@@ -1,0 +1,1 @@
+./configure --with-x11 --with-wx --with-svga --enable-cpu-level=6 --enable-smp --enable-configurable-msrs --enable-a20-pin --enable-idle-hack --enable-pnic --enable-e1000 --enable-fast-function-calls --enable-debugger --enable-readline --enable-disasm --enable-show-ips --enable-logging --enable-usb --enable-usb-ohci --enable-usb-xhci --enable-ne2000 --enable-sb16
