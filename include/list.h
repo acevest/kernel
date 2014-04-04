@@ -14,75 +14,74 @@
  *--------------------------------------------------------------------------
  */
 
-#ifndef    _LIST_H
-#define _LIST_H
+#pragma once
 
 /* Allmost Copy From Linux */
 typedef struct list_head
 {
     struct list_head *prev, *next;
-} ListHead, *pListHead;
+} list_head_t;
+
+// TODO Remove
+typedef list_head_t ListHead, *pListHead;
 
 #define LIST_HEAD_INIT(name) {&(name), &(name) }
-#define LIST_HEAD(name) ListHead name = LIST_HEAD_INIT(name)
-#define INIT_LIST_HEAD(ptr)         \
-do{                    \
+#define LIST_HEAD(name) list_head_t name = LIST_HEAD_INIT(name)
+
+#define INIT_LIST_HEAD(ptr)     \
+do{                             \
     (ptr)->next = (ptr);        \
     (ptr)->prev = (ptr);        \
 }while(0)
 
-#define list_entry(ptr, type, member)    \
+#define list_entry(ptr, type, member)       \
     ((type *)((char *)(ptr)-(unsigned long)(&((type *)0)->member)))
 
-#define list_for_each(pos, head)    \
+#define list_for_each(pos, head)            \
     for(pos = (head)->next; pos != (head); pos = pos->next)
-#define list_for_each_safe(pos, tmp, head)        \
-    for(pos = (head)->next, tmp = pos->next;    \
-        pos != (head);                \
+
+#define list_for_each_safe(pos, tmp, head)  \
+    for(pos = (head)->next, tmp = pos->next;\
+        pos != (head);                      \
         pos = tmp, tmp = pos->next)
 
-static inline void _list_add(    pListHead newItem,
-                pListHead prev,
-                pListHead next)
+static inline void _list_add(list_head_t *pnew, list_head_t *prev, list_head_t *next)
 {
-    next->prev    = newItem;
-    newItem->next    = next;
-    newItem->prev    = prev;
-    prev->next    = newItem;
+    next->prev    = pnew;
+    pnew->next    = next;
+    pnew->prev    = prev;
+    prev->next    = pnew;
 }
 
-static inline void list_add(pListHead newItem, pListHead head)
+static inline void list_add(list_head_t *pnew, list_head_t *head)
 {
-    _list_add(newItem, head, head->next);
+    _list_add(pnew, head, head->next);
 }
 
-static inline void list_add_tail(pListHead newItem, pListHead head)
+static inline void list_add_tail(list_head_t *pnew, list_head_t *head)
 {
-    _list_add(newItem, head->prev, head);
+    _list_add(pnew, head->prev, head);
 }
 
 
-static inline void _list_del(pListHead prev, pListHead next)
+static inline void _list_del(list_head_t *prev, list_head_t *next)
 {
     next->prev = prev;
     prev->next = next;
 }
 
-static inline void list_del(pListHead entry)
+static inline void list_del(list_head_t *entry)
 {
     _list_del(entry->prev, entry->next);
 }
 
-static inline void list_del_init(pListHead entry)
+static inline void list_del_init(list_head_t *entry)
 {
     _list_del(entry->prev, entry->next);
     INIT_LIST_HEAD(entry);
 }
 
-static inline int list_is_empty(pListHead head)
+static inline int list_is_empty(list_head_t *head)
 {
     return head->next == head;
 }
-
-
-#endif //_LIST_H

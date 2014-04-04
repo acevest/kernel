@@ -67,6 +67,13 @@ typedef unsigned long pte_t;
 
 typedef struct page
 {
+    
+
+} page_t;
+
+// TODO Remove
+typedef struct page_
+{
     //struct page *prev, *next;
     ListHead list;
     unsigned int order;
@@ -74,7 +81,7 @@ typedef struct page
     unsigned int count;
 } Page, *pPage;
 
-typedef struct free_area
+typedef struct free_area_
 {
     //struct page *prev, *next;
     ListHead freeList;
@@ -83,8 +90,6 @@ typedef struct free_area
     unsigned int count;
 } FreeArea, *pFreeArea;
 
-
-extern FreeArea freeArea[MAX_ORDER];
 
 pPage    alloc_pages(unsigned int order);
 void    free_pages(pPage page);

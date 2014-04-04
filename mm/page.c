@@ -24,6 +24,8 @@
 #define add_page2list(page, order) \
         list_add(&page->list, &freeArea[order].freeList)
 
+FreeArea freeArea[MAX_ORDER];
+
 #if 1
 void    do_no_page(void *addr)
 {

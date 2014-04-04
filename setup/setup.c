@@ -42,7 +42,7 @@ void setup_kernel()
 {
     extern char _start, _end;
 
-    printk("kernel:\t%08x - %08x\n", &_start, &_end);
+    printk("kernel: %08x - %08x\n", &_start, &_end);
 
     init_mm();
 
