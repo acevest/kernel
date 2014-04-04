@@ -8,5 +8,5 @@
  */
 #include "processor.h"
 
-Desc	idt[NIDT];
-Desc	gdt[NGDT];
+Desc    idt[NIDT];
+Desc    gdt[NGDT];

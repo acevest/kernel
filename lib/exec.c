@@ -1,17 +1,17 @@
 /*
  *--------------------------------------------------------------------------
- *   File Name:	exec.c
+ *   File Name: exec.c
  * 
- *      Author:	Zhao Yanbai [zhaoyanbai@126.com]
- * 			Tue Feb 23 20:47:11 2010
+ *      Author: Zhao Yanbai [zhaoyanbai@126.com]
+ *              Tue Feb 23 20:47:11 2010
  * 
- * Description:	none
+ * Description: none
  * 
  *--------------------------------------------------------------------------
  */
-#include<syscall.h>
+#include <syscall.h>
 
 int execv(const char *path, char *const argv[])
 {
-	return syscall2(SYSC_EXEC, path, argv);
+    return syscall2(SYSC_EXEC, path, argv);
 }

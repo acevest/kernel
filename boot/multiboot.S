@@ -14,8 +14,8 @@
  *--------------------------------------------------------------------------
  */
 #define ASM
-#include"boot/boot.h"
-#include"system.h"
+#include "boot/boot.h"
+#include "system.h"
 .global _start
 .extern CheckKernel
 .extern SetupKernel

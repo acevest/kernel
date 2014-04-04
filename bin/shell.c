@@ -1,60 +1,60 @@
 /*
  *--------------------------------------------------------------------------
- *   File Name:	shell.c
+ *   File Name: shell.c
  * 
- *      Author:	Zhao Yanbai [zhaoyanbai@126.com]
- * 			Wed Feb 24 17:47:22 2010
+ *      Author: Zhao Yanbai [zhaoyanbai@126.com]
+ *              Wed Feb 24 17:47:22 2010
  * 
- * Description:	none
+ * Description: none
  * 
  *--------------------------------------------------------------------------
  */
-#include<stdio.h>
-#include<types.h>
-#include<string.h>
-#define	CMD_SIZE	256
+#include <stdio.h>
+#include <types.h>
+#include <string.h>
+#define CMD_SIZE    256
 char cmd[CMD_SIZE];
 
 void get_cmd()
 {
-	int i;
+    int i;
 
-	i=0;
-	printf("#");
-	while(1)
-	{
-		int k;
-		char ch;
-		extern char ParseKbdInput(int k);
-		extern unsigned char read_kbd();
+    i=0;
+    printf("#");
+    while(1)
+    {
+        int k;
+        char ch;
+        extern char ParseKbdInput(int k);
+        extern unsigned char read_kbd();
 reinput:
-		k = read_kbd();
-		ch = ParseKbdInput(k);
-		if(ch == -1)
-			continue;
-		
-		if(ch == '\b')
-		{
+        k = read_kbd();
+        ch = ParseKbdInput(k);
+        if(ch == -1)
+            continue;
+        
+        if(ch == '\b')
+        {
             i = --i < 0 ? 0 : i;
-			cmd[i] = 0;
-			continue;
-		}
+            cmd[i] = 0;
+            continue;
+        }
 
-		if(ch == '\n')
-		{
-			cmd[i++] = 0;
-			break;
-		}
+        if(ch == '\n')
+        {
+            cmd[i++] = 0;
+            break;
+        }
 
-		cmd[i++] = ch;
+        cmd[i++] = ch;
 
-		if(i == CMD_SIZE - 1)
-		{
-			printf("shell buffer is full..."
-				"reset buffer...\n");
-			i = 0;
-		}
-	}
+        if(i == CMD_SIZE - 1)
+        {
+            printf("shell buffer is full..."
+                "reset buffer...\n");
+            i = 0;
+        }
+    }
 
     int len = strlen(cmd);
     int j;
@@ -71,83 +71,83 @@ reinput:
         goto reinput;
     }
 
-	cmd[CMD_SIZE-1] = 0;
+    cmd[CMD_SIZE-1] = 0;
 }
 
 int shell()
 {
-	char buf[CMD_SIZE];
+    char buf[CMD_SIZE];
 
-	while(1)
-	{
-		get_cmd();
+    while(1)
+    {
+        get_cmd();
 
-		//printf("\nCMD: %s\n", cmd);
+        //printf("\nCMD: %s\n", cmd);
 
-		if(cmd[0] == 0) continue;
-		if(cmd[0] != '/')
-		{
-			strcpy(buf, cmd);
-			strcpy(cmd, "/bin/");
-			strcat(cmd, buf);
-		}
-		
-		pid_t pid;
-		pid = fork();
+        if(cmd[0] == 0) continue;
+        if(cmd[0] != '/')
+        {
+            strcpy(buf, cmd);
+            strcpy(cmd, "/bin/");
+            strcat(cmd, buf);
+        }
+        
+        pid_t pid;
+        pid = fork();
 
-		if(pid<0)
-		{
-			printf("shit happens in shell\n");
-			while(1);
-		}
-		else if(pid == 0)
-		{
-			execv(cmd, NULL);
-		}
+        if(pid<0)
+        {
+            printf("shit happens in shell\n");
+            while(1);
+        }
+        else if(pid == 0)
+        {
+            execv(cmd, NULL);
+        }
 
-		int  i = 100000;
-		while(i--);
-	}
+        int  i = 100000;
+        while(i--);
+    }
 
 
 
-	return 0;
+    return 0;
 }
 
 #if 0
 int shell()
 {
-	pid_t pid;
+    pid_t pid;
 
-	pid = fork();
+    pid = fork();
 
-	if(pid<0)
-	{
-		printf("shit happens in shell\n");
-		while(1);
-	}
-	else if(pid == 0)
-	{
-		execv("/bin/hw", NULL);
-	}
-	else
-	{
+    if(pid<0)
+    {
+        printf("shit happens in shell\n");
+        while(1);
+    }
+    else if(pid == 0)
+    {
+        execv("/bin/hw", NULL);
+    }
+    else
+    {
 
-		while(1)
-		{
-			int k;
-			char ch;
-			extern char ParseKbdInput(int k);
-			extern unsigned char read_kbd();
-			//asm("xchg %bx, %bx");
-			k = read_kbd();
-			ch = ParseKbdInput(k);
-			if(ch != -1)
-			printf("<%c>",ch);
-		}
-	}
+        while(1)
+        {
+            int k;
+            char ch;
+            extern char ParseKbdInput(int k);
+            extern unsigned char read_kbd();
+            //asm("xchg %bx, %bx");
+            k = read_kbd();
+            ch = ParseKbdInput(k);
+            if(ch != -1)
+            printf("<%c>",ch);
+        }
+    }
 
 
-	return 0;
+    return 0;
 }
 #endif

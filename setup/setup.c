@@ -13,9 +13,9 @@
  * 
  *--------------------------------------------------------------------------
  */
-#include<bits.h>
-#include<printk.h>
-#include<system.h>
+#include <bits.h>
+#include <printk.h>
+#include <system.h>
 
 extern void setup_gdt();
 extern void setup_idt();

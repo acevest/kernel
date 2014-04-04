@@ -1,29 +1,29 @@
 /*
  *--------------------------------------------------------------------------
- *   File Name:	exit.c
+ *   File Name: exit.c
  * 
- *      Author:	Zhao Yanbai [zhaoyanbai@126.com]
- * 			Thu Mar  4 10:03:57 2010
+ *      Author: Zhao Yanbai [zhaoyanbai@126.com]
+ *              Thu Mar  4 10:03:57 2010
  * 
- * Description:	none
+ * Description: none
  * 
  *--------------------------------------------------------------------------
  */
 
-#include<sched.h>
-#include<system.h>
+#include <sched.h>
+#include <system.h>
 
 int sysc_exit(int status)
 {
 
-	if(current == &RootTsk)
-		panic("Root Task is Exiting...");
+    if(current == &RootTsk)
+        panic("Root Task is Exiting...");
 
-	/* 先简要实现 */
-	current->state = TASK_EXITING;
+    /* 先简要实现 */
+    current->state = TASK_EXITING;
 
-	
-	schedule();
+    
+    schedule();
 
-	return 0;
+    return 0;
 }

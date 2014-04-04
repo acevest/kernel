@@ -1,19 +1,19 @@
 /*
  *--------------------------------------------------------------------------
- *   File Name:	assert.c
+ *   File Name: assert.c
  * 
- *      Author:	Zhao Yanbai [zhaoyanbai@126.com]
- * 			Sat Jan 23 15:25:29 2010
+ *      Author: Zhao Yanbai [zhaoyanbai@126.com]
+ *              Sat Jan 23 15:25:29 2010
  * 
- * Description:	none
+ * Description: none
  * 
  *--------------------------------------------------------------------------
  */
 
 void assert_fail(char *exp, char *file, unsigned int line, char *func)
 {
-	printk("%s:%d: %s: Assertion \'%s\' failed.\n",
-		file, line, func, exp);
+    printk("%s:%d: %s: Assertion \'%s\' failed.\n",
+        file, line, func, exp);
 
-	while(1);
+    while(1);
 }

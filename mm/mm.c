@@ -1,26 +1,26 @@
 /*
  *--------------------------------------------------------------------------
- *   File Name:	mm.c
+ *   File Name: mm.c
  * 
- * Description:	none
+ * Description: none
  * 
  * 
- *      Author:	Zhao Yanbai [zhaoyanbai@126.com]
+ *      Author: Zhao Yanbai [zhaoyanbai@126.com]
  * 
- *     Version:	1.0
+ *     Version:    1.0
  * Create Date: Wed Mar  4 21:08:47 2009
  * Last Update: Wed Mar  4 21:08:47 2009
  * 
  *--------------------------------------------------------------------------
  */
-#include<printk.h>
-#include<system.h>
-#include<page.h>
-#include<types.h>
-#include<bits.h>
-#include<mm.h>
-#include<init.h>
-#include<boot/boot.h>
+#include <printk.h>
+#include <system.h>
+#include <page.h>
+#include <types.h>
+#include <bits.h>
+#include <mm.h>
+#include <init.h>
+#include <boot/boot.h>
 
 
 extern char kernel_begin, kernel_end;
@@ -59,11 +59,11 @@ void e820_print_map()
     {
         struct e820_entry *p = boot_params.e820map.map + i;
 
-		printk("[%02d] 0x%08x - 0x%08x size %- 10d %8dKB %5dMB ", i, p->addr, p->addr + p->size, p->size, p->size>>10, p->size>>20);
+        printk("[%02d] 0x%08x - 0x%08x size %- 10d %8dKB %5dMB ", i, p->addr, p->addr + p->size, p->size, p->size>>10, p->size>>20);
 
         e820_print_type(p->type);
 
-		printk("\n");
+        printk("\n");
     }
 }
 
@@ -384,102 +384,102 @@ FreeArea freeArea[MAX_ORDER];
 
 void printBitMap(FreeArea fa)
 {
-	int i;
-	printk("# ");
-	for(i=0; i<fa.mapSize; i++)
-		printk("%x ", fa.map[i]);
-	printk("++++ %d ++++", freeArea[i].count);
-	printk(" #\n");
+    int i;
+    printk("# ");
+    for(i=0; i<fa.mapSize; i++)
+        printk("%x ", fa.map[i]);
+    printk("++++ %d ++++", freeArea[i].count);
+    printk(" #\n");
 }
 void setup_mm()
 {
-	u32 mm_size = system.mm_size;
-	if(mm_size > 1UL<<30)
-		mm_size = 1UL<<30;
+    u32 mm_size = system.mm_size;
+    if(mm_size > 1UL<<30)
+        mm_size = 1UL<<30;
 
-	printk("mm_size: %x\n", mm_size);
+    printk("mm_size: %x\n", mm_size);
 
 /*
-	pmmapItem mmap;
-	unsigned long maxAddr;
+    pmmapItem mmap;
+    unsigned long maxAddr;
 
-	mmStart = (va2pa(&end) + (PAGE_SIZE-1)) & PAGE_MASK;
-	//mmEnd = (mb_mm_upper) & PAGE_MASK;
+    mmStart = (va2pa(&end) + (PAGE_SIZE-1)) & PAGE_MASK;
+    //mmEnd = (mb_mm_upper) & PAGE_MASK;
 
-	mmap = (pmmapItem)mb_mmap_addr;
-	maxAddr = 0;
-	int n = 1;
-	printk("Boot Loader Provided Physical RAM Map:\n");
-	while((unsigned long)mmap < (mb_mmap_addr + mb_mmap_size))
-	{
-		printk("[%02d] 0x%08x%08x - 0x%08x%08x ",
-		n++,//mmap->size,
+    mmap = (pmmapItem)mb_mmap_addr;
+    maxAddr = 0;
+    int n = 1;
+    printk("Boot Loader Provided Physical RAM Map:\n");
+    while((unsigned long)mmap < (mb_mmap_addr + mb_mmap_size))
+    {
+        printk("[%02d] 0x%08x%08x - 0x%08x%08x ",
+        n++,//mmap->size,
 
-		mmap->base_addr_high,
-		mmap->base_addr_low,
-		mmap->length_high,
-		mmap->length_low);
+        mmap->base_addr_high,
+        mmap->base_addr_low,
+        mmap->length_high,
+        mmap->length_low);
 
-		switch(mmap->type)
-		{
-		case E820_RAM:
-			printk("RAM");
-			if(maxAddr<(mmap->base_addr_low+mmap->length_low))
-			{
-				maxAddr = 
-				mmap->base_addr_low + mmap->length_low;
-			}
-			break;
-		case E820_RESERVED:
-			printk("Reserved");
-			break;
-		case E820_ACPI:
-			printk("ACPI Data");
-			break;
-		case E820_NVS:
-			printk("ACPI NVS");
-			break;
-		default:
-			printk("Unknown %x\n", mmap->type);
-			break;
-		}
-		printk("\n");
+        switch(mmap->type)
+        {
+        case E820_RAM:
+            printk("RAM");
+            if(maxAddr<(mmap->base_addr_low+mmap->length_low))
+            {
+                maxAddr = 
+                mmap->base_addr_low + mmap->length_low;
+            }
+            break;
+        case E820_RESERVED:
+            printk("Reserved");
+            break;
+        case E820_ACPI:
+            printk("ACPI Data");
+            break;
+        case E820_NVS:
+            printk("ACPI NVS");
+            break;
+        default:
+            printk("Unknown %x\n", mmap->type);
+            break;
+        }
+        printk("\n");
 
-		mmap = (pmmapItem) ((unsigned long) mmap
-			+ mmap->size + sizeof(mmap->size));
-	}
+        mmap = (pmmapItem) ((unsigned long) mmap
+            + mmap->size + sizeof(mmap->size));
+    }
 
-	
-	//if(maxAddr < mmEnd)	
-	mmEnd = maxAddr & PAGE_MASK;
-	if(mmEnd > MAX_SUPT_PHY_MEM_SIZE)
-		mmEnd = MAX_SUPT_PHY_MEM_SIZE;
-	totalPages = mmEnd >> PAGE_SHIFT;
-
-
-	// bit map
-	int i;
-	static char *bitmap_start,*bitmap_end;
-	bitmap_start = (char *)mmStart;
+    
+    //if(maxAddr < mmEnd)    
+    mmEnd = maxAddr & PAGE_MASK;
+    if(mmEnd > MAX_SUPT_PHY_MEM_SIZE)
+        mmEnd = MAX_SUPT_PHY_MEM_SIZE;
+    totalPages = mmEnd >> PAGE_SHIFT;
 
 
+    // bit map
+    int i;
+    static char *bitmap_start,*bitmap_end;
+    bitmap_start = (char *)mmStart;
 
-	// 
-	unsigned long bitmap_size = (mmEnd + 7) / 8;
-	bitmap_size =  (bitmap_size + (sizeof(long) - 1UL))
-		    &~ (sizeof(long) - 1UL);
-	//while(1);
-	//memset(bitmap_start, 0xFF, bitmap_size);
+
+
+    // 
+    unsigned long bitmap_size = (mmEnd + 7) / 8;
+    bitmap_size =  (bitmap_size + (sizeof(long) - 1UL))
+            &~ (sizeof(long) - 1UL);
+    //while(1);
+    //memset(bitmap_start, 0xFF, bitmap_size);
 
 #if 0
-	printk(	"bitmap_start: %x "
-		"mmStart: %x "
-		"mmEnd: %x "
-		"bitmap_size: %x\n",
-		bitmap_start,
-		mmStart,
-		mmEnd,
-		bitmap_size);
+    printk(    "bitmap_start: %x "
+        "mmStart: %x "
+        "mmEnd: %x "
+        "bitmap_size: %x\n",
+        bitmap_start,
+        mmStart,
+        mmEnd,
+        bitmap_size);
 #endif
 */
 }

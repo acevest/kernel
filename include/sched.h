@@ -1,34 +1,34 @@
 /*
  *--------------------------------------------------------------------------
- *   File Name:	sched.h
+ *   File Name: sched.h
  * 
- * Description:	none
+ * Description: none
  * 
  * 
- *      Author:	Zhao Yanbai [zhaoyanbai@126.com]
+ *      Author: Zhao Yanbai [zhaoyanbai@126.com]
  * 
- *     Version:	1.0
+ *     Version:    1.0
  * Create Date: Sat Feb  7 21:43:49 2009
  * Last Update: Sat Feb  7 21:43:49 2009
  * 
  *--------------------------------------------------------------------------
  */
 
-#ifndef	_SCHED_H
-#define	_SCHED_H
+#ifndef    _SCHED_H
+#define _SCHED_H
 
-#include<task.h>
-#define	NR_TASKS	3
-//pTask	tTasks[NR_TASKS];
-//void	add_task();
-void	SetupTasks();
-//void	test_taskA();
-//void	test_taskB();
-//unsigned long schedule(pPtRegs	regs);
+#include <task.h>
+#define NR_TASKS    3
+//pTask    tTasks[NR_TASKS];
+//void    add_task();
+void    SetupTasks();
+//void    test_taskA();
+//void    test_taskB();
+//unsigned long schedule(pPtRegs    regs);
 unsigned long schedule();
 
-pid_t	get_next_pid();
-void	init_tsk_cr3(pTask);
+pid_t    get_next_pid();
+void    init_tsk_cr3(pTask);
 
 
 inline void wake_up(pWaitQueue wq);

@@ -1,11 +1,11 @@
 /*
  *--------------------------------------------------------------------------
- *   File Name:    system.h
+ *   File Name: system.h
  * 
- * Description:    none
+ * Description: none
  * 
  * 
- *      Author:    Zhao Yanbai [zhaoyanbai@126.com]
+ *      Author: Zhao Yanbai [zhaoyanbai@126.com]
  * 
  *     Version:    1.0
  * Create Date: Sat Feb  7 18:57:58 2009
@@ -15,11 +15,11 @@
  */
 
 #ifndef    _SYSTEM_H
-#define    _SYSTEM_H
+#define _SYSTEM_H
 
-#include<page.h>
-#include<assert.h>
-#define    KRNLADDR    PAGE_OFFSET
+#include <page.h>
+#include <assert.h>
+#define KRNLADDR    PAGE_OFFSET
 
 #ifndef    ASM
 #include "types.h"
@@ -59,22 +59,22 @@ extern char etext, edata, end;
 
 char gdtr[6],idtr[6];
 #define lgdt()    __asm__    __volatile__("lgdt gdtr")
-#define    sgdt()    __asm__    __volatile__("sgdt gdtr")
-#define    lidt()    __asm__    __volatile__("lidt idtr")
-#define    sidt()    __asm__    __volatile__("sidt idtr")
+#define sgdt()    __asm__    __volatile__("sgdt gdtr")
+#define lidt()    __asm__    __volatile__("lidt idtr")
+#define sidt()    __asm__    __volatile__("sidt idtr")
 
-#define    cli()    __asm__    __volatile__("cli")
-#define    sti()    __asm__    __volatile__("sti")
-#define    disableIRQ()    cli()
-#define    enableIRQ()    sti()
+#define cli()    __asm__    __volatile__("cli")
+#define sti()    __asm__    __volatile__("sti")
+#define disableIRQ()    cli()
+#define enableIRQ()    sti()
 
-#define    ALIGN(x, a)    (((x)+(a)-1) & ~((a)-1))
+#define ALIGN(x, a)    (((x)+(a)-1) & ~((a)-1))
 
 
 // 1 GB
-#define    MAX_SUPT_PHYMM_SIZE    (1UL<<30)
+#define MAX_SUPT_PHYMM_SIZE    (1UL<<30)
 
-#define    INT_STACK_SIZE    PAGE_SIZE
+#define INT_STACK_SIZE    PAGE_SIZE
 
 
 enum GDTSelectorIndex
@@ -152,7 +152,7 @@ typedef struct system
     u32    boot_device;
 
     Dev    root_dev;
-#define    CMD_LINE_SIZE    128
+#define CMD_LINE_SIZE    128
     char    *cmdline;
 
     u32    debug;
@@ -160,12 +160,12 @@ typedef struct system
 
 extern    System system;
 
-#define    pgmap system.page_map
+#define pgmap system.page_map
 
 #endif
 
 
-#define    SAVE_REGS   \
+#define SAVE_REGS   \
     cld;            \
     pushl    %gs;    \
     pushl    %fs;    \
@@ -179,7 +179,7 @@ extern    System system;
     pushl    %edx;    \
     pushl    %ebx;
 
-#define    RESTORE_REGS    \
+#define RESTORE_REGS    \
     popl    %ebx;    \
     popl    %edx;    \
     popl    %ecx;    \
@@ -193,45 +193,45 @@ extern    System system;
     popl    %gs;
 
 
-#define    PRIVILEGE_KRNL    0x0
-#define    PRIVILEGE_USER    0x3
+#define PRIVILEGE_KRNL    0x0
+#define PRIVILEGE_USER    0x3
 
-#define    INDEX_UCODE    3
-#define    INDEX_UDATA    4
+#define INDEX_UCODE    3
+#define INDEX_UDATA    4
 /* *8 == <<3 .但要用于汇编文件 <<3 不行. */
-#define    SELECTOR_KRNL_CS    (INDEX_KCODE*8)
-#define    SELECTOR_KRNL_DS    (INDEX_KDATA*8)
-#define    SELECTOR_KRNL_SS    SELECTOR_KRNL_DS
-#define    SELECTOR_USER_CS    ((INDEX_UCODE*8)|PRIVILEGE_USER)
-#define    SELECTOR_USER_DS    ((INDEX_UDATA*8)|PRIVILEGE_USER)
-#define    SELECTOR_USER_SS    SELECTOR_USER_DS
+#define SELECTOR_KRNL_CS    (INDEX_KCODE*8)
+#define SELECTOR_KRNL_DS    (INDEX_KDATA*8)
+#define SELECTOR_KRNL_SS    SELECTOR_KRNL_DS
+#define SELECTOR_USER_CS    ((INDEX_UCODE*8)|PRIVILEGE_USER)
+#define SELECTOR_USER_DS    ((INDEX_UDATA*8)|PRIVILEGE_USER)
+#define SELECTOR_USER_SS    SELECTOR_USER_DS
 
 
 #if 0
-#define    INT_VECT_DIVIDE          0x0
-#define    INT_VECT_DEBUG           0x1
-#define    INT_VECT_NMI             0x2
-#define    INT_VECT_BREAKPOINT      0x3    /* Break Point */
-#define    INT_VECT_OVERFLOW        0x4
-#define    INT_VECT_BOUNDS          0x5
-#define    INT_VECT_INVALOP         0x6
-#define    INT_VECT_COPROCNOT       0x7
-#define    INT_VECT_DOUBLEFAULT     0x8    /* Double Fault */
-#define    INT_VECT_COPROCSEG       0x9
-#define    INT_VECT_INVALTSS        0xA
-#define    INT_VECT_SEGNOT          0xB
-#define    INT_VECT_STACKFAULT      0xC    /* Stack Fault */
-#define    INT_VECT_PROTECTION      0xD
-#define    INT_VECT_PAGEFAULT       0xE
-#define    INT_VECT_COPROCERR       0x10
+#define INT_VECT_DIVIDE          0x0
+#define INT_VECT_DEBUG           0x1
+#define INT_VECT_NMI             0x2
+#define INT_VECT_BREAKPOINT      0x3    /* Break Point */
+#define INT_VECT_OVERFLOW        0x4
+#define INT_VECT_BOUNDS          0x5
+#define INT_VECT_INVALOP         0x6
+#define INT_VECT_COPROCNOT       0x7
+#define INT_VECT_DOUBLEFAULT     0x8    /* Double Fault */
+#define INT_VECT_COPROCSEG       0x9
+#define INT_VECT_INVALTSS        0xA
+#define INT_VECT_SEGNOT          0xB
+#define INT_VECT_STACKFAULT      0xC    /* Stack Fault */
+#define INT_VECT_PROTECTION      0xD
+#define INT_VECT_PAGEFAULT       0xE
+#define INT_VECT_COPROCERR       0x10
 #endif
-#define    INT_VECT_IRQ0    0x20
-#define    INT_VECT_IRQ8    0x28
+#define INT_VECT_IRQ0    0x20
+#define INT_VECT_IRQ8    0x28
 
-#define    REBOOT_RESTART   0x00
-#define    REBOOT_POWEROFF  0x01
+#define REBOOT_RESTART   0x00
+#define REBOOT_POWEROFF  0x01
 
 
-#define    ROOT_DEV    system.root_dev
+#define ROOT_DEV    system.root_dev
 
 #endif //_SYSTEM_H

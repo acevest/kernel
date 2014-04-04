@@ -1,11 +1,11 @@
 /*
  *--------------------------------------------------------------------------
- *   File Name:	errno.c
+ *   File Name: errno.c
  * 
- *      Author:	Zhao Yanbai [zhaoyanbai@126.com]
- * 			Tue Feb 23 01:49:49 2010
+ *      Author: Zhao Yanbai [zhaoyanbai@126.com]
+ *              Tue Feb 23 01:49:49 2010
  * 
- * Description:	none
+ * Description: none
  * 
  *--------------------------------------------------------------------------
  */

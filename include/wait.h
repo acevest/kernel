@@ -1,26 +1,26 @@
 /*
  *--------------------------------------------------------------------------
- *   File Name:	wait.h
+ *   File Name: wait.h
  * 
- *      Author:	Zhao Yanbai [zhaoyanbai@126.com]
- * 			Mon Feb 22 20:50:56 2010
+ *      Author: Zhao Yanbai [zhaoyanbai@126.com]
+ *              Mon Feb 22 20:50:56 2010
  * 
- * Description:	none
+ * Description: none
  * 
  *--------------------------------------------------------------------------
  */
 
-#ifndef	_WAIT_H
-#define	_WAIT_H
+#ifndef    _WAIT_H
+#define _WAIT_H
 
-#include<list.h>
+#include <list.h>
 
-typedef	struct
+typedef    struct
 {
-	ListHead wait;
+    ListHead wait;
 } WaitQueueHead, *pWaitQueueHead;
 
-typedef	ListHead WaitQueue, *pWaitQueue;
+typedef    ListHead WaitQueue, *pWaitQueue;
 
 void init_wait_queue(pWaitQueueHead wqh);
 
