@@ -63,13 +63,17 @@ typedef unsigned long pte_t;
 
 #define LOAD_CR3(pde) asm("movl %%edx, %%cr3"::"d"(va2pa(pde)))
 
-#define MAX_ORDER    (11)
+#define MAX_OLD_ORDER    (11)
 
 typedef struct page
 {
-    
-
+    unsigned long index;
 } page_t;
+
+typedef struct free_area
+{
+    unsigned long count;
+} free_area_t;
 
 // TODO Remove
 typedef struct page_

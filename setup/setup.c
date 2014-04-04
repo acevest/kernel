@@ -40,9 +40,9 @@ extern void reboot();
 
 void setup_kernel()
 {
-    extern char _start, _end;
+    extern char kernel_begin, kernel_end;
 
-    printk("kernel: %08x - %08x\n", &_start, &_end);
+    printk("kernel: %08x - %08x\n", &kernel_begin, &kernel_end);
 
     init_mm();
 

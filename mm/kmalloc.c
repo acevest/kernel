@@ -22,7 +22,7 @@ static    get_order(size_t size)
     //printk(" %08x\n", size);
     int i;
     int n = size>>PAGE_SHIFT;
-    for(i=0; i<MAX_ORDER; i++)
+    for(i=0; i<MAX_OLD_ORDER; i++)
     {
         if(n<=(1UL<<i))
             break;

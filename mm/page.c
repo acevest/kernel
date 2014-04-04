@@ -20,11 +20,12 @@
 #include <mm.h>
 
 
+
 #define get_page_from_list(pList) list_entry(pList, Page, list)
 #define add_page2list(page, order) \
         list_add(&page->list, &freeArea[order].freeList)
 
-FreeArea freeArea[MAX_ORDER];
+FreeArea freeArea[MAX_OLD_ORDER];
 
 #if 1
 void    do_no_page(void *addr)
@@ -133,7 +134,7 @@ void do_wp_page(void *addr)
 
 inline pPage __alloc_pages(unsigned int order, unsigned int alloc_order)
 {
-    assert(0 <= order && order<MAX_ORDER);
+    assert(0 <= order && order<MAX_OLD_ORDER);
     assert(!list_is_empty(&freeArea[order].freeList));
     assert(alloc_order <= order);
 
@@ -178,11 +179,11 @@ inline pPage __alloc_pages(unsigned int order, unsigned int alloc_order)
 
 pPage    alloc_pages(unsigned int order)
 {
-    if(order<0 || order>=MAX_ORDER)
+    if(order<0 || order>=MAX_OLD_ORDER)
         return NULL;
 
     int i;
-    for(i=order; i<MAX_ORDER; i++)
+    for(i=order; i<MAX_OLD_ORDER; i++)
     {
         if(list_is_empty(&freeArea[i].freeList))
             continue;
@@ -195,7 +196,7 @@ pPage    alloc_pages(unsigned int order)
 
 pPage    get_buddy_page(pPage page, unsigned int order)
 {
-    assert(0<=order && order<MAX_ORDER);
+    assert(0<=order && order<MAX_OLD_ORDER);
     assert(page != NULL);
 
     //printk("mapnr: %d order:%d %d\n", page->mapNR, order, 1UL<<order);
@@ -229,7 +230,7 @@ void    free_pages(pPage page)
 {
     assert(page != NULL);
     unsigned int order = page->order;
-    assert(0<=order && order<MAX_ORDER);
+    assert(0<=order && order<MAX_OLD_ORDER);
 
 
     // buddy page
@@ -239,7 +240,7 @@ void    free_pages(pPage page)
     //printk("<%d %d>", bpage->mapNR, bpage->order);
     
 
-    if(bpage == NULL || order == MAX_ORDER-1)
+    if(bpage == NULL || order == MAX_OLD_ORDER-1)
     {
         add_page2list(page, order);
     }
@@ -264,7 +265,7 @@ void    free_pages(pPage page)
 
 inline pPage __alloc_pages(unsigned int order, unsigned int alloc_order)
 {
-    assert(0 <= order && order<MAX_ORDER);
+    assert(0 <= order && order<MAX_OLD_ORDER);
     assert(!list_is_empty(&freeArea[order].freeList));
     assert(alloc_order <= order);
 
@@ -289,11 +290,11 @@ inline pPage __alloc_pages(unsigned int order, unsigned int alloc_order)
 
 pPage alloc_pages(unsigned int order)
 {
-    if(order >= MAX_ORDER)
+    if(order >= MAX_OLD_ORDER)
         return NULL;
 
     int i;
-    for(i=order; i<MAX_ORDER; i++)
+    for(i=order; i<MAX_OLD_ORDER; i++)
     {
         if(list_is_empty(&freeArea[i].freeList))
             continue;
@@ -307,14 +308,14 @@ pPage alloc_pages(unsigned int order)
 
 void free_pages(pPage page, unsigned int order)
 {
-    assert(0<=order &&  order<MAX_ORDER);
+    assert(0<=order &&  order<MAX_OLD_ORDER);
     assert(page != NULL);
 
 
     
     int nr = page->mapNR>>(order+1);
     //printk("#########%d %d\n",page->mapNR, variable_test_bit( nr, (unsigned long *)freeArea[order].map));
-    if(order == MAX_ORDER -1
+    if(order == MAX_OLD_ORDER -1
     || !variable_test_bit( nr, (unsigned long *)freeArea[order].map))
     {
         change_bit( nr, (unsigned long *)freeArea[order].map);
@@ -353,7 +354,7 @@ void free_pages(pPage page, unsigned int order)
 void disp_free_area()
 {
     int i;
-    for(i=0; i<MAX_ORDER; i++)
+    for(i=0; i<MAX_OLD_ORDER; i++)
     {
         pListHead pos,tmp;
         int count = 0;

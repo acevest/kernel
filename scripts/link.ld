@@ -1,13 +1,13 @@
 /*
  *--------------------------------------------------------------------------
- *   File Name:	link.ld
+ *   File Name: link.ld
  * 
  * Description: Link All Object Files to KERNEL ...
  * 
  * 
- *      Author:	Zhao Yanbai [zhaoyanbai@126.com]
+ *      Author: Zhao Yanbai [zhaoyanbai@126.com]
  * 
- *     Version:	1.1
+ *     Version: 1.1
  * Create Date: Mon Mar  2 12:21:03 2009
  * Last Update: Mon Mar  2 12:21:03 2009
  * 
@@ -21,28 +21,28 @@ kernel_virtual_addr_start = 0xC0000000;
 kernel_begin = kernel_virtual_addr_start + kernel_loaded_physic_addr;
 SECTIONS
 {
-	. = kernel_begin;
-	.text : AT(phys_addr) ALIGN(0x1000)
-	{
-		code = .;
+    . = kernel_begin;
+    .text : AT(phys_addr) ALIGN(0x1000)
+    {
+        code = .;
         phys_addr = . - kernel_virtual_addr_start;
         *(.multiboot_header)
-		*(.text)
-	}
-	etext = .;
-	.data : AT(phys_addr) ALIGN(0x1000) 
-	{
-		data = .;
+        *(.text)
+    }
+    etext = .;
+    .data : AT(phys_addr) ALIGN(0x1000) 
+    {
+        data = .;
         phys_addr = . - kernel_virtual_addr_start;
-		*(.data)
-	}
-	edata = .;
-	.bss : AT(phys_addr)  ALIGN(0x1000)
-	{
-		bss = .;
+        *(.data)
+    }
+    edata = .;
+    .bss : AT(phys_addr)  ALIGN(0x1000)
+    {
+        bss = .;
         phys_addr = . - kernel_virtual_addr_start;
-		*(.bss);
-	}
+        *(.bss);
+    }
 
     ebss = .;
 
@@ -54,7 +54,7 @@ SECTIONS
     }
 
 
-	end = .;
-	_end = .;
-	kernel_end = (end + 0x1000 - 1) & ~ (0x1000 -1);
+    end = .;
+    _end = .;
+    kernel_end = (end + 0x1000 - 1) & ~ (0x1000 -1);
 }

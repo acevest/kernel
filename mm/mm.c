@@ -25,6 +25,7 @@
 
 extern char kernel_begin, kernel_end;
 extern char etext,edata,end;
+extern void init_buddy_system();
 
 static void e820_print_type(unsigned long type)
 {
@@ -67,7 +68,6 @@ void e820_print_map()
     }
 }
 
-
 typedef struct bootmem_data {
     unsigned long min_pfn;
     unsigned long max_pfn;
@@ -79,9 +79,18 @@ typedef struct bootmem_data {
     unsigned long mapsize;
 } bootmem_data_t;
 
+
 bootmem_data_t bootmem_data;
 
+unsigned long bootmem_total_pages()
+{
+    return bootmem_data.max_pfn;
+}
 
+unsigned long bootmem_page_state(unsigned long pfn)
+{
+    return constant_test_bit(pfn, bootmem_data.bitmap);
+}
 
 void e820_init_bootmem_data()
 {
@@ -100,8 +109,8 @@ void e820_init_bootmem_data()
         if(p->type != E820_RAM)
             continue;
 
-        bgn_pfn = pa2pfn(p->addr);
-        end_pfn = pa2pfn(p->addr + p->size);
+        bgn_pfn = PFN_UP(p->addr);
+        end_pfn = PFN_DW(p->addr + p->size);
 
         if(bootmem_data.max_pfn < end_pfn)
             bootmem_data.max_pfn = end_pfn;
@@ -110,7 +119,7 @@ void e820_init_bootmem_data()
     bootmem_data.min_pfn = 0;
 
     // limit max_pfn
-    unsigned long max_support_pfn = pa2pfn(MAX_SUPT_PHYMM_SIZE);
+    unsigned long max_support_pfn = PFN_DW(MAX_SUPT_PHYMM_SIZE);
     if(bootmem_data.max_pfn > max_support_pfn)
     {
         bootmem_data.max_pfn = max_support_pfn;
@@ -137,7 +146,6 @@ void register_bootmem_pages()
             test_and_clear_bit(j, bootmem_data.bitmap);
         }
     } 
-
 }
 
 void reserve_bootmem(unsigned long bgn_pfn, unsigned long end_pfn)
@@ -240,7 +248,7 @@ find_block:
 
         for(i=bgn_pfn; i<search_end_pfn; ++i)
         {
-            if(constant_test_bit(i, pbd->bitmap) != 0) {    // space not enough
+            if(bootmem_page_state(i) != BOOTMEM_PAGE_FREE) {    // space not enough
                 bgn_pfn = ALIGN(i, step);
                 if(bgn_pfn == i)
                     bgn_pfn += step;
@@ -328,4 +336,5 @@ void init_mm()
     printk("init global paging...\n");
     init_paging();
     printk("init buddy system...\n");
+    init_buddy_system();
 }
