@@ -12,8 +12,7 @@
 
 
 #include<system.h>
-#include<boot/multiboot.h>
-#include<boot/bootparam.h>
+#include<boot/boot.h>
 #include<page.h>
 #include<bits.h>
 #include<assert.h>
@@ -47,8 +46,6 @@ void init_boot_params(multiboot_info_t *p)
     }
 }
 
-extern void init_bootmem();
-
 void CheckKernel(unsigned long addr, unsigned long magic)
 {
 	if(magic != MULTIBOOT_BOOTLOADER_MAGIC)
@@ -67,9 +64,6 @@ void CheckKernel(unsigned long addr, unsigned long magic)
 
     init_boot_params(mbi);
 
-    init_bootmem();
-
-    while(1);
 }
 
 #if 0

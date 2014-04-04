@@ -19,7 +19,8 @@
 #include<types.h>
 #include<bits.h>
 #include<mm.h>
-#include<boot/bootparam.h>
+#include<init.h>
+#include<boot/boot.h>
 
 
 extern char kernel_begin, kernel_end;
@@ -81,6 +82,7 @@ typedef struct bootmem_data {
 bootmem_data_t bootmem_data;
 #define pfn2inx(pfn) ((pfn) - bootmem_data.min_pfn)
 #define inx2pfn(inx) ((inx) + bootmem_data.min_pfn)
+
 
 void e820_init_bootmem_data()
 {
@@ -166,7 +168,7 @@ void register_bootmem_pages()
 
 void reserve_bootmem(unsigned long bgn_inx, unsigned long end_inx)
 {
-    printk("reserve %d %d\n", bgn_inx, end_inx);
+    //printk("reserve %d %d\n", bgn_inx, end_inx);
 
     int i=0;
     for(i=bgn_inx; i<end_inx; ++i)
@@ -213,12 +215,14 @@ void init_bootmem()
     e820_init_bootmem_data();
     init_bootmem_allocator();
     
+#if 0
     printk("alloc 10 bytes align 8    addr %08x\n", alloc_bootmem(10, 8));
     printk("alloc 40961 bytes align 4096 addr %08x\n", alloc_bootmem(40961, 4096));
     printk("alloc 5  bytes align 4    addr %08x\n", alloc_bootmem(5, 4));
     printk("alloc 10 bytes align 1024 addr %08x\n", alloc_bootmem(10, 1024));
     printk("alloc 123bytes align 2    addr %08x\n", alloc_bootmem(123, 2));
     printk("alloc 123bytes align 2    addr %08x\n", alloc_bootmem(123, 2));
+#endif
 }
 
 unsigned long align_bootmem_index(unsigned long inx, unsigned long align)
@@ -318,10 +322,51 @@ find_block:
     return 0;
 }
 
+
+
+pde_t __initdata init_pgd[PDECNT_PER_PAGE]                       __attribute__((__aligned__(PAGE_SIZE)));
+pte_t __initdata init_pgt[PTECNT_PER_PAGE*BOOT_INIT_PAGETBL_CNT] __attribute__((__aligned__(PAGE_SIZE)));
+
+void init_paging()
+{
+    unsigned long di, ti;
+    unsigned long *pde, *pte;
+
+    unsigned long pde_end = (pfn2pa(bootmem_data.max_pfn) >> 22);
+
+    for(di=BOOT_INIT_PAGETBL_CNT; di<pde_end; ++di)
+    {
+        pde = init_pgd + di;
+
+        if(di >= pde_end)
+        {
+            *pde = 0;
+            continue;
+        }
+
+        unsigned long pt_addr = (unsigned long) va2pa(bootmem_alloc_pages(1));
+
+        *pde = pt_addr | 7;
+        *(pde + (PAGE_OFFSET>>20)) = *pde; // for kernel paging
+
+        for(ti=0; ti<PTECNT_PER_PAGE; ++ti)
+        {
+            unsigned long page = (di << 22) | (ti << 12);
+
+            pte = ((pte_t *) pa2va(pt_addr)) + ti;
+
+            *pte = page | 7;
+            //printk("pde %08x pte %08x pt_addr %08x page %08x\n", pde, pte, pt_addr, page);
+        }
+    }
+
+    LOAD_CR3(init_pgd);
+}
+
 void init_mm()
 {
-
-
+    init_bootmem();
+    init_paging();
 }
 
 

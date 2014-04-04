@@ -1,6 +1,6 @@
 /*
  * ------------------------------------------------------------------------
- *   File Name: bootparam.h
+ *   File Name: boot.h
  *      Author: Zhao Yanbai
  *              Sat Mar 29 09:02:21 2014
  * Description: none
@@ -11,13 +11,17 @@
 
 #include "multiboot.h"
 
-#define	E820_RAM	1
-#define	E820_RESERVED	2
-#define	E820_ACPI	3
-#define	E820_NVS	4
-#define E820_UNUSABLE 5
+#define BOOT_INIT_PAGETBL_CNT 2
 
-#define E820_MAP_CNT 128
+#ifndef ASM
+
+#define E820_RAM        1
+#define E820_RESERVED   2
+#define E820_ACPI       3
+#define E820_NVS        4
+#define E820_UNUSABLE   5
+
+#define E820_MAP_CNT    128
 
 struct e820_entry {
     unsigned long addr;
@@ -42,3 +46,5 @@ struct boot_params {
 };
 
 extern struct boot_params boot_params;
+
+#endif

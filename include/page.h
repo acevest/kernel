@@ -35,7 +35,13 @@
 
 #include<list.h>
 
-#define	PAGE_ITEMS	(PAGE_SIZE/sizeof(unsigned long))
+typedef unsigned long pde_t;
+typedef unsigned long pte_t;
+
+#define	PDECNT_PER_PAGE (PAGE_SIZE/sizeof(pde_t))
+#define PTECNT_PER_PAGE (PAGE_SIZE/sizeof(pte_t))
+
+#define	PAGE_ITEMS (PAGE_SIZE/sizeof(unsigned long))
 #define	PAGE_ALIGN(page)	(page & PAGE_MASK)
 #define	PAGE_UP(page) 	(((unsigned long)page + PAGE_SIZE -1) & PAGE_MASK)
 #define	PAGE_DOWN	PAGE_ALIGN
@@ -53,6 +59,9 @@
 
 #define PFN_UP(addr)     (((addr) + PAGE_SIZE - 1) >> PAGE_SHIFT)
 #define PFN_DW(addr)     ((addr) >> PAGE_SHIFT)
+
+
+#define LOAD_CR3(pde) asm("movl %%edx, %%cr3"::"d"(va2pa(pde)))
 
 #define	MAX_ORDER	(11)
 

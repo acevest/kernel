@@ -9,5 +9,9 @@
 
 #pragma once
 
+#include <page.h>
 
 void *alloc_bootmem(unsigned long size, unsigned long align);
+
+#define bootmem_alloc_pages(n) alloc_bootmem((n)*PAGE_SIZE, PAGE_SIZE)
+

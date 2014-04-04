@@ -17,29 +17,7 @@
 #include<assert.h>
 #include<printk.h>
 #include<init.h>
-
-#define INIT_PAGE_TABLE_CNT 2
-
-char __initdata init_pgd[PAGE_SIZE]                     __attribute__((__aligned__(PAGE_SIZE)));
-char __initdata init_pgt[PAGE_SIZE*INIT_PAGE_TABLE_CNT] __attribute__((__aligned__(PAGE_SIZE)));
-
-
-void init_paging()
-{
-    system.page_dir = (u32 *) init_pgd;
-
-	int i;
-	unsigned long kernel_pde_base = KRNLADDR>>22;
-	for(i=0; i<kernel_pde_base; ++i)
-    {
-		system.page_dir[i] = 0;
-    }
-
-    for(i=kernel_pde_base + INIT_PAGE_TABLE_CNT; i<1024; ++i)
-    {
-        
-    }
-}
+#include<mm.h>
 
 
 #define	get_page_from_list(pList) list_entry(pList, Page, list)
