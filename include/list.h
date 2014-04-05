@@ -81,7 +81,7 @@ static inline void list_del_init(list_head_t *entry)
     INIT_LIST_HEAD(entry);
 }
 
-static inline int list_is_empty(list_head_t *head)
+static inline int list_empty(list_head_t *head)
 {
     return head->next == head;
 }

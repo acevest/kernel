@@ -33,7 +33,7 @@ int    sysc_reboot(int mode)
 }
 
 
-inline void panic(char *msg)
+void panic(char *msg)
 {
     printk("PANIC:\"%s\" file:%s function:%s line:%d\n",
         msg, __FILE__, __FUNCTION__, __LINE__);

@@ -36,7 +36,7 @@ void    *kmalloc(size_t size)
     assert(0<size && size<=32*PAGE_SIZE);
     int    order = get_order(size);
     void    *p;
-    pPage page = alloc_pages(order);
+    pPage page = old_alloc_pages(order);
 
     if(page == NULL)
         return NULL;
@@ -58,5 +58,5 @@ void    kfree(void *p)
     //printk("kfree:%08x %08x %08x ", p, va2pa(p));
     page += ((unsigned long)va2pa(p)>>PAGE_SHIFT);
     //printk("%08x\n", page->mapNR);
-    free_pages(page);
+    old_free_pages(page);
 }

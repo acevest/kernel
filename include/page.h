@@ -57,6 +57,7 @@ typedef unsigned long pte_t;
 #define va2pfn(addr)    pa2pfn(va2pa(addr))
 #define pfn2va(pfn)     pa2va(pfn2pa(pfn))
 
+#define valid_va(addr)  ((addr) >= PAGE_OFFSET)
 
 #define PFN_UP(addr)     (((addr) + PAGE_SIZE - 1) >> PAGE_SHIFT)
 #define PFN_DW(addr)     ((addr) >> PAGE_SHIFT)
@@ -103,6 +104,10 @@ typedef struct free_area
     list_head_t   free_list;
 } free_area_t;
 
+
+unsigned long alloc_pages(unsigned int gfp_mask, unsigned int order);
+void free_pages(unsigned long addr, unsigned int order);
+
 // TODO Remove
 typedef struct page_
 {
@@ -123,8 +128,8 @@ typedef struct free_area_
 } FreeArea, *pFreeArea;
 
 
-pPage    alloc_pages(unsigned int order);
-void    free_pages(pPage page);
+pPage   old_alloc_pages(unsigned int order);
+void    old_free_pages(pPage page);
 //void    free_pages(pPage page, unsigned int order);
 void    disp_free_area();
 

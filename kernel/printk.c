@@ -24,4 +24,3 @@ int printk(const char *fmtstr, ...)
     printString(pkbuf,0x2);
     return 0;
 }
-
