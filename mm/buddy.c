@@ -62,7 +62,7 @@ found:
         size = 1UL << select_order;
 
         buddy = page + size;
-        list_add(&(page->lru), &(area->free_list)); 
+        list_add(&(buddy->lru), &(area->free_list)); 
         area->free_count++;
         buddy->private = select_order;
         SetPagePrivate(buddy);
@@ -150,6 +150,13 @@ void dump_buddy_system()
     }
 
 
+    printk("alloc 1 pages va 0x%08x\n", alloc_pages(0, 0));
+    printk("alloc 1 pages va 0x%08x\n", alloc_pages(0, 0));
+    printk("alloc 1 pages va 0x%08x\n", alloc_pages(0, 0));
+    printk("alloc 1 pages va 0x%08x\n", alloc_pages(0, 0));
+    printk("alloc 1 pages va 0x%08x\n", alloc_pages(0, 0));
+    printk("alloc 1 pages va 0x%08x\n", alloc_pages(0, 0));
+    printk("alloc 1 pages va 0x%08x\n", alloc_pages(0, 0));
     printk("alloc 1 pages va 0x%08x\n", alloc_pages(0, 0));
     printk("alloc 1 pages va 0x%08x\n", alloc_pages(0, 0));
     printk("alloc 2 pages va 0x%08x\n", alloc_pages(0, 1));
