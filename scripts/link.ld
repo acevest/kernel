@@ -56,5 +56,5 @@ SECTIONS
 
     end = .;
     _end = .;
-    kernel_end = (end + 0x1000 - 1) & ~ (0x1000 -1);
+    kernel_end = ALIGN(0x1000);
 }

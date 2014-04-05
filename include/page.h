@@ -30,6 +30,7 @@
 
 #ifndef    ASM
 #include <types.h>
+#include <bits.h>
 #define get_npd(vaddr)    (((u32)(vaddr))>>22)
 #define get_npt(vaddr)    ((((u32)(vaddr))>>12) & 0x3FF)
 
@@ -65,14 +66,41 @@ typedef unsigned long pte_t;
 
 #define MAX_OLD_ORDER    (11)
 
+enum page_flags {
+    PG_Private,
+};
+
+
 typedef struct page
 {
+    unsigned long flags;
+    unsigned long private;
     unsigned long index;
+    list_head_t   lru;
 } page_t;
+
+#define __GETPAGEFLAG(name)                                         \
+    static inline int Page##name(page_t *page)                      \
+            {return constant_test_bit(PG_##name, &page->flags); }
+
+#define __SETPAGEFLAG(name)                                         \
+    static inline int SetPage##name(page_t *page)                   \
+            {return test_and_set_bit(PG_##name, &page->flags); }
+
+#define __CLEARPAGEFLAG(name)                                       \
+    static inline int ClearPage##name(page_t *page)                 \
+            {return test_and_clear_bit(PG_##name, &page->flags); }
+
+
+__GETPAGEFLAG(Private)
+__SETPAGEFLAG(Private)
+__CLEARPAGEFLAG(Private)
+
 
 typedef struct free_area
 {
-    unsigned long count;
+    unsigned long free_count;
+    list_head_t   free_list;
 } free_area_t;
 
 // TODO Remove
