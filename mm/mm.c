@@ -313,7 +313,7 @@ void init_paging()
         unsigned long pt_addr = (unsigned long) va2pa(bootmem_alloc_pages(1));
 
         *pde = pt_addr | 7;
-        *(pde + (PAGE_OFFSET>>20)) = *pde; // for kernel paging
+        *(pde + (PAGE_OFFSET>>22)) = *pde; // for kernel paging
 
         for(ti=0; ti<PTECNT_PER_PAGE; ++ti)
         {
@@ -337,4 +337,5 @@ void init_mm()
     init_paging();
     printk("init buddy system...\n");
     init_buddy_system();
+    printk("memory init finish...\n");
 }
