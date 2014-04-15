@@ -16,7 +16,7 @@
 #define ASM
 #include "boot/boot.h"
 #include "system.h"
-.global _start
+.global kernel_entry
 .extern CheckKernel
 .extern SetupKernel
 .extern KernelEntry
@@ -39,7 +39,7 @@
 .text
 .code32
 .align 32
-_start:
+kernel_entry:
     # Reset EFLAGS
     pushl   $0
     popf

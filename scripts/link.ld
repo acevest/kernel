@@ -15,7 +15,7 @@
  */
 
 OUTPUT_FORMAT("elf32-i386")
-ENTRY(_start)
+ENTRY(kernel_entry)
 kernel_loaded_physic_addr = 0x100000;
 kernel_virtual_addr_start = 0xC0000000;
 kernel_begin = kernel_virtual_addr_start + kernel_loaded_physic_addr;

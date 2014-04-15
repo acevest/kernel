@@ -7,7 +7,6 @@ lodev=`losetup -f --show $HDIMG`
 partx -a ${lodev}
 
 PART=${lodev}p1
-#sleep 1
 
 mount $PART /mnt/
 

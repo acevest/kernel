@@ -26,6 +26,7 @@
 extern char kernel_begin, kernel_end;
 extern char etext,edata,end;
 extern void init_buddy_system();
+extern void init_slub_system();
 
 static void e820_print_type(unsigned long type)
 {
@@ -337,5 +338,7 @@ void init_mm()
     init_paging();
     printk("init buddy system...\n");
     init_buddy_system();
-    printk("memory init finish...\n");
+    printk("init slub system...\n");
+    init_slub_system();
+    printk("memory init finished...\n");
 }

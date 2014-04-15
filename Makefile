@@ -26,6 +26,10 @@ $(KERNELBIN):
 .PHONY:real
 real:
 
+.PHONY:c
+c:
+	rm -f $(KERNELBIN)
+
 .PHONY:clean
 clean:
 	cd boot && make clean
@@ -40,6 +44,9 @@ clean:
 	rm -f $(KERNELBIN) System.map snapshot.txt log.txt
 	rm -f KRNL.ELF
 
+.PHONY:install
+install:
+	cp KERNEL.BIN /boot/
 .PHONY:copy
 copy:
-	./copy.sh
+	./scripts/copy.sh

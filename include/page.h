@@ -14,21 +14,21 @@
  *--------------------------------------------------------------------------
  */
 
-#ifndef    _PAGE_H
+#ifndef _PAGE_H
 #define _PAGE_H
 
 
 
-#define PAGE_P        0x0
-#define PAGE_WR        0x1
-#define PAGE_US        0x2
+#define PAGE_P      0x0
+#define PAGE_WR     0x1
+#define PAGE_US     0x2
 
-#define PAGE_SHIFT    (12)
-#define PAGE_SIZE    (1UL << PAGE_SHIFT)
-#define PAGE_MASK    (~((1UL << PAGE_SHIFT)-1))
-#define PAGE_OFFSET    (0xC0000000)
+#define PAGE_SHIFT  (12)
+#define PAGE_SIZE   (1UL << PAGE_SHIFT)
+#define PAGE_MASK   (~((1UL << PAGE_SHIFT)-1))
+#define PAGE_OFFSET (0xC0000000)
 
-#ifndef    ASM
+#ifndef ASM
 #include <types.h>
 #include <bits.h>
 #define get_npd(vaddr)    (((u32)(vaddr))>>22)
@@ -59,13 +59,13 @@ typedef unsigned long pte_t;
 
 #define valid_va(addr)  ((addr) >= PAGE_OFFSET)
 
-#define PFN_UP(addr)     (((addr) + PAGE_SIZE - 1) >> PAGE_SHIFT)
-#define PFN_DW(addr)     ((addr) >> PAGE_SHIFT)
+#define PFN_UP(addr)    (((addr) + PAGE_SIZE - 1) >> PAGE_SHIFT)
+#define PFN_DW(addr)    ((addr) >> PAGE_SHIFT)
 
+#define MAX_ORDER       (5)
+#define MAX_OLD_ORDER   (11)
 
-#define LOAD_CR3(pde) asm("movl %%edx, %%cr3"::"d"(va2pa(pde)))
-
-#define MAX_OLD_ORDER    (11)
+#define LOAD_CR3(pde)   asm("movl %%edx, %%cr3"::"d"(va2pa(pde)))
 
 enum page_flags {
     PG_Private,
