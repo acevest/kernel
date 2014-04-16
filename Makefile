@@ -1,52 +1,40 @@
 ############################################################################
-CF		= -c -I include -fno-builtin
-CC		= $(_CC) $(CF) -o
+CC			= gcc
+CFLAGS		= -c -fno-builtin
 SYSTEMMAP	= System.map
 KERNELBIN	= KERNEL.BIN
 LINKSCRIPT	= scripts/link.ld
-OBJS =	boot/multiboot.S.o boot/boot.o boot/reboot.S.o	boot/cmdline.o\
-	setup/*.o mm/*.o kernel/*.o fs/*.o pci/*.o lib/*.o \
-	drivers/*.o
-#BINS#######################################################################
-$(KERNELBIN):
-	cd boot && make
-	cd setup && make
-	cd mm && make
-	cd kernel && make
-	cd fs && make
-	cd pci && make
-	cd lib && make
-	cd drivers && make
-	ld -M -T$(LINKSCRIPT) -o $@ $(OBJS) > $(SYSTEMMAP)
-	ld -T$(LINKSCRIPT) -o $@ $(OBJS)
-	cd bin && make
-	md5sum $(KERNELBIN)
-	#./scripts/grub2-debug.sh
-	#mv $@ KRNL.ELF
-.PHONY:real
-real:
+############################################################################
 
-.PHONY:c
+SRC_DIRS = boot setup mm lib fs kernel drivers pci
+INC_DIRS = include drivers
+
+CSOURCE_FILES := $(foreach dir, $(SRC_DIRS), $(wildcard $(dir)/*.c))
+SSOURCE_FILES := $(foreach dir, $(SRC_DIRS), $(wildcard $(dir)/*.S))
+
+OBJS := $(patsubst %.c,%.c.o,$(CSOURCE_FILES))
+OBJS += $(patsubst %.S,%.S.o,$(SSOURCE_FILES))
+
+CFLAGS += ${INC_DIRS:%=-I%}
+
+${KERNELBIN}: ${OBJS} $
+	ld -M -T$(LINKSCRIPT) $(OBJS) -o $@ > $(SYSTEMMAP)
+
+%.S.o: %.S
+	${CC} ${CFLAGS} $< -o $@
+
+%.c.o: %.c
+	${CC} ${CFLAGS} $< -o $@
+
 c:
 	rm -f $(KERNELBIN)
 
-.PHONY:clean
 clean:
-	cd boot && make clean
-	cd setup && make clean
-	cd mm && make clean
-	cd kernel && make clean
-	cd fs && make clean
-	cd pci && make clean
-	cd lib && make clean
-	cd drivers && make clean
-	cd bin && make clean
-	rm -f $(KERNELBIN) System.map snapshot.txt log.txt
-	rm -f KRNL.ELF
+	rm -f $(OBJS)
+	rm -f $(KERNELBIN) $(SYSTEMMAP)
 
-.PHONY:install
 install:
 	cp KERNEL.BIN /boot/
-.PHONY:copy
+
 copy:
 	./scripts/copy.sh
