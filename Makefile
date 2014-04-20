@@ -1,23 +1,18 @@
-############################################################################
 CC			= gcc
-CFLAGS		= -c -fno-builtin
+CFLAGS		= -g -c -fno-builtin
 SYSTEMMAP	= System.map
 KERNELBIN	= KERNEL.BIN
 LINKSCRIPT	= scripts/link.ld
-############################################################################
 
 SRC_DIRS = boot setup mm lib fs kernel drivers pci
 INC_DIRS = include drivers
 
-CSOURCE_FILES := $(foreach dir, $(SRC_DIRS), $(wildcard $(dir)/*.c))
-SSOURCE_FILES := $(foreach dir, $(SRC_DIRS), $(wildcard $(dir)/*.S))
-
-OBJS := $(patsubst %.c,%.c.o,$(CSOURCE_FILES))
-OBJS += $(patsubst %.S,%.S.o,$(SSOURCE_FILES))
-
 CFLAGS += ${INC_DIRS:%=-I%}
 
-${KERNELBIN}: ${OBJS} $
+SOURCE_FILES := $(foreach DIR, $(SRC_DIRS), $(wildcard $(DIR)/*.[cS]))
+OBJS := $(patsubst %,%.o,$(SOURCE_FILES))
+
+${KERNELBIN}: ${OBJS}
 	ld -M -T$(LINKSCRIPT) $(OBJS) -o $@ > $(SYSTEMMAP)
 
 %.S.o: %.S

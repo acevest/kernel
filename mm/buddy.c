@@ -25,8 +25,15 @@ int buddy_is_free(page_t *page, unsigned int order)
     return 0;
 }
 
-#define va2page(addr)   (buddy_system.page_map + va2pfn(addr))
-#define page2va(page)   (pfn2va((page) - buddy_system.page_map))
+page_t *va2page(unsigned long addr)
+{
+    return buddy_system.page_map + va2pfn(addr);
+}
+
+void *page2va(page_t *page)
+{
+    return pfn2va((page) - buddy_system.page_map);
+}
 
 page_t *__alloc_pages(unsigned int order)
 {
@@ -36,6 +43,7 @@ page_t *__alloc_pages(unsigned int order)
     free_area_t *area;
     unsigned long size;
     unsigned int select_order;
+    unsigned int i;
     for(select_order=order; select_order<MAX_ORDER; ++select_order)
     {
         area = buddy_system.free_area + select_order;
@@ -65,6 +73,14 @@ found:
         area->free_count++;
         buddy->private = select_order;
         SetPagePrivate(buddy);
+    }
+
+    //
+    for(i=0; i<(1UL<<order); ++i)
+    {
+        page_t *p = page + i;
+        p->head_page = page;
+        p->order = order;
     }
 
     return page;
@@ -116,14 +132,16 @@ void __free_pages(page_t *page, unsigned int order)
 }
 
 
-void free_pages(unsigned long addr, unsigned int order)
+void free_pages(unsigned long addr)
 {
     if(!valid_va(addr))
     {
         BUG_ON(!valid_va(addr));
     }
 
-    __free_pages(va2page(addr), order);
+    page_t *page = va2page(addr);
+
+    __free_pages(page, page->order);
 }
 
 void dump_buddy_system()

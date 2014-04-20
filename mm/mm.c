@@ -299,8 +299,12 @@ void init_paging()
     unsigned long di, ti;
     unsigned long *pde, *pte;
 
-    unsigned long pde_end = (pfn2pa(bootmem_data.max_pfn) >> 22);
+    unsigned long max_pfn = bootmem_data.max_pfn;
+    unsigned long min_pfn = BOOT_INIT_PAGETBL_CNT*1024;
 
+    unsigned long pde_end = (pfn2pa(bootmem_data.max_pfn) >> 22);
+    if(1)   // need to fix.
+        pde_end++;
     for(di=BOOT_INIT_PAGETBL_CNT; di<pde_end; ++di)
     {
         pde = init_pgd + di;

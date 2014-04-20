@@ -27,6 +27,8 @@
 #define PAGE_SIZE   (1UL << PAGE_SHIFT)
 #define PAGE_MASK   (~((1UL << PAGE_SHIFT)-1))
 #define PAGE_OFFSET (0xC0000000)
+#define PAGE_PDE_CNT    1024
+#define PAGE_PTE_CNT    1024
 
 #ifndef ASM
 #include <types.h>
@@ -78,7 +80,18 @@ typedef struct page
     unsigned long private;
     unsigned long index;
     list_head_t   lru;
+
+    struct page   *head_page;
+    unsigned int order;
+
+    void **freelist;    // for slub
+    unsigned long inuse;
 } page_t;
+
+void *page2va(page_t *page);
+page_t *va2page(unsigned long addr);
+
+static inline page_t *get_head_page(page_t *page) { return page->head_page; }
 
 #define __GETPAGEFLAG(name)                                         \
     static inline int Page##name(page_t *page)                      \
@@ -106,7 +119,7 @@ typedef struct free_area
 
 
 unsigned long alloc_pages(unsigned int gfp_mask, unsigned int order);
-void free_pages(unsigned long addr, unsigned int order);
+void free_pages(unsigned long addr);
 
 // TODO Remove
 typedef struct page_
