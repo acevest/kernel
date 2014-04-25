@@ -19,9 +19,9 @@
 
 
 
-#define PAGE_P      0x0
-#define PAGE_WR     0x1
-#define PAGE_US     0x2
+#define PAGE_P      0x1
+#define PAGE_WR     0x2
+#define PAGE_US     0x4
 
 #define PAGE_SHIFT  (12)
 #define PAGE_SIZE   (1UL << PAGE_SHIFT)
@@ -33,8 +33,8 @@
 #ifndef ASM
 #include <types.h>
 #include <bits.h>
-#define get_npd(vaddr)    (((u32)(vaddr))>>22)
-#define get_npt(vaddr)    ((((u32)(vaddr))>>12) & 0x3FF)
+#define get_npd(addr)    (((u32)(addr))>>22)
+#define get_npt(addr)    ((((u32)(addr))>>12) & 0x3FF)
 
 #include <list.h>
 

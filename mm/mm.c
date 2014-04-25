@@ -296,39 +296,35 @@ pte_t __initdata init_pgt[PTECNT_PER_PAGE*BOOT_INIT_PAGETBL_CNT] __attribute__((
 
 void init_paging()
 {
-    unsigned long di, ti;
-    unsigned long *pde, *pte;
-
-    unsigned long max_pfn = bootmem_data.max_pfn;
-    unsigned long min_pfn = BOOT_INIT_PAGETBL_CNT*1024;
-
-    unsigned long pde_end = (pfn2pa(bootmem_data.max_pfn) >> 22);
-    if(1)   // need to fix.
-        pde_end++;
-    for(di=BOOT_INIT_PAGETBL_CNT; di<pde_end; ++di)
+    unsigned int i;
+    unsigned long pfn = 0;
+    pte_t *pte = 0;
+    unsigned long pgtb_addr = 0;
+    for(pfn=pa2pfn(BOOT_INIT_PAGETBL_CNT<<22); pfn<bootmem_data.max_pfn; ++pfn)
     {
-        pde = init_pgd + di;
-
-        if(di >= pde_end)
+        unsigned long ti = pfn % PAGE_PTE_CNT;
+        unsigned long page_addr = pfn2pa(pfn);
+        if(ti == 0)
         {
-            *pde = 0;
-            continue;
+            pgtb_addr = (unsigned long) va2pa(bootmem_alloc_pages(1));
+            if(0 == pgtb_addr)
+                panic("No Pages for Paging...");
+
+            memset((void *)pgtb_addr, 0, PAGE_SIZE);
+
+            init_pgd[get_npd(page_addr)] = (pde_t)(pgtb_addr | PAGE_P | PAGE_WR | PAGE_US);
         }
 
-        unsigned long pt_addr = (unsigned long) va2pa(bootmem_alloc_pages(1));
+        pte = ((pte_t *) pa2va(pgtb_addr)) + ti;
+        *pte = (pte_t) (page_addr | PAGE_P | PAGE_WR | PAGE_US);
+    }
 
-        *pde = pt_addr | 7;
-        *(pde + (PAGE_OFFSET>>22)) = *pde; // for kernel paging
 
-        for(ti=0; ti<PTECNT_PER_PAGE; ++ti)
-        {
-            unsigned long page = (di << 22) | (ti << 12);
-
-            pte = ((pte_t *) pa2va(pt_addr)) + ti;
-
-            *pte = page | 7;
-            //printk("pde %08x pte %08x pt_addr %08x page %08x\n", pde, pte, pt_addr, page);
-        }
+    // paging for kernel space
+    unsigned long delta = get_npd(PAGE_OFFSET);
+    for(i=delta; i<PDECNT_PER_PAGE; ++i)
+    {
+        init_pgd[i] = init_pgd[i-delta];
     }
 
     LOAD_CR3(init_pgd);
