@@ -63,7 +63,7 @@ void    do_no_page(void *addr)
 #if 0
     u32    *pde = (u32*)pa2va(current->cr3);
     u32    *pte;
-    void    *page = (void*)va2pa(kmalloc(PAGE_SIZE));
+    void    *page = (void*)va2pa(kmalloc_old(PAGE_SIZE));
     if(page == NULL)
         panic("failed alloc page");
 
@@ -73,7 +73,7 @@ void    do_no_page(void *addr)
     if(pde[npde] == 0)
     {
         printk("*a*");
-        pte = (u32 *) kmalloc(PAGE_SIZE);
+        pte = (u32 *) kmalloc_old(PAGE_SIZE);
         memset((void*)pte, 0, PAGE_SIZE);
         if(pte == NULL)
             panic("failed alloc pte");

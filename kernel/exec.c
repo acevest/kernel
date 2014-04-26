@@ -43,7 +43,7 @@ int sysc_exec(const char *path, char *const argv[])
         printk("file %s is not exist\n", path);
         return -ENOENT;
     }
-    buf = (void*)kmalloc(filesz);
+    buf = (void*)kmalloc_old(filesz);
     sysc_read(fd, buf, filesz);
 
 #if 0    
@@ -56,7 +56,7 @@ int sysc_exec(const char *path, char *const argv[])
     if(strncmp(ELFMAG, ehdr->e_ident, sizeof(ELFMAG)-1) != 0)
     {
         printk("file %s can not execute\n", path);
-        kfree(buf);
+        kfree_old(buf);
         return -ENOEXEC;
     }
     //printk("Entry: %08x phnum:%d\n", ehdr->e_entry, ehdr->e_phnum);
@@ -76,7 +76,7 @@ int sysc_exec(const char *path, char *const argv[])
         }
     }
 
-    char *exe = (char *) kmalloc(size);
+    char *exe = (char *) kmalloc_old(size);
     for(i=0; i<ehdr->e_phnum; i++)
     {
         pElf32_Phdr phdr;
@@ -190,7 +190,7 @@ int sysc_exec(const char *path, char *const argv[])
     printk("stack pt: %08x pde:%08x %08x %08x\n",
         pt, pde, pd[get_npd(KRNLADDR)-1]);
 #endif
-    kfree(buf);
+    kfree_old(buf);
 
 
     //printk("eip: %08x \n", regs->eip);

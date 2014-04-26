@@ -28,26 +28,28 @@
 #define likely(x)       __builtin_expect(!!(x), 1)
 #define unlikely(x)     __builtin_expect(!!(x), 0)
 
-void    *kmalloc(size_t size);
-void    kfree(void *p);
+void    *kmalloc(size_t size, gfp_t gfpflags);
+void    kfree(void *addr);
 
+void    *kmalloc_old(size_t size);
+void    kfree_old(void *p);
 
 static inline void *get_virt_pages(unsigned int n)
 {
     assert(n>0);
     size_t    size = n << PAGE_SHIFT;
-    return (void*) kmalloc(size);
+    return (void*) kmalloc_old(size);
 }
 static inline void free_virt_pages(void *p)
 {
-    kfree((void *)p);
+    kfree_old((void *)p);
 }
 static inline void *get_phys_pages(unsigned int n)
 {
 /*
     assert(n>0);
     size_t    size = n << PAGE_SHIFT;
-    return (void*) va2pa(kmalloc(size));
+    return (void*) va2pa(kmalloc_old(size));
 */
     return (void *)va2pa(get_virt_pages(n));
 }

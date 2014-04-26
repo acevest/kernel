@@ -10,15 +10,17 @@ INC_DIRS = include drivers
 CFLAGS += ${INC_DIRS:%=-I%}
 
 SOURCE_FILES := $(foreach DIR, $(SRC_DIRS), $(wildcard $(DIR)/*.[cS]))
+HEADER_FILES := $(foreach DIR, $(INC_DIRS), $(wildcard $(DIR)/*.h))
+
 OBJS := $(patsubst %,%.o,$(SOURCE_FILES))
 
 ${KERNELBIN}: ${OBJS}
 	ld -M -T$(LINKSCRIPT) $(OBJS) -o $@ > $(SYSTEMMAP)
 
-%.S.o: %.S
+%.S.o: %.S ${HEADER_FILES}
 	${CC} ${CFLAGS} $< -o $@
 
-%.c.o: %.c
+%.c.o: %.c ${HEADER_FILES}
 	${CC} ${CFLAGS} $< -o $@
 
 c:

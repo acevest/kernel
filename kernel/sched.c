@@ -72,7 +72,7 @@ void    init_root_tsk()
     current = root_task;
 /*
     // 栈
-    void *stack = kmalloc(PAGE_SIZE);
+    void *stack = kmalloc_old(PAGE_SIZE);
     if(stack == NULL)
         panic("stack");
     stack = va2pa(stack);
@@ -80,7 +80,7 @@ void    init_root_tsk()
     printk("Stack : %08x\n", stack);
 
     u32 *pde = pa2va(current->cr3);
-    u32 *pte = (u32 *)kmalloc(PAGE_SIZE);
+    u32 *pte = (u32 *)kmalloc_old(PAGE_SIZE);
     if(pte == NULL)
         panic("root task stack pte");
     pte[1023] = stack + 7;

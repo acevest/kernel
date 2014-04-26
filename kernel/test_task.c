@@ -37,7 +37,7 @@ void    add_task(void *fun)
 #if 0
     assert(fun != NULL);
     pTask    tsk = NULL;
-    tsk = kmalloc(sizeof(Task));
+    tsk = kmalloc_old(sizeof(Task));
     if(tsk == NULL)
         panic("shit happens");
 
@@ -71,7 +71,7 @@ void    add_task(void *fun)
     {
         if(tTasks[i] == NULL)
         {
-            tsk = kmalloc(sizeof(Task));
+            tsk = kmalloc_old(sizeof(Task));
             if(tsk == NULL)
                 panic("shit happens");
             //tTasks[i] = tsk;

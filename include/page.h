@@ -69,10 +69,15 @@ typedef unsigned long pte_t;
 
 #define LOAD_CR3(pde)   asm("movl %%edx, %%cr3"::"d"(va2pa(pde)))
 
+
+typedef unsigned int gfp_t;
+
 enum page_flags {
     PG_Private,
 };
-
+ 
+struct kmem_cache;
+typedef struct kmem_cache kmem_cache_t;
 
 typedef struct page
 {
@@ -85,6 +90,8 @@ typedef struct page
     unsigned int order;
 
     void **freelist;    // for slub
+    kmem_cache_t *cache;
+
     unsigned long inuse;
 } page_t;
 
@@ -120,6 +127,26 @@ typedef struct free_area
 
 unsigned long alloc_pages(unsigned int gfp_mask, unsigned int order);
 void free_pages(unsigned long addr);
+
+
+struct kmem_cache
+{
+    const char *name;
+
+    unsigned long objsize;
+    unsigned long size;
+    unsigned long align;
+    unsigned long order;
+    unsigned long objects;
+
+    unsigned int partial_cnt;
+    list_head_t partial;
+
+    page_t *page;
+
+    list_head_t list;
+};
+
 
 // TODO Remove
 typedef struct page_

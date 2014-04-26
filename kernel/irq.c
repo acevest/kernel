@@ -79,7 +79,7 @@ int    request_irq(    unsigned int irq,
         p = p->next;
     }
 
-    p = kmalloc(sizeof(IrqAction));
+    p = kmalloc_old(sizeof(IrqAction));
     if(p == NULL)
         return -ENOMEM;
 

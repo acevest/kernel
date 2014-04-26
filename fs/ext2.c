@@ -53,7 +53,7 @@ void    setup_ext2()
         panic("Only Support Ext2 File System...");
 
     /* 分配group descriptor table 的内存 */
-    gdesc = (pGroupDesc) kmalloc(EXT2_BLOCK_SIZE);
+    gdesc = (pGroupDesc) kmalloc_old(EXT2_BLOCK_SIZE);
     if(gdesc == NULL)
         panic("out of memory for ext2 group descritpor table");
     /* 初始化ext2 group descriptor table */
@@ -89,7 +89,7 @@ void    setup_ext2()
         printk("%c", buf[i]);
 #endif
 #if 0
-    unsigned char *p = (char *)kmalloc(EXT2_BLOCK_SIZE);
+    unsigned char *p = (char *)kmalloc_old(EXT2_BLOCK_SIZE);
     ext2_read_block(0, p);
 
     for(i=0; i<512; i++)
@@ -138,14 +138,14 @@ int    ext2_read_inode(unsigned int n, pInode ino)
     gidx   %= EXT2_INODES_PER_BLOCK;
 
 
-    char *buf = kmalloc(EXT2_BLOCK_SIZE);
+    char *buf = kmalloc_old(EXT2_BLOCK_SIZE);
     if(buf == NULL)
         panic("faild read inode. out of memory");
     ext2_read_block(inotbl, buf);
 
     memcpy((void *)ino,(void*)(((pInode)buf)+gidx), EXT2_INODE_SIZE);
 
-    kfree(buf);
+    kfree_old(buf);
 
     return n;
 }
@@ -160,7 +160,7 @@ int ext2_read_file(const pInode ino, void *buf, size_t count)
     if(blks > EXT2_NDIR_BLOCKS)
         panic("file too large to read");
 
-    p = kmalloc(blks*EXT2_BLOCK_SIZE);
+    p = kmalloc_old(blks*EXT2_BLOCK_SIZE);
 
     if(p == NULL)
         panic("out of memory when search inode in directory");
@@ -173,7 +173,7 @@ int ext2_read_file(const pInode ino, void *buf, size_t count)
 
     memcpy(buf, p, count);
 
-    kfree(p);
+    kfree_old(p);
 
     return count;
 }
@@ -189,7 +189,7 @@ char *load_inode_content(const pInode ino)
         panic("unsupport file large than 12KB");
 
 
-    buf = kmalloc(blks*EXT2_BLOCK_SIZE);
+    buf = kmalloc_old(blks*EXT2_BLOCK_SIZE);
     if(buf == NULL)
         panic("out of memory when search inode in directory");
     for(i=0; i<blks; i++)
@@ -216,7 +216,7 @@ int ext2_search_file(const char *file, const pInode in, pInode out)
 #if 0
     buf = load_inode_content(in);
 #else
-    buf = kmalloc(in->i_size);
+    buf = kmalloc_old(in->i_size);
     ext2_read_file(in, buf, in->i_size);
 #endif
 
@@ -240,7 +240,7 @@ int ext2_search_file(const char *file, const pInode in, pInode out)
 
         ent = (pDirEnt)(ent->rec_len + (unsigned long)ent);
     }
-    kfree(buf);
+    kfree_old(buf);
 
     ext2_read_inode(inode_n, out);
 

@@ -137,8 +137,8 @@ void    setup_irqs()
     pIRQAction    pKbdAction, pClkAction;
 
 
-    pKbdAction    = (pIRQAction) kmalloc(sizeof(IRQAction));
-    pClkAction    = (pIRQAction) kmalloc(sizeof(IRQAction));
+    pKbdAction    = (pIRQAction) kmalloc_old(sizeof(IRQAction));
+    pClkAction    = (pIRQAction) kmalloc_old(sizeof(IRQAction));
 
 
     assert(pKbdAction != NULL);

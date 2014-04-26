@@ -12,26 +12,6 @@
 
 list_head_t slub_caches = LIST_HEAD_INIT(slub_caches);
 
-typedef struct kmem_cache
-{
-    const char *name;
-
-    unsigned long objsize;
-    unsigned long size;
-    unsigned long align;
-    unsigned long order;
-    unsigned long objects;
-
-    unsigned int partial_cnt;
-    list_head_t partial;
-
-    page_t *page;
-
-//    void **freelist;
-
-    list_head_t list;
-} kmem_cache_t;
-
 
 #define SLUB_MIN_SHIFT          5
 #define SLUB_MAX_SHIFT          12
@@ -40,8 +20,6 @@ typedef struct kmem_cache
 #define KMALLOC_MIN_ALIGN       (1UL<<(SLUB_MIN_SHIFT))
 
 static kmem_cache_t kmalloc_caches[SLUB_INIT_CACHE_SIZE];
-
-typedef unsigned int gfp_t;
 
 static bool calculate_params(kmem_cache_t *cache)
 {
@@ -101,7 +79,6 @@ static bool kmem_cache_init(kmem_cache_t *cache,
     cache->objsize      = size;
     cache->align        = align;
     cache->page         = 0;
-    //cache->freelist     = 0;
     cache->partial_cnt  = 0;
     INIT_LIST_HEAD(&(cache->partial));
 
@@ -140,7 +117,6 @@ static page_t *new_slub(kmem_cache_t *cache, gfp_t gfpflags)
     if(0 == page)
         return 0;
 
-
     end = bgn + cache->objects*cache->size;
 
     unsigned long last = bgn;
@@ -155,6 +131,7 @@ static page_t *new_slub(kmem_cache_t *cache, gfp_t gfpflags)
 
     page->freelist = (void **)bgn;
     page->inuse    = 0;
+    page->cache    = cache;
 
     return page;
 }
@@ -198,6 +175,9 @@ static void *__slub_alloc(kmem_cache_t *cache, gfp_t gfpflags)
 static void *slub_alloc(kmem_cache_t *cache, gfp_t gfpflags)
 {
     void **object = 0;
+
+    if(cache == 0)
+        return 0;
 
     unsigned long objsize = cache->objsize;
 
@@ -251,11 +231,42 @@ static void slub_free(kmem_cache_t *cache, page_t *page, void *addr)
     }
 }
 
+void *kmem_cache_alloc(kmem_cache_t *cache, gfp_t gfpflags)
+{
+    return slub_alloc(cache, gfpflags);
+}
+
 void kmem_cache_free(kmem_cache_t *cache, void *addr)
 {
     page_t *page = 0;
 
     page = get_head_page(va2page((unsigned long)addr));
+
+    slub_free(cache, page, addr);
+}
+
+void *kmalloc(size_t size, gfp_t gfpflags)
+{
+    unsigned int i;
+    kmem_cache_t *cache = 0;
+
+    for(i=0; i<SLUB_INIT_CACHE_SIZE; ++i)
+    {
+        kmem_cache_t *p = kmalloc_caches + i;
+        if(p->objsize > size)
+        {
+            cache = p;
+            break;
+        }
+    }
+
+    return kmem_cache_alloc(cache, gfpflags);
+}
+
+void kfree(void *addr)
+{
+    page_t *page = get_head_page(va2page((unsigned long)addr));
+    kmem_cache_t *cache = page->cache;
 
     slub_free(cache, page, addr);
 }
@@ -269,9 +280,7 @@ void init_slub_system()
     for(i=SLUB_MIN_SHIFT; i<SLUB_MAX_SHIFT; ++i)
     {
         cache = kmalloc_caches + i - SLUB_MIN_SHIFT;
-        kmem_cache_init(cache, "kmalloc", 1UL<<i, KMALLOC_MIN_ALIGN);
-
-        //cache->inx = i;
+        kmem_cache_init(cache, "kmalloc_old", 1UL<<i, KMALLOC_MIN_ALIGN);
 
         list_add(&(cache->list), &slub_caches);
     }

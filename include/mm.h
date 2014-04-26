@@ -19,3 +19,4 @@ unsigned long bootmem_total_pages();
 unsigned long bootmem_page_state(unsigned long pfn);
 
 #define bootmem_alloc_pages(n) alloc_bootmem((n)*PAGE_SIZE, PAGE_SIZE)
+

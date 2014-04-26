@@ -1,6 +1,6 @@
 /*
  *--------------------------------------------------------------------------
- *   File Name: kmalloc.c
+ *   File Name: kmalloc_old.c
  * 
  *      Author: Zhao Yanbai [zhaoyanbai@126.com]
  *              Sat Jan 30 12:15:51 2010
@@ -31,7 +31,7 @@ static    get_order(size_t size)
     //printk("i:%d\n", i);
     return i;
 }
-void    *kmalloc(size_t size)
+void    *kmalloc_old(size_t size)
 {
     assert(0<size && size<=32*PAGE_SIZE);
     int    order = get_order(size);
@@ -41,21 +41,21 @@ void    *kmalloc(size_t size)
     if(page == NULL)
         return NULL;
 
-    //printk("kmalloc:%08x %08x ", page->mapNR, page->mapNR<<PAGE_SHIFT);
+    //printk("kmalloc_old:%08x %08x ", page->mapNR, page->mapNR<<PAGE_SHIFT);
     p = (void*)pa2va(page->mapNR<<PAGE_SHIFT);
     
-    //printk("kmalloc: %08x\n", p);
+    //printk("kmalloc_old: %08x\n", p);
 
     return p;
 }
 
 
-void    kfree(void *p)
+void    kfree_old(void *p)
 {
     assert(p != NULL);
 
     pPage page = system.page_map;
-    //printk("kfree:%08x %08x %08x ", p, va2pa(p));
+    //printk("kfree_old:%08x %08x %08x ", p, va2pa(p));
     page += ((unsigned long)va2pa(p)>>PAGE_SHIFT);
     //printk("%08x\n", page->mapNR);
     old_free_pages(page);
