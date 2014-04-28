@@ -25,7 +25,6 @@ extern void setup_sysc();
 extern void setup_pci();
 extern void set_tss();
 extern void show_logo();
-//extern void setup_tTasks();
 extern void setup_tasks();
 extern void setup_root_dev();
 extern void setup_hd();
@@ -46,7 +45,6 @@ void setup_kernel()
 
     init_mm();
 
-    while(1);
 
     setup_gdt();
     setup_idt();
@@ -54,12 +52,13 @@ void setup_kernel()
 
     detect_cpu();
 
-    //setup_tTasks();
 
-    setup_irqs();
     set_tss();
+
     setup_sysc();
     setup_pci();
+
+    setup_irqs();
 
 
     while(1); // TODO MODIFY CODE BELOW

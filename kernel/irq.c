@@ -18,17 +18,17 @@
 #include <errno.h>
 #include <assert.h>
 
-IrqDesc    irq_desc[NR_IRQS];
+irq_desc_t    irq_desc[NR_IRQS];
 
 int    enable_no_irq_chip(unsigned int irq){return 0;}
 int    disable_no_irq_chip(unsigned int irq){return 0;}
-IrqChip    no_irq_chip =
+irq_chip_t    no_irq_chip =
 {
     .name        = "none",
     .enable        = enable_no_irq_chip,
     .disable    = disable_no_irq_chip
 };
-IrqDesc    no_irq_desc =
+irq_desc_t    no_irq_desc =
 {
     .chip    = &no_irq_chip,
     .action    = NULL,
@@ -39,8 +39,8 @@ __attribute__ ((regparm(1))) void    irq_handler(pPtRegs regs)
 {
 
     unsigned int irq = regs->irq;
-    pIrqDesc    p = irq_desc + irq;
-    pIrqAction    action = p->action;
+    irq_desc_t *    p = irq_desc + irq;
+    irq_action_t *    action = p->action;
     p->chip->ack(irq);
     while(action)
     {
@@ -52,18 +52,12 @@ __attribute__ ((regparm(1))) void    irq_handler(pPtRegs regs)
 }
 
 
-/*
-int    request_irq(    unsigned int irq,
-            void (*handler)(pPtRegs, unsigned int),
-            const char *devname,
-            void    *dev_id)
-*/
 int    request_irq(    unsigned int irq,
             void    (*handler)(unsigned int, pPtRegs, void *),
             const char *devname,
             void    *dev_id)
 {
-    pIrqAction    p;
+    irq_action_t *    p;
 
     if(irq >= NR_IRQS)
         return -EINVAL;
@@ -79,7 +73,7 @@ int    request_irq(    unsigned int irq,
         p = p->next;
     }
 
-    p = kmalloc_old(sizeof(IrqAction));
+    p = (irq_action_t *) kmalloc(sizeof(irq_action_t), 0);
     if(p == NULL)
         return -ENOMEM;
 

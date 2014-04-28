@@ -290,6 +290,7 @@ void init_slub_system()
         printk("kmem objsize %d  size %d \n", cache->objsize, cache->size);
     }
 
+#if 0
     list_head_t *p;
     list_for_each(p, &slub_caches)
     {
@@ -319,4 +320,5 @@ void init_slub_system()
         printk("kmalloc addr %08x\n", (unsigned long) addr);
         addrs[i] = addr;
     }
+#endif
 }

@@ -19,7 +19,7 @@
 #include "i8259.h"
 #include "irq.h"
 
-IrqChip    i8259_chip =
+irq_chip_t    i8259_chip =
 {
     .name        = "XT-PIC",
     .enable        = enable_i8259_irq,

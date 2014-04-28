@@ -14,21 +14,21 @@
  *--------------------------------------------------------------------------
  */
 
-#ifndef    _IRQ_H
+#ifndef _IRQ_H
 #define _IRQ_H
 
 #include "system.h"
 
-#define NR_IRQS        224
 #define FIRST_IRQ_VECT    0x20
+#define NR_IRQS           (0xFF-FIRST_IRQ_VECT)
 
-typedef    struct
+typedef struct irq_chip
 {
     const char *name;
     int     (*enable)(unsigned int irq);
     int     (*disable)(unsigned int irq);
     void    (*ack)(unsigned int irq);
-} IrqChip, *pIrqChip;
+} irq_chip_t;
 
 typedef struct irqaction
 {
@@ -37,19 +37,19 @@ typedef struct irqaction
     const char *dev_name;
     void *dev_id;
     struct irqaction *next;    
-} IrqAction, *pIrqAction;
+} irq_action_t;
 
-typedef    struct
+typedef struct irq_desc
 {
-    pIrqChip    chip;
-    pIrqAction    action;
+    irq_chip_t *    chip;
+    irq_action_t *    action;
     unsigned int    status;
     unsigned int    depth;
-} IrqDesc, *pIrqDesc;
+} irq_desc_t;
 
-extern    IrqChip    i8259_chip;
-extern    IrqDesc    irq_desc[];
-extern    IrqDesc    no_irq_desc;
+extern    irq_chip_t    i8259_chip;
+extern    irq_desc_t    irq_desc[];
+extern    irq_desc_t    no_irq_desc;
 int    request_irq(unsigned int irq,
     //void (*handler)(pPtRegs, unsigned int),
     void    (*handler)(unsigned int, pPtRegs, void *),

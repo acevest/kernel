@@ -119,19 +119,18 @@ void    setup_irqs()
             irq_desc[i].chip = &i8259_chip;
     }
 
-    //extern    void kbd_handler(pPtRegs, unsigned int);
-    //extern    void clk_handler(pPtRegs, unsigned int);
+    //extern    void kbd_handler(pPtRegs, unsigned int); //extern    void clk_handler(pPtRegs, unsigned int);
     //extern    void hd_handler(pPtRegs, unsigned int);
     void    kbd_handler(unsigned int irq, pPtRegs regs, void *dev_id);
     void    clk_handler(unsigned int irq, pPtRegs regs, void *dev_id);
     void    hd_handler(unsigned int irq, pPtRegs regs, void *dev_id);
     request_irq(0x00, clk_handler,    "Intel 8254",    "Clock Chip");
     request_irq(0x01, kbd_handler,    "Intel 8042",    "PS/2 Keyboard");
-    request_irq(0x0E, hd_handler,    "IDE",        "IDE");
+    request_irq(0x0E, hd_handler,     "IDE",           "IDE");
     enable_irq(0x00);
     enable_irq(0x01);
     enable_irq(0x0E);
-    
+    asm("sti");
 
 /*
     pIRQAction    pKbdAction, pClkAction;

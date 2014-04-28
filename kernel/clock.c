@@ -12,9 +12,13 @@
 
 #include <printk.h>
 #include <system.h>
-//void    clk_handler(pPtRegs regs, unsigned int irq)
+
+static unsigned int jiffies = 0;
+
 void    clk_handler(unsigned int irq, pPtRegs regs, void *dev_id)
 {
-    //printk("^");
+    jiffies++;
+
+    printk("^%d^ ", jiffies);
     //printk("%s ", dev_id);
 }

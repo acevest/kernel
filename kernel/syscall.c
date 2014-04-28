@@ -25,13 +25,11 @@ unsigned long sysc_handler_table[SYSC_NUM];
 
 void    setup_sysc()
 {
-    wrmsr(MSR_SYSENTER_CS,    SELECTOR_KRNL_CS,    0);
-    wrmsr(MSR_SYSENTER_EIP,    syscall_entry,        0);
-    wrmsr(MSR_SYSENTER_ESP,    &current,        0);
-
+    wrmsr(MSR_SYSENTER_CS,  SELECTOR_KRNL_CS,   0);
+    wrmsr(MSR_SYSENTER_EIP, syscall_entry,      0);
+    wrmsr(MSR_SYSENTER_ESP, &current,           0);
 
     init_sysc_handler_table();
-
 }
 
 
