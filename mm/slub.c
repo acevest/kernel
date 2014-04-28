@@ -152,6 +152,10 @@ static void *__slub_alloc(kmem_cache_t *cache, gfp_t gfpflags)
                 cache->page = page;
             }
         }
+        else
+        {
+            cache->page = page;
+        }
     }
 
     if(cache->page == 0)
@@ -179,8 +183,6 @@ static void *slub_alloc(kmem_cache_t *cache, gfp_t gfpflags)
     if(cache == 0)
         return 0;
 
-    unsigned long objsize = cache->objsize;
-
     if(cache->page == 0 || cache->page->freelist == 0)
     {
         cache->page = 0;
@@ -190,6 +192,7 @@ static void *slub_alloc(kmem_cache_t *cache, gfp_t gfpflags)
     {
         object = cache->page->freelist;
         cache->page->freelist = object[0];
+        cache->page->inuse++;
     }
 
     return object;
@@ -202,7 +205,6 @@ static void __slub_free(kmem_cache_t *cache, page_t *page, void *addr)
 
     prior = object[0] = page->freelist;
     page->freelist = object;
-    page->inuse--;
 
     if(page->inuse == 0)
     {
@@ -219,6 +221,8 @@ static void __slub_free(kmem_cache_t *cache, page_t *page, void *addr)
 static void slub_free(kmem_cache_t *cache, page_t *page, void *addr)
 {
     void **object = addr;
+
+    page->inuse--;
 
     if(page == cache->page)
     {
@@ -253,7 +257,7 @@ void *kmalloc(size_t size, gfp_t gfpflags)
     for(i=0; i<SLUB_INIT_CACHE_SIZE; ++i)
     {
         kmem_cache_t *p = kmalloc_caches + i;
-        if(p->objsize > size)
+        if(p->objsize >= size)
         {
             cache = p;
             break;
@@ -283,6 +287,7 @@ void init_slub_system()
         kmem_cache_init(cache, "kmalloc_old", 1UL<<i, KMALLOC_MIN_ALIGN);
 
         list_add(&(cache->list), &slub_caches);
+        printk("kmem objsize %d  size %d \n", cache->objsize, cache->size);
     }
 
     list_head_t *p;
@@ -292,9 +297,26 @@ void init_slub_system()
         printk("cache size %d align %d \n", cache->size, cache->align);
     }
 
-    for(i=0; i<10; ++i)
+#define SIZE 10000
+    void *addrs[SIZE];
+    void *addr;
+    for(i=0; i<SIZE; ++i)
     {
-        void *addr = slub_alloc(kmalloc_caches+2, 0);
-        printk("slub addr %08x\n", (unsigned long)addr);
+        addr = kmalloc(2048, 0);
+        printk("kmalloc addr %08x\n", (unsigned long) addr);
+        addrs[i] = addr;
+    }
+
+    printk("Cleaning...\n");
+    for(i=0; i<SIZE; ++i)
+    {
+        kfree(addrs[i]);
+    }
+
+    for(i=0; i<SIZE; ++i)
+    {
+        addr = kmalloc(2048, 0);
+        printk("kmalloc addr %08x\n", (unsigned long) addr);
+        addrs[i] = addr;
     }
 }
