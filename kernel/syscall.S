@@ -99,50 +99,15 @@ bad_syscnr:
     jmp    ret_from_bad_syscnr
 #endif
 
-#if 0
-syscall_entry:
-    /* 此时%esp存的是current的地址(&current) */
-    movl    (%esp),%esp        /* 获得current的值 */
-    addl    $TASK_SIZE, %esp    /* 指向PCB的顶部 */
 
-    pushl    %ds            /* %ss */
-    pushl    %ebp            /* %esp */
-    pushfl                /* %eflags */
-    pushl    $SELECTOR_USER_CS    /* %cs */
-    pushl    %gs:(,%ebp)        /* %eip */
-    pushl    %eax            /* sysc_nr */
-    SAVE_REGS
-
-    pushl    %eax
-    movw    %ss,%ax
-    movw    %ax, %ds
-    movw    %ax, %es
-    movw    %ax, %gs
-    movw    %ax, %fs
-    popl    %eax
-
-    call    *sysc_handler_table(,%eax,4)
-
-    movl    %eax, 0x18(%esp)    /* return value */
-
-    RESTORE_REGS
-    
-    movl    0x04(%esp), %edx    /* sysexit 参数 %eip */
-    movl    0x10(%esp), %ecx    /* sysexit 参数 %esp */
-
-    sti        /* sysenter会自动清除IF.貌似sysexit不会自动置位 */
-    sysexit
-#endif
-
-#if 0
-.global sysc_handler_table
-.extern sysc_write
-.extern    sysc_read_kbd
-.extern    sysc_reboot
-.extern    sysc_fork
-sysc_handler_table:
-.long    sysc_write
-.long    sysc_read_kbd
-.long    sysc_reboot
-.long    sysc_fork
-#endif
+# this routine should be load align by PAGE_SIZE
+# this page is shared by the kernel and userspace
+# the reason why i use this method is because of that the user program
+# no need to pay attention on the return address
+.section .sysexit
+.align 0x1000 
+.global sysexit
+sysexit:
+    nop
+    nop
+    ret

@@ -28,6 +28,7 @@ SECTIONS
         phys_addr = . - kernel_virtual_addr_start;
         *(.multiboot_header)
         *(.text)
+        *(.sysexit)
     }
     etext = .;
     .data : AT(phys_addr) ALIGN(0x1000) 

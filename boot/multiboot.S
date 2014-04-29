@@ -74,7 +74,7 @@ kernel_entry:
     # Init Page Directory
     movl    %ebx,%edi
     movl    $init_pgt-KRNLADDR,%eax
-    addl    $7,%eax
+    addl    $3,%eax
     movl    $BOOT_INIT_PAGETBL_CNT,%ecx
 1:
     stosl
@@ -87,7 +87,7 @@ kernel_entry:
     movl    %eax,%edi
 
     movl    $init_pgt-KRNLADDR,%eax
-    addl    $7,%eax
+    addl    $3,%eax
     movl    $BOOT_INIT_PAGETBL_CNT,%ecx
 2:
     stosl
@@ -98,7 +98,7 @@ kernel_entry:
     movl    $init_pgt-KRNLADDR,%ebx
     movl    %ebx,%edi
     movl    $(BOOT_INIT_PAGETBL_CNT*1024),%ecx
-    movl    $0x07,%eax
+    movl    $3,%eax
     cld
 3:
     stosl

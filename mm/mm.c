@@ -294,6 +294,19 @@ find_block:
 pde_t __initdata init_pgd[PDECNT_PER_PAGE]                       __attribute__((__aligned__(PAGE_SIZE)));
 pte_t __initdata init_pgt[PTECNT_PER_PAGE*BOOT_INIT_PAGETBL_CNT] __attribute__((__aligned__(PAGE_SIZE)));
 
+extern void sysexit();
+
+void set_page_shared(void *x)
+{
+    unsigned long addr = (unsigned long) x;
+    addr = PAGE_ALIGN(addr);
+    unsigned int npd = get_npd(addr);
+    init_pgd[npd] |= PAGE_US;
+
+    pte_t *pte = pa2va(init_pgd[npd] & PAGE_MASK);
+    pte[get_npt(addr)] |= PAGE_US;
+}
+
 void init_paging()
 {
     unsigned int i;
@@ -312,11 +325,11 @@ void init_paging()
 
             memset((void *)pgtb_addr, 0, PAGE_SIZE);
 
-            init_pgd[get_npd(page_addr)] = (pde_t)(pgtb_addr | PAGE_P | PAGE_WR | PAGE_US);
+            init_pgd[get_npd(page_addr)] = (pde_t)(pgtb_addr | PAGE_P | PAGE_WR);
         }
 
         pte = ((pte_t *) pa2va(pgtb_addr)) + ti;
-        *pte = (pte_t) (page_addr | PAGE_P | PAGE_WR | PAGE_US);
+        *pte = (pte_t) (page_addr | PAGE_P | PAGE_WR);
     }
 
 
@@ -326,6 +339,9 @@ void init_paging()
     {
         init_pgd[i] = init_pgd[i-delta];
     }
+
+    // paging for user space
+    set_page_shared(sysexit);
 
     LOAD_CR3(init_pgd);
 }

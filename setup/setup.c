@@ -60,7 +60,6 @@ void setup_kernel()
 
     setup_irqs();
 
-
     while(1); // TODO MODIFY CODE BELOW
 
     setup_tasks();
