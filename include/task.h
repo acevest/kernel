@@ -32,7 +32,7 @@ enum
     TASK_EXITING
 };
 
-typedef    union
+typedef union task_union
 {
     struct
     {
@@ -62,14 +62,15 @@ typedef    union
     };
 
     unsigned char stack[TASK_SIZE];
-} Task, *pTask;
+} task_struct;
 
-typedef Task task_struct;
+
+typedef task_struct Task;
+typedef task_struct *pTask;
 
 #define ROOT_TSK_PID    (1)
 
 extern    pTask        current;
-extern    Task        RootTsk;
 extern    ListHead    tsk_list;
 
 #define add_tsk2list(tsk)    list_add_tail((&(tsk)->list), &tsk_list)

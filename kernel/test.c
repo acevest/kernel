@@ -33,7 +33,9 @@ void dump_fd()
 
 int sysc_test()
 {
-    dump_fd();
+    //dump_fd();
+
+    printk(".");
 
     return 0;
 }

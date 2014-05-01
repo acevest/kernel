@@ -58,10 +58,11 @@ void setup_kernel()
 
     setup_irqs();
 
+    setup_tasks();
+
     return;
     while(1); // TODO MODIFY CODE BELOW
 
-    setup_tasks();
 
     setup_root_dev();
     setup_hd();

@@ -9,17 +9,17 @@
 #include <irq.h>
 #include <fcntl.h>
 #include <stat.h>
+#include <init.h>
 
 #define KRNL_STACK_SIZE    4096
 
-extern void    root_task();
-extern void    setup_kernel();
+void    root_task_entry();
+void    setup_kernel();
 
 TSS    tss;
 System    system;
 
-static char    kernel_stack[KRNL_STACK_SIZE] __attribute__ ((__aligned__(PAGE_SIZE)));
-static char    root_task_stack[PAGE_SIZE] __attribute__ ((__aligned__(PAGE_SIZE)));
+static char __initdata kernel_stack[KRNL_STACK_SIZE] __attribute__ ((__aligned__(PAGE_SIZE)));
 
 int KernelEntry()
 {
@@ -28,6 +28,8 @@ int KernelEntry()
         ::"a"(KRNL_STACK_SIZE));
 
     setup_kernel();
+
+    char *root_task_user_space_stack = (char *) alloc_pages(0, 0);
 
     asm("movl   $0x23,%%eax;        \
         movw    %%ax,%%ds;          \
@@ -38,14 +40,14 @@ int KernelEntry()
         pushl   %%ebx;              \
         pushl   $0x282;             \
         pushl   $0x1B;              \
-        leal    root_task,%%eax;    \
+        leal    root_task_entry,%%eax;    \
         pushl   %%eax;              \
-        iret;"::"b"(root_task_stack+PAGE_SIZE));
+        iret;"::"b"(root_task_user_space_stack+PAGE_SIZE));
     return 0;
 }
 
 #if 0
-void root_task()
+void root_task_entry()
 {
     pid_t pid;
     pid = fork();
@@ -68,11 +70,11 @@ void root_task()
     }
 }
 #else
-void root_task()
+void root_task_entry()
 {
     while(1)
     {
-        //asm("hlt;");
+        syscall0(SYSC_TEST);
     }
     pid_t pid;
 /*

@@ -290,11 +290,8 @@ find_block:
 }
 
 
-
 pde_t __initdata init_pgd[PDECNT_PER_PAGE]                       __attribute__((__aligned__(PAGE_SIZE)));
 pte_t __initdata init_pgt[PTECNT_PER_PAGE*BOOT_INIT_PAGETBL_CNT] __attribute__((__aligned__(PAGE_SIZE)));
-
-extern void sysexit();
 
 void set_page_shared(void *x)
 {
@@ -306,6 +303,8 @@ void set_page_shared(void *x)
     pte_t *pte = pa2va(init_pgd[npd] & PAGE_MASK);
     pte[get_npt(addr)] |= PAGE_US;
 }
+
+extern void sysexit();
 
 void init_paging()
 {
@@ -338,7 +337,6 @@ void init_paging()
     for(i=delta; i<PDECNT_PER_PAGE; ++i)
     {
         init_pgd[i] = init_pgd[i-delta];
-        init_pgd[i] |= PAGE_US;
     }
 
     // paging for user space

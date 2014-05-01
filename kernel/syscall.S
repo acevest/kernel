@@ -25,29 +25,50 @@
 .extern sysc_handler_table
 #endif
 .text
-.global    syscall_entry
-.global    ret_from_fork
+.global syscall_entry
+.global ret_from_fork
+.global sysexit
 
-/*
- *    0x40 -- %ss
- *    0x3C -- %esp
- *    0x38 -- %eflags
- *    0x34 -- %cs
- *    0x30 -- %eip
- *    0x2C -- sysc_nr
- *    0x28 -- %gs
- *    0x24 -- %fs
- *    0x20 -- %es
- *    0x1C -- %ds
- *    0x18 -- %eax
- *    0x14 -- %ebp
- *    0x10 -- %esi
- *    0x0C -- %edi
- *    0x08 -- %ecx
- *    0x04 -- %edx
- *    0x00 -- %ebx
- */
 #if 1
+syscall_entry:
+    movl    (%esp),%esp
+
+    SAVE_REGS
+
+    pushfl
+    pushl    %ebp
+    pushl    %eax
+
+    movw    %ss, %ax
+    movw    %ax, %ds
+    movw    %ax, %es
+    movw    %ax, %gs
+    movw    %ax, %fs
+
+    popl    %eax
+
+    cmpl    $SYSC_NUM, %eax
+    jae    bad_syscnr
+
+    call    *sysc_handler_table(,%eax,4)
+
+ret_from_bad_syscnr:
+    popl    %ebp
+    popfl
+    RESTORE_REGS
+    
+    leal    sysexit, %edx
+    movl    %ebp, %ecx
+
+    sti        /* sysenter会自动清除IF.貌似sysexit不会自动置位 */
+    sysexit
+
+ret_from_fork: /* for compiler now */
+bad_syscnr:
+    call    sysc_bad_syscnr
+    jmp    ret_from_bad_syscnr
+
+#else
 syscall_entry:
     /* 此时%esp存的是current的地址(&current) */
     movl    (%esp),%esp        /* 获得current的值 */
@@ -106,7 +127,6 @@ bad_syscnr:
 # no need to pay attention on the return address
 .section .sysexit
 .align 0x1000 
-.global sysexit
 sysexit:
     popl    %ebp;
     popl    %edx;

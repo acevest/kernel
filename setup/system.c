@@ -162,13 +162,12 @@ void    setup_irqs()
 
 }
 
-
 void    set_tss()
 {
     pTSS p = &tss;
     memset((void *)p, sizeof(TSS), 0);
-    p->esp0        = TASK_SIZE + (unsigned long)&RootTsk;
-    p->ss0        = SELECTOR_KRNL_DS;
+    p->esp0      = 0; // delay to init root_task
+    p->ss0       = SELECTOR_KRNL_DS;
     p->ss        = SELECTOR_KRNL_DS;
     p->gs        = SELECTOR_KRNL_DS;
     p->fs        = SELECTOR_KRNL_DS;

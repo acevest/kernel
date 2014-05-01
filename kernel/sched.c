@@ -17,15 +17,9 @@
 #include "sched.h"
 #include "assert.h"
 
-
-
 pTask        current;
-Task        RootTsk __attribute__((__aligned__(PAGE_SIZE)));
 
-task_struct* task[TASK_CNT];
-
-#define root_task task[0]
-#define first_task task[0]
+task_struct root_task __attribute__((__aligned__(PAGE_SIZE)));
 
 pid_t    get_next_pid()
 {
@@ -57,19 +51,21 @@ void    init_root_tsk()
 {
     int i;
 
-    root_task->pid    = get_next_pid();
-    root_task->ppid    = 0;
+    root_task.pid    = get_next_pid();
+    root_task.ppid    = 0;
 
     for(i=0; i<NR_OPENS; i++)
-        root_task->fps[i] = 0;
+        root_task.fps[i] = 0;
 
-    /* 这个时候还没有进程开始 */
-    root_task->esp0    = tss.esp0;
+    tss.esp0        = ((unsigned long)&root_task) + sizeof(root_task);
+    root_task.esp0  = tss.esp0;
 
-    init_tsk_cr3(root_task);
-    load_cr3(root_task);
+    printk("init_root_task tss.esp0 %08x\n", tss.esp0);
 
-    current = root_task;
+    //init_tsk_cr3(root_task);
+    //load_cr3(root_task);
+
+    //current = &root_task;
 /*
     // 栈
     void *stack = kmalloc_old(PAGE_SIZE);
@@ -116,6 +112,7 @@ task_struct *get_unused_task_pcb()
 
 inline    pTask get_next_tsk()
 {
+#if 0
     static unsigned int inx = 0;
     unsigned int i = 0;
     task_struct *tsk = root_task;
@@ -134,23 +131,24 @@ inline    pTask get_next_tsk()
     }
 
     return tsk;
+#endif
+    return 0;
 }
 
-#if 1
-inline    void set_esp0(pTask tsk)
+inline void set_esp0(pTask tsk)
 {
     tss.esp0 = tsk->esp0;
 }
+
 inline void    switch_to()
 {
-
     //printk("current:%08x esp0:%08x\n", current, current->esp0);
     load_cr3(current);
     set_esp0(current);
 }
+
 inline void context_switch(pTask prev, pTask next)
 {
-#if 1
     //pTask    last;
     unsigned long eax, ebx, ecx, edx, esi, edi;
     //asm("xchg %bx, %bx");
@@ -165,21 +163,21 @@ inline void context_switch(pTask prev, pTask next)
     "1:"
     "popl    %%ebp;"
     "popfl;"
-    :    [prev_esp] "=m"    (prev->esp),
+    :   [prev_esp] "=m"    (prev->esp),
         [prev_eip] "=m"    (prev->eip),
         "=a" (prev),    "=b" (ebx),    "=c" (ecx),
         "=d" (edx),    "=S" (esi),    "=D" (edi)
-    :    [next_esp] "m"    (next->esp),
+    :   [next_esp] "m"    (next->esp),
         [next_eip] "m"    (next->eip),
         [prev]    "a" (prev),
         [next]    "d" (next)
     :    "memory"
     );
-#endif
 }
 
 unsigned long    schedule()
 {
+#if 0
     pTask    tsk, prev, next;
 
     cli();    // For Safe.
@@ -198,8 +196,8 @@ unsigned long    schedule()
     prev = current;
     current = next = tsk;
     context_switch(prev, next);
-}
 #endif
+}
 
 
 inline void wake_up(pWaitQueue wq)
