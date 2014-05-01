@@ -102,12 +102,13 @@ enum GDTSelectorIndex
 // pushad push eax, ecx, edx, ebx, esp, ebp, esi, edi
 typedef    struct
 {
-    u32    ebx;
-    u32    edx;
-    u32    ecx;
     u32    edi;
     u32    esi;
     u32    ebp;
+    u32    _esp;
+    u32    ebx;
+    u32    edx;
+    u32    ecx;
     u32    eax;    // 因为在系统调用中用来带调用号，就无法传送参数
             // 所以把eax放在这个位置
     u16    ds, _ds;
@@ -116,7 +117,6 @@ typedef    struct
     u16    gs, _gs;
     union
     {
-        u32    sysc_nr;
         u32    irq;
         u32    errcode;
     };
@@ -176,22 +176,10 @@ extern    System system;
     pushl    %fs;    \
     pushl    %es;    \
     pushl    %ds;    \
-    pushl    %eax;    \
-    pushl    %ebp;    \
-    pushl    %esi;    \
-    pushl    %edi;    \
-    pushl    %ecx;    \
-    pushl    %edx;    \
-    pushl    %ebx;
+    pushal;
 
 #define RESTORE_REGS    \
-    popl    %ebx;    \
-    popl    %edx;    \
-    popl    %ecx;    \
-    popl    %edi;    \
-    popl    %esi;    \
-    popl    %ebp;    \
-    popl    %eax;    \
+    popal;          \
     popl    %ds;    \
     popl    %es;    \
     popl    %fs;    \

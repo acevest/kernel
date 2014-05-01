@@ -66,11 +66,6 @@ DEF_IRQ(0,F)
 .extern irq_handler
 .extern    schedule
 _irq_handler:
-#if 1
-    /*
-     * 这些寄存器以及上面的中断号和中断自动压栈的寄存器
-     * 都存在中断栈中.
-     */
     SAVE_REGS
 
     movw    %ss,%ax
@@ -82,7 +77,7 @@ _irq_handler:
     movl    %esp, %eax
     call    irq_handler
 
-    call    schedule
+    # call    schedule
 
     # movl    current, %esp
         
@@ -91,38 +86,3 @@ _irq_handler:
     addl    $4,%esp    /* 跳过中断号. */
 
     iret
-#endif
-
-#if 0    /* 2010.02.22 */
-    /*
-     * 这些寄存器以及上面的中断号和中断自动压栈的寄存器
-     * 都存在中断栈中.
-     */
-    SAVE_REGS
-
-    movw    %ss,%ax
-    movw    %ax, %ds
-    movw    %ax, %es
-    movw    %ax, %fs
-    movw    %ax, %gs
-
-    movl    %esp, %eax
-    call    irq_handler
-
-
-    /* 向调度器传递栈帧的位置以便其保存现场. */
-    pushl    %esp
-    call    schedule
-
-    /*
-     * 利用task_struct 里的内容作为新进程的现场来恢复
-     * 所以用不着针对pushl %esp 写 addl $4,%esp了.
-     */
-    movl    current, %esp
-        
-    RESTORE_REGS
-    
-    addl    $4,%esp    /* 跳过中断号. */
-
-    iret
-#endif
