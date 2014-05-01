@@ -108,6 +108,7 @@ bad_syscnr:
 .align 0x1000 
 .global sysexit
 sysexit:
-    nop
-    nop
+    popl    %ebp;
+    popl    %edx;
+    popl    %ecx;
     ret

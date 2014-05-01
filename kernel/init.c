@@ -19,27 +19,28 @@ TSS    tss;
 System    system;
 
 static char    kernel_stack[KRNL_STACK_SIZE] __attribute__ ((__aligned__(PAGE_SIZE)));
+static char    root_task_stack[PAGE_SIZE] __attribute__ ((__aligned__(PAGE_SIZE)));
 
 int KernelEntry()
 {
-    asm(    "movl $kernel_stack,%%esp;"
+    asm("movl $kernel_stack,%%esp;"
         "addl %%eax,%%esp;"
         ::"a"(KRNL_STACK_SIZE));
 
     setup_kernel();
 
-    asm("    movl    $0x23,%%eax;        \
-        movw    %%ax,%%ds;        \
-        movw    %%ax,%%es;        \
-        movw    %%ax,%%fs;        \
-        movw    %%ax,%%gs;        \
-        pushl    $0x23;            \
-        pushl    %%ebx;            \
-        pushl    $0x282;            \
-        pushl    $0x1B;            \
+    asm("movl   $0x23,%%eax;        \
+        movw    %%ax,%%ds;          \
+        movw    %%ax,%%es;          \
+        movw    %%ax,%%fs;          \
+        movw    %%ax,%%gs;          \
+        pushl   $0x23;              \
+        pushl   %%ebx;              \
+        pushl   $0x282;             \
+        pushl   $0x1B;              \
         leal    root_task,%%eax;    \
-        pushl    %%eax;            \
-        iret;"::"b"(KRNLADDR));
+        pushl   %%eax;              \
+        iret;"::"b"(root_task_stack+PAGE_SIZE));
     return 0;
 }
 
@@ -69,6 +70,10 @@ void root_task()
 #else
 void root_task()
 {
+    while(1)
+    {
+        //asm("hlt;");
+    }
     pid_t pid;
 /*
     int fd = open("/boot/grub/grub.conf", O_RDONLY);

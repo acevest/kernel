@@ -22,5 +22,6 @@
 *build*
 *.BIN
 *.map
+*.diff
 bin/hw
 bin/sh

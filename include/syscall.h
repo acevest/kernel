@@ -14,7 +14,7 @@
  *--------------------------------------------------------------------------
  */
 
-#ifndef    _SYSCALL_H
+#ifndef _SYSCALL_H
 #define _SYSCALL_H
 
 #define SYSC_NUM    256
@@ -23,79 +23,28 @@
 
 #include "page.h"
 #include "errno.h"
-typedef    int    SyscReturn;
-typedef SyscReturn  (*pfSysc)();
 
+int _syscall0(int nr);
+int _syscall1(int nr, unsigned long a);
+int _syscall2(int nr, unsigned long a, unsigned long b);
+int _syscall3(int nr, unsigned long a, unsigned long b, unsigned long c);
+int _syscall4(int nr, unsigned long a, unsigned long b, unsigned long c, unsigned long d);
+int _syscall5(int nr, unsigned long a, unsigned long b, unsigned long c, unsigned long d, unsigned long e);
 
-#define SYSENTER        \
-    asm(            \
-    "pushl    %ecx;"        \
-    "pushl    %edx;"        \
-    "pushl    %ebp;"        \
-    "pushl    $1f;"        \
-    "movl    %esp,%ebp;"    \
-    "sysenter;"        \
-    "1:"            \
-    "addl    $4,%esp;"    \
-    "popl    %ebp;"        \
-    "popl    %edx;"        \
-    "popl    %ecx;");    \
+#define syscall0(nr)                _syscall0(nr)
+#define syscall1(nr, a)             _syscall1(nr, (unsigned long)a)
+#define syscall2(nr, a, b)          _syscall2(nr, (unsigned long)a, (unsigned long)b)
+#define syscall3(nr, a, b, c)       _syscall3(nr, (unsigned long)a, (unsigned long)b, (unsigned long)c)
+#define syscall4(nr, a, b, c, d)    _syscall4(nr, (unsigned long)a, (unsigned long)b, (unsigned long)c, (unsigned long)d)
+#define syscall5(nr, a, b, c, d, e) _syscall5(nr, (unsigned long)a, (unsigned long)b, (unsigned long)c, (unsigned long)d, (unsigned long)e)
 
-
-
-#define sysenter(vect)({     \
-    asm(""::"a"(vect));    \
-    SYSENTER        \
-})
-#if 0
-#define syscall0(vect)(({    \
-    sysenter(vect);        \
-}), ({int i;asm("":"=a"(i));i;}))
-#endif
-#define _syscall0(vect)({    \
-    sysenter(vect);        \
-})
-
-#define _syscall1(vect, a)({    \
-    asm(""::"b"(a));    \
-    sysenter(vect);        \
-})
-
-#define _syscall2(vect, a, b)({    \
-    asm(""::"b"(a), "d"(b));\
-    sysenter(vect);        \
-})
-
-#define _syscall3(vect, a, b, c)({    \
-    asm(""::"b"(a), "d"(b), "c"(c));\
-    sysenter(vect);            \
-})
-
-#define _syscall_ret()({    \
-    int ret;        \
-    asm("":"=a"(ret));    \
-    if(ret < 0)        \
-    {            \
-        errno = -ret;    \
-        ret = -1;    \
-    }            \
-    ret;})
-
-#define syscall0(vect)        \
-    (({_syscall0(vect);}),        ({_syscall_ret();}))
-#define syscall1(vect, a)    \
-    (({_syscall1(vect, a);}),    ({_syscall_ret();}))
-#define syscall2(vect, a, b)    \
-    (({_syscall2(vect, a, b);}),    ({_syscall_ret();}))
-#define syscall3(vect, a, b, c)    \
-    (({_syscall3(vect, a, b, c);}),    ({_syscall_ret();}))
-#if 1
 enum
 {
     SYSC_WRITE,
     SYSC_READ_KBD,
     SYSC_REBOOT,
     SYSC_FORK,
+    SYSC_CLONE,
     SYSC_EXEC,
     SYSC_OPEN,
     SYSC_READ,
@@ -104,7 +53,6 @@ enum
     SYSC_PAUSE,
     SYSC_TEST
 };
-#endif
 
 #endif    // ASM
 

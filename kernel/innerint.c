@@ -97,6 +97,10 @@ void doPageFault(PtRegs regs)
         current, errcode, addr, cr3);
 */
 
+    unsigned long a = (unsigned long) addr;
+
+    a = 0;
+
     if((errcode & PAGE_P) == 0)
     {
         extern    void    do_no_page(void *);

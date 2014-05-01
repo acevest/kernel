@@ -54,7 +54,6 @@ SECTIONS
         *(.init.data);
     }
 
-
     end = .;
     _end = .;
     kernel_end = ALIGN(0x1000);

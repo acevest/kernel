@@ -325,11 +325,11 @@ void init_paging()
 
             memset((void *)pgtb_addr, 0, PAGE_SIZE);
 
-            init_pgd[get_npd(page_addr)] = (pde_t)(pgtb_addr | PAGE_P | PAGE_WR);
+            init_pgd[get_npd(page_addr)] = (pde_t)(pgtb_addr | PAGE_P | PAGE_WR | PAGE_US);
         }
 
         pte = ((pte_t *) pa2va(pgtb_addr)) + ti;
-        *pte = (pte_t) (page_addr | PAGE_P | PAGE_WR);
+        *pte = (pte_t) (page_addr | PAGE_P | PAGE_WR | PAGE_US);
     }
 
 
@@ -338,10 +338,11 @@ void init_paging()
     for(i=delta; i<PDECNT_PER_PAGE; ++i)
     {
         init_pgd[i] = init_pgd[i-delta];
+        init_pgd[i] |= PAGE_US;
     }
 
     // paging for user space
-    set_page_shared(sysexit);
+    // set_page_shared(sysexit);
 
     LOAD_CR3(init_pgd);
 }

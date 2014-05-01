@@ -130,7 +130,8 @@ void    setup_irqs()
     enable_irq(0x00);
     enable_irq(0x01);
     enable_irq(0x0E);
-    asm("sti");
+    //asm("sti");
+    asm("cli");
 
 /*
     pIRQAction    pKbdAction, pClkAction;

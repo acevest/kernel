@@ -45,13 +45,11 @@ void setup_kernel()
 
     init_mm();
 
-
     setup_gdt();
     setup_idt();
     setup_gate();
 
     detect_cpu();
-
 
     set_tss();
 
@@ -60,6 +58,7 @@ void setup_kernel()
 
     setup_irqs();
 
+    return;
     while(1); // TODO MODIFY CODE BELOW
 
     setup_tasks();
