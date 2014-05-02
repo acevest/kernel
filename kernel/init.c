@@ -22,13 +22,9 @@ char __initdata kernel_init_stack[KRNL_INIT_STACK_SIZE] __attribute__ ((__aligne
 
 int KernelEntry()
 {
-    /*
-    asm("movl $kernel_stack,%%esp;"
-        "addl %%eax,%%esp;"
-        ::"a"(KRNL_STACK_SIZE));
-*/
     setup_kernel();
 
+#if 0
     char *root_task_user_space_stack = (char *) alloc_pages(0, 0);
 
     asm("movl   $0x23,%%eax;        \
@@ -43,6 +39,16 @@ int KernelEntry()
         leal    root_task_entry,%%eax;    \
         pushl   %%eax;              \
         iret;"::"b"(root_task_user_space_stack+PAGE_SIZE));
+#else
+    asm("xorl  %eax, %eax; \
+        sti;\
+        pushfl;  \
+        movw  %cs, %ax;   \
+        pushl   %eax;\
+        leal    root_task_entry,%eax;    \
+        pushl   %eax;              \
+        iret;");
+#endif
 
     return 0; /* never come to here */
 }
@@ -75,7 +81,8 @@ void root_task_entry()
 {
     while(1)
     {
-        syscall0(SYSC_TEST);
+        asm("hlt;");
+        //syscall0(SYSC_TEST);
     }
     pid_t pid;
 /*
