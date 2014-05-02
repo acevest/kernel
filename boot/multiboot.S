@@ -23,6 +23,7 @@
 .extern init_pgd
 .extern init_pgt
 .extern kernel_virtual_addr_start
+.extern kernel_init_stack
 
 .section .multiboot_header
 .align 32
@@ -121,6 +122,7 @@ kernel_entry:
 Label:
     call    CheckKernel
     addl    $8,%esp
+    movl    $kernel_init_stack + KRNL_INIT_STACK_SIZE, %esp
     call    KernelEntry
 
 Die:

@@ -11,7 +11,6 @@
 #include <stat.h>
 #include <init.h>
 
-#define KRNL_STACK_SIZE    4096
 
 void    root_task_entry();
 void    setup_kernel();
@@ -19,14 +18,15 @@ void    setup_kernel();
 TSS    tss;
 System    system;
 
-static char __initdata kernel_stack[KRNL_STACK_SIZE] __attribute__ ((__aligned__(PAGE_SIZE)));
+char __initdata kernel_init_stack[KRNL_INIT_STACK_SIZE] __attribute__ ((__aligned__(PAGE_SIZE)));
 
 int KernelEntry()
 {
+    /*
     asm("movl $kernel_stack,%%esp;"
         "addl %%eax,%%esp;"
         ::"a"(KRNL_STACK_SIZE));
-
+*/
     setup_kernel();
 
     char *root_task_user_space_stack = (char *) alloc_pages(0, 0);
@@ -43,7 +43,8 @@ int KernelEntry()
         leal    root_task_entry,%%eax;    \
         pushl   %%eax;              \
         iret;"::"b"(root_task_user_space_stack+PAGE_SIZE));
-    return 0;
+
+    return 0; /* never come to here */
 }
 
 #if 0

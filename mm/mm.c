@@ -337,6 +337,7 @@ void init_paging()
     for(i=delta; i<PDECNT_PER_PAGE; ++i)
     {
         init_pgd[i] = init_pgd[i-delta];
+        init_pgd[i-delta] = 0;
     }
 
     // paging for user space

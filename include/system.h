@@ -227,4 +227,6 @@ extern    System system;
 
 #define ROOT_DEV    system.root_dev
 
+#define KRNL_INIT_STACK_SIZE    4096
+
 #endif //_SYSTEM_H

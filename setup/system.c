@@ -29,7 +29,7 @@ void    setup_gdt()
     pDesc    pdesc;
     //change to new gdt.
     sgdt();
-    memcpy(gdt, (void *)*((unsigned long*)(gdtr+2)),
+    memcpy(gdt, (void *)pa2va(*((unsigned long*)(gdtr+2))),
                 *((unsigned short *)gdtr));
     *((unsigned short *)gdtr)    = NGDT*sizeof(Desc);
     *((unsigned long  *)(gdtr+2))    = (unsigned long)gdt;
