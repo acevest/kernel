@@ -94,39 +94,42 @@ void    do_no_page(void *addr)
 
 void do_wp_page(void *addr)
 {
-    int npde = ((u32)addr)>>22;
-    int npte = (((u32)addr)>>12) & 0x3FF;
+    int npde = get_npd(addr);
+    int npte = get_npt(addr);
 
+    unsigned long *pd = (u32 *)pa2va(current->cr3);
+    unsigned long *pt = NULL;
 
-    u32 *pd = (u32 *)pa2va(current->cr3);
-    u32 *pt = NULL;
+    pt = pa2va(PAGE_ALIGN(pd[npde]));
 
+    unsigned long src, dst;
 
-    pt = pa2va(pd[npde] & 0xFFFFF000);
+    src = pt[npte];
 
-    void *dst, *src;
+    page_t *page = pa2page(src);
 
-    src = (void*)pt[npte];
-
-    if(pgmap[((u32)src)>>PAGE_SHIFT].count > 0)
+    if(page->count > 0)
     {
-        pgmap[((u32)src)>>PAGE_SHIFT].count--;
+        unsigned long flags = PAGE_FLAGS(src);
 
-        src = (void *)pa2va(((u32)src) & 0xFFFFF000);
+        page->count--;
 
-        dst = get_phys_pages(1);
-        if(dst == NULL)
+        src = (unsigned long) pa2va(PAGE_ALIGN(src));
+
+        dst = alloc_one_page(0);
+
+        if(0 == dst)
             panic("out of memory");
-        dst = pa2va(dst);
 
-        memcpy(dst, src, PAGE_SIZE);    
+        pt[npte] = dst | flags;
 
-        dst = (void *)va2pa(dst);
-        pt[npte] = (u32)dst | 7;
+        dst = (unsigned long)pa2va(PAGE_ALIGN(dst));
+
+        memcpy((void *)dst, (void *)src, PAGE_SIZE);
     }
     else
     {
-        pt[npte] |= 7;
+        pt[npte] |= PAGE_WR;
     }
 
     load_cr3(current);

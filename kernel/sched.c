@@ -30,20 +30,21 @@ pid_t    get_next_pid()
 inline    void    load_cr3(task_union *    tsk)
 {
     //printk("tsk %08x cr3: %08x\n",tsk, tsk->cr3);
-    asm("movl %%eax,%%cr3;"::"a"(tsk->cr3));
+    // asm("movl %%eax,%%cr3;"::"a"(tsk->cr3));
     //int j=10000; while(j--);
+    LOAD_CR3(tsk->cr3);
 }
 
 void    init_tsk_cr3(task_union * tsk)
 {
-    tsk->cr3 = pa2va(get_phys_pages(1));
+    tsk->cr3 = (unsigned long) pa2va(get_phys_pages(1));
 
-    if(tsk->cr3 == NULL)
+    if(tsk->cr3 == 0)
         panic("failed init tsk cr3");
 
-    memset(tsk->cr3, 0, PAGE_SIZE);
+    memset((void *)tsk->cr3, 0, PAGE_SIZE);
     memcpy((void *)tsk->cr3, (void*)system.page_dir, PAGE_SIZE);
-    tsk->cr3 = (void *)va2pa(tsk->cr3);
+    tsk->cr3 = va2pa(tsk->cr3);
 }
 
 void    init_root_tsk()

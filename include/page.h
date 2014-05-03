@@ -36,6 +36,7 @@
 #define get_npd(addr)    (((u32)(addr))>>22)
 #define get_npt(addr)    ((((u32)(addr))>>12) & 0x3FF)
 
+
 #include <list.h>
 
 typedef unsigned long pde_t;
@@ -48,6 +49,8 @@ typedef unsigned long pte_t;
 #define PAGE_ALIGN(page)    (page & PAGE_MASK)
 #define PAGE_UP(page)     (((unsigned long)page + PAGE_SIZE -1) & PAGE_MASK)
 #define PAGE_DOWN    PAGE_ALIGN
+
+#define PAGE_FLAGS(addr) ((addr) - PAGE_ALIGN(addr))
 
 #define va2pa(x) (((unsigned long)(x)) - PAGE_OFFSET)
 #define pa2va(x) ((void *) (((unsigned long)(x)) + PAGE_OFFSET))
@@ -81,6 +84,7 @@ typedef struct kmem_cache kmem_cache_t;
 
 typedef struct page
 {
+    unsigned long count;
     unsigned long flags;
     unsigned long private;
     unsigned long index;
@@ -97,6 +101,8 @@ typedef struct page
 
 void *page2va(page_t *page);
 page_t *va2page(unsigned long addr);
+
+#define pa2page(addr) va2page((unsigned long)pa2va(addr))
 
 static inline page_t *get_head_page(page_t *page) { return page->head_page; }
 
@@ -128,6 +134,7 @@ typedef struct free_area
 unsigned long alloc_pages(unsigned int gfp_mask, unsigned int order);
 void free_pages(unsigned long addr);
 
+#define alloc_one_page(gfp_mask) alloc_pages(gfp_mask, 0)
 
 struct kmem_cache
 {

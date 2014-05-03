@@ -83,6 +83,8 @@ found:
         p->order = order;
     }
 
+    page->count = 1;
+
     return page;
 }
 

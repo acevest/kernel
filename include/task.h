@@ -49,7 +49,7 @@ typedef union task_union
         pid_t        ppid;
         unsigned int state;
         long        exit_code;
-        void        *cr3;
+        unsigned long cr3;
 
         long        tty;
 
