@@ -16,10 +16,9 @@
 
 #include "sched.h"
 #include "assert.h"
+#include "mm.h"
 
-pTask        current;
-
-task_struct root_task __attribute__((__aligned__(PAGE_SIZE)));
+task_union root_task __attribute__((__aligned__(PAGE_SIZE)));
 
 pid_t    get_next_pid()
 {
@@ -28,14 +27,14 @@ pid_t    get_next_pid()
     return g_pid++;
 }
 
-inline    void    load_cr3(pTask    tsk)
+inline    void    load_cr3(task_union *    tsk)
 {
     //printk("tsk %08x cr3: %08x\n",tsk, tsk->cr3);
     asm("movl %%eax,%%cr3;"::"a"(tsk->cr3));
     //int j=10000; while(j--);
 }
 
-void    init_tsk_cr3(pTask tsk)
+void    init_tsk_cr3(task_union * tsk)
 {
     tsk->cr3 = pa2va(get_phys_pages(1));
 
@@ -89,19 +88,30 @@ void    init_root_tsk()
 */
 }
 
+kmem_cache_t *task_union_cache;
+
 void    setup_tasks()
 {
 
-    /* 初始化第一个特殊的进程 */
     init_root_tsk();
+
+    kmem_cache_t *task_union_cache = kmem_cache_create("task_union", sizeof(task_union), PAGE_SIZE);
+    if(0 == task_union_cache)
+        panic("setup tasks failed. out of memory");
+
 #if 0
     add_task(test_taskB);
     add_task(test_taskA);
 #endif
 }
 
+task_union *alloc_task_union()
+{
+    return (task_union *) kmem_cache_alloc(task_union_cache, 0);
+}
 
-task_struct *get_unused_task_pcb()
+
+task_union *get_unused_task_pcb()
 {
     unsigned int i;
     for(i=0; i<TASK_CNT; ++i)
@@ -110,18 +120,18 @@ task_struct *get_unused_task_pcb()
     }
 }
 
-inline    pTask get_next_tsk()
+inline    task_union * get_next_tsk()
 {
 #if 0
     static unsigned int inx = 0;
     unsigned int i = 0;
-    task_struct *tsk = root_task;
+    task_union *tsk = root_task;
 
     for(i=0; i<TASK_CNT; ++i)
     {
         inx = (inx + i) % TASK_CNT;
 
-        task_struct *p = root_task + inx;
+        task_union *p = root_task + inx;
 
         if(tsk->state == TASK_RUNNING)
         {
@@ -135,7 +145,7 @@ inline    pTask get_next_tsk()
     return 0;
 }
 
-inline void set_esp0(pTask tsk)
+inline void set_esp0(task_union * tsk)
 {
     tss.esp0 = tsk->esp0;
 }
@@ -147,9 +157,9 @@ inline void    switch_to()
     set_esp0(current);
 }
 
-inline void context_switch(pTask prev, pTask next)
+inline void context_switch(task_union * prev, task_union * next)
 {
-    //pTask    last;
+    //task_union *    last;
     unsigned long eax, ebx, ecx, edx, esi, edi;
     //asm("xchg %bx, %bx");
     asm volatile(
@@ -178,7 +188,7 @@ inline void context_switch(pTask prev, pTask next)
 unsigned long    schedule()
 {
 #if 0
-    pTask    tsk, prev, next;
+    task_union *    tsk, prev, next;
 
     cli();    // For Safe.
     tsk = current;

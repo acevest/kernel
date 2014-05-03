@@ -162,9 +162,9 @@ int sysc_exec(const char *path, char *const argv[])
 
 
     /* 准备内核栈的数据并从ret_from_fork返回 */
-    pPtRegs    regs    = ((pPtRegs)(TASK_SIZE+(unsigned long)current)) - 1;
+    pt_regs_t *    regs    = ((pt_regs_t *)(TASK_SIZE+(unsigned long)current)) - 1;
     extern void ret_from_fork();
-    memset((void*)regs, 0, sizeof(PtRegs));
+    memset((void*)regs, 0, sizeof(pt_regs_t));
     regs->ss    = SELECTOR_USER_DS;
     regs->ds    = SELECTOR_USER_DS;
     regs->es    = SELECTOR_USER_DS;

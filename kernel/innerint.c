@@ -26,63 +26,63 @@
     while(1);                        \
 }while(0);
 
-void doDivideError(PtRegs regs)
+void doDivideError(pt_regs_t regs)
 {
     DIE_MSG();
 }
-void doDebug(PtRegs regs)
+void doDebug(pt_regs_t regs)
 {
     DIE_MSG();
 }
-void doNMI(PtRegs regs)
+void doNMI(pt_regs_t regs)
 {
     DIE_MSG();
 }
-void doBreakPoint(PtRegs regs)
+void doBreakPoint(pt_regs_t regs)
 {
     DIE_MSG();
 }
-void doOverFlow(PtRegs regs)
+void doOverFlow(pt_regs_t regs)
 {
     DIE_MSG();
 }
-void doBoundsCheck(PtRegs regs)
+void doBoundsCheck(pt_regs_t regs)
 {
     DIE_MSG();
 }
-void doInvalidOpcode(PtRegs regs)
+void doInvalidOpcode(pt_regs_t regs)
 {
     DIE_MSG();
 }
-void doDeviceNotAvailable(PtRegs regs)
+void doDeviceNotAvailable(pt_regs_t regs)
 {
     DIE_MSG();
 }
-void doDoubleFault(PtRegs regs)
+void doDoubleFault(pt_regs_t regs)
 {
     DIE_MSG();
 }
-void doCoprocSegOverRun(PtRegs regs)
+void doCoprocSegOverRun(pt_regs_t regs)
 {
     DIE_MSG();
 }
-void doInvalidTss(PtRegs regs)
+void doInvalidTss(pt_regs_t regs)
 {
     DIE_MSG();
 }
-void doSegNotPresent(PtRegs regs)
+void doSegNotPresent(pt_regs_t regs)
 {
     DIE_MSG();
 }
-void doStackFault(PtRegs regs)
+void doStackFault(pt_regs_t regs)
 {
     DIE_MSG();
 }
-void doGeneralProtection(PtRegs regs)
+void doGeneralProtection(pt_regs_t regs)
 {
     DIE_MSG();
 }
-void doPageFault(PtRegs regs)
+void doPageFault(pt_regs_t regs)
 {
     //DIE_MSG();
     void    *addr;
@@ -112,7 +112,7 @@ void doPageFault(PtRegs regs)
         do_wp_page(addr);
     }
 }
-void doCoprocError(PtRegs regs)
+void doCoprocError(pt_regs_t regs)
 {
     DIE_MSG();
 }

@@ -32,9 +32,16 @@
 syscall_entry:
     movl    (%esp),%esp
 
+    pushl   $(SELECTOR_USER_SS)
+    pushl   %ebp
+    pushfl
+    pushl   $(SELECTOR_USER_CS)
+    pushl   $sysexit
+    pushl   $0
+
     SAVE_REGS
 
-    pushl    %eax
+    pushl   %eax
     movw    %ss, %ax
     movw    %ax, %ds
     movw    %ax, %es
@@ -51,6 +58,8 @@ syscall_exit:
     movl    %eax, EAX(%esp)
 
     RESTORE_REGS
+
+    # addl    $20, %esp # no need now
     
     leal    sysexit, %edx
     movl    %ebp, %ecx

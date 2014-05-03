@@ -13,8 +13,8 @@
 #include <hd.h>
 #include <irq.h>
 #include <system.h>
-//void    hd_handler(pPtRegs regs, unsigned int irq)
-void    hd_handler(unsigned int irq, pPtRegs regs, void *dev_id)
+//void    hd_handler(pt_regs_t * regs, unsigned int irq)
+void    hd_handler(unsigned int irq, pt_regs_t * regs, void *dev_id)
 {
     printk("hd_handler:%d ", irq);
 }

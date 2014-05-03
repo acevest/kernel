@@ -35,7 +35,7 @@ static struct
 
 extern void reboot();
 extern void poweroff();
-void    kbd_handler(unsigned int irq, pPtRegs regs, void *dev_id)
+void    kbd_handler(unsigned int irq, pt_regs_t * regs, void *dev_id)
 {
     unsigned char ScanCode;
     //printk("%s\n", dev_id);

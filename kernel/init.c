@@ -17,6 +17,8 @@ void    setup_kernel();
 
 TSS    tss;
 System    system;
+Desc    idt[NIDT];
+Desc    gdt[NGDT];
 
 char __initdata kernel_init_stack[KRNL_INIT_STACK_SIZE] __attribute__ ((__aligned__(PAGE_SIZE)));
 
@@ -82,6 +84,7 @@ void root_task_entry()
     while(1)
     {
         asm("hlt;");
+        sysc_test();
         //syscall0(SYSC_TEST);
     }
     pid_t pid;

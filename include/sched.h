@@ -19,16 +19,16 @@
 
 #include <task.h>
 #define NR_TASKS    3
-//pTask    tTasks[NR_TASKS];
+//task_union *    tTasks[NR_TASKS];
 //void    add_task();
-void    SetupTasks();
+//void    SetupTasks();
 //void    test_taskA();
 //void    test_taskB();
-//unsigned long schedule(pPtRegs    regs);
+//unsigned long schedule(pt_regs_t *    regs);
 unsigned long schedule();
 
 pid_t    get_next_pid();
-void    init_tsk_cr3(pTask);
+void    init_tsk_cr3(task_union *);
 
 
 inline void wake_up(pWaitQueue wq);

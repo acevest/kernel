@@ -11,22 +11,42 @@
  */
 
 #include <sched.h>
-#if 1
-int sysc_fork()
+
+int sysc_fork(pt_regs_t regs)
 {
-    // 先分配一个进程控制结构
-    task_struct *tsk;
-    // TODO tsk = get_unused_task_pcb();
+    return do_fork(&regs, 0);
+}
+
+extern void ret_from_fork();
+int do_fork(pt_regs_t *regs, unsigned long flags)
+{
+    task_union *tsk;
+    tsk = alloc_task_union();
     if(tsk == NULL)
         panic("can not malloc PCB");
 
-    //printk("CHILD:%08x\n", tsk);
-
-    memcpy(tsk, current, sizeof(task_struct));
+    memcpy(tsk, current, sizeof(task_union));
 
     tsk->pid    = get_next_pid();
-    tsk->ppid    = current->pid;
+    tsk->ppid   = current->pid;
 
+    pt_regs_t *child_regs = ((pt_regs_t *) (TASK_SIZE+(unsigned long) tsk)) - 1;
+
+    *child_regs = *regs;
+
+    child_regs->eax = 0;
+
+    regs->eax   = 0x00;
+    tsk->esp0   = TASK_SIZE + (unsigned long) tsk;
+    tsk->esp    = (unsigned long) child_regs;
+    tsk->eip    = (unsigned long) ret_from_fork;
+
+    tsk->state = TASK_RUNNING;
+
+    return (int)tsk->pid;
+}
+
+#if 0
     init_tsk_cr3(tsk);
 
     int i, j;
@@ -76,7 +96,7 @@ int sysc_fork()
     //tsk->regs    = *regs;
     //tsk->regs.eax    = 0x00;
     //tsk->regs.eflags |= 0x200; //enable IF
-    pPtRegs    regs    = ((pPtRegs)(TASK_SIZE+(unsigned long) tsk))-1;
+    //TODO pPtRegs    regs    = ((pPtRegs)(TASK_SIZE+(unsigned long) tsk))-1;
     extern    void ret_from_fork();
     regs->eax    = 0x00;
     tsk->esp0    = TASK_SIZE + (unsigned long) tsk;

@@ -15,7 +15,7 @@
 #include <sched.h>
 #include <assert.h>
 #include <system.h>
-pTask    tTasks[NR_TASKS];
+task_union *    tTasks[NR_TASKS];
 
 #if 0
 void    SetuptTasks()
@@ -36,7 +36,7 @@ void    add_task(void *fun)
 {
 #if 0
     assert(fun != NULL);
-    pTask    tsk = NULL;
+    task_union *    tsk = NULL;
     tsk = kmalloc_old(sizeof(Task));
     if(tsk == NULL)
         panic("shit happens");
@@ -47,9 +47,9 @@ void    add_task(void *fun)
     tsk->ppid    = 0;
     init_tsk_cr3(tsk);
 
-    pPtRegs    r;
+    pt_regs_t *    r;
     r = &tsk->regs;
-    memset((void *)r, 0, sizeof(PtRegs));
+    memset((void *)r, 0, sizeof(pt_regs_t));
     r->ds = r->es = r->fs = r->gs = SELECTOR_USER_DS;
     r->eip        = (unsigned long)fun;
     r->cs        = SELECTOR_USER_CS;
@@ -65,7 +65,7 @@ void    add_task(void *fun)
 void    add_task(void *fun)
 {
     assert(fun != NULL);
-    pTask    tsk = NULL;
+    task_union *    tsk = NULL;
     int i=0;
     for(i=0; i<NR_TASKS; i++)
     {
@@ -82,13 +82,13 @@ void    add_task(void *fun)
     if(i == NR_TASKS)
         panic("tasks full");
 
-    pPtRegs    r;
-    r = &tsk->regs;//(pPtRegs)(TASK_SIZE + (unsigned long)tsk);
+    pt_regs_t *    r;
+    r = &tsk->regs;//(pt_regs_t *)(TASK_SIZE + (unsigned long)tsk);
     //printk("Add Tsk: tsk:%08x r:%08x ", tsk, r);
     //r--;
-    //printk("r:%08x sizeof regs:%x ", r, sizeof(PtRegs));
+    //printk("r:%08x sizeof regs:%x ", r, sizeof(pt_regs_t));
 
-    memset((void *)r, 0, sizeof(PtRegs));
+    memset((void *)r, 0, sizeof(pt_regs_t));
     //printk("USER CS: %x\n", SELECTOR_USER_CS);
     //printk("USER DS: %x\n", SELECTOR_USER_DS);
     r->ds = r->es = r->fs = r->gs = SELECTOR_USER_DS;

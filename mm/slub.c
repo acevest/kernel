@@ -57,15 +57,6 @@ static bool calculate_params(kmem_cache_t *cache)
     return true;
 }
 
-kmem_cache_t *kmem_cache_create(const char *name,
-                                size_t size,
-                                size_t align)
-{
-
-
-    return 0;
-}
-
 
 static bool kmem_cache_init(kmem_cache_t *cache,
                             const char *name,
@@ -273,6 +264,19 @@ void kfree(void *addr)
     kmem_cache_t *cache = page->cache;
 
     slub_free(cache, page, addr);
+}
+
+kmem_cache_t *kmem_cache_create(const char *name, size_t size, size_t align)
+{
+    kmem_cache_t *cache = kmalloc(sizeof(kmem_cache_t), 0);
+    if(cache == 0)
+        return 0;
+
+    kmem_cache_init(cache, name, size, align);
+
+    list_add(&(cache->list), &slub_caches);
+
+    return cache;
 }
 
 

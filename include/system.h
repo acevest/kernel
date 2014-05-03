@@ -14,7 +14,7 @@
  *--------------------------------------------------------------------------
  */
 
-#ifndef    _SYSTEM_H
+#ifndef _SYSTEM_H
 #define _SYSTEM_H
 
 #include <page.h>
@@ -99,18 +99,17 @@ enum GDTSelectorIndex
     INDEX_EMP8,
     INDEX_TSS,
 };
-// pushad push eax, ecx, edx, ebx, esp, ebp, esi, edi
-typedef    struct
+// pushal push eax, ecx, edx, ebx, esp, ebp, esi, edi
+typedef struct pt_regs
 {
     u32    edi;
     u32    esi;
     u32    ebp;
-    u32    _esp;
+    u32    esp;
     u32    ebx;
     u32    edx;
     u32    ecx;
-    u32    eax;    // 因为在系统调用中用来带调用号，就无法传送参数
-            // 所以把eax放在这个位置
+    u32    eax;
     u16    ds, _ds;
     u16    es, _es;
     u16    fs, _fs;
@@ -123,9 +122,9 @@ typedef    struct
     u32    eip;
     u16    cs, _cs;
     u32    eflags;
-    u32    esp;
+    u32    _esp;
     u16    ss, _ss;
-} PtRegs, *pPtRegs;
+} pt_regs_t;
 
 typedef    unsigned long    Dev, *pDev;
 
@@ -170,28 +169,28 @@ extern    System system;
 #endif
 
 
-#define SAVE_REGS   \
-    cld;            \
-    pushl    %gs;    \
-    pushl    %fs;    \
-    pushl    %es;    \
-    pushl    %ds;    \
+#define SAVE_REGS       \
+    cld;                \
+    pushl    %gs;       \
+    pushl    %fs;       \
+    pushl    %es;       \
+    pushl    %ds;       \
     pushal;
 
 #define RESTORE_REGS    \
-    popal;          \
-    popl    %ds;    \
-    popl    %es;    \
-    popl    %fs;    \
+    popal;              \
+    popl    %ds;        \
+    popl    %es;        \
+    popl    %fs;        \
     popl    %gs;
 
 
-#define PRIVILEGE_KRNL    0x0
-#define PRIVILEGE_USER    0x3
+#define PRIVILEGE_KRNL      0x0
+#define PRIVILEGE_USER      0x3
 
-#define INDEX_UCODE    3
-#define INDEX_UDATA    4
-/* *8 == <<3 .但要用于汇编文件 <<3 不行. */
+#define INDEX_UCODE         3
+#define INDEX_UDATA         4
+/* *8 == <<3 . but <<3 is not right for asm code. */
 #define SELECTOR_KRNL_CS    (INDEX_KCODE*8)
 #define SELECTOR_KRNL_DS    (INDEX_KDATA*8)
 #define SELECTOR_KRNL_SS    SELECTOR_KRNL_DS

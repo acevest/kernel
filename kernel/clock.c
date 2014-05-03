@@ -15,7 +15,7 @@
 
 static unsigned int jiffies = 0;
 
-void    clk_handler(unsigned int irq, pPtRegs regs, void *dev_id)
+void    clk_handler(unsigned int irq, pt_regs_t * regs, void *dev_id)
 {
     jiffies++;
 

@@ -32,8 +32,8 @@ typedef struct irq_chip
 
 typedef struct irqaction
 {
-    //void (*handler)(pPtRegs regs, unsigned int irq);
-    void    (*handler)(unsigned int irq, pPtRegs regs, void *dev_id);
+    //void (*handler)(pt_regs_t * regs, unsigned int irq);
+    void    (*handler)(unsigned int irq, pt_regs_t * regs, void *dev_id);
     const char *dev_name;
     void *dev_id;
     struct irqaction *next;    
@@ -51,8 +51,8 @@ extern    irq_chip_t    i8259_chip;
 extern    irq_desc_t    irq_desc[];
 extern    irq_desc_t    no_irq_desc;
 int    request_irq(unsigned int irq,
-    //void (*handler)(pPtRegs, unsigned int),
-    void    (*handler)(unsigned int, pPtRegs, void *),
+    //void (*handler)(pt_regs_t *, unsigned int),
+    void    (*handler)(unsigned int, pt_regs_t *, void *),
     const char *devname,
     void    *dev_id);
 

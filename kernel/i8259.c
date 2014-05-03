@@ -106,7 +106,7 @@ irq_chip_t    i8259_chip =
     .ack        = mask_ack_i8259_irq,
 };
 
-void do_i8259_IRQ(pPtRegs regs, unsigned int irq)
+void do_i8259_IRQ(pt_regs_t * regs, unsigned int irq)
 {
 
 

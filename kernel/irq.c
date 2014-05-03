@@ -35,7 +35,7 @@ irq_desc_t    no_irq_desc =
     .status    = 0,
     .depth    = 0
 };
-__attribute__ ((regparm(1))) void    irq_handler(pPtRegs regs)
+__attribute__ ((regparm(1))) void    irq_handler(pt_regs_t * regs)
 {
 
     unsigned int irq = regs->irq;
@@ -53,7 +53,7 @@ __attribute__ ((regparm(1))) void    irq_handler(pPtRegs regs)
 
 
 int    request_irq(    unsigned int irq,
-            void    (*handler)(unsigned int, pPtRegs, void *),
+            void    (*handler)(unsigned int, pt_regs_t *, void *),
             const char *devname,
             void    *dev_id)
 {

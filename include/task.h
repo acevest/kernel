@@ -36,7 +36,7 @@ typedef union task_union
 {
     struct
     {
-        PtRegs        regs;
+        pt_regs_t        regs;
 
         unsigned long    esp0;    /* 指示发生在用户态的中断在进入
                        内核态后的栈位置 */
@@ -62,15 +62,22 @@ typedef union task_union
     };
 
     unsigned char stack[TASK_SIZE];
-} task_struct;
+} task_union;
+
+task_union *alloc_task_union();
 
 
-typedef task_struct Task;
-typedef task_struct *pTask;
+static inline task_union *get_current()
+{
+    task_union *tsk;
+    asm("andl %%esp, %0;":"=r"(tsk):"0"(~(TASK_SIZE-1)));
+    return tsk;
+}
 
-#define ROOT_TSK_PID    (1)
+#define current get_current()
 
-extern    pTask        current;
+#define ROOT_TSK_PID    (0)
+
 extern    ListHead    tsk_list;
 
 #define add_tsk2list(tsk)    list_add_tail((&(tsk)->list), &tsk_list)
