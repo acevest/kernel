@@ -16,6 +16,7 @@
 #define ASM
 #include "boot/boot.h"
 #include "system.h"
+#include "task.h"
 .global kernel_entry
 .extern CheckKernel
 .extern SetupKernel
@@ -23,7 +24,8 @@
 .extern init_pgd
 .extern init_pgt
 .extern kernel_virtual_addr_start
-.extern kernel_init_stack
+.extern root_task
+.extern root_task_entry
 
 .section .multiboot_header
 .align 32
@@ -122,8 +124,17 @@ kernel_entry:
 Label:
     call    CheckKernel
     addl    $8,%esp
-    movl    $kernel_init_stack + KRNL_INIT_STACK_SIZE, %esp
+    movl    $root_task + TASK_SIZE, %esp
     call    KernelEntry
+
+    xorl    %eax, %eax
+    sti
+    pushfl
+    movw    %cs, %ax
+    pushl   %eax
+    movl    $root_task_entry, %eax
+    pushl   %eax
+    iret
 
 Die:
     jmp     Die    # Should never come to here.

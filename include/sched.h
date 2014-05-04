@@ -36,4 +36,6 @@ inline void sleep_on(pWaitQueue wq);
 
 #define TASK_CNT 64
 
+extern task_union root_task;
+
 #endif //_SCHED_H

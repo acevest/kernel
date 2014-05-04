@@ -30,11 +30,14 @@ int do_fork(pt_regs_t *regs, unsigned long flags)
         if(tsk->cr3 == 0)
             panic("failed init tsk cr3");
 
-        memcpy((void *)tsk->cr3, (void*)current->cr3, PAGE_SIZE);
+        task_union *t = current;
 
         unsigned int i, j;
         pde_t *pde_src = (pde_t*) current->cr3;
         pde_t *pde_dst = (pde_t*) tsk->cr3;
+
+        memcpy((void *)tsk->cr3, (void*)current->cr3, PAGE_SIZE);
+
         for(i=0; i<PAGE_PDE_CNT; ++i)
         {
             unsigned long spde = (unsigned long) pde_src[i];
@@ -74,6 +77,10 @@ int do_fork(pt_regs_t *regs, unsigned long flags)
     tsk->eip    = (unsigned long) ret_from_fork;
 
     tsk->state = TASK_RUNNING;
+
+
+    INIT_LIST_HEAD(&tsk->list);
+    list_add(&tsk->list, &root_task.list);
 
     return (int)tsk->pid;
 }

@@ -66,6 +66,7 @@ DEF_IRQ(0,F)
 .extern irq_handler
 .extern    schedule
 _irq_handler:
+    cli #FOR TEST ONLY
     SAVE_REGS
 
     movw    %ss,%ax
@@ -77,7 +78,7 @@ _irq_handler:
     movl    %esp, %eax
     call    irq_handler
 
-    # call    schedule
+    call    schedule
 
     # movl    current, %esp
         

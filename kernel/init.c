@@ -42,6 +42,7 @@ int KernelEntry()
         pushl   %%eax;              \
         iret;"::"b"(root_task_user_space_stack+PAGE_SIZE));
 #else
+#if 0
     asm("xorl  %eax, %eax; \
         sti;\
         pushfl;  \
@@ -49,7 +50,8 @@ int KernelEntry()
         pushl   %eax;\
         leal    root_task_entry,%eax;    \
         pushl   %eax;              \
-        iret;");
+        iret;"::"b"(root_task.cr3 + TASK_SIZE));
+#endif
 #endif
 
     return 0; /* never come to here */
@@ -81,13 +83,29 @@ void root_task_entry()
 #else
 void root_task_entry()
 {
-    while(1)
+    pt_regs_t regs;
+    int pid = do_fork(regs, 0);
+
+    printk("pid is %d\n", pid);
+
+    if(pid > 0)
     {
-        asm("hlt;");
-        sysc_test();
-        //syscall0(SYSC_TEST);
+        while(1)
+        {
+            asm("hlt;");
+            sysc_test();
+            //syscall0(SYSC_TEST);
+        }
     }
-    pid_t pid;
+    else if(pid == 0)
+    {
+
+    }
+    else
+    {
+        printk("err\n");
+    }
+    //pid_t pid;
 /*
     int fd = open("/boot/grub/grub.conf", O_RDONLY);
     //int fd = open("/bin/hw", O_RDONLY);

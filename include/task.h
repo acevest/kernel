@@ -10,9 +10,12 @@
  *--------------------------------------------------------------------------
  */
 
-#ifndef    _TASK_H
+#ifndef _TASK_H
 #define _TASK_H
 
+#define TASK_SIZE 4096
+
+#ifndef ASM
 #include <page.h>
 #include <list.h>
 #include <types.h>
@@ -20,8 +23,6 @@
 #include <system.h>
 #include <wait.h>
 #include <fs.h>
-#define TASK_PAGES    (2)
-#define TASK_SIZE    (TASK_PAGES<<PAGE_SHIFT)
 
 enum
 {
@@ -53,7 +54,7 @@ typedef union task_union
 
         long        tty;
 
-        ListHead     list;
+        list_head_t list;
 
         WaitQueue    wait;
 
@@ -83,5 +84,6 @@ extern    ListHead    tsk_list;
 #define add_tsk2list(tsk)    list_add_tail((&(tsk)->list), &tsk_list)
 #define get_tsk_from_list(p)    list_entry((p), Task, list)
 #define del_tsk_from_list(tsk)    list_del((&tsk->list))
+#endif
 
 #endif //_TASK_H
