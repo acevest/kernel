@@ -38,4 +38,6 @@ inline void sleep_on(pWaitQueue wq);
 
 extern task_union root_task;
 
+#define FORK_KRNL 1
+
 #endif //_SCHED_H

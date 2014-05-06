@@ -30,10 +30,9 @@ FreeArea freeArea[MAX_OLD_ORDER];
 #if 1
 void    do_no_page(void *addr)
 {
-    //printk("%s ", __FUNCTION__);
-    u32    *pde = (u32*)pa2va(current->cr3);
+    u32    *pde = (u32 *)current->cr3;
     u32    *pte;
-    void    *page = get_phys_pages(1);
+    void    *page = (void *)alloc_one_page(0);
     if(page == NULL)
         panic("failed alloc page");
 
@@ -42,8 +41,7 @@ void    do_no_page(void *addr)
 
     if((pde[npde] & 0xFFFFF000)== 0)
     {
-        //printk("*a*\n");
-        pte = (u32 *) pa2va(get_phys_pages(1));
+        pte = (u32 *) alloc_one_page(0);
         memset((void*)pte, 0, PAGE_SIZE);
         if(pte == NULL)
             panic("failed alloc pte");
@@ -53,42 +51,11 @@ void    do_no_page(void *addr)
     }
     else
     {
-        //printk("*b* : %08x\n", page);
-        //printk("*b* : %08x %08x\n", pde[npde], page);
         pte = (u32*)(pde[npde] & 0xFFFFF000);
         pte = pa2va(pte);
         pte[npte] = (u32) page | 7;
     }
     load_cr3(current);
-#if 0
-    u32    *pde = (u32*)pa2va(current->cr3);
-    u32    *pte;
-    void    *page = (void*)va2pa(kmalloc_old(PAGE_SIZE));
-    if(page == NULL)
-        panic("failed alloc page");
-
-    int npde = ((u32)addr)>>22;
-    int npte = (((u32)addr)>>12) & 0x3FF;
-
-    if(pde[npde] == 0)
-    {
-        printk("*a*");
-        pte = (u32 *) kmalloc_old(PAGE_SIZE);
-        memset((void*)pte, 0, PAGE_SIZE);
-        if(pte == NULL)
-            panic("failed alloc pte");
-
-        pte[npte] = (u32) page | 7;
-        pde[npde] = va2pa(pte) | 7;
-    }
-    else
-    {
-        printk("*b*");
-        pte = pde[npde] & 0xFFFFF000;
-        pte = pa2va(pte);
-        pte[npte] = (u32) page | 7;
-    }
-#endif
 }
 
 

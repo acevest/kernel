@@ -124,7 +124,7 @@ typedef struct pt_regs
     u32    eflags;
     u32    _esp;
     u16    ss, _ss;
-} pt_regs_t;
+} __attribute__((packed)) pt_regs_t;
 
 typedef    unsigned long    Dev, *pDev;
 

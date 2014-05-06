@@ -199,13 +199,13 @@ unsigned long    schedule()
     else
         p = &root_task;
 
-    if(p == &root_task)
-        return ;
-    
+    asm("nop;nop;nop;nop;");
+    printk("=");
     task_union *prev, *next;
     prev = current;
     next = p;
 
+    printk("%08x ", next);
     context_switch(prev, next);
 
 #if 0

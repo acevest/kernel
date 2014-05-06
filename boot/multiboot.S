@@ -20,7 +20,7 @@
 .global kernel_entry
 .extern CheckKernel
 .extern SetupKernel
-.extern KernelEntry
+.extern setup_kernel
 .extern init_pgd
 .extern init_pgt
 .extern kernel_virtual_addr_start
@@ -125,16 +125,26 @@ Label:
     call    CheckKernel
     addl    $8,%esp
     movl    $root_task + TASK_SIZE, %esp
-    call    KernelEntry
+    call    setup_kernel
 
-    xorl    %eax, %eax
-    sti
-    pushfl
-    movw    %cs, %ax
+
+#if 0
+    movl    $0x23, %eax
+    movw    %ax, %ds
+    movw    %ax, %es
+    movw    %ax, %fs
+    movw    %ax, %gs
     pushl   %eax
+    pushl   $KRNLADDR
+    pushl   $0x282
+    pushl   $0x1B
     movl    $root_task_entry, %eax
     pushl   %eax
     iret
+#else
+    movl    $root_task_entry, %eax
+    jmpl    *%eax
+#endif
 
 Die:
     jmp     Die    # Should never come to here.

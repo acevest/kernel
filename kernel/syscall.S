@@ -24,10 +24,12 @@
 .code32
 .text
 .global syscall_entry
-.global ret_from_fork
+.global ret_from_fork_user
+.global ret_from_fork_krnl
 .global sysexit
 
-#define EAX 32
+#define EAX 28
+#define EDX 20
 
 syscall_entry:
     movl    (%esp),%esp
@@ -69,11 +71,17 @@ syscall_exit:
 
 bad_sysc_nr:
     call    sysc_bad_syscnr
-    jmp     sysc_exit
+    jmp     syscall_exit
 
-ret_from_fork: 
+ret_from_fork_user:
     xorl    %eax, %eax
-    jmp     sysc_exit
+    jmp     syscall_exit
+
+ret_from_fork_krnl:
+    movl    EDX(%esp), %edx
+    call    *%edx
+
+    
     
 
 # this routine should be load align by PAGE_SIZE

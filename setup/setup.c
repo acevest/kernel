@@ -54,7 +54,7 @@ void setup_kernel()
     set_tss();
 
     setup_sysc();
-    setup_pci();
+    //setup_pci();
 
     setup_irqs();
 
