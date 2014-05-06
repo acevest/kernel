@@ -17,10 +17,6 @@
 #include <bits.h>
 #include <assert.h>
 
-extern void    parse_cmdline(const char *cmdline);
-void    init_free_area(u32 base, u32 len);
-
-
 struct boot_params boot_params __attribute__((aligned(32)));
 
 void init_boot_params(multiboot_info_t *p)
@@ -46,7 +42,7 @@ void init_boot_params(multiboot_info_t *p)
     }
 }
 
-void CheckKernel(unsigned long addr, unsigned long magic)
+void check_kernel(unsigned long addr, unsigned long magic)
 {
     if(magic != MULTIBOOT_BOOTLOADER_MAGIC)
     {
@@ -63,5 +59,4 @@ void CheckKernel(unsigned long addr, unsigned long magic)
     }
 
     init_boot_params(mbi);
-
 }

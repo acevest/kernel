@@ -18,8 +18,7 @@
 #include "system.h"
 #include "task.h"
 .global kernel_entry
-.extern CheckKernel
-.extern SetupKernel
+.extern check_kernel 
 .extern setup_kernel
 .extern init_pgd
 .extern init_pgt
@@ -77,7 +76,7 @@ kernel_entry:
     # Init Page Directory
     movl    %ebx,%edi
     movl    $init_pgt-KRNLADDR,%eax
-    addl    $7,%eax
+    addl    $3,%eax
     movl    $BOOT_INIT_PAGETBL_CNT,%ecx
 1:
     stosl
@@ -90,7 +89,7 @@ kernel_entry:
     movl    %eax,%edi
 
     movl    $init_pgt-KRNLADDR,%eax
-    addl    $7,%eax
+    addl    $3,%eax
     movl    $BOOT_INIT_PAGETBL_CNT,%ecx
 2:
     stosl
@@ -101,7 +100,7 @@ kernel_entry:
     movl    $init_pgt-KRNLADDR,%ebx
     movl    %ebx,%edi
     movl    $(BOOT_INIT_PAGETBL_CNT*1024),%ecx
-    movl    $7,%eax
+    movl    $3,%eax
     cld
 3:
     stosl
@@ -122,7 +121,7 @@ kernel_entry:
 
     ljmp    $0x08,$Label
 Label:
-    call    CheckKernel
+    call    check_kernel
     addl    $8,%esp
     movl    $root_task + TASK_SIZE, %esp
     call    setup_kernel

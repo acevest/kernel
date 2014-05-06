@@ -80,6 +80,7 @@ ret_from_fork_user:
 ret_from_fork_krnl:
     movl    EDX(%esp), %edx
     call    *%edx
+    #call    do_exit
 
     
     
