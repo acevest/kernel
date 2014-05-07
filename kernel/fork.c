@@ -24,7 +24,7 @@ int do_fork(pt_regs_t *regs, unsigned long flags)
 {
     task_union *tsk;
     tsk = alloc_task_union();
-    printk("another task %08x flags %08x\n", tsk, flags);
+    printk("fork task %08x flags %08x\n", tsk, flags);
     if(tsk == NULL)
         panic("can not malloc PCB");
 
@@ -82,7 +82,6 @@ int do_fork(pt_regs_t *regs, unsigned long flags)
 
     if(flags & FORK_KRNL)
     {
-        printk("--dsfsdafdsaf----\n");
         tsk->eip= (unsigned long) ret_from_fork_krnl;
     }
 

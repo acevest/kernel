@@ -19,6 +19,7 @@ void    clk_handler(unsigned int irq, pt_regs_t * regs, void *dev_id)
 {
     jiffies++;
 
-    printk("^%d^ ", jiffies);
+    printk("^");
+    //printk("^%d^ ", jiffies);
     //printk("%s ", dev_id);
 }

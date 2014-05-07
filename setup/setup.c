@@ -16,6 +16,7 @@
 #include <bits.h>
 #include <printk.h>
 #include <system.h>
+#include <io.h>
 
 extern void setup_gdt();
 extern void setup_idt();
@@ -31,11 +32,18 @@ extern void setup_hd();
 extern void setup_fs();
 extern void setup_ext2();
 
-extern unsigned long mb_mm_lower, mb_mm_upper;
-extern unsigned long mb_mmap_addr, mb_mmap_size;
-
 extern void reboot();
 
+#define HZ 100
+#define CLOCK_TICK_RATE 1193180
+#define LATCH ((CLOCK_TICK_RATE + HZ/2) / HZ)
+
+void setup_i8253()
+{
+    outb_p(0x34, 0x43);
+    outb_p(LATCH & 0xFF, 0x40);
+    outb(LATCH >> 8, 0x40);
+}
 
 void setup_kernel()
 {
@@ -49,12 +57,14 @@ void setup_kernel()
     setup_idt();
     setup_gate();
 
+    setup_i8253();
+
     detect_cpu();
 
     set_tss();
 
     setup_sysc();
-    //setup_pci();
+    setup_pci();
 
     setup_irqs();
 

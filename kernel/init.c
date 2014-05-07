@@ -26,7 +26,7 @@ void init_task_entry()
     printk("hahahha %s\n", __func__);
     while(1)
     {
-        printk("i ");
+        printk("i");
         asm("sti;hlt;");
     }
 }
@@ -42,14 +42,12 @@ void root_task_entry()
     pt_regs_t regs;
     memset((void*)&regs, 0, sizeof(regs));
     regs.edx = (unsigned long) init_task_entry;
-    cli();
     int pid = do_fork(&regs, FORK_KRNL);
-    sti();
 
     printk("pid is %d\n", pid);
     while(1)
     {
-        printk("r ");
+        printk("r");
         asm("sti;hlt;");
         //sysc_test();
         //syscall0(SYSC_TEST);

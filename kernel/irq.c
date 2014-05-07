@@ -18,36 +18,42 @@
 #include <errno.h>
 #include <assert.h>
 
-irq_desc_t    irq_desc[NR_IRQS];
+irq_desc_t irq_desc[NR_IRQS];
 
-int    enable_no_irq_chip(unsigned int irq){return 0;}
-int    disable_no_irq_chip(unsigned int irq){return 0;}
-irq_chip_t    no_irq_chip =
+int enable_no_irq_chip(unsigned int irq){return 0;}
+int disable_no_irq_chip(unsigned int irq){return 0;}
+
+irq_chip_t no_irq_chip =
 {
-    .name        = "none",
-    .enable        = enable_no_irq_chip,
-    .disable    = disable_no_irq_chip
+    .name   = "none",
+    .enable = enable_no_irq_chip,
+    .disable= disable_no_irq_chip
 };
-irq_desc_t    no_irq_desc =
+
+irq_desc_t no_irq_desc =
 {
-    .chip    = &no_irq_chip,
-    .action    = NULL,
-    .status    = 0,
-    .depth    = 0
+    .chip   = &no_irq_chip,
+    .action = NULL,
+    .status = 0,
+    .depth  = 0
 };
-__attribute__ ((regparm(1))) void    irq_handler(pt_regs_t * regs)
+
+__attribute__ ((regparm(1))) void irq_handler(pt_regs_t *regs)
 {
 
     unsigned int irq = regs->irq;
-    irq_desc_t *    p = irq_desc + irq;
-    irq_action_t *    action = p->action;
+    irq_desc_t *p = irq_desc + irq;
+    irq_action_t *action = p->action;
+
     p->chip->ack(irq);
+    sti();
     while(action)
     {
         //action->handler(regs, irq);
         action->handler(irq, regs, action->dev_id);
         action = action->next;
     }
+
     p->chip->enable(irq);
 }
 
