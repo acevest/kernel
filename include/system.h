@@ -21,6 +21,24 @@
 #include <assert.h>
 #define KRNLADDR    PAGE_OFFSET
 
+#define PT_REGS_EDI     0
+#define PT_REGS_ESI     4
+#define PT_REGS_EBP     8
+#define PT_REGS_EBX     12
+#define PT_REGS_EDX     16
+#define PT_REGS_ECX     20
+#define PT_REGS_EAX     24
+#define PT_REGS_DS      28
+#define PT_REGS_ES      32
+#define PT_REGS_FS      36
+#define PT_REGS_GS      40
+#define PT_REGS_IRQ     44
+#define PT_REGS_EIP     48
+#define PT_REGS_CS      52
+#define PT_REGS_EFLAGS  56
+#define PT_REGS_ESP     60
+#define PT_REGS_SS      64
+
 #ifndef    ASM
 #include "types.h"
 #include "printk.h"
@@ -105,7 +123,6 @@ typedef struct pt_regs
     u32    edi;
     u32    esi;
     u32    ebp;
-    u32    esp;
     u32    ebx;
     u32    edx;
     u32    ecx;
@@ -122,7 +139,7 @@ typedef struct pt_regs
     u32    eip;
     u16    cs, _cs;
     u32    eflags;
-    u32    _esp;
+    u32    esp;
     u16    ss, _ss;
 } __attribute__((packed)) pt_regs_t;
 
@@ -168,17 +185,28 @@ extern    System system;
 
 #endif
 
-
 #define SAVE_REGS       \
     cld;                \
-    pushl    %gs;       \
-    pushl    %fs;       \
-    pushl    %es;       \
-    pushl    %ds;       \
-    pushal;
+    pushl   %gs;        \
+    pushl   %fs;        \
+    pushl   %es;        \
+    pushl   %ds;        \
+    pushl   %eax;       \
+    pushl   %ecx;       \
+    pushl   %edx;       \
+    pushl   %ebx;       \
+    pushl   %ebp;       \
+    pushl   %esi;       \
+    pushl   %edi;
 
 #define RESTORE_REGS    \
-    popal;              \
+    popl    %edi;       \
+    popl    %esi;       \
+    popl    %ebp;       \
+    popl    %ebx;       \
+    popl    %edx;       \
+    popl    %ecx;       \
+    popl    %eax;       \
     popl    %ds;        \
     popl    %es;        \
     popl    %fs;        \

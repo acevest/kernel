@@ -17,6 +17,7 @@
 #include <irq.h>
 #include <errno.h>
 #include <assert.h>
+#include <task.h>
 
 irq_desc_t irq_desc[NR_IRQS];
 
@@ -45,8 +46,11 @@ __attribute__ ((regparm(1))) void irq_handler(pt_regs_t *regs)
     irq_desc_t *p = irq_desc + irq;
     irq_action_t *action = p->action;
 
+    current->preempt_cnt++;
+
     p->chip->ack(irq);
     sti();
+
     while(action)
     {
         //action->handler(regs, irq);
@@ -54,7 +58,10 @@ __attribute__ ((regparm(1))) void irq_handler(pt_regs_t *regs)
         action = action->next;
     }
 
+    cli();
     p->chip->enable(irq);
+
+    current->preempt_cnt--;
 }
 
 

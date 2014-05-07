@@ -28,9 +28,6 @@
 .global ret_from_fork_krnl
 .global sysexit
 
-#define EAX 28
-#define EDX 20
-
 syscall_entry:
     movl    (%esp),%esp
 
@@ -57,7 +54,7 @@ syscall_entry:
     call    *sysc_handler_table(,%eax,4)
 
 syscall_exit:
-    movl    %eax, EAX(%esp)
+    movl    %eax, PT_REGS_EAX(%esp)
 
     RESTORE_REGS
 
@@ -78,7 +75,7 @@ ret_from_fork_user:
     jmp     syscall_exit
 
 ret_from_fork_krnl:
-    movl    EDX(%esp), %edx
+    movl    PT_REGS_EDX(%esp), %edx
     call    *%edx
     #call    do_exit
 

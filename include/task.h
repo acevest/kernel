@@ -15,6 +15,8 @@
 
 #define TASK_SIZE 4096
 
+#define TI_preempt_cnt  0
+
 #ifndef ASM
 #include <page.h>
 #include <list.h>
@@ -37,12 +39,13 @@ typedef union task_union
 {
     struct
     {
+        unsigned long   preempt_cnt;
+
         pt_regs_t        regs;
 
-        unsigned long    esp0;    /* 指示发生在用户态的中断在进入
-                       内核态后的栈位置 */
+        unsigned long    esp0;    /* kernel stack */
 
-        /* 进程切换时用 */
+        /* for context switch */
         unsigned long    esp;
         unsigned long    eip;
 

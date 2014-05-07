@@ -1,6 +1,6 @@
 /*
  *--------------------------------------------------------------------------
- *   File Name: reboot.S
+ *   File Name: multiboot.S
  * 
  * Description: none
  * 

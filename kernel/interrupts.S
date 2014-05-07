@@ -16,6 +16,7 @@
 #define ASM
 #include <linkage.h>
 #include <system.h>
+#include <task.h>
 
 #define IRQ_SYMBL(a,b)    irq_0x##a##b_handler
 #define IRQ_LIST(x)    \
@@ -68,7 +69,7 @@ DEF_IRQ(0,F)
 _irq_handler:
     SAVE_REGS
 
-    movw    %ss,%ax
+    movw    %ss, %ax
     movw    %ax, %ds
     movw    %ax, %es
     movw    %ax, %fs
@@ -77,11 +78,26 @@ _irq_handler:
     movl    %esp, %eax
     call    irq_handler
 
+    movl    $-TASK_SIZE, %ebp
+    andl    %esp, %ebp
+
+    movl    PT_REGS_CS(%esp), %eax
+    testl   $0x0003, %eax
+    jz      resume_kernel
+
+resched:
+
     call    schedule
 
-    # movl    current, %esp
-        
+restore_regs:
+
     RESTORE_REGS
     
-    addl    $4,%esp    /* 跳过中断号. */
+    addl    $4, %esp
+
     iret
+
+resume_kernel:
+    cmpl    $0, TI_preempt_cnt(%ebp)
+    jz      resched
+    jmp     restore_regs

@@ -66,9 +66,9 @@ void setup_kernel()
     setup_sysc();
     setup_pci();
 
-    setup_irqs();
-
     setup_tasks();
+
+    setup_irqs();
 
     return;
     while(1); // TODO MODIFY CODE BELOW

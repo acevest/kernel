@@ -55,6 +55,11 @@ void init_root_tsk()
 {
     int i;
 
+    // never use memset to init root_task
+    // because the stack is at top of the root_task
+    // memset((char*)&root_task, 0, sizeof(root_task));
+
+    root_task.preempt_cnt = 0;
     root_task.pid    = get_next_pid();
     root_task.ppid    = 0;
     INIT_LIST_HEAD(&root_task.list);
