@@ -41,7 +41,6 @@ typedef union task_union
     {
         unsigned long   preempt_cnt;
 
-        pt_regs_t        regs;
 
         unsigned long    esp0;    /* kernel stack */
 
