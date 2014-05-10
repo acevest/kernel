@@ -126,8 +126,7 @@ typedef union pci_device
 #define PCI_MAXLAT          0x3F
 
 // PCI Command Register
-#define PCI_CMD(bus, dev, devfn, reg) \
-(0x80000000 | (dev << 11) | (devfn << 8) | (reg & 0xFC))
+#define PCI_CMD(bus, dev, devfn, reg) (0x80000000 | (bus << 16) | (dev << 11) | (devfn << 8) | (reg/* & 0xFC */))
 
 #define PCI_CONFIG_CMD(cmd) (cmd & ~3)
 #define PCI_GET_CMD_REG(cmd) (cmd & 0xFF)

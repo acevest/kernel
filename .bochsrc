@@ -25,6 +25,9 @@ com4: enabled=0
 cpuid: vendor_string="GenuineIntel"
 cpuid: brand_string="              Intel(R) Pentium(R) 4 CPU        "
 
+pci: enabled=1, chipset=i440fx, slot1=pcivga
+#pcidev: vendor=0x1234, device=0x5678
+
 #usb_uhci: enabled=0
 #usb_ohci: enabled=0
 print_timestamps: enabled=0

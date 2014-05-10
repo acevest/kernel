@@ -45,6 +45,16 @@ void setup_i8253()
     outb(LATCH >> 8, 0x40);
 }
 
+#define VERSION    "0.2.5 Final"
+#define BUIDER    "Zhao Yanbai"
+const char *version = 
+    "Kernel "
+    VERSION
+    " Build on "__DATE__ " " __TIME__
+    " by "
+    BUIDER;
+
+
 void setup_kernel()
 {
     extern char kernel_begin, kernel_end;
@@ -57,7 +67,7 @@ void setup_kernel()
     setup_idt();
     setup_gate();
 
-    setup_i8253();
+    //setup_i8253();
 
     detect_cpu();
 
@@ -70,12 +80,15 @@ void setup_kernel()
 
     setup_irqs();
 
+    setup_hd();
+
+    printk("%s\n", version);
+
     return;
     while(1); // TODO MODIFY CODE BELOW
 
 
     setup_root_dev();
-    setup_hd();
     setup_fs();
     setup_ext2();
 

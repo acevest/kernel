@@ -54,14 +54,14 @@
 #define HD_LBAH            5
 #define HD_DEVICE        6
 #define HD_STATUS        7        /* controller status */
-#define     HD_STATUS_BSY        0x80    /* controller busy */
-#define     HD_STATUS_RDY        0x40    /* drive ready */
+#define     HD_STATUS_BSY       0x80    /* controller busy */
+#define     HD_STATUS_RDY       0x40    /* drive ready */
 #define     HD_STATUS_WF        0x20    /* write fault */
-#define     HD_STATUS_SC        0x10    /* seek complete */
-#define     HD_STATUS_DRQ        0x08    /* data transfer request */
-#define     HD_STATUS_CRD        0x04    /* correct data */
-#define     HD_STATUS_IDX        0x02    /* index pulse */
-#define     HD_STATUS_ERR        0x01    /* error */
+#define     HD_STATUS_SEEK_CMPT 0x10    /* seek complete */
+#define     HD_STATUS_DRQ       0x08    /* data transfer request */
+#define     HD_STATUS_CRD       0x04    /* correct data */
+#define     HD_STATUS_IDX       0x02    /* index pulse */
+#define     HD_STATUS_ERR       0x01    /* error */
 #define HD_FEATURES        HD_ERR
 #define HD_CMD            HD_STATUS
 #define     HD_CMD_IDLE        0x00
@@ -84,22 +84,16 @@
 #define HD_CTL            0
 #define     HD_CTL_NORETRY        0x80    /* disable access retry */
 #define     HD_CTL_NOECC        0x40    /* disable ecc retry */
-#define     HD_CTL_EIGHTHEADS    0x08    /* more than 8 heads */
+#define     HD_CTL_EIGHTHEADS   0x08    /* more than 8 heads */
 #define     HD_CTL_RESET        0x04    /* reset controller */
 #define     HD_CTL_DISABLE_INT    0x02    /* disable interrupts */
 
 #define     HD_GET_CHL(dev)        (0)    /* 暂时还是只支持通道0 */
 #define     HD_GET_DEV(dev)        (0)    /* 暂时还是只支持一个硬盘 */
 
-#define REG_CMD_BASE(dev, offset)            \
-    (HD_GET_CHL(dev)?(HD_CHL1_CMD_BASE+offset)    \
-    :                        \
-    (HD_CHL0_CMD_BASE+offset))
+#define REG_CMD_BASE(dev, offset)  ( HD_GET_CHL(dev) ? (HD_CHL1_CMD_BASE+offset) : (HD_CHL0_CMD_BASE+offset) )
 
-#define REG_CTL_BASE(dev, offset)            \
-    (HD_GET_CHL(dev)?(HD_CHL1_CTL_BASE+offset)    \
-    :                        \
-    (HD_CHL0_CTL_BASE+offset))
+#define REG_CTL_BASE(dev, offset)  ( HD_GET_CHL(dev) ? (HD_CHL1_CTL_BASE+offset) : (HD_CHL0_CTL_BASE+offset) )
 
 #if 1
 #define REG_DATA(dev)        REG_CMD_BASE(dev, HD_DATA)

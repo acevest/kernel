@@ -68,7 +68,7 @@ _bt;                            \
 })
 
 #define inl(port)({             \
-u16 _bt;                        \
+u32 _bt;                        \
 asm("inl    %%dx,%%eax"         \
 :"=a" (_bt)                     \
 :"d" (port));                   \

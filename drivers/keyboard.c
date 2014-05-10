@@ -35,12 +35,16 @@ static struct
 
 extern void reboot();
 extern void poweroff();
+extern void hd_out(Dev dev, u32 nsect, u64 sect_nr, u32 cmd);
 void    kbd_handler(unsigned int irq, pt_regs_t * regs, void *dev_id)
 {
     unsigned char ScanCode;
     //printk("%s\n", dev_id);
     ScanCode = inb(0x60);
-    //printk("%02x", ScanCode);
+    
+    printk("%02x", ScanCode);
+    hd_out(0, 1, 1, 0x24);
+    return; // debug
     if(count < KBD_BUF_SIZE)
     {
         count++;

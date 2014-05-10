@@ -52,7 +52,7 @@ void    setup_idt()
 void no_irq_handler()
 {
     printk("no_irq_handler");
-    while(1);
+    //while(1);
 }
 
 void    setup_gate()
@@ -129,9 +129,22 @@ void    setup_irqs()
     request_irq(0x0E, hd_handler,     "IDE",           "IDE");
     enable_irq(0x00);
     enable_irq(0x01);
+    enable_irq(0x02);
+    enable_irq(0x03);
+    enable_irq(0x04);
+    enable_irq(0x05);
+    enable_irq(0x06);
+    enable_irq(0x07);
+    enable_irq(0x08);
+    enable_irq(0x09);
+    enable_irq(0x0A);
+    enable_irq(0x0B);
+    enable_irq(0x0C);
+    enable_irq(0x0D);
+    enable_irq(0x0F);
     enable_irq(0x0E);
-    //asm("sti");
-    asm("cli");
+    asm("sti");
+    //asm("cli");
 
 /*
     pIRQAction    pKbdAction, pClkAction;
