@@ -21,30 +21,48 @@
 
 LIST_HEAD(pci_devs);
 
-static int pci_read_config_byte(int cmd)
+int pci_read_config_byte(int cmd)
 {
     outl(PCI_CONFIG_CMD(cmd), PCI_ADDR);
     return inb(PCI_DATA + (PCI_GET_CMD_REG(cmd) & 3));
 }
 
-static int pci_read_config_word(int cmd)
+int pci_read_config_word(int cmd)
 {
     outl(PCI_CONFIG_CMD(cmd), PCI_ADDR);
     return inw(PCI_DATA + (PCI_GET_CMD_REG(cmd) & 2));
 }
 
-static int pci_read_config_long(int cmd)
+int pci_read_config_long(int cmd)
 {
     outl(PCI_CONFIG_CMD(cmd), PCI_ADDR);
     return inl(PCI_DATA);
 }
 
+void pci_write_config_byte(int value, int cmd)
+{
+    outl(PCI_CONFIG_CMD(cmd), PCI_ADDR);
+    outb(value & 0xFF, PCI_DATA);
+}
+
+void pci_write_config_word(int value, int cmd)
+{
+    outl(PCI_CONFIG_CMD(cmd), PCI_ADDR);
+    outb(value & 0xFFFF, PCI_DATA);
+}
+
+void pci_write_config_long(int value, int cmd)
+{
+    outl(PCI_CONFIG_CMD(cmd), PCI_ADDR);
+    outl(value, PCI_DATA);
+}
 
 void scan_pci_bus(int bus)
 {
     u8 dev, devfn;
     u32 cmd;
     u32 v;
+    int i;
     printk("scanning PCI bus %d\n", bus);
     
     for(dev=0; dev<32; dev++)
@@ -76,6 +94,10 @@ void scan_pci_bus(int bus)
                 continue;
             }
 
+            pci->bus    = bus;
+            pci->dev    = dev;
+            pci->devfn  = devfn;
+
             pci->vendor = v;
 
             cmd = PCI_CMD(bus, dev, devfn, PCI_DEVICEID);
@@ -93,46 +115,81 @@ void scan_pci_bus(int bus)
             cmd = PCI_CMD(bus, dev, devfn, PCI_INTRPIN);
             pci->intr_pin = pci_read_config_byte(cmd);
 
+
             cmd = PCI_CMD(bus, dev, devfn, PCI_HDRTYPE);
             pci->hdr_type = pci_read_config_byte(cmd);
             pci->hdr_type &= PCI_HDRTYPE_MASK;
 
+            for(i=0; i<BARS_CNT; ++i)
+            {
+                cmd = PCI_CMD(bus, dev, devfn, PCI_BAR0 + i*4);
+                pci->bars[i] = pci_read_config_long(cmd);
+            }
+
+#if 0
             if(pci->hdr_type == PCI_HDRTYPE_BRIDGE)
             {
                 cmd = PCI_CMD(bus, dev, devfn, PCI_PRIMARY_BUS_NUMBER);
                 pci->primary_bus_nr = pci_read_config_byte(cmd);
-                scan_pci_bus(pci->primary_bus_nr);
+
+                cmd = PCI_CMD(bus, dev, devfn, PCI_SECONDARY_BUS_NUMBER);
+                pci->secondary_bus_nr = pci_read_config_byte(cmd);
+
+                printk("    PCI BUS: %d %d\n", pci->primary_bus_nr, pci->secondary_bus_nr);
+
+                scan_pci_bus(pci->secondary_bus_nr);
             }
+#endif
 
             list_add(&pci->list, &pci_devs);
         }
     }
 }
 
+
+pci_device_t *pci_find_device(unsigned int vendor, unsigned int device)
+{
+    int i;
+    list_head_t *p;
+    pci_device_t *pci = 0;
+
+    list_for_each(p, &pci_devs)
+    {
+        pci = list_entry(p, pci_device_t, list);
+
+        if(pci->vendor == vendor && pci->device == device)
+            return pci;
+    }
+
+
+    return 0;
+}
+
 void dump_pci_dev()
 {
     list_head_t *p;
+    int i;
+
     list_for_each(p, &pci_devs)
     {
         pci_device_t *pci = list_entry(p, pci_device_t, list);
-        printk("Vendor %x Device %x Class %x Revision %x IntrLine %d ", pci->vendor, pci->device, pci->classcode, pci->revision, pci->intr_line);
+        printk("Vendor %x Device %x Class %x Revision %x IntrLine %d Pin %d ", pci->vendor, pci->device, pci->classcode, pci->revision, pci->intr_line, pci->intr_pin);
         switch(pci->hdr_type)
         {
         case PCI_HDRTYPE_NORMAL:
             printk("Normal Device\n");
             break;
         case PCI_HDRTYPE_BRIDGE:
-            printk("Aha PCI-PCI Bridge\n");
+            printk("PCI-PCI Bridge\n");
             break;
         case PCI_HDRTYPE_CARDBUS:
-            printk("Wow PCI-CardBus\n");
+            printk("PCI-CardBus\n");
             break;
         default:
             printk("Not Support!\n");
             break;
         }
     }
-    while(1);
 }
 
 int probe_pci_bus()

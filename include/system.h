@@ -76,7 +76,11 @@ static inline void free_phys_pages(void *p)
     free_virt_pages((void*)va2pa(p));
 }
 
-extern inline void panic(char *msg);
+#define panic(msg) do {                                     \
+    printk("PANIC:\"%s\" file:%s function:%s line:%d\n",    \
+        msg, __FILE__, __FUNCTION__, __LINE__);             \
+    while(1);                                               \
+} while(0);
 
 extern char etext, edata, end;
 

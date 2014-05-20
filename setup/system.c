@@ -49,11 +49,6 @@ void    setup_idt()
     *((unsigned long  *)(idtr+2))    = (unsigned long)idt;
     lidt();
 }
-void no_irq_handler()
-{
-    printk("no_irq_handler");
-    //while(1);
-}
 
 void    setup_gate()
 {    int i;
@@ -86,6 +81,7 @@ do{                            \
     for(i=0x20; i<256; i++)
         set_sys_int(i, INTR_GATE, PL_KRNL, no_irq_handler);
 
+#if 1
     set_sys_int(0x20, INTR_GATE, PL_KRNL, irq_0x00_handler);
     set_sys_int(0x21, INTR_GATE, PL_KRNL, irq_0x01_handler);    
     set_sys_int(0x22, INTR_GATE, PL_KRNL, irq_0x02_handler);    
@@ -102,6 +98,7 @@ do{                            \
     set_sys_int(0x2D, INTR_GATE, PL_KRNL, irq_0x0D_handler);    
     set_sys_int(0x2E, INTR_GATE, PL_KRNL, irq_0x0E_handler);    
     set_sys_int(0x2F, INTR_GATE, PL_KRNL, irq_0x0F_handler);    
+#endif
 #endif
 }
 
@@ -126,7 +123,12 @@ void    setup_irqs()
     void    hd_handler(unsigned int irq, pt_regs_t * regs, void *dev_id);
     request_irq(0x00, clk_handler,    "Intel 8254",    "Clock Chip");
     request_irq(0x01, kbd_handler,    "Intel 8042",    "PS/2 Keyboard");
-    request_irq(0x0E, hd_handler,     "IDE",           "IDE");
+    //request_irq(0x0E, hd_handler,     "IDE",           "IDE");
+    for(i=2; i<16; i++)
+    {
+        request_irq(i, hd_handler,     "IDE",           "IDE");
+    }
+
     enable_irq(0x00);
     enable_irq(0x01);
     enable_irq(0x02);

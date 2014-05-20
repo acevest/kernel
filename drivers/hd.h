@@ -14,7 +14,7 @@
  *--------------------------------------------------------------------------
  */
 
-#ifndef    _HD_H
+#ifndef _HD_H
 #define _HD_H
 
 #include <types.h>
@@ -40,20 +40,20 @@
 #define HD_CHL0_CMD_BASE    0x1F0
 #define HD_CHL1_CMD_BASE    0x170
 
-#define HD_DATA            0
-#define HD_ERR            1
+#define HD_DATA         0
+#define HD_ERR          1
 #define     HD_ERR_BB        0x80
-#define     HD_ERR_ECC        0x40
+#define     HD_ERR_ECC       0x40
 #define     HD_ERR_ID        0x10
 #define     HD_ERR_AC        0x04
 #define     HD_ERR_TK        0x02
 #define     HD_ERR_DM        0x01
-#define HD_NSECTOR        2
-#define HD_LBAL            3
-#define HD_LBAM            4
-#define HD_LBAH            5
-#define HD_DEVICE        6
-#define HD_STATUS        7        /* controller status */
+#define HD_NSECTOR      2
+#define HD_LBAL         3
+#define HD_LBAM         4
+#define HD_LBAH         5
+#define HD_DEVICE       6
+#define HD_STATUS       7        /* controller status */
 #define     HD_STATUS_BSY       0x80    /* controller busy */
 #define     HD_STATUS_RDY       0x40    /* drive ready */
 #define     HD_STATUS_WF        0x20    /* write fault */
@@ -62,31 +62,31 @@
 #define     HD_STATUS_CRD       0x04    /* correct data */
 #define     HD_STATUS_IDX       0x02    /* index pulse */
 #define     HD_STATUS_ERR       0x01    /* error */
-#define HD_FEATURES        HD_ERR
-#define HD_CMD            HD_STATUS
-#define     HD_CMD_IDLE        0x00
-#define     HD_CMD_RECALIBRATE    0x10
-#define     HD_CMD_READ        0x20    /* read data */
-#define     HD_CMD_READ_EXT        0x24    /* read data (LBA-48 bit)*/
+#define HD_FEATURES     HD_ERR
+#define HD_CMD          HD_STATUS
+#define     HD_CMD_IDLE         0x00
+#define     HD_CMD_RECALIBRATE  0x10
+#define     HD_CMD_READ         0x20    /* read data */
+#define     HD_CMD_READ_EXT     0x24    /* read data (LBA-48 bit)*/
 #define     HD_CMD_WRITE        0x30
 #define     HD_CMD_WRITE_EXT    0x34
-#define     HD_CMD_READ_VERIFY    0x40
-#define     HD_CMD_FORMAT        0x50
-#define     HD_CMD_SEEK        0x70
-#define     HD_CMD_DIAG        0x90
-#define     HD_CMD_SPECIFY        0x91
-#define     HD_CMD_IDENTIFY        0xEC
+#define     HD_CMD_READ_VERIFY  0x40
+#define     HD_CMD_FORMAT       0x50
+#define     HD_CMD_SEEK         0x70
+#define     HD_CMD_DIAG         0x90
+#define     HD_CMD_SPECIFY      0x91
+#define     HD_CMD_IDENTIFY     0xEC
 
 /* 硬盘控制寄存器 */
 #define HD_CHL0_CTL_BASE    0x3F6
 #define HD_CHL1_CTL_BASE    0x376
 
 #define HD_CTL            0
-#define     HD_CTL_NORETRY        0x80    /* disable access retry */
+#define     HD_CTL_NORETRY      0x80    /* disable access retry */
 #define     HD_CTL_NOECC        0x40    /* disable ecc retry */
 #define     HD_CTL_EIGHTHEADS   0x08    /* more than 8 heads */
 #define     HD_CTL_RESET        0x04    /* reset controller */
-#define     HD_CTL_DISABLE_INT    0x02    /* disable interrupts */
+#define     HD_CTL_DISABLE_INT  0x02    /* disable interrupts */
 
 #define     HD_GET_CHL(dev)        (0)    /* 暂时还是只支持通道0 */
 #define     HD_GET_DEV(dev)        (0)    /* 暂时还是只支持一个硬盘 */
@@ -207,6 +207,6 @@ static inline void hd_rd_port(int port, void *buf, unsigned long count)
 #define hd_err(dev) ((inb(REG_STATUS(dev)) & HD_STATUS_ERR))
 
 
-#define USE_LBA_48    /* 使用LBA-48bit 模式操作硬盘 */
+#define USE_LBA_48   1 /* 使用LBA-48bit 模式操作硬盘 */
 
 #endif //_HD_H

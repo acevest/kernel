@@ -18,6 +18,7 @@
 #include <syscall.h>
 #include <stdio.h>
 #include <io.h>
+#include <hd.h>
 
 #define KBD_BUF_SIZE    256
 static struct
@@ -43,8 +44,9 @@ void    kbd_handler(unsigned int irq, pt_regs_t * regs, void *dev_id)
     ScanCode = inb(0x60);
     
     printk("%02x", ScanCode);
-    hd_out(0, 1, 1, 0x24);
-    return; // debug
+
+    hd_out(0, 1, 1, HD_CMD_READ_EXT);
+
     if(count < KBD_BUF_SIZE)
     {
         count++;

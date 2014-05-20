@@ -33,9 +33,3 @@ int    sysc_reboot(int mode)
 }
 
 
-void panic(char *msg)
-{
-    printk("PANIC:\"%s\" file:%s function:%s line:%d\n",
-        msg, __FILE__, __FUNCTION__, __LINE__);
-    while(1);
-}

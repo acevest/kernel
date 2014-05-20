@@ -80,10 +80,11 @@ void setup_kernel()
 
     setup_irqs();
 
+
     setup_hd();
-
     printk("%s\n", version);
-
+    asm("cli;");
+    while(1);
     return;
     while(1); // TODO MODIFY CODE BELOW
 

@@ -12,6 +12,7 @@
 #include <io.h>
 #include <hd.h>
 #include <irq.h>
+#include <pci.h>
 #include <system.h>
 //void    hd_handler(pt_regs_t * regs, unsigned int irq)
 void hd_handler(unsigned int irq, pt_regs_t * regs, void *dev_id)
@@ -52,6 +53,7 @@ void hd_out(Dev dev, u32 nsect, u64 sect_nr, u32 cmd)
 
     if(!hd_controller_ready(dev))
     {
+        printk("hd is not ready\n");
         return ;
     }
 
@@ -83,6 +85,7 @@ void hd_out(Dev dev, u32 nsect, u64 sect_nr, u32 cmd)
 #endif    
     outb((u8)device,    REG_DEVICE(dev));
     outb((u8)cmd,       REG_CMD(dev));
+
 }
 
 void    _hd_read(Dev dev, u64 sect_nr, void *buf, u32 count, u32 cmd)
@@ -161,8 +164,36 @@ void    hd_print_identify(const char *buf)
         panic("Your hard disk ");
 }
 
+void hd_pci_init(pci_device_t *pci)
+{
+    unsigned int v;
+    v = pci_read_config_word(pci_cmd(pci, PCI_COMMAND));
+    printk(" ide pci command %04x\n", v);
+    v = pci_read_config_byte(pci_cmd(pci, PCI_PROGIF));
+    printk(" ide pci program interface %02x\n", v);
+    v = pci_read_config_long(pci_cmd(pci, PCI_BAR4));
+    printk(" ide pci Base IO Address Register %08x\n", v);
+    unsigned long iobase = v & 0xFFF0;
+
+    v = inw(iobase+0);
+    printk(" ide bus master ide command register primary %04x\n", v);
+    v = inw(iobase+2);
+    printk(" ide bus master ide status register primary %04x\n", v);
+}
+
 void setup_hd()
 {
+    pci_device_t *pci = pci_find_device(PCI_VENDORID_INTEL, 0x2850);
+    if(pci == 0)
+        pci = pci_find_device(PCI_VENDORID_INTEL, 0x7010); // qemu
+
+    if(pci == 0)
+        panic("can not find ide device");
+
+    printk("found ide pci device\n");
+
+    hd_pci_init(pci);
+
     hd_controller_reset(ROOT_DEV);
 
     char *buf;

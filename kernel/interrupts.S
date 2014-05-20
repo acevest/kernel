@@ -18,31 +18,18 @@
 #include <system.h>
 #include <task.h>
 
-#define IRQ_SYMBL(a,b)    irq_0x##a##b_handler
-#define IRQ_LIST(x)    \
-IRQ_SYMBL(x,0),        \
-IRQ_SYMBL(x,1),        \
-IRQ_SYMBL(x,2),        \
-IRQ_SYMBL(x,3),        \
-IRQ_SYMBL(x,4),        \
-IRQ_SYMBL(x,5),        \
-IRQ_SYMBL(x,6),        \
-IRQ_SYMBL(x,7),        \
-IRQ_SYMBL(x,8),        \
-IRQ_SYMBL(x,9),        \
-IRQ_SYMBL(x,A),        \
-IRQ_SYMBL(x,B),        \
-IRQ_SYMBL(x,C),        \
-IRQ_SYMBL(x,D),        \
-IRQ_SYMBL(x,E),        \
-IRQ_SYMBL(x,F)
+#define DEF_IRQ(a,b)            \
+.align  0x04,0x90;              \
+.global irq_0x##a##b##_handler; \
+irq_0x##a##b##_handler:         \
+pushl   $0x##a##b;              \
+jmp     _irq_handler;
 
-#define DEF_IRQ(a,b)        \
-.align    0x04,0x90;        \
-.global    irq_0x##a##b##_handler;    \
-irq_0x##a##b##_handler:        \
-pushl    $0x##a##b;        \
-jmp    _irq_handler;
+.align  0x04,0x90
+.global no_irq_handler
+no_irq_handler:
+pushl   $0xFFFFFFFF
+jmp     _irq_handler
 
 
 DEF_IRQ(0,0)
@@ -65,7 +52,7 @@ DEF_IRQ(0,F)
 
 .global _irq_handler
 .extern irq_handler
-.extern    schedule
+.extern schedule
 _irq_handler:
     SAVE_REGS
 

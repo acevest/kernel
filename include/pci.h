@@ -62,23 +62,30 @@
 
 extern list_head_t pci_devs;
 
+#define BARS_CNT 6
+
 typedef struct pci_device
 {
     list_head_t   list;
-    unsigned long vendor;
-    unsigned long device;
-    unsigned long command;
-    unsigned long status;
-    unsigned long revision;
-    unsigned long classcode;
-    unsigned long hdr_type;
-    unsigned long bar0, bar1, bar2, bar3, bar4, bar5;
-    unsigned long sub_system_id;
-    unsigned long system_id;
-    unsigned long intr_line;
-    unsigned long intr_pin;
+    unsigned int bus, dev, devfn;
 
-    unsigned long primary_bus_nr;   /* only for pci bridge */
+
+    unsigned int vendor;
+    unsigned int device;
+    unsigned int command;
+    unsigned int status;
+    unsigned int revision;
+    unsigned int classcode;
+    unsigned int hdr_type;
+    //unsigned int bar0, bar1, bar2, bar3, bar4, bar5;
+    unsigned int bars[BARS_CNT];
+    unsigned int sub_system_id;
+    unsigned int system_id;
+    unsigned int intr_line;
+    unsigned int intr_pin;
+
+    unsigned int primary_bus_nr;   /* only for pci bridge */
+    unsigned int secondary_bus_nr;
 } __attribute__((packed)) pci_device_t;
 
 
@@ -118,6 +125,12 @@ typedef union pci_device
     #define    PCI_HDRTYPE_NORMAL   0x00
     #define    PCI_HDRTYPE_BRIDGE   0x01    /* PCI-to-PCI Bridge */
     #define    PCI_HDRTYPE_CARDBUS  0x02    /* CardBus Bridge */
+#define PCI_BAR0            0x10
+#define PCI_BAR1            0x14
+#define PCI_BAR2            0x18
+#define PCI_BAR3            0x1C
+#define PCI_BAR4            0x20
+#define PCI_BAR5            0x24
 #define PCI_PRIMARY_BUS_NUMBER    0x18
 #define PCI_SECONDARY_BUS_NUMBER  0x19
 #define PCI_INTRLINE        0x3C
@@ -156,6 +169,21 @@ typedef union pci_device
 #define PCI_VENDORID_SUN            0x108E
 #define PCI_VENDORID_NVIDIA         0x10DE
 #define PCI_VENDORID_REALTEK        0x10EC
+
+pci_device_t *pci_find_device(unsigned int vendor, unsigned int device);
+
+static inline u32 pci_cmd(pci_device_t *pci, unsigned int reg) {
+    return PCI_CMD(pci->bus, pci->dev, pci->devfn, reg);
+}
+
+int pci_read_config_byte(int cmd);
+int pci_read_config_word(int cmd);
+int pci_read_config_long(int cmd);
+void pci_write_config_byte(int value, int cmd);
+void pci_write_config_word(int value, int cmd);
+void pci_write_config_long(int value, int cmd);
+
+
 
 
 // PCI Bridge

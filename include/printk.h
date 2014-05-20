@@ -14,9 +14,6 @@
  *--------------------------------------------------------------------------
  */
 
-#ifndef    _PRINTK_H
-#define _PRINTK_H
+#pragma once
 
 int    printk(char *fmtstr, ...);
-
-#endif //_PRINTK_H
