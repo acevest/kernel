@@ -43,6 +43,7 @@ __attribute__ ((regparm(1))) void irq_handler(pt_regs_t *regs)
 {
 
     unsigned int irq = regs->irq;
+
     if(irq >= NR_IRQS)
     {
         printk("invalid irq %d\n", irq);
@@ -57,7 +58,6 @@ __attribute__ ((regparm(1))) void irq_handler(pt_regs_t *regs)
 
     p->chip->ack(irq);
     sti();
-
     while(action && action->handler)
     {
         action->handler(irq, regs, action->dev_id);

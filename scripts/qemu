@@ -1,0 +1,1 @@
+qemu-system-i386 -drive file=/root/kernel/HD.IMG,if=none,id=mydisk -device ich9-ahci,id=ahci -device ide-drive,drive=mydisk,bus=ahci.0

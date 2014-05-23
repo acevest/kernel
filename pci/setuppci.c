@@ -48,7 +48,7 @@ void pci_write_config_byte(int value, int cmd)
 void pci_write_config_word(int value, int cmd)
 {
     outl(PCI_CONFIG_CMD(cmd), PCI_ADDR);
-    outb(value & 0xFFFF, PCI_DATA);
+    outw(value & 0xFFFF, PCI_DATA);
 }
 
 void pci_write_config_long(int value, int cmd)
@@ -126,6 +126,19 @@ void scan_pci_bus(int bus)
                 pci->bars[i] = pci_read_config_long(cmd);
             }
 
+            if(pci->classcode == 0x0601)
+            //|| pci->classcode == 0x0106)
+            {
+                cmd = PCI_CMD(bus, dev, devfn, 0x0A);
+                v = pci_read_config_byte(cmd);
+                printk("subclass code %02x ", v);
+                cmd = PCI_CMD(bus, dev, devfn, 0x0B);
+                v = pci_read_config_byte(cmd);
+                printk("class code %02x\n", v);
+
+            //while(1);
+            }
+
 #if 0
             if(pci->hdr_type == PCI_HDRTYPE_BRIDGE)
             {
@@ -174,6 +187,7 @@ void dump_pci_dev()
     {
         pci_device_t *pci = list_entry(p, pci_device_t, list);
         printk("Vendor %x Device %x Class %x Revision %x IntrLine %d Pin %d ", pci->vendor, pci->device, pci->classcode, pci->revision, pci->intr_line, pci->intr_pin);
+
         switch(pci->hdr_type)
         {
         case PCI_HDRTYPE_NORMAL:

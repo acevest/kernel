@@ -68,6 +68,7 @@
 #define     HD_CMD_RECALIBRATE  0x10
 #define     HD_CMD_READ         0x20    /* read data */
 #define     HD_CMD_READ_EXT     0x24    /* read data (LBA-48 bit)*/
+#define     HD_CMD_READ_DMA     0x25    /* read data DMA LBA48 */
 #define     HD_CMD_WRITE        0x30
 #define     HD_CMD_WRITE_EXT    0x34
 #define     HD_CMD_READ_VERIFY  0x40

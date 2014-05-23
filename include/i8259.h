@@ -31,6 +31,8 @@
 
 #define PIC_CASCADE_IR  0x2    //The IR2 on Master Connect to Slave.
 
+#define PIC_AEOI 1
+
 extern void init_i8259();
 extern void mask_i8259();
 

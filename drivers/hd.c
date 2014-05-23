@@ -14,10 +14,13 @@
 #include <irq.h>
 #include <pci.h>
 #include <system.h>
+unsigned long iobase = 0;
 //void    hd_handler(pt_regs_t * regs, unsigned int irq)
 void hd_handler(unsigned int irq, pt_regs_t * regs, void *dev_id)
 {
-    printk("\nhd_handler:%d\n", irq);
+    //printk("\nhd_handler:%d\n", irq);
+    unsigned int v = inw(iobase+2);
+    printk("[%04x]", v);
 }
 
 int    hd_controller_ready(Dev dev)
@@ -45,47 +48,100 @@ void    hd_controller_reset(unsigned int dev)
 
 void hd_out(Dev dev, u32 nsect, u64 sect_nr, u32 cmd)
 {
+
+    {
+    unsigned long long sect_nr = 0;
+    unsigned int nsect = 1;
+
+    cli();
+    outb(0x00, REG_CTL(dev));
+
+    outb(0,           REG_NSECTOR(dev));    // High
+    outb((u8)nsect,   REG_NSECTOR(dev));    // Low
+
+    outb((u8)((sect_nr>>24)&0xFF),    REG_LBAL(dev));
+    outb((u8)((sect_nr>> 0)&0xFF),    REG_LBAL(dev));
+
+    outb((u8)((sect_nr>>32)&0xFF),    REG_LBAM(dev));
+    outb((u8)((sect_nr>> 8)&0xFF),    REG_LBAM(dev));
+
+    outb((u8)((sect_nr>>40)&0xFF),    REG_LBAH(dev));
+    outb((u8)((sect_nr>>16)&0xFF),    REG_LBAH(dev));
+
+    outb(0xE0,    REG_DEVICE(dev));
+    outb(0x24,    REG_CMD(dev));
+    sti();
+    return ;
+    }
+
+
+
+
+
+
     assert(nsect > 0);
     assert(HD_GET_DEV(dev) < 2);    // 0: ata-master 1:ata-slave
 
-    unsigned char device = 0xE0;
+    unsigned char device = 0x40;
     device |= ((HD_GET_DEV(dev)) << 4);
 
+#if 1
+    //hd_controller_reset(dev);
     if(!hd_controller_ready(dev))
     {
         printk("hd is not ready\n");
         return ;
     }
+#endif
 
-    if(system.debug)
+#if 0
     {
-        hd_controller_reset(dev);
+        printk("ho \n");
+        outb_p(0x00, 0x3F6);
+
+        outb_p(0xE0, 0x1F6);
+        outb_p(0x00, 0x1F1);
+        outb_p(0x01, 0x1F2);    // Sec cnt
+        outb_p(0x01, 0x1F3);
+        outb_p(0x00, 0x1F4);
+        outb_p(0x00, 0x1F5);
+
+        outb_p(0x20, 0x1F7);
+
+        return ;
+        while(1);
+            printk("*[%02x]*", inb(REG_STATUS(dev)));
     }
+#endif
+
 
     printk("hdout\n");
-    outb(0x00,                REG_CTL(dev));
-    outb(0x00,                REG_FEATURES(dev));
-    outb((u8)nsect,           REG_NSECTOR(dev));
-#ifdef USE_LBA_48
-    /* 
-     * LBA-48 bit
-     * 先写高位.再写低位.
-     */
-    outb((u8)((sect_nr>>0x18)&0xFF),    REG_LBAL(dev));
-    outb((u8)((sect_nr>>0x20)&0xFF),    REG_LBAM(dev));
-    outb((u8)((sect_nr>>0x28)&0xFF),    REG_LBAH(dev));
+    //outb(0x00,                REG_CTL(dev));
+    outb(0x00, REG_DATA(dev));
 
-    outb((u8)((sect_nr>>0x00)&0xFF),    REG_LBAL(dev));
-    outb((u8)((sect_nr>>0x08)&0xFF),    REG_LBAM(dev));
-    outb((u8)((sect_nr>>0x10)&0xFF),    REG_LBAH(dev));
-#else
-    outb((u8)((sect_nr>>0x00)&0xFF),    REG_LBAL(dev));
-    outb((u8)((sect_nr>>0x08)&0xFF),    REG_LBAM(dev));
-    outb((u8)((sect_nr>>0x10)&0xFF),    REG_LBAH(dev));
-#endif    
-    outb((u8)device,    REG_DEVICE(dev));
-    outb((u8)cmd,       REG_CMD(dev));
+    outb(0,           REG_NSECTOR(dev));
+    outb((u8)nsect,   REG_NSECTOR(dev));
 
+
+    outb((u8)((sect_nr>>24)&0xFF),    REG_LBAL(dev));
+    outb((u8)((sect_nr>> 0)&0xFF),    REG_LBAL(dev));
+
+    outb((u8)((sect_nr>>32)&0xFF),    REG_LBAM(dev));
+    outb((u8)((sect_nr>> 8)&0xFF),    REG_LBAM(dev));
+
+    outb((u8)((sect_nr>>40)&0xFF),    REG_LBAH(dev));
+    outb((u8)((sect_nr>>16)&0xFF),    REG_LBAH(dev));
+
+    //outb((u8)device,    REG_DEVICE(dev));
+    outb(0xE0,    REG_DEVICE(dev));
+    outb(0x24,       REG_CMD(dev));
+
+    //asm("int $47;");
+    return ;
+    while(1);
+        printk("*[%02x]*", inb(REG_STATUS(dev)));
+    printk("iobase %x\n", iobase);
+    outl(1, iobase);
 }
 
 void    _hd_read(Dev dev, u64 sect_nr, void *buf, u32 count, u32 cmd)
@@ -164,28 +220,89 @@ void    hd_print_identify(const char *buf)
         panic("Your hard disk ");
 }
 
+typedef struct prd
+{
+    unsigned int addr;
+    unsigned int cnt : 16;
+    unsigned int reserved : 15;
+    unsigned int eot : 1;
+} prd_t;
+
+#define PRD_CNT 1
+prd_t hd_prd_tbl[PRD_CNT] __attribute__((aligned(64*1024)));
+
 void hd_pci_init(pci_device_t *pci)
 {
     unsigned int v;
+    unsigned int progif;
     v = pci_read_config_word(pci_cmd(pci, PCI_COMMAND));
     printk(" ide pci command %04x\n", v);
     v = pci_read_config_byte(pci_cmd(pci, PCI_PROGIF));
+    progif = v & 0xFF;
     printk(" ide pci program interface %02x\n", v);
     v = pci_read_config_long(pci_cmd(pci, PCI_BAR4));
     printk(" ide pci Base IO Address Register %08x\n", v);
-    unsigned long iobase = v & 0xFFF0;
+    iobase = v & 0xFFF0;
+
+    pci_write_config_word(2, pci_cmd(pci, PCI_COMMAND));
 
     v = inw(iobase+0);
     printk(" ide bus master ide command register primary %04x\n", v);
     v = inw(iobase+2);
     printk(" ide bus master ide status register primary %04x\n", v);
+
+
+
+
+    prd_t *p = (prd_t *) va2pa(hd_prd_tbl);
+    printk("hd_prd_tbl %08x physical %08x sizeof prd %d\n", hd_prd_tbl, p, sizeof(prd_t));
+    p->addr = 0;
+    p->cnt  = 512;
+    p->reserved = 0;
+    p->eot = 1;
+
+
+    outl(p, iobase+4);
+    outl(32, iobase+2);
+    v = inw(iobase+2);
+    printk(" ide bus master ide status register primary %04x\n", v);
+
+
+    pci_write_config_byte(0xFE, pci_cmd(pci, PCI_INTRLINE));
+    v = pci_read_config_byte(pci_cmd(pci, PCI_INTRLINE));
+    printk("---- %x\n", v);
+    if((v & 0xFF) == 0xFE) {
+        printk("This Device needs IRQ assignment.\n");
+    } else {
+        if(progif == 0x8A || progif == 0x80) {
+            printk("This is a Parallel IDE Controller which use IRQ 14 and IRQ 15.\n");
+        }
+    }
+
+    pci_write_config_byte(14, pci_cmd(pci, PCI_INTRLINE));
+    v = pci_read_config_byte(pci_cmd(pci, PCI_INTRLINE));
+    printk("---- %x\n", v);
 }
+
+/*
+ * Bus Master IDE Status Register
+ * Bit2 Bit0
+ *   0   0      Error Condition
+ *   0   1      DMA transfer is in progress
+ *   1   0      The IDE device generated an interrupt and the Physical Region Descriptors exhausted
+ *   1   1      The IDE device generated an interrupt
+ */
 
 void setup_hd()
 {
+#if 1
     pci_device_t *pci = pci_find_device(PCI_VENDORID_INTEL, 0x2850);
     if(pci == 0)
         pci = pci_find_device(PCI_VENDORID_INTEL, 0x7010); // qemu
+
+#else
+    pci_device_t *pci = pci_find_device(PCI_VENDORID_INTEL, 0x2922);
+#endif
 
     if(pci == 0)
         panic("can not find ide device");
@@ -194,15 +311,15 @@ void setup_hd()
 
     hd_pci_init(pci);
 
-    hd_controller_reset(ROOT_DEV);
+    //hd_controller_reset(ROOT_DEV);
 
     char *buf;
     buf = (unsigned char *) alloc_one_page(0);
     assert(buf != NULL);
 
-    hd_read_identify(ROOT_DEV, buf);
+    //hd_read_identify(ROOT_DEV, buf);
 
-    hd_print_identify(buf);
+    //hd_print_identify(buf);
 
     free_pages((unsigned long)buf);
 }

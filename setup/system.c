@@ -102,6 +102,16 @@ do{                            \
 #endif
 }
 
+#include<hd.h>
+void    sata_handler(unsigned int irq, pt_regs_t * regs, void *dev_id)
+{
+    printk("sata irq handler %d \n", irq);
+    inb(REG_STATUS(0));
+    char buf[1024];
+    memset(buf, 0, 1024);
+    hd_rd_data(0, buf, 512);
+}
+
 void    setup_irqs()
 {
     extern    void init_i8259();
@@ -118,33 +128,26 @@ void    setup_irqs()
 
     //extern    void kbd_handler(pt_regs_t *, unsigned int); //extern    void clk_handler(pt_regs_t *, unsigned int);
     //extern    void hd_handler(pt_regs_t *, unsigned int);
+    extern void hd_handler(unsigned int irq, pt_regs_t * regs, void *dev_id);
     void    kbd_handler(unsigned int irq, pt_regs_t * regs, void *dev_id);
     void    clk_handler(unsigned int irq, pt_regs_t * regs, void *dev_id);
     void    hd_handler(unsigned int irq, pt_regs_t * regs, void *dev_id);
     request_irq(0x00, clk_handler,    "Intel 8254",    "Clock Chip");
     request_irq(0x01, kbd_handler,    "Intel 8042",    "PS/2 Keyboard");
     //request_irq(0x0E, hd_handler,     "IDE",           "IDE");
-    for(i=2; i<16; i++)
+    for(i=3; i<256; i++)
     {
-        request_irq(i, hd_handler,     "IDE",           "IDE");
+        //request_irq(i, hd_handler,     "IDE",           "IDE");
+        request_irq(i, sata_handler,   "Intel 8086",    "SATA");
     }
 
-    enable_irq(0x00);
+    //request_irq(11, sata_handler,   "Intel 8086",    "SATA");
+    //request_irq(0x11, sata_handler,   "Intel 8086",    "SATA");
+
+    //enable_irq(0x00);
     enable_irq(0x01);
-    enable_irq(0x02);
-    enable_irq(0x03);
-    enable_irq(0x04);
-    enable_irq(0x05);
-    enable_irq(0x06);
-    enable_irq(0x07);
-    enable_irq(0x08);
-    enable_irq(0x09);
-    enable_irq(0x0A);
-    enable_irq(0x0B);
-    enable_irq(0x0C);
-    enable_irq(0x0D);
-    enable_irq(0x0F);
-    enable_irq(0x0E);
+    for(i=2; i<16; i++)
+        enable_irq(i);
     asm("sti");
     //asm("cli");
 
