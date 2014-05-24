@@ -103,6 +103,7 @@ do{                            \
 }
 
 #include<hd.h>
+void dump();
 void    sata_handler(unsigned int irq, pt_regs_t * regs, void *dev_id)
 {
     printk("sata irq handler %d \n", irq);
@@ -110,6 +111,8 @@ void    sata_handler(unsigned int irq, pt_regs_t * regs, void *dev_id)
     char buf[1024];
     memset(buf, 0, 1024);
     hd_rd_data(0, buf, 512);
+    printk("SECTOR %04x\n", *(unsigned short *)(buf+510));
+    dump();
 }
 
 void    setup_irqs()

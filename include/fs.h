@@ -35,13 +35,13 @@ typedef struct partition
 
 /* 设备的主设备号. 占用两个字节. */
 #define DEV_MAJOR_UNUSED    0x0000
-#define DEV_MAJOR_MEM        0x0001
-#define DEV_MAJOR_TTY        0x0002
-#define DEV_MAJOR_IDE0        0x0003
+#define DEV_MAJOR_MEM       0x0001
+#define DEV_MAJOR_TTY       0x0002
+#define DEV_MAJOR_IDE0      0x0003
 #define DEV_MAJOR_HD        DEV_MAJOR_IDE0
-#define DEV_MAJOR_IDE1        0x0004
-#define DEV_MAJOR_SCSI0        0x0005
-#define DEV_MAJOR_SCSI2        0x0006
+#define DEV_MAJOR_IDE1      0x0004
+#define DEV_MAJOR_SCSI0     0x0005
+#define DEV_MAJOR_SCSI2     0x0006
 
 #define DEV_MAJOR_BITS        (16)
 #define DEV_MINOR_MASK        ((1UL << DEV_MAJOR_BITS) - 1)

@@ -42,6 +42,9 @@ void    kbd_handler(unsigned int irq, pt_regs_t * regs, void *dev_id)
     unsigned char ScanCode;
     //printk("%s\n", dev_id);
     ScanCode = inb(0x60);
+
+    if(ScanCode == 0x01) // Esc
+        reboot();
     
     printk("%02x", ScanCode);
 

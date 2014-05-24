@@ -126,34 +126,6 @@ void scan_pci_bus(int bus)
                 pci->bars[i] = pci_read_config_long(cmd);
             }
 
-            if(pci->classcode == 0x0601)
-            //|| pci->classcode == 0x0106)
-            {
-                cmd = PCI_CMD(bus, dev, devfn, 0x0A);
-                v = pci_read_config_byte(cmd);
-                printk("subclass code %02x ", v);
-                cmd = PCI_CMD(bus, dev, devfn, 0x0B);
-                v = pci_read_config_byte(cmd);
-                printk("class code %02x\n", v);
-
-            //while(1);
-            }
-
-#if 0
-            if(pci->hdr_type == PCI_HDRTYPE_BRIDGE)
-            {
-                cmd = PCI_CMD(bus, dev, devfn, PCI_PRIMARY_BUS_NUMBER);
-                pci->primary_bus_nr = pci_read_config_byte(cmd);
-
-                cmd = PCI_CMD(bus, dev, devfn, PCI_SECONDARY_BUS_NUMBER);
-                pci->secondary_bus_nr = pci_read_config_byte(cmd);
-
-                printk("    PCI BUS: %d %d\n", pci->primary_bus_nr, pci->secondary_bus_nr);
-
-                scan_pci_bus(pci->secondary_bus_nr);
-            }
-#endif
-
             list_add(&pci->list, &pci_devs);
         }
     }

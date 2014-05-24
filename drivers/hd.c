@@ -14,6 +14,14 @@
 #include <irq.h>
 #include <pci.h>
 #include <system.h>
+
+
+#define IDE_COMMAND 0
+#define IDE_STATUS  2
+#define IDE_PRDT    4
+
+
+
 unsigned long iobase = 0;
 //void    hd_handler(pt_regs_t * regs, unsigned int irq)
 void hd_handler(unsigned int irq, pt_regs_t * regs, void *dev_id)
@@ -39,10 +47,10 @@ int    hd_controller_ready(Dev dev)
 void    hd_controller_reset(unsigned int dev)
 {
     outb_p(HD_CTL_RESET,    REG_CTL(dev));
-    outb_p(0,    REG_CTL(dev));
+    outb_p(0,               REG_CTL(dev));
     while(hd_bsy(dev))
     {
-        printk("bsy");
+        //printk("bsy");
     }
 }
 
@@ -54,7 +62,7 @@ void hd_out(Dev dev, u32 nsect, u64 sect_nr, u32 cmd)
     unsigned int nsect = 1;
 
     cli();
-    outb(0x00, REG_CTL(dev));
+    outb_p(0x00, REG_CTL(dev));
 
     outb(0,           REG_NSECTOR(dev));    // High
     outb((u8)nsect,   REG_NSECTOR(dev));    // Low
@@ -68,80 +76,12 @@ void hd_out(Dev dev, u32 nsect, u64 sect_nr, u32 cmd)
     outb((u8)((sect_nr>>40)&0xFF),    REG_LBAH(dev));
     outb((u8)((sect_nr>>16)&0xFF),    REG_LBAH(dev));
 
-    outb(0xE0,    REG_DEVICE(dev));
+    outb(0xE0,    REG_DEVSEL(dev));
     outb(0x24,    REG_CMD(dev));
     sti();
+    outl(4, iobase);
     return ;
     }
-
-
-
-
-
-
-    assert(nsect > 0);
-    assert(HD_GET_DEV(dev) < 2);    // 0: ata-master 1:ata-slave
-
-    unsigned char device = 0x40;
-    device |= ((HD_GET_DEV(dev)) << 4);
-
-#if 1
-    //hd_controller_reset(dev);
-    if(!hd_controller_ready(dev))
-    {
-        printk("hd is not ready\n");
-        return ;
-    }
-#endif
-
-#if 0
-    {
-        printk("ho \n");
-        outb_p(0x00, 0x3F6);
-
-        outb_p(0xE0, 0x1F6);
-        outb_p(0x00, 0x1F1);
-        outb_p(0x01, 0x1F2);    // Sec cnt
-        outb_p(0x01, 0x1F3);
-        outb_p(0x00, 0x1F4);
-        outb_p(0x00, 0x1F5);
-
-        outb_p(0x20, 0x1F7);
-
-        return ;
-        while(1);
-            printk("*[%02x]*", inb(REG_STATUS(dev)));
-    }
-#endif
-
-
-    printk("hdout\n");
-    //outb(0x00,                REG_CTL(dev));
-    outb(0x00, REG_DATA(dev));
-
-    outb(0,           REG_NSECTOR(dev));
-    outb((u8)nsect,   REG_NSECTOR(dev));
-
-
-    outb((u8)((sect_nr>>24)&0xFF),    REG_LBAL(dev));
-    outb((u8)((sect_nr>> 0)&0xFF),    REG_LBAL(dev));
-
-    outb((u8)((sect_nr>>32)&0xFF),    REG_LBAM(dev));
-    outb((u8)((sect_nr>> 8)&0xFF),    REG_LBAM(dev));
-
-    outb((u8)((sect_nr>>40)&0xFF),    REG_LBAH(dev));
-    outb((u8)((sect_nr>>16)&0xFF),    REG_LBAH(dev));
-
-    //outb((u8)device,    REG_DEVICE(dev));
-    outb(0xE0,    REG_DEVICE(dev));
-    outb(0x24,       REG_CMD(dev));
-
-    //asm("int $47;");
-    return ;
-    while(1);
-        printk("*[%02x]*", inb(REG_STATUS(dev)));
-    printk("iobase %x\n", iobase);
-    outl(1, iobase);
 }
 
 void    _hd_read(Dev dev, u64 sect_nr, void *buf, u32 count, u32 cmd)
@@ -180,6 +120,15 @@ void    hd_read_identify(Dev dev, void *buf)
 {
     _hd_read(dev, 0, buf, SECT_SIZE, HD_CMD_IDENTIFY);
 }
+
+typedef struct _ide_ident {
+    u16_t   dev_type;
+    u8_t    _space_[18];
+    u8_t    serial[34];
+    u8_t    model[44];
+    u8_t    capabilites[8];
+    u8_t    filed_valid[4];
+} ide_ident_t;
 
 void    hd_print_identify(const char *buf)
 {
@@ -231,6 +180,15 @@ typedef struct prd
 #define PRD_CNT 1
 prd_t hd_prd_tbl[PRD_CNT] __attribute__((aligned(64*1024)));
 
+void dump()
+{
+    unsigned char *p = (unsigned char *) hd_prd_tbl[0].addr;
+    int i;
+    for(i=510; i<512; ++i)
+        printk("[%02x] ", p[i]);
+}
+
+
 void hd_pci_init(pci_device_t *pci)
 {
     unsigned int v;
@@ -250,8 +208,6 @@ void hd_pci_init(pci_device_t *pci)
     printk(" ide bus master ide command register primary %04x\n", v);
     v = inw(iobase+2);
     printk(" ide bus master ide status register primary %04x\n", v);
-
-
 
 
     prd_t *p = (prd_t *) va2pa(hd_prd_tbl);
@@ -311,15 +267,17 @@ void setup_hd()
 
     hd_pci_init(pci);
 
-    //hd_controller_reset(ROOT_DEV);
+    hd_controller_reset(ROOT_DEV);
+
+    return ;
 
     char *buf;
     buf = (unsigned char *) alloc_one_page(0);
     assert(buf != NULL);
 
-    //hd_read_identify(ROOT_DEV, buf);
+    hd_read_identify(ROOT_DEV, buf);
 
-    //hd_print_identify(buf);
+    hd_print_identify(buf);
 
     free_pages((unsigned long)buf);
 }

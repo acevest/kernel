@@ -29,7 +29,7 @@ extern void set_tss();
 extern void show_logo();
 extern void setup_tasks();
 extern void setup_root_dev();
-extern void setup_hd();
+extern void ide_init();
 extern void setup_fs();
 extern void setup_ext2();
 
@@ -79,26 +79,10 @@ void hd()
     outb((u8)((sect_nr>>40)&0xFF),    REG_LBAH(dev));
     outb((u8)((sect_nr>>16)&0xFF),    REG_LBAH(dev));
 
-    outb(0xE0,    REG_DEVICE(dev));
+    outb(0xE0,    REG_DEVSEL(dev));
     outb(0x24,    REG_CMD(dev));
     sti();
 
-    int drq_retires = 100000;
-    while(!hd_drq(dev) && --drq_retires)
-        /* do nothing */;
-
-    if(drq_retires == 0)
-        printk("hard disk no ready\n");
-    else
-        printk("read finished\n");
-
-    char buf[1024];
-    memset(buf, 0, 1024);
-    hd_rd_data(0, buf, 512);
-
-    printk("SECTOR %04x\n", *(unsigned short *)(buf+510));
-
-    while(1);
 }
 
 
@@ -121,16 +105,16 @@ void setup_kernel()
     set_tss();
 
     setup_sysc();
-    //setup_pci();
+    setup_pci();
 
     setup_tasks();
 
     setup_irqs();
 
-    asm("sti;");
-    hd();
+    //asm("sti;");
+    //hd();
 
-    setup_hd();
+    ide_init();
     printk("%s\n", version);
     //asm("cli;");
     //while(1);
