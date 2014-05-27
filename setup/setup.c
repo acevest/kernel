@@ -17,7 +17,6 @@
 #include <printk.h>
 #include <system.h>
 #include <io.h>
-#include <hd.h>
 
 extern void setup_gdt();
 extern void setup_idt();
@@ -56,36 +55,6 @@ const char *version =
     BUIDER;
 
 
-extern void hd_out(Dev dev, u32 nsect, u64 sect_nr, u32 cmd);
-
-#include "hd.h"
-void hd()
-{
-    unsigned long long sect_nr = 0;
-    unsigned int nsect = 1;
-
-    cli();
-    outb(0x00, REG_CTL(dev));
-
-    outb(0,           REG_NSECTOR(dev));    // High
-    outb((u8)nsect,   REG_NSECTOR(dev));    // Low
-
-    outb((u8)((sect_nr>>24)&0xFF),    REG_LBAL(dev));
-    outb((u8)((sect_nr>> 0)&0xFF),    REG_LBAL(dev));
-
-    outb((u8)((sect_nr>>32)&0xFF),    REG_LBAM(dev));
-    outb((u8)((sect_nr>> 8)&0xFF),    REG_LBAM(dev));
-
-    outb((u8)((sect_nr>>40)&0xFF),    REG_LBAH(dev));
-    outb((u8)((sect_nr>>16)&0xFF),    REG_LBAH(dev));
-
-    outb(0xE0,    REG_DEVSEL(dev));
-    outb(0x24,    REG_CMD(dev));
-    sti();
-
-}
-
-
 void setup_kernel()
 {
     extern char kernel_begin, kernel_end;
@@ -110,16 +79,14 @@ void setup_kernel()
     setup_tasks();
 
     setup_irqs();
-
-    //asm("sti;");
-    //hd();
-
+    
+    void ide_init();
     ide_init();
+    ahci_init();
     printk("%s\n", version);
-    //asm("cli;");
-    //while(1);
+
+
     return;
-    hd_out(0, 1, 1, HD_CMD_READ_EXT);
     while(1); // TODO MODIFY CODE BELOW
 
 

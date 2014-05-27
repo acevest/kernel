@@ -116,6 +116,17 @@ typedef union pci_device
 #define PCI_VENDORID        0x00
 #define PCI_DEVICEID        0x02
 #define PCI_COMMAND         0x04
+    #define     PCI_COMMAND_IO              0x01
+    #define     PCI_COMMAND_MEMORY          0x02
+    #define     PCI_COMMAND_MASTER          0x04
+    #define     PCI_COMMAND_SPECIAL         0x08
+    #define     PCI_COMMAND_INVALIDATE      0x10
+    #define     PCI_COMMAND_VGA_PALETTE     0x20
+    #define     PCI_COMMAND_PARITY          0x40
+    #define     PCI_COMMAND_WAIT            0x80
+    #define     PCI_COMMAND_SERR            0x100
+    #define     PCI_COMMAND_FAST_BACK       0x200
+    #define     PCI_COMMAND_INTR_DISABLE    0x400
 #define PCI_STATUS          0x06
 #define PCI_REVISION        0x08
 #define PCI_PROGIF          0x09

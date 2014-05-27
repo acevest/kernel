@@ -18,7 +18,6 @@
 #include <syscall.h>
 #include <stdio.h>
 #include <io.h>
-#include <hd.h>
 
 #define KBD_BUF_SIZE    256
 static struct
@@ -36,44 +35,44 @@ static struct
 
 extern void reboot();
 extern void poweroff();
-extern void hd_out(Dev dev, u32 nsect, u64 sect_nr, u32 cmd);
+extern void ide_debug();
 void    kbd_handler(unsigned int irq, pt_regs_t * regs, void *dev_id)
 {
-    unsigned char ScanCode;
-    //printk("%s\n", dev_id);
-    ScanCode = inb(0x60);
+    unsigned char scan_code;
+    scan_code = inb(0x60);
 
-    if(ScanCode == 0x01) // Esc
+    if(scan_code == 0x01) // Esc
         reboot();
     
-    printk("%02x", ScanCode);
+    printk("%02x", scan_code);
 
-    hd_out(0, 1, 1, HD_CMD_READ_EXT);
+    if(scan_code == 0x13)
+        ide_debug();
 
     if(count < KBD_BUF_SIZE)
     {
         count++;
-        buf[tail++] = ScanCode;
+        buf[tail++] = scan_code;
         tail %= KBD_BUF_SIZE;
     }
 }
 
-inline int getScanCode()
+inline int getscan_code()
 {
-    unsigned int ScanCode;
+    unsigned int scan_code;
     
     //while(count <= 0);
     if(count <= 0) return -1;
 
-    ScanCode = buf[head++];
+    scan_code = buf[head++];
     head %= KBD_BUF_SIZE;
     count--;    //很明显这是临界资源但现在只能这样了
 
-    return (0xFF & ScanCode);
+    return (0xFF & scan_code);
 }
 
 
 int    sysc_read_kbd()
 {
-    return getScanCode();
+    return getscan_code();
 }

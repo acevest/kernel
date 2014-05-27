@@ -161,6 +161,8 @@ static inline void set_idt_gate(u32 vec, u32 handler,u8 type, u8 DPL)
     idt[vec] = _create_gate(handler, type, DPL);
 }
 
+#define set_sys_int(vect, type, DPL, handler) do { void handler(); set_idt_gate(vect, (u32)handler, type, DPL); } while(0)
+
 typedef    struct
 {
     u16    backlink, _backlink;
