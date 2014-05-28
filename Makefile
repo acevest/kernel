@@ -16,6 +16,7 @@ OBJS := $(patsubst %,%.o,$(SOURCE_FILES))
 
 ${KERNELBIN}: ${OBJS}
 	ld -M -T$(LINKSCRIPT) $(OBJS) -o $@ > $(SYSTEMMAP)
+	rm setup/setup.c.o
 
 %.S.o: %.S ${HEADER_FILES}
 	${CC} ${CFLAGS} $< -o $@
@@ -31,7 +32,10 @@ clean:
 	rm -f $(KERNELBIN) $(SYSTEMMAP)
 
 install:
-	cp KERNEL.BIN /boot/
+	cp -p KERNEL.BIN /boot/
+	sync
+	md5sum /boot/KERNEL.BIN
+	md5sum KERNEL.BIN
 
 copy:
 	./scripts/copy.sh

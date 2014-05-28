@@ -23,6 +23,7 @@
 #include <assert.h>
 #include <i8259.h>
 #include <fs.h>
+#include <ide.h>
 
 void    setup_gdt()
 {
@@ -91,9 +92,11 @@ void    setup_gate()
     set_sys_int(0x2F, INTR_GATE, PRIVILEGE_KRNL, irq_0x0F_handler);    
 }
 
+void ide_irq();
 void default_irq_handler(unsigned int irq, pt_regs_t * regs, void *dev_id)
 {
     printk("default irq handler %d \n", irq);
+    ide_irq();
 }
 
 void    setup_irqs()
