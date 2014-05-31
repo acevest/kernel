@@ -36,6 +36,7 @@ static struct
 extern void reboot();
 extern void poweroff();
 extern void ide_debug();
+extern void ide_status();
 void    kbd_handler(unsigned int irq, pt_regs_t * regs, void *dev_id)
 {
     unsigned char scan_code;
@@ -46,8 +47,11 @@ void    kbd_handler(unsigned int irq, pt_regs_t * regs, void *dev_id)
     
     printk("%02x", scan_code);
 
-    if(scan_code == 0x13)
+    if(scan_code == 0x13)   // r
         ide_debug();
+
+    if(scan_code == 0x1F)
+        ide_status();
 
     if(count < KBD_BUF_SIZE)
     {

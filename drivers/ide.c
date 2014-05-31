@@ -30,72 +30,6 @@ typedef struct _hd_drv
 
 hd_drive_t hdrv;
 
-
-void ide_read_identify()
-{
-    unsigned char *buf = (unsigned char *) alloc_one_page(0);
-
-    // Select Drive
-    outb_p(0xA0,  REG_DEVSEL(0));
-
-    //outb_p(0x00, REG_CTL(0));
-
-    outb(0,   REG_NSECTOR(0));    // High
-    outb(1,   REG_NSECTOR(0));    // Low
-
-    outb(0,    REG_LBAL(0));
-    outb(1,    REG_LBAL(0));
-
-    outb(0,    REG_LBAM(0));
-    outb(0,    REG_LBAM(0));
-
-    outb(0,    REG_LBAH(0));
-    outb(0,    REG_LBAH(0));
-
-    outb_p(HD_CMD_IDENTIFY,   REG_CMD(0));
-
-    while(1) {
-        u8_t status = inb(REG_STATUS(0));
-        printk("status %02x\n", status);
-        if(status & HD_STATUS_ERR) {
-            printk("Hard Disk Error.\n");
-            break;
-        }
-        if(!(status & HD_STATUS_BSY) && (status & HD_STATUS_DRQ)) {
-            break;
-        }
-        int i = 1000000000;
-        while(i--);
-    }
-
-    insw(REG_DATA(0), buf, 256);
-
-    int i;
-    for(i=0; i<32; i+=2)
-    {
-        unsigned char *p;
-        unsigned char c;
-#if 1
-        p = buf+ATA_IDENT_SERIAL;
-        c = p[i + 1];
-        p[i+1] = p[i];
-        p[i] = c;
-#endif
-
-        p = buf + ATA_IDENT_MODEL;
-        c = p[i + 1];
-        p[i+1] = p[i];
-        p[i] = c;
-    }
-
-    buf[ATA_IDENT_SERIAL+32] = 0;
-    buf[ATA_IDENT_MODEL+32] = 0;
-
-    printk("Hard Disk SN: %s Model: %s\n", buf + ATA_IDENT_SERIAL, buf + ATA_IDENT_MODEL);
-
-    free_pages((unsigned long)buf);
-}
-
 unsigned int iobase;
 typedef struct prd
 {
@@ -106,6 +40,7 @@ typedef struct prd
 } prd_t;
 
 #define PRD_CNT 1
+#define USE_DMA 0
 prd_t hd_prd_tbl[PRD_CNT] __attribute__((aligned(64*1024)));
 unsigned long prdt_phys = 0;
 void ide_pci_init(pci_device_t *pci)
@@ -121,10 +56,10 @@ void ide_pci_init(pci_device_t *pci)
     printk(" ide pci Base IO Address Register %08x\n", v);
     iobase = v & 0xFFFC;
 
-#if 1
-    v = inw(iobase+0);
+#if USE_DMA
+    v = inb(iobase+0);
     printk(" ide bus master ide command register primary %04x\n", v);
-    v = inw(iobase+2);
+    v = inb(iobase+2);
     printk(" ide bus master ide status register primary %04x\n", v);
 #endif
 
@@ -137,8 +72,7 @@ void ide_pci_init(pci_device_t *pci)
     }
     printk("\n");
 
-#if 1
-
+#if USE_DMA
     prd_t *p = (prd_t *) va2pa(hd_prd_tbl);
     printk("iobase %04x hd_prd_tbl %08x physical %08x sizeof prd %d\n", iobase, hd_prd_tbl, p, sizeof(prd_t));
     p->addr = 0;
@@ -160,7 +94,7 @@ void ide_pci_init(pci_device_t *pci)
 
 void ide_hd_out(Dev dev, u32 nsect, u64 sect_nr, u32 cmd)
 {
-#if 1
+#if USE_DMA
     outb(0x00, iobase);
 
     //outl(prdt_phys, iobase+4);
@@ -178,29 +112,33 @@ void ide_hd_out(Dev dev, u32 nsect, u64 sect_nr, u32 cmd)
     unsigned long long sect_nr = 0;
     unsigned int nsect = 1;
 
-    outb_p(0x00, REG_CTL(dev));
-    outb(0xE0,    REG_DEVSEL(dev));
+    outb(0x00,      REG_CTL(dev));
+    outb(0x40,      REG_DEVSEL(dev));
 
     outb(0,           REG_NSECTOR(dev));    // High
-    outb((u8)nsect,   REG_NSECTOR(dev));    // Low
-
     outb((u8)((sect_nr>>24)&0xFF),    REG_LBAL(dev));
-    outb((u8)((sect_nr>> 0)&0xFF),    REG_LBAL(dev));
-
     outb((u8)((sect_nr>>32)&0xFF),    REG_LBAM(dev));
-    outb((u8)((sect_nr>> 8)&0xFF),    REG_LBAM(dev));
-
     outb((u8)((sect_nr>>40)&0xFF),    REG_LBAH(dev));
+
+    outb((u8)nsect,   REG_NSECTOR(dev));    // Low
+    outb((u8)((sect_nr>> 0)&0xFF),    REG_LBAL(dev));
+    outb((u8)((sect_nr>> 8)&0xFF),    REG_LBAM(dev));
     outb((u8)((sect_nr>>16)&0xFF),    REG_LBAH(dev));
 
-    outb(0x25,    REG_CMD(dev));
-
-
+    outb(0x24,    REG_CMD(dev));
     }
 }
 
 
 void dump_pci_ide();
+
+void ide_status()
+{
+    u8_t idest = inb(REG_STATUS(0));
+    u8_t pcist = inb(iobase+2);
+    printk(" ide status %02x pci status %02x\n", idest, pcist);
+
+}
 void ide_debug()
 {
     u32    device;
@@ -231,9 +169,9 @@ void dump_pci_controller(unsigned int vendor, unsigned int device)
 
 void dump_pci_ide()
 {
-    //dump_pci_controller(PCI_VENDORID_INTEL, 0x7010);
     dump_pci_controller(PCI_VENDORID_INTEL, 0x2922);
     dump_pci_controller(PCI_VENDORID_INTEL, 0x2829);
+    //dump_pci_controller(PCI_VENDORID_INTEL, 0x7000);
 }
 
 void ide_irq()
@@ -242,9 +180,20 @@ void ide_irq()
 #if 1
     unsigned short *p = (unsigned short *) (0+510);
     printk("||----------------- %s:%d  status %04x SIG: %04x\n", __func__, __LINE__, sa, *p);
+    u8_t v = inb(iobase+2);
+    printk(" irq pci ide status register primary %02x\n", v);
+    v |= 0x04;
+    printk(" irq pci ide status before write %02x\n", v);
+    //outb(v, iobase+2);
+    v = inb(iobase+2);
+    printk(" irq pci ide status after write %02x\n", v);
     outb(0x00, iobase);
-    unsigned short v = inw(iobase+2);
-    printk(" irq ide status register primary %04x\n", v);
+
+    char buf[1024];
+    memset(buf, 0xEE, 1024);
+    insw(REG_DATA(0), buf, 512>>1);
+    unsigned short *s = (unsigned short *) (buf+510);
+    printk("insw %04x\n", *s);
 #else
     char buf[1024];
     memset(buf, 0xEE, 1024);
@@ -269,7 +218,7 @@ void ide_irq()
 void ide_init()
 {
     pci_device_t *pci = 0;
-    dump_pci_ide();
+    //dump_pci_ide();
 #if 0
     pci = pci_find_device(PCI_VENDORID_INTEL, 0x7010); // qemu
     if(pci == 0)
