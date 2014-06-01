@@ -100,3 +100,10 @@ extern unsigned int HD_CHL1_CTL_BASE;
 #define ATA_IDENT_MAX_LBA               120
 #define ATA_IDENT_COMMANDSETS           164
 #define ATA_IDENT_MAX_LBA_EXT           200
+
+
+
+#define PCI_IDE_CMD     0
+#define PCI_IDE_STATUS  2
+    #define PCI_IDE_STATUS_INTR 0x04
+#define PCI_IDE_PRDT    4
