@@ -25,15 +25,12 @@ pid_t get_next_pid()
 {
     static pid_t    g_pid = ROOT_TSK_PID;
 
-
     pid_t pid = g_pid;
-
-    g_pid += 123;
 
     return pid;
 }
 
-inline void load_cr3(task_union *    tsk)
+inline void load_cr3(task_union *tsk)
 {
     LOAD_CR3(tsk->cr3);
 }
@@ -61,7 +58,8 @@ void init_root_tsk()
 
     root_task.preempt_cnt = 0;
     root_task.pid    = get_next_pid();
-    root_task.ppid    = 0;
+    root_task.ppid   = 0;
+    root_task.state  = TASK_RUNNING;
     INIT_LIST_HEAD(&root_task.list);
 
     for(i=0; i<NR_OPENS; i++)
@@ -101,7 +99,7 @@ task_union *get_unused_task_pcb()
     }
 }
 
-inline    task_union * get_next_tsk()
+inline task_union *get_next_tsk()
 {
     return 0;
 }
@@ -111,7 +109,7 @@ inline void set_esp0(task_union * tsk)
     tss.esp0 = tsk->esp0;
 }
 
-inline void    switch_to()
+inline void switch_to()
 {
     load_cr3(current);
     set_esp0(current);
@@ -143,29 +141,44 @@ inline void context_switch(task_union * prev, task_union * next)
     );
 }
 
-unsigned long    schedule()
+unsigned long schedule()
 {
-    static task_union *p = &root_task;
+    static task_union *last_sel = &root_task;
+    task_union *sel = &root_task;
+    task_union *p = 0;
+    list_head_t *pos = 0;
 
-    if(p == &root_task)
-        p = list_entry(root_task.list.next, task_union, list);
-    else
-        p = &root_task;
+    list_for_each(pos, &(last_sel->list))
+    {
+        p = list_entry(pos, task_union, list);
 
-    task_union *prev, *next;
-    prev = current;
-    next = p;
+        if(p->state == TASK_RUNNING)
+        {
+            sel = p;
+            last_sel = sel;
+            break;
+        }
+    }
+
+    task_union *prev = current;
+    task_union *next = sel;
 
     context_switch(prev, next);
 }
 
+void debug_sched()
+{
+    task_union *p = list_entry(root_task.list.next, task_union, list);
+    p->state = (p->state == TASK_RUNNING) ? TASK_INTERRUPTIBLE : TASK_RUNNING;
+}
 
-inline void wake_up(pWaitQueue wq)
+
+inline void wake_up(wait_queue_t * wq)
 {
     
 }
 
-inline void sleep_on(pWaitQueue wq)
+inline void sleep_on(wait_queue_t * wq)
 {
 
 }

@@ -58,7 +58,7 @@ typedef union task_union
 
         list_head_t list;
 
-        WaitQueue    wait;
+        wait_queue_t    wait;
 
         pFile        fps[NR_OPENS];
 

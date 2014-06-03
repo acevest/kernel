@@ -11,17 +11,17 @@
  */
 #include <wait.h>
 
-void init_wait_queue(pWaitQueueHead wqh)
+void init_wait_queue(wait_queue_head_t * wqh)
 {
     INIT_LIST_HEAD(&wqh->wait);
 }
 
-void add_wait_queue(pWaitQueueHead wqh, pWaitQueue wq)
+void add_wait_queue(wait_queue_head_t * wqh, wait_queue_t * wq)
 {
     list_add_tail(wq, &wqh->wait);
 }
 
-void del_wait_queue(pWaitQueueHead wqh, pWaitQueue old)
+void del_wait_queue(wait_queue_head_t * wqh, wait_queue_t * old)
 {
     //list_del_init();
 }

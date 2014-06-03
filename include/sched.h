@@ -31,8 +31,8 @@ pid_t    get_next_pid();
 void    init_tsk_cr3(task_union *);
 
 
-inline void wake_up(pWaitQueue wq);
-inline void sleep_on(pWaitQueue wq);
+inline void wake_up(wait_queue_t * wq);
+inline void sleep_on(wait_queue_t * wq);
 
 #define TASK_CNT 64
 

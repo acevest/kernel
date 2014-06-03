@@ -91,6 +91,7 @@ int do_fork(pt_regs_t *regs, unsigned long flags)
 
 
     INIT_LIST_HEAD(&tsk->list);
+    // TODO Lock
     list_add(&tsk->list, &root_task.list);
 
     return (int)tsk->pid;

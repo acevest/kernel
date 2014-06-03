@@ -10,19 +10,16 @@
  *--------------------------------------------------------------------------
  */
 
-#ifndef    _WAIT_H
-#define _WAIT_H
+#pragma once
 
 #include <list.h>
 
-typedef    struct
+typedef struct
 {
-    ListHead wait;
-} WaitQueueHead, *pWaitQueueHead;
+    list_head_t wait;
 
-typedef    ListHead WaitQueue, *pWaitQueue;
+} wait_queue_head_t;
 
-void init_wait_queue(pWaitQueueHead wqh);
+typedef list_head_t wait_queue_t;
 
-
-#endif //_WAIT_H
+void init_wait_queue(wait_queue_head_t * wqh);

@@ -123,7 +123,7 @@ void    setup_irqs()
         request_irq(i, default_irq_handler,   "default",    "default");
     }
 
-    for(i=1; i<16; i++)
+    for(i=0; i<16; i++)
         enable_irq(i);
     asm("sti");
 }
