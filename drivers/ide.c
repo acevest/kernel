@@ -146,7 +146,7 @@ void ide_irq()
 
     insl(REG_DATA(0), buf, 512>>2);
     u16_t *s = (u16_t *) (buf+510);
-    printk("insw %04x\n", *s);
+    printk("hard disk data %04x\n", *s);
 }
 
 
@@ -218,7 +218,7 @@ void ide_read_identify()
 
 void ide_init()
 {
-    ide_read_identify();
+    //ide_read_identify();
     init_pci_controller(PCI_VENDORID_INTEL, 0x2829);
     init_pci_controller(PCI_VENDORID_INTEL, 0x7010);
 }

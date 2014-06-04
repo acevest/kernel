@@ -56,12 +56,19 @@ int    request_irq(unsigned int irq,
     const char *devname,
     void    *dev_id);
 
-static inline int enable_irq(unsigned int irq)
-{
-    return irq_desc[irq].chip->enable(irq);
-}
-static inline int disable_irq(unsigned int irq)
-{
-    return irq_desc[irq].chip->disable(irq);
-}
+int open_irq(unsigned int irq);
+int close_irq(unsigned int irq);
+
+#define enable_irq() asm("sti")
+#define disable_irq() asm("cli")
+
+#define irq_save(x) __asm__ __volatile__("pushfl; popl %0; cli":"=g"(x)::"memory")
+
+#define irq_restore(x) do { \
+    typecheck(unsigned long, x);    \
+    __asm__ __volatile__("pushl %0; popfl"::"g"(x):"memory", "cc"); \
+} while(0)
+
+
+
 #endif //_IRQ_H

@@ -88,7 +88,7 @@ int do_fork(pt_regs_t *regs, unsigned long flags)
     printk("tsk %08x child_regs esp %08x esp0 %08x\n", tsk, tsk->esp, tsk->esp0);
 
     tsk->state = TASK_RUNNING;
-
+    tsk->weight= TASK_INIT_WEIGHT;
 
     INIT_LIST_HEAD(&tsk->list);
     // TODO Lock

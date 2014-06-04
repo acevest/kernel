@@ -34,7 +34,7 @@ extern void setup_ext2();
 
 extern void reboot();
 
-#define HZ 100
+#define HZ 10
 #define CLOCK_TICK_RATE 1193180
 #define LATCH ((CLOCK_TICK_RATE + HZ/2) / HZ)
 

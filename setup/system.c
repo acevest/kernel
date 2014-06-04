@@ -124,8 +124,9 @@ void    setup_irqs()
     }
 
     for(i=0; i<16; i++)
-        enable_irq(i);
-    asm("sti");
+        open_irq(i);
+
+    enable_irq();
 }
 
 void    set_tss()

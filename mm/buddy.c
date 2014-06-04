@@ -7,6 +7,7 @@
  * ------------------------------------------------------------------------
  */
 #include <mm.h>
+#include <irq.h>
 #include <sysctl.h>
 
 struct buddy_system
@@ -93,7 +94,10 @@ unsigned long alloc_pages(unsigned int gfp_mask, unsigned int order)
     // gfp_mask
     // ...
 
+    unsigned long flags;
+    irq_save(flags);
     page_t *page = __alloc_pages(order);
+    irq_restore(flags);
 
     return (unsigned long) page2va(page);
 }
@@ -143,7 +147,10 @@ void free_pages(unsigned long addr)
 
     page_t *page = va2page(addr);
 
+    unsigned long flags;
+    irq_save(flags);
     __free_pages(page, page->order);
+    irq_restore(flags);
 }
 
 void dump_buddy_system()

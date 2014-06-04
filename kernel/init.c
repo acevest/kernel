@@ -21,12 +21,14 @@ Desc    gdt[NGDT];
 
 char __initdata kernel_init_stack[KRNL_INIT_STACK_SIZE] __attribute__ ((__aligned__(PAGE_SIZE)));
 
+static unsigned int eid = 0;
 void init_task_entry()
 {
     printk("hahahha %s\n", __func__);
+    unsigned int id = eid++;
     while(1)
     {
-        printk("i");
+        printk("%d", id);
         asm("sti;hlt;");
     }
 }
@@ -39,12 +41,24 @@ void root_task_entry()
             asm("sti;hlt;");
     }
 #endif
-    pt_regs_t regs;
-    memset((void*)&regs, 0, sizeof(regs));
-    regs.edx = (unsigned long) init_task_entry;
-    int pid = do_fork(&regs, FORK_KRNL);
+    {
+        pt_regs_t regs;
+        memset((void*)&regs, 0, sizeof(regs));
+        regs.edx = (unsigned long) init_task_entry;
+        int pid = do_fork(&regs, FORK_KRNL);
+        printk("a pid is %d\n", pid);
+    }
 
-    printk("pid is %d\n", pid);
+
+    {
+        pt_regs_t regs;
+        memset((void*)&regs, 0, sizeof(regs));
+        regs.edx = (unsigned long) init_task_entry;
+        int pid = do_fork(&regs, FORK_KRNL);
+        printk("b pid is %d\n", pid);
+    }
+
+
     while(1)
     {
         printk("r");

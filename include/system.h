@@ -39,12 +39,19 @@
 #define PT_REGS_ESP     60
 #define PT_REGS_SS      64
 
-#ifndef    ASM
+#ifndef ASM
 #include "types.h"
 #include "printk.h"
 
 #define likely(x)       __builtin_expect(!!(x), 1)
 #define unlikely(x)     __builtin_expect(!!(x), 0)
+
+#define typecheck(type, x)          \
+({  type __dummy;                   \
+    typeof(x) __dummy2;             \
+    (void)(&__dummy == &__dummy2);  \
+    1;                              \
+})
 
 void    *kmalloc(size_t size, gfp_t gfpflags);
 void    kfree(void *addr);

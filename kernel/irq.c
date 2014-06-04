@@ -110,3 +110,15 @@ int    request_irq(    unsigned int irq,
     //printk("irq: %d action:%x\n", irq, p);
     return 0;
 }
+
+
+
+int open_irq(unsigned int irq)
+{
+    return irq_desc[irq].chip->enable(irq);
+}
+
+int close_irq(unsigned int irq)
+{
+    return irq_desc[irq].chip->disable(irq);
+}

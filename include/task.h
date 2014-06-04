@@ -48,6 +48,8 @@ typedef union task_union
         unsigned long    esp;
         unsigned long    eip;
 
+        unsigned long   weight;
+
         pid_t        pid;
         pid_t        ppid;
         unsigned int state;
@@ -79,7 +81,9 @@ static inline task_union *get_current()
 
 #define current get_current()
 
-#define ROOT_TSK_PID    (0)
+#define ROOT_TSK_PID    (7)
+
+#define TASK_INIT_WEIGHT 10
 
 extern    ListHead    tsk_list;
 

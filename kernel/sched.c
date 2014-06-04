@@ -23,9 +23,9 @@ task_union root_task __attribute__((__aligned__(PAGE_SIZE)));
 
 pid_t get_next_pid()
 {
-    static pid_t    g_pid = ROOT_TSK_PID;
+    static pid_t g_pid = ROOT_TSK_PID;
 
-    pid_t pid = g_pid;
+    pid_t pid = g_pid++;
 
     return pid;
 }
@@ -60,6 +60,7 @@ void init_root_tsk()
     root_task.pid    = get_next_pid();
     root_task.ppid   = 0;
     root_task.state  = TASK_RUNNING;
+    root_task.weight = TASK_INIT_WEIGHT;
     INIT_LIST_HEAD(&root_task.list);
 
     for(i=0; i<NR_OPENS; i++)
@@ -143,22 +144,31 @@ inline void context_switch(task_union * prev, task_union * next)
 
 unsigned long schedule()
 {
-    static task_union *last_sel = &root_task;
     task_union *sel = &root_task;
     task_union *p = 0;
     list_head_t *pos = 0;
 
-    list_for_each(pos, &(last_sel->list))
+    unsigned int max_weight = 0;
+
+    list_for_each(pos, &root_task.list)
     {
         p = list_entry(pos, task_union, list);
 
-        if(p->state == TASK_RUNNING)
+        if(p->state != TASK_RUNNING)
+            continue;
+
+        if(p->weight > max_weight)
         {
+            max_weight = p->weight;
             sel = p;
-            last_sel = sel;
-            break;
+        }
+        else if(p->weight == 0)
+        {
+            p->weight = TASK_INIT_WEIGHT;
         }
     }
+
+    sel->weight--;
 
     task_union *prev = current;
     task_union *next = sel;
@@ -168,7 +178,7 @@ unsigned long schedule()
 
 void debug_sched()
 {
-    task_union *p = list_entry(root_task.list.next, task_union, list);
+    task_union *p = list_entry(current->list.next, task_union, list);
     p->state = (p->state == TASK_RUNNING) ? TASK_INTERRUPTIBLE : TASK_RUNNING;
 }
 

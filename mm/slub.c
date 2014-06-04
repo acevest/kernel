@@ -9,6 +9,7 @@
 
 #include <mm.h>
 #include <system.h>
+#include <irq.h>
 
 list_head_t slub_caches = LIST_HEAD_INIT(slub_caches);
 
@@ -174,6 +175,9 @@ static void *slub_alloc(kmem_cache_t *cache, gfp_t gfpflags)
     if(cache == 0)
         return 0;
 
+    unsigned long flags;
+    irq_save(flags);
+
     if(cache->page == 0 || cache->page->freelist == 0)
     {
         cache->page = 0;
@@ -185,6 +189,8 @@ static void *slub_alloc(kmem_cache_t *cache, gfp_t gfpflags)
         cache->page->freelist = object[0];
         cache->page->inuse++;
     }
+
+    irq_restore(flags);
 
     return object;
 }
@@ -211,6 +217,9 @@ static void __slub_free(kmem_cache_t *cache, page_t *page, void *addr)
 
 static void slub_free(kmem_cache_t *cache, page_t *page, void *addr)
 {
+    unsigned long flags;
+    irq_save(flags);
+
     void **object = addr;
 
     page->inuse--;
@@ -224,6 +233,8 @@ static void slub_free(kmem_cache_t *cache, page_t *page, void *addr)
     {
         __slub_free(cache, page, addr);
     }
+
+    irq_restore(flags);
 }
 
 void *kmem_cache_alloc(kmem_cache_t *cache, gfp_t gfpflags)
@@ -245,6 +256,9 @@ void *kmalloc(size_t size, gfp_t gfpflags)
     unsigned int i;
     kmem_cache_t *cache = 0;
 
+    unsigned long flags;
+    irq_save(flags);
+
     for(i=0; i<SLUB_INIT_CACHE_SIZE; ++i)
     {
         kmem_cache_t *p = kmalloc_caches + i;
@@ -255,26 +269,41 @@ void *kmalloc(size_t size, gfp_t gfpflags)
         }
     }
 
-    return kmem_cache_alloc(cache, gfpflags);
+    void *addr = kmem_cache_alloc(cache, gfpflags);
+
+    irq_restore(flags);
+
+    return addr;
 }
 
 void kfree(void *addr)
 {
+    unsigned long flags;
+    irq_save(flags);
+
     page_t *page = get_head_page(va2page((unsigned long)addr));
     kmem_cache_t *cache = page->cache;
 
     slub_free(cache, page, addr);
+
+    irq_restore(flags);
 }
 
 kmem_cache_t *kmem_cache_create(const char *name, size_t size, size_t align)
 {
+
     kmem_cache_t *cache = kmalloc(sizeof(kmem_cache_t), 0);
     if(cache == 0)
         return 0;
 
+    unsigned long flags;
+    irq_save(flags);
+
     kmem_cache_init(cache, name, size, align);
 
     list_add(&(cache->list), &slub_caches);
+
+    irq_restore(flags);
 
     return cache;
 }
