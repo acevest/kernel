@@ -15,7 +15,7 @@
  */
 
 
-extern void     printString(const char *buf, unsigned char color);
+extern void     vga_puts(const char *buf, unsigned char color);
 int sysc_write(int fd, const char *buf, unsigned long size)
 {
     if(size < 0) return -1;
@@ -23,7 +23,7 @@ int sysc_write(int fd, const char *buf, unsigned long size)
     switch(fd)
     {
     case 0:
-        printString(buf, 0xF);
+        vga_puts(buf, 0xF);
         break;
     default:
         return -1;

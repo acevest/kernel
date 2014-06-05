@@ -320,7 +320,7 @@ void init_slub_system()
         kmem_cache_init(cache, "kmalloc_old", 1UL<<i, KMALLOC_MIN_ALIGN);
 
         list_add(&(cache->list), &slub_caches);
-        printk("kmem objsize %d  size %d \n", cache->objsize, cache->size);
+        printk("kmem objsize %d\tsize %d \n", cache->objsize, cache->size);
     }
 
 #if 0

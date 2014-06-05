@@ -62,7 +62,7 @@ void setup_kernel()
     printk("kernel: %08x - %08x\n", &kernel_begin, &kernel_end);
 
     init_mm();
-
+    //while(1);
     setup_gdt();
     setup_idt();
     setup_gate();

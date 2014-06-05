@@ -16,11 +16,11 @@
  */
 
 char pkbuf[1024];
-extern void     printString(const char *buf, unsigned char color);
+extern void     vga_puts(const char *buf, unsigned char color);
 int printk(const char *fmtstr, ...)
 {
     char *args = (char*)(((char*)&fmtstr)+4);
     vsprintf(pkbuf, fmtstr, args);
-    printString(pkbuf,0x2);
+    vga_puts(pkbuf,0x2);
     return 0;
 }
