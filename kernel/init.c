@@ -21,13 +21,22 @@ Desc    gdt[NGDT];
 
 char __initdata kernel_init_stack[KRNL_INIT_STACK_SIZE] __attribute__ ((__aligned__(PAGE_SIZE)));
 
-static unsigned int eid = 0;
+static unsigned int eid = 1;
+void debug_sem();
 void init_task_entry()
 {
     printk("hahahha %s\n", __func__);
     unsigned int id = eid++;
+    int i = 0;
     while(1)
     {
+        i++;
+        if(i == id*100)
+        {
+            printk("---READ---%d\n", id);
+            debug_sem();
+            printk("---END----%d\n", id);
+        }
         printk("%d", id);
         asm("sti;hlt;");
     }

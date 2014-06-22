@@ -19,6 +19,7 @@ int sysc_fork(pt_regs_t regs)
 
 extern void ret_from_fork_user();
 extern void ret_from_fork_krnl();
+extern pid_t get_next_pid();
 
 int do_fork(pt_regs_t *regs, unsigned long flags)
 {

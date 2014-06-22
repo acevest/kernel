@@ -37,6 +37,10 @@ do{                             \
 #define list_entry(ptr, type, member)       \
     ((type *)((char *)(ptr)-(unsigned long)(&((type *)0)->member)))
 
+#define list_first_entry(ptr, type, member) \
+    list_entry((ptr)->next, type, member)
+
+
 #define list_for_each(pos, head)            \
     for(pos = (head)->next; pos != (head); pos = pos->next)
 
@@ -85,3 +89,4 @@ static inline int list_empty(list_head_t *head)
 {
     return head->next == head;
 }
+
