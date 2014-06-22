@@ -23,6 +23,7 @@
 *.BIN
 *.map
 *.diff
+*.swp
 bin/hw
 bin/sh
 a.*

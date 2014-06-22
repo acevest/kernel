@@ -91,15 +91,6 @@ task_union *alloc_task_union()
 }
 
 
-task_union *get_unused_task_pcb()
-{
-    unsigned int i;
-    for(i=0; i<TASK_CNT; ++i)
-    {
-
-    }
-}
-
 inline task_union *get_next_tsk()
 {
     return 0;
@@ -179,7 +170,7 @@ unsigned long schedule()
 void debug_sched()
 {
     task_union *p = list_entry(current->list.next, task_union, list);
-    p->state = (p->state == TASK_RUNNING) ? TASK_INTERRUPTIBLE : TASK_RUNNING;
+    p->state = (p->state == TASK_RUNNING) ? TASK_WAIT: TASK_RUNNING;
 }
 
 

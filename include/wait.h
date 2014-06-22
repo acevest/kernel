@@ -13,13 +13,37 @@
 #pragma once
 
 #include <list.h>
+#include <task.h>
+#include <irq.h>
 
 typedef struct
 {
-    list_head_t wait;
-
+    list_head_t task_list;
 } wait_queue_head_t;
 
-typedef list_head_t wait_queue_t;
+typedef struct
+{
+    task_union *task;
+    list_head_t task_list;
+} wait_queue_t;
+
+#define WAIT_QUEUE_HEAD_INITIALIZER(name)           \
+{                                                   \
+    .task_list  = LIST_HEAD_INIT((name).task_list)  \
+}
+
+#define DECLARE_WAIT_QUEUE_HEAD(name)               \
+    wait_queue_head_t name = WAIT_QUEUE_HEAD_INITIALIZER(name)
+
+#define WAIT_QUEUE_INITIALIZER(name)                \
+{                                                   \
+    .task       = tsk,                              \
+    .task_list  = LIST_HEAD_INIT((name).task_list)  \
+}
+
+#define DECLARE_WAIT_QUEUE(name)                    \
+    wait_queue_t name = WAIT_QUEUE_INITIALIZER(name)
+
 
 void init_wait_queue(wait_queue_head_t * wqh);
+

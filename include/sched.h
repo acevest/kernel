@@ -14,30 +14,17 @@
  *--------------------------------------------------------------------------
  */
 
-#ifndef    _SCHED_H
-#define _SCHED_H
+#pragma once
 
 #include <task.h>
-#define NR_TASKS    3
-//task_union *    tTasks[NR_TASKS];
-//void    add_task();
-//void    SetupTasks();
-//void    test_taskA();
-//void    test_taskB();
-//unsigned long schedule(pt_regs_t *    regs);
+#include <wait.h>
+
+#define FORK_USER 0
+#define FORK_KRNL 1
+
 unsigned long schedule();
-
-pid_t    get_next_pid();
-void    init_tsk_cr3(task_union *);
-
 
 inline void wake_up(wait_queue_t * wq);
 inline void sleep_on(wait_queue_t * wq);
 
-#define TASK_CNT 64
-
 extern task_union root_task;
-
-#define FORK_KRNL 1
-
-#endif //_SCHED_H

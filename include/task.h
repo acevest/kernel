@@ -23,15 +23,15 @@
 #include <types.h>
 #include <processor.h>
 #include <system.h>
-#include <wait.h>
 #include <fs.h>
 
 enum
 {
     TASK_UNUSED,
     TASK_RUNNING,
-    TASK_UNINTERRUPTIBLE,
-    TASK_INTERRUPTIBLE,
+    TASK_WAIT,
+    //TASK_UNINTERRUPTIBLE,
+    //TASK_INTERRUPTIBLE,
     TASK_EXITING
 };
 
@@ -40,7 +40,6 @@ typedef union task_union
     struct
     {
         unsigned long   preempt_cnt;
-
 
         unsigned long    esp0;    /* kernel stack */
 
@@ -60,8 +59,6 @@ typedef union task_union
 
         list_head_t list;
 
-        wait_queue_t    wait;
-
         pFile        fps[NR_OPENS];
 
     };
@@ -70,7 +67,6 @@ typedef union task_union
 } task_union;
 
 task_union *alloc_task_union();
-
 
 static inline task_union *get_current()
 {
@@ -85,9 +81,6 @@ static inline task_union *get_current()
 
 #define TASK_INIT_WEIGHT 10
 
-extern    ListHead    tsk_list;
-
-#define add_tsk2list(tsk)    list_add_tail((&(tsk)->list), &tsk_list)
 #define get_tsk_from_list(p)    list_entry((p), Task, list)
 #define del_tsk_from_list(tsk)    list_del((&tsk->list))
 #endif

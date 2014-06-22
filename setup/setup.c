@@ -82,7 +82,6 @@ void setup_kernel()
     
     void ide_init();
     ide_init();
-    ahci_init();
     printk("%s\n", version);
 
 

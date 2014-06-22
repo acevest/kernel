@@ -15,6 +15,7 @@
 #include <irq.h>
 #include <pci.h>
 #include <system.h>
+#include <semaphore.h>
 
 unsigned int HD_CHL0_CMD_BASE = 0x1F0;
 unsigned int HD_CHL1_CMD_BASE = 0x170;
@@ -101,6 +102,8 @@ void ide_status()
     printk(" ide status %02x pci status %02x\n", idest, pcist);
 
 }
+
+
 void ide_debug()
 {
     u32    device;
@@ -114,6 +117,13 @@ void ide_debug()
     ide_cmd_out(0, nsect,  sect_nr, HD_CMD_READ_EXT);
 
     printk("ide_debug\n");
+}
+
+DECLARE_MUTEX(mutex);
+void debug_sem()
+{
+    down(&mutex);
+    ide_debug();
 }
 
 void init_pci_controller(unsigned int vendor, unsigned int device)
@@ -147,10 +157,11 @@ void ide_irq()
     insl(REG_DATA(0), buf, 512>>2);
     u16_t *s = (u16_t *) (buf+510);
     printk("hard disk data %04x\n", *s);
+    up(&mutex);
 }
 
 
-void    print_ide_identify(const char *buf)
+void print_ide_identify(const char *buf)
 {
     char    *p;
     short    *ident;

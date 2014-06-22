@@ -11,17 +11,24 @@
  */
 #include <wait.h>
 
-void init_wait_queue(wait_queue_head_t * wqh)
+void init_wait_queue(wait_queue_head_t *wqh)
 {
-    INIT_LIST_HEAD(&wqh->wait);
+    INIT_LIST_HEAD(&wqh->task_list);
 }
 
-void add_wait_queue(wait_queue_head_t * wqh, wait_queue_t * wq)
+void add_wait_queue(wait_queue_head_t *wqh, wait_queue_t *wq)
 {
-    list_add_tail(wq, &wqh->wait);
+    unsigned long iflags;
+    irq_save(iflags);
+    list_add_tail(&wq->task_list, &wqh->task_list);
+    irq_restore(iflags);
 }
 
-void del_wait_queue(wait_queue_head_t * wqh, wait_queue_t * old)
+void del_wait_queue(wait_queue_head_t *wqh, wait_queue_t *wq)
 {
-    //list_del_init();
+    unsigned long iflags;
+    irq_save(iflags);
+    list_del(&wq->task_list);
+    irq_restore(iflags);
 }
+
