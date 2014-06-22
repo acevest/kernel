@@ -164,22 +164,12 @@ unsigned long schedule()
     task_union *prev = current;
     task_union *next = sel;
 
-    context_switch(prev, next);
+    if(prev != sel)
+        context_switch(prev, next);
 }
 
 void debug_sched()
 {
     task_union *p = list_entry(current->list.next, task_union, list);
     p->state = (p->state == TASK_RUNNING) ? TASK_WAIT: TASK_RUNNING;
-}
-
-
-inline void wake_up(wait_queue_t * wq)
-{
-    
-}
-
-inline void sleep_on(wait_queue_t * wq)
-{
-
 }

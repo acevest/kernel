@@ -33,7 +33,7 @@ void __down(semaphore_t *s)
     DECLARE_SEMAPHORE_WAITER(waiter, task);
     list_add_tail(&waiter.list, &s->wait_list);
 
-    while(true)
+    //while(true)
     {
         task->state = TASK_WAIT;
 
@@ -42,7 +42,7 @@ void __down(semaphore_t *s)
         disable_irq();
 
         if(waiter.up)
-            break;
+            ;//break;
     }
 }
 
@@ -69,6 +69,8 @@ void __up(semaphore_t *s)
     semaphore_waiter_t *waiter = list_first_entry(&s->wait_list, semaphore_waiter_t, list);
     list_del(&waiter->list);
     waiter->up = 1;
+
+    waiter->task->state = TASK_RUNNING;
 }
 
 

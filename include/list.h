@@ -49,6 +49,13 @@ do{                             \
         pos != (head);                      \
         pos = tmp, tmp = pos->next)
 
+#define list_for_each_entry_safe(pos, tmp, head, member)        \
+    for(pos=list_entry((head)->next, typeof(*pos), member),     \
+        tmp=list_entry(pos->member.next, typeof(*pos), member); \
+        &pos->member != (head);                                 \
+        pos=tmp, tmp=list_entry(tmp->member.next, typeof(*tmp), member))
+
+
 static inline void _list_add(list_head_t *pnew, list_head_t *prev, list_head_t *next)
 {
     next->prev    = pnew;
