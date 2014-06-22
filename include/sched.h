@@ -24,7 +24,6 @@
 
 unsigned long schedule();
 
-inline void wake_up(wait_queue_t * wq);
-inline void sleep_on(wait_queue_t * wq);
+void wake_up(wait_queue_head_t *wqh);
 
 extern task_union root_task;

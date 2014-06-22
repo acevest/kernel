@@ -35,15 +35,16 @@ typedef struct
 #define DECLARE_WAIT_QUEUE_HEAD(name)               \
     wait_queue_head_t name = WAIT_QUEUE_HEAD_INITIALIZER(name)
 
-#define WAIT_QUEUE_INITIALIZER(name)                \
+#define WAIT_QUEUE_INITIALIZER(name, tsk)           \
 {                                                   \
     .task       = tsk,                              \
     .task_list  = LIST_HEAD_INIT((name).task_list)  \
 }
 
-#define DECLARE_WAIT_QUEUE(name)                    \
-    wait_queue_t name = WAIT_QUEUE_INITIALIZER(name)
+#define DECLARE_WAIT_QUEUE(name, tsk)               \
+    wait_queue_t name = WAIT_QUEUE_INITIALIZER(name, tsk)
 
 
 void init_wait_queue(wait_queue_head_t * wqh);
-
+void add_wait_queue(wait_queue_head_t *wqh, wait_queue_t *wq);
+void del_wait_queue(wait_queue_head_t *wqh, wait_queue_t *wq);

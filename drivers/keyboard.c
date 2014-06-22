@@ -18,27 +18,15 @@
 #include <syscall.h>
 #include <stdio.h>
 #include <io.h>
-
-#define KBD_BUF_SIZE    256
-static struct
-{
-    unsigned int count;
-    unsigned int head,tail;
-    unsigned char buf[KBD_BUF_SIZE];
-} kbd_buf;
-#define count    kbd_buf.count
-#define head    kbd_buf.head
-#define tail    kbd_buf.tail
-#define buf    kbd_buf.buf
-
-
+#include <console.h>
 
 void reboot();
 void poweroff();
 void ide_debug();
 void ide_status();
 void debug_sched();
-void    kbd_handler(unsigned int irq, pt_regs_t * regs, void *dev_id)
+
+void kbd_handler(unsigned int irq, pt_regs_t * regs, void *dev_id)
 {
     unsigned char scan_code;
     scan_code = inb(0x60);
@@ -57,32 +45,21 @@ void    kbd_handler(unsigned int irq, pt_regs_t * regs, void *dev_id)
     if(scan_code == 0x14)   // t
         debug_sched();
 
-//    if(scan_code 
+    if((cnsl_rd_q.head+1) == cnsl_rd_q.tail)
+        goto end;
 
-    if(count < KBD_BUF_SIZE)
-    {
-        count++;
-        buf[tail++] = scan_code;
-        tail %= KBD_BUF_SIZE;
-    }
+    cnsl_rd_q.data[cnsl_rd_q.head++] = (char) scan_code;
+
+end:
+
+    wake_up(&cnsl_rd_q.wait);
 }
 
-inline int getscan_code()
+int sysc_read_kbd()
 {
-    unsigned int scan_code;
-    
-    //while(count <= 0);
-    if(count <= 0) return -1;
-
-    scan_code = buf[head++];
-    head %= KBD_BUF_SIZE;
-    count--;    //很明显这是临界资源但现在只能这样了
-
-    return (0xFF & scan_code);
-}
+    DECLARE_WAIT_QUEUE(wait, current);
+    add_wait_queue(&cnsl_rd_q.wait, &wait);
 
 
-int    sysc_read_kbd()
-{
-    return getscan_code();
+    return 0;
 }

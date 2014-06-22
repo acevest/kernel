@@ -33,6 +33,7 @@ extern void setup_fs();
 extern void setup_ext2();
 
 extern void reboot();
+extern void cnsl_init();
 
 #define HZ 10
 #define CLOCK_TICK_RATE 1193180
@@ -75,6 +76,9 @@ void setup_kernel()
 
     setup_sysc();
     setup_pci();
+
+    cnsl_init();
+
 
     setup_tasks();
 

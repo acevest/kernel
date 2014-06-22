@@ -19,14 +19,14 @@ typedef struct semaphore
     list_head_t wait_list;
 } semaphore_t;
 
-#define SEMAPHORE_INIT(name, n)                         \
+#define SEMAPHORE_INITIALIZER(name, n)                  \
 {                                                       \
     .cnt        = (n),                                  \
     .wait_list  = LIST_HEAD_INIT((name).wait_list)      \
 }
 
 #define DECLARE_MUTEX(name)                             \
-    semaphore_t name = SEMAPHORE_INIT(name, 1)
+    semaphore_t name = SEMAPHORE_INITIALIZER(name, 1)
 
 void down(semaphore_t *s);
 void up(semaphore_t *s);
