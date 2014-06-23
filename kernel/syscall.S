@@ -76,6 +76,7 @@ ret_from_fork_user:
 
 ret_from_fork_krnl:
     movl    PT_REGS_EDX(%esp), %edx
+    sti
     call    *%edx
     #call    do_exit
 

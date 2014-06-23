@@ -25,6 +25,7 @@ void poweroff();
 void ide_debug();
 void ide_status();
 void debug_sched();
+void vga_toggle();
 
 void kbd_handler(unsigned int irq, pt_regs_t * regs, void *dev_id)
 {
@@ -34,7 +35,7 @@ void kbd_handler(unsigned int irq, pt_regs_t * regs, void *dev_id)
     if(scan_code == 0x01) // Esc
         reboot();
     
-    printk("%02x", scan_code);
+    printk("[%02x]", scan_code);
 
     if(scan_code == 0x13)   // r
         ide_debug();
@@ -44,6 +45,9 @@ void kbd_handler(unsigned int irq, pt_regs_t * regs, void *dev_id)
 
     if(scan_code == 0x14)   // t
         debug_sched();
+
+    if(scan_code == 0x3B)   // F1
+        vga_toggle();
 
     if((cnsl_rd_q.head+1) == cnsl_rd_q.tail)
         goto end;
