@@ -142,3 +142,35 @@ void vga_puts(const char *buf, unsigned char color)
         p++;
     }
 }
+
+
+#define VIDEO_DBG_LINE 30
+
+void vga_toggle()
+{
+    static bool dbg = true;
+    unsigned long addr = 0;
+    if(dbg)
+    {
+        addr += VIDEO_DBG_LINE*CHARS_PER_LINE;
+    }
+
+    dbg = !dbg;
+    
+    outb(VGA_CRTC_START_ADDR_H,VGA_CRTC_ADDR);
+    outb((addr>>8)&0xFF,VGA_CRTC_DATA);
+    outb(VGA_CRTC_START_ADDR_L,VGA_CRTC_ADDR);
+    outb((addr)&0xFF,   VGA_CRTC_DATA);
+}
+
+void vga_dbg_puts(unsigned int line, const char *buf, unsigned char color)
+{
+    int i;
+    char *p = (char *) buf;
+    vga_char_t * const pv = (vga_char_t * const) (VIDEO_ADDR + (VIDEO_DBG_LINE + line) * BYTES_PER_LINE);
+
+    for(i=0; *p; ++i, ++p)
+    {
+        pv[i] = vga_char(*p, color);
+    }
+}

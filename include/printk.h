@@ -16,4 +16,5 @@
 
 #pragma once
 
-int    printk(char *fmtstr, ...);
+int printk(char *fmtstr, ...);
+int printd(unsigned int line, const char *fmtstr, ...);

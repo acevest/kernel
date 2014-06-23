@@ -21,7 +21,7 @@ Desc    gdt[NGDT];
 
 char __initdata kernel_init_stack[KRNL_INIT_STACK_SIZE] __attribute__ ((__aligned__(PAGE_SIZE)));
 
-static unsigned int eid = 1;
+static unsigned int eid = 2;
 void debug_sem();
 void init_task_entry()
 {
@@ -31,14 +31,15 @@ void init_task_entry()
     while(1)
     {
         i++;
+
         if(i == id*100)
         {
             printk("---READ---%d\n", id);
             debug_sem();
             printk("---END----%d\n", id);
         }
-        printk("%d", id);
-        asm("sti;hlt;");
+        printd(id, "task:%d cnt:%d", id, i);
+        //asm("sti;");
     }
 }
 
@@ -68,9 +69,10 @@ void root_task_entry()
     }
 
 
+    int cnt;
     while(1)
     {
-        printk("r");
+        printd(1, "root_task cnt %d", cnt++);
         asm("sti;hlt;");
         //sysc_test();
         //syscall0(SYSC_TEST);
