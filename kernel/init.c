@@ -21,8 +21,9 @@ Desc    gdt[NGDT];
 
 char __initdata kernel_init_stack[KRNL_INIT_STACK_SIZE] __attribute__ ((__aligned__(PAGE_SIZE)));
 
-static unsigned int eid = 2;
+static unsigned int eid = 1;
 void debug_sem();
+int debug_wait_queue_get();
 void init_task_entry()
 {
     printk("hahahha %s\n", __func__);
@@ -38,7 +39,9 @@ void init_task_entry()
             debug_sem();
             printk("---END----%d\n", id);
         }
-        printd(id, "task:%d cnt:%d", id, i);
+        printd(id+1, "task:%d cnt:%d", id, i);
+        int v = debug_wait_queue_get();
+        printk("task:%d wait queue get %d\n", id, v);
         //asm("sti;");
     }
 }
