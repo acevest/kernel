@@ -26,7 +26,7 @@ void ide_debug();
 void ide_status();
 void debug_sched();
 void vga_toggle();
-
+int debug_wait_queue_put(unsigned int v);
 void kbd_handler(unsigned int irq, pt_regs_t * regs, void *dev_id)
 {
     unsigned char scan_code;
@@ -48,6 +48,13 @@ void kbd_handler(unsigned int irq, pt_regs_t * regs, void *dev_id)
 
     if(scan_code == 0x3B)   // F1
         vga_toggle();
+
+    if(scan_code == 0x3C)   // F2
+        debug_wait_queue_put(0);
+    if(scan_code == 0x3D)   // F3
+        debug_wait_queue_put(1);
+    if(scan_code == 0x3E)   // F4
+        debug_wait_queue_put(2);
 
     if((cnsl_rd_q.head+1) == cnsl_rd_q.tail)
         goto end;

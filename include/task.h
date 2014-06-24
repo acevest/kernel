@@ -77,7 +77,13 @@ static inline task_union *get_current()
 
 #define current get_current()
 
-#define ROOT_TSK_PID    (7)
+static inline pid_t sysc_getpid()
+{
+    return current->pid;
+}
+
+
+#define ROOT_TSK_PID    (0)
 
 #define TASK_INIT_WEIGHT 10
 
