@@ -72,9 +72,13 @@ _irq_handler:
     testl   $0x0003, %eax
     jz      resume_kernel
 
+return:
+    cmpl    $0, TI_preempt_cnt(%ebp)
+    jnz     restore_regs
+
 resched:
 
-    call    schedule
+    #call    schedule
 
 restore_regs:
 
@@ -85,6 +89,5 @@ restore_regs:
     iret
 
 resume_kernel:
-    cmpl    $0, TI_preempt_cnt(%ebp)
-    jz      resched
-    jmp     restore_regs
+    # ... 
+    jmp     return

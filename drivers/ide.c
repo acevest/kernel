@@ -116,7 +116,7 @@ void ide_debug()
 
     ide_cmd_out(0, nsect,  sect_nr, HD_CMD_READ_EXT);
 
-    printk("ide_debug\n");
+    //printk("ide_debug\n");
 }
 
 DECLARE_MUTEX(mutex);
@@ -137,12 +137,12 @@ void init_pci_controller(unsigned int vendor, unsigned int device)
     }
 }
 
+char buf[1024];
 void ide_irq()
 {
     u8_t status = inb(REG_STATUS(0));
 
-    char buf[1024];
-    memset(buf, 0xEE, 1024);
+    //memset(buf, 0xEE, 1024);
 
     status = inb(drv.iobase+PCI_IDE_STATUS);
     if(0 == (status & PCI_IDE_STATUS_INTR))
@@ -154,10 +154,14 @@ void ide_irq()
     outb(status, drv.iobase+PCI_IDE_STATUS);
     outb(0x00,   drv.iobase+PCI_IDE_CMD);
 
-    insl(REG_DATA(0), buf, 512>>2);
-    u16_t *s = (u16_t *) (buf+510);
-    printk("hard disk data %04x\n", *s);
-    up(&mutex);
+    //insl(REG_DATA(0), buf, (512>>2));
+    int i;
+    unsigned short sig;
+    for(i=0; i<256; ++i)
+        sig = inw(REG_DATA(0));
+    //u16_t *s = (u16_t *) (buf+510);
+    //printd(11, "hard disk data %04x\n", sig);
+    //up(&mutex);
 }
 
 
@@ -221,7 +225,7 @@ void ide_read_identify()
     if(retires == 0)
         panic("hard disk is not ready");
 
-    char buf[1024];
+    //char buf[1024];
     insl(REG_DATA(0), buf, 512>>2);
     print_ide_identify(buf);
 }
@@ -229,7 +233,8 @@ void ide_read_identify()
 
 void ide_init()
 {
-    //ide_read_identify();
     init_pci_controller(PCI_VENDORID_INTEL, 0x2829);
     init_pci_controller(PCI_VENDORID_INTEL, 0x7010);
+    ide_read_identify();
+    printd(6, "BUFF ADDR %08x", buf);
 }

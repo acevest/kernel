@@ -39,7 +39,7 @@ void init_task_entry()
             debug_sem();
             printk("---END----%d\n", id);
         }
-        printd(id+1, "task:%d cnt:%d", id, i);
+        printd(id+1, "task:%d    [%08x] cnt:%d preempt_cnt %d", id, current, i, current->preempt_cnt);
         int v = debug_wait_queue_get();
         printk("task:%d wait queue get %d\n", id, v);
         //asm("sti;");
@@ -75,7 +75,9 @@ void root_task_entry()
     int cnt;
     while(1)
     {
-        printd(1, "root_task cnt %d", cnt++);
+        printd(1, "root_task [%08x] cnt %d preempt_cnt %08x", current, cnt++, root_task.preempt_cnt);
+        printd(9, "pid %d ppid %08x state %08x weight %08x",
+            root_task.pid, root_task.ppid, root_task.state, root_task.weight);
         asm("sti;hlt;");
         //sysc_test();
         //syscall0(SYSC_TEST);

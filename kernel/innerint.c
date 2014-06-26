@@ -90,25 +90,18 @@ void doPageFault(pt_regs_t regs)
 
     asm("movl %%cr2,%%eax":"=a"(addr));
 
-/*
-    unsigned long cr3;
-    asm("movl %%cr3,%%eax":"=a"(cr3));
-    printk("%08x errcode: %08x cr2: %08x cr3: %08x\n",
-        current, errcode, addr, cr3);
-*/
-
     unsigned long a = (unsigned long) addr;
 
     a = 0;
 
     if((errcode & PAGE_P) == 0)
     {
-        extern    void    do_no_page(void *);
+        extern void do_no_page(void *);
         do_no_page(addr);
     }
     else
     {
-        extern    void    do_wp_page(void *);
+        extern void do_wp_page(void *);
         do_wp_page(addr);
     }
 }
