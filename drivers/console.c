@@ -21,6 +21,7 @@ static void cnsl_queue_init(cnsl_queue_t *cq)
     cq->head = 0;
     cq->tail = 0;
     init_wait_queue(&cq->wait);
+
     //cq->data = kmalloc(CNSL_QUEUE_SIZE, 0);
 
     printk("console queue data addr %08x\n", cq->data);

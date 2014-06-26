@@ -58,9 +58,9 @@ void init_root_tsk()
 
     root_task.preempt_cnt = 0;
     root_task.pid    = get_next_pid();
-    root_task.ppid   = 0;
-    root_task.state  = TASK_RUNNING;
-    root_task.weight = TASK_INIT_WEIGHT;
+    root_task.ppid   = 1000;
+    root_task.state  = 2000;//TASK_RUNNING;
+    root_task.weight = 3000;//TASK_INIT_WEIGHT;
     INIT_LIST_HEAD(&root_task.list);
 
     for(i=0; i<NR_OPENS; i++)
@@ -103,7 +103,7 @@ inline void set_esp0(task_union * tsk)
 
 inline void switch_to()
 {
-    load_cr3(current);
+    LOAD_CR3(current->cr3);
     set_esp0(current);
 }
 
@@ -121,12 +121,12 @@ inline void context_switch(task_union * prev, task_union * next)
     "1:"
     "popl   %%ebp;"
     "popfl;"
-    :   [prev_esp] "=m"    (prev->esp),
-        [prev_eip] "=m"    (prev->eip),
-        "=a" (prev),    "=b" (ebx),    "=c" (ecx),
-        "=d" (edx),    "=S" (esi),    "=D" (edi)
-    :   [next_esp] "m"    (next->esp),
-        [next_eip] "m"    (next->eip),
+    :   [prev_esp] "=m" (prev->esp),
+        [prev_eip] "=m" (prev->eip),
+        "=a" (prev),"=b" (ebx), "=c" (ecx),
+        "=d" (edx), "=S" (esi), "=D" (edi)
+    :   [next_esp] "m"(next->esp),
+        [next_eip] "m"(next->eip),
         [prev]    "a" (prev),
         [next]    "d" (next)
     :    "memory"
@@ -137,11 +137,13 @@ unsigned long schedule()
 {
     task_union *sel = &root_task;
     task_union *p = 0;
-    list_head_t *pos = 0;
+    list_head_t *pos = 0, *t=0;
 
     unsigned int max_weight = 0;
 
-    list_for_each(pos, &root_task.list)
+    unsigned long iflags;
+    irq_save(iflags);
+    list_for_each_safe(pos, t, &root_task.list)
     {
         p = list_entry(pos, task_union, list);
 
@@ -158,6 +160,7 @@ unsigned long schedule()
             p->weight = TASK_INIT_WEIGHT;
         }
     }
+    irq_restore(iflags);
 
     sel->weight--;
 
@@ -165,7 +168,13 @@ unsigned long schedule()
     task_union *next = sel;
 
     if(prev != sel)
+    {
+        //unsigned long flags;
+        //irq_save(flags);
+        //LOAD_CR3(root_task.cr3);
         context_switch(prev, next);
+        //irq_restore(flags);
+    }
 }
 
 void debug_sched()

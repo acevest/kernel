@@ -18,20 +18,20 @@
 extern void vga_puts(const char *buf, unsigned char color);
 extern void vga_dbg_puts(unsigned long line, const char *buf, unsigned char color);
 
+char pkbuf[1024];
 int printk(const char *fmtstr, ...)
 {
-    char pkbuf[1024];
     char *args = (char*)(((char*)&fmtstr)+4);
     vsprintf(pkbuf, fmtstr, args);
     vga_puts(pkbuf,0x2);
     return 0;
 }
 
+char pdbuf[1024];
 int printd(unsigned int line, const char *fmtstr, ...)
 {
-    char pkbuf[1024];
     char *args = (char*)(((char*)&fmtstr)+4);
-    vsprintf(pkbuf, fmtstr, args);
-    vga_dbg_puts(line, pkbuf,0x2);
+    vsprintf(pdbuf, fmtstr, args);
+    vga_dbg_puts(line, pdbuf,0x7);
     return 0;
 }

@@ -18,7 +18,7 @@
 unsigned int ext2_start_sect;
 Inode    ext2_root_inode;
 
-void hd_read(Dev dev, u64 sect_nr, void *buf, u32 count);// { /*TODO*/ }
+void hd_read(Dev dev, u64 sect_nr, void *buf, u32 count) { /*TODO*/ }
 void    ext2_read_block(int block_id, char *buf);
 static void ext2_print_group_descriptor(pGroupDesc p);
 static void ext2_print_inode(pInode p);

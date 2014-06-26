@@ -92,8 +92,11 @@ int do_fork(pt_regs_t *regs, unsigned long flags)
     tsk->weight= TASK_INIT_WEIGHT;
 
     INIT_LIST_HEAD(&tsk->list);
-    // TODO Lock
+
+    unsigned long iflags;
+    irq_save(iflags);
     list_add(&tsk->list, &root_task.list);
+    irq_restore(iflags);
 
     return (int)tsk->pid;
 }
