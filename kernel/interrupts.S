@@ -78,7 +78,7 @@ return:
 
 resched:
 
-    #call    schedule
+    call    schedule
 
 restore_regs:
 

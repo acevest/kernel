@@ -75,8 +75,8 @@ void root_task_entry()
     int cnt;
     while(1)
     {
-        printd(1, "root_task [%08x] cnt %d preempt_cnt %08x", current, cnt++, root_task.preempt_cnt);
-        printd(9, "pid %d ppid %08x state %08x weight %08x",
+        printd(1, "root_task [%08x] cnt %d preempt_cnt %d", current, cnt++, root_task.preempt_cnt);
+        printd(9, "pid %d ppid %d state %d weight %d",
             root_task.pid, root_task.ppid, root_task.state, root_task.weight);
         asm("sti;hlt;");
         //sysc_test();

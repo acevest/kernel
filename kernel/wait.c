@@ -52,7 +52,6 @@ DECLARE_WAIT_QUEUE_HEAD(debug_wq);
 unsigned int debug_global_var = 0;
 int debug_wait_queue_get()
 {
-    return 0;
     unsigned int v = 0;
     task_union * task = current;
     DECLARE_WAIT_QUEUE(wait, task);
