@@ -26,7 +26,7 @@ void debug_sem();
 int debug_wait_queue_get();
 void init_task_entry()
 {
-    printk("hahahha %s\n", __func__);
+    printk("%s\n", __func__);
     unsigned int id = eid++;
     int i = 0;
     while(1)
