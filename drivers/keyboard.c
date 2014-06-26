@@ -35,7 +35,7 @@ void kbd_handler(unsigned int irq, pt_regs_t * regs, void *dev_id)
     if(scan_code == 0x01) // Esc
         reboot();
     
-    //printk("[%02x]", scan_code);
+    printk("[%02x]", scan_code);
 
     if(scan_code == 0x13)   // r
         ide_debug();
@@ -56,7 +56,7 @@ void kbd_handler(unsigned int irq, pt_regs_t * regs, void *dev_id)
     if(scan_code == 0x3E)   // F4
         debug_wait_queue_put(2);
 
-#if 0
+#if 1
     printd(10, "CNSL HEAD : %d", cnsl_rd_q.head);
     if((cnsl_rd_q.head+1) == cnsl_rd_q.tail)
         goto end;
@@ -64,7 +64,6 @@ void kbd_handler(unsigned int irq, pt_regs_t * regs, void *dev_id)
     cnsl_rd_q.data[cnsl_rd_q.head++] = (char) scan_code;
 
 end:
-
     wake_up(&cnsl_rd_q.wait);
 #endif
 }

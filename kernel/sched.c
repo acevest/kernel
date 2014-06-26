@@ -58,9 +58,9 @@ void init_root_tsk()
 
     root_task.preempt_cnt = 0;
     root_task.pid    = get_next_pid();
-    root_task.ppid   = 1000;
-    root_task.state  = 2000;//TASK_RUNNING;
-    root_task.weight = 3000;//TASK_INIT_WEIGHT;
+    root_task.ppid   = 0;
+    root_task.state  = TASK_RUNNING;
+    root_task.weight = TASK_INIT_WEIGHT;
     INIT_LIST_HEAD(&root_task.list);
 
     for(i=0; i<NR_OPENS; i++)

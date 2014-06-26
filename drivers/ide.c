@@ -116,7 +116,7 @@ void ide_debug()
 
     ide_cmd_out(0, nsect,  sect_nr, HD_CMD_READ_EXT);
 
-    //printk("ide_debug\n");
+    printk("ide_debug\n");
 }
 
 DECLARE_MUTEX(mutex);
@@ -142,7 +142,7 @@ void ide_irq()
 {
     u8_t status = inb(REG_STATUS(0));
 
-    //memset(buf, 0xEE, 1024);
+    memset(buf, 0xEE, 1024);
 
     status = inb(drv.iobase+PCI_IDE_STATUS);
     if(0 == (status & PCI_IDE_STATUS_INTR))
@@ -154,14 +154,11 @@ void ide_irq()
     outb(status, drv.iobase+PCI_IDE_STATUS);
     outb(0x00,   drv.iobase+PCI_IDE_CMD);
 
-    //insl(REG_DATA(0), buf, (512>>2));
-    int i;
-    unsigned short sig;
-    for(i=0; i<256; ++i)
-        sig = inw(REG_DATA(0));
-    //u16_t *s = (u16_t *) (buf+510);
-    //printd(11, "hard disk data %04x\n", sig);
-    //up(&mutex);
+    insl(REG_DATA(0), buf, (512>>2));
+    u16_t sig = *((u16_t *) (buf+510));
+    printd(11, "hard disk data %04x", sig);
+
+    up(&mutex);
 }
 
 
@@ -225,7 +222,6 @@ void ide_read_identify()
     if(retires == 0)
         panic("hard disk is not ready");
 
-    //char buf[1024];
     insl(REG_DATA(0), buf, 512>>2);
     print_ide_identify(buf);
 }
