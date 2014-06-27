@@ -47,7 +47,7 @@ typedef union task_union
         unsigned long    esp;
         unsigned long    eip;
 
-        unsigned long   weight;
+        long   weight;
 
         pid_t        pid;
         pid_t        ppid;

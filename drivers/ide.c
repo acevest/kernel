@@ -27,6 +27,8 @@ typedef struct _ide_drv
 {
     pci_device_t *pci;
     u32_t iobase;
+    unsigned long cmd_out_cnt;
+    unsigned long irq_cnt;
 } ide_drive_t;
 
 ide_drive_t drv;
@@ -74,8 +76,15 @@ void ide_pci_init(pci_device_t *pci)
     printk("channel0: cmd %04x ctl %04x channel1: cmd %04x ctl %04x\n", HD_CHL0_CMD_BASE, HD_CHL0_CTL_BASE, HD_CHL1_CMD_BASE, HD_CHL1_CTL_BASE);
 }
 
+
+void ide_printd()
+{
+    printd(MPL_IDE, "ide cmd cnt %d irq cnt %d", drv.cmd_out_cnt,  drv.irq_cnt);
+}
 void ide_cmd_out(Dev dev, u32 nsect, u64 sect_nr, u32 cmd)
 {
+    drv.cmd_out_cnt++;
+
     outb(0x00,                      REG_CTL(dev));
     outb(0x40,                      REG_DEVSEL(dev));
 
@@ -90,6 +99,8 @@ void ide_cmd_out(Dev dev, u32 nsect, u64 sect_nr, u32 cmd)
     outb((u8)((sect_nr>>16)&0xFF),  REG_LBAH(dev));
 
     outb(cmd,                       REG_CMD(dev));
+
+    ide_printd();
 }
 
 
@@ -100,7 +111,6 @@ void ide_status()
     u8_t idest = inb(REG_STATUS(0));
     u8_t pcist = inb(drv.iobase+PCI_IDE_STATUS);
     printk(" ide status %02x pci status %02x\n", idest, pcist);
-
 }
 
 
@@ -115,8 +125,6 @@ void ide_debug()
     nsect    = (count + SECT_SIZE -1)/SECT_SIZE;
 
     ide_cmd_out(0, nsect,  sect_nr, HD_CMD_READ_EXT);
-
-    printd(4, "ide_debug\n");
 }
 
 DECLARE_MUTEX(mutex);
@@ -137,7 +145,7 @@ void ide_irq()
 {
     u8_t status = inb(REG_STATUS(0));
 
-    memset(buf, 0xEE, 1024);
+    drv.irq_cnt++;
 
     status = inb(drv.iobase+PCI_IDE_STATUS);
     if(0 == (status & PCI_IDE_STATUS_INTR))
@@ -151,7 +159,8 @@ void ide_irq()
 
     insl(REG_DATA(0), buf, (512>>2));
     u16_t sig = *((u16_t *) (buf+510));
-    printd(11, "hard disk data %04x", sig);
+    printk("hard disk data %04x\n", sig);
+    ide_printd();
 
     up(&mutex);
 }
@@ -224,8 +233,9 @@ void ide_read_identify()
 
 void ide_init()
 {
+    memset((void *)&drv, 0, sizeof(drv));
     init_pci_controller(PCI_VENDORID_INTEL, 0x2829);
     init_pci_controller(PCI_VENDORID_INTEL, 0x7010);
     ide_read_identify();
-    printd(6, "BUFF ADDR %08x", buf);
+    ide_printd();
 }
