@@ -27,10 +27,14 @@ void ide_status();
 void debug_sched();
 void vga_dbg_toggle();
 int debug_wait_queue_put(unsigned int v);
+
+unsigned long kbd_cnt = 0;
 void kbd_handler(unsigned int irq, pt_regs_t * regs, void *dev_id)
 {
     unsigned char scan_code;
     scan_code = inb(0x60);
+
+    printd(MPL_KEYBOARD, "keyboard:%d scan code %02x", kbd_cnt++, scan_code);
 
     if(scan_code == 0x01) // Esc
         reboot();
@@ -46,10 +50,6 @@ void kbd_handler(unsigned int irq, pt_regs_t * regs, void *dev_id)
     if(scan_code == 0x14)   // t
         debug_sched();
 
-    if(scan_code == 0x39)   // Space
-        vga_dbg_toggle();
-
-
     if(scan_code == 0x3B)   // F1
         vga_switch(0);
     if(scan_code == 0x3C)   // F2
@@ -59,17 +59,22 @@ void kbd_handler(unsigned int irq, pt_regs_t * regs, void *dev_id)
     if(scan_code == 0x3E)   // F4
         vga_switch(3);
 
-    if(scan_code == 0x43)   // F9
+    if(scan_code == 0x3F)   // F5
         debug_wait_queue_put(0);
-    if(scan_code == 0x44)   // F10
+    if(scan_code == 0x40)   // F6
         debug_wait_queue_put(1);
-    if(scan_code == 0x57)   // F11
+    if(scan_code == 0x41)   // F7
         debug_wait_queue_put(2);
-    if(scan_code == 0x58)   // F12
+    if(scan_code == 0x42)   // F8
         debug_wait_queue_put(7);
 
+    if(scan_code == 0x43);  // F9
+    if(scan_code == 0x44);  // F10
+    if(scan_code == 0x57);  // F11
+    if(scan_code == 0x58)   // F12
+        vga_dbg_toggle();
+
 #if 1
-    printd(10, "CNSL HEAD : %d", cnsl_rd_q.head++);
     cnsl_rd_q.data[0] = (char) scan_code;
     wake_up(&cnsl_rd_q.wait);
 #endif

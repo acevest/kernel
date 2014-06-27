@@ -21,18 +21,15 @@ Desc    gdt[NGDT];
 
 char __initdata kernel_init_stack[KRNL_INIT_STACK_SIZE] __attribute__ ((__aligned__(PAGE_SIZE)));
 
-static unsigned int eid = 1;
-void debug_sem();
 int debug_wait_queue_get();
 void init_task_entry()
 {
-    printk("%s\n", __func__);
-    unsigned int id = eid++;
-    int i = 0;
+    int cnt = 0;
+    pid_t id = sysc_getpid();
+
     while(1)
     {
-        i++;
-        printd(id+1, "task:%d    [%08x] cnt:%d preempt_cnt %d", id, current, i, current->preempt_cnt);
+        printd(MPL_TASK_1+id-1, "task:%d [%08x] weight %d cnt %d", id, current, current->weight, cnt++);
         int v = debug_wait_queue_get();
         printk("task:%d wait queue get %d\n", id, v);
     }
@@ -59,11 +56,10 @@ void root_task_entry()
     }
 
 
-    int cnt;
+    int cnt = 0;
     while(1)
     {
-        printd(1, "root_task [%08x] cnt:%d preempt_cnt %d", current, cnt++, root_task.preempt_cnt);
-        printd(9, "pid %d ppid %d state %d weight %d", root_task.pid, root_task.ppid, root_task.state, root_task.weight);
+        printd(MPL_ROOT, "root:0 [%08x] weight %d cnt %d", current, root_task.weight, cnt++);
         asm("sti;hlt;");
         //sysc_test();
         //syscall0(SYSC_TEST);

@@ -168,13 +168,7 @@ unsigned long schedule()
     task_union *next = sel;
 
     if(prev != sel)
-    {
-        //unsigned long flags;
-        //irq_save(flags);
-        //LOAD_CR3(root_task.cr3);
         context_switch(prev, next);
-        //irq_restore(flags);
-    }
 }
 
 void debug_sched()

@@ -18,3 +18,16 @@
 
 int printk(char *fmtstr, ...);
 int printd(unsigned int line, const char *fmtstr, ...);
+
+// monitor print line
+enum {
+    MPL_CLOCK,
+    MPL_KEYBOARD,
+    MPL_IDE,
+    MPL_PREEMPT,
+    MPL_ROOT,
+    MPL_TASK_1,
+    MPL_TASK_2,
+    MPL_END
+};
+

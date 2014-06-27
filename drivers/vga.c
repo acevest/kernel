@@ -11,6 +11,7 @@
  */
 
 #include <io.h>
+#include <irq.h>
 
 typedef struct {
     u8_t    c;
@@ -81,10 +82,13 @@ void vga_set_cursor_pos(vga_screen_t *s)
     base = s->id*MAX_LINES_PER_SCREEN*CHARS_PER_LINE;
     offset = base + s->offset;
 
+    unsigned long flags;
+    irq_save(flags);
     outb(VGA_CRTC_CURSOR_H,     VGA_CRTC_ADDR);
     outb((offset>>8) & 0xFF,    VGA_CRTC_DATA);
     outb(VGA_CRTC_CURSOR_L,     VGA_CRTC_ADDR);
     outb(offset & 0xFF,         VGA_CRTC_DATA);
+    irq_restore(flags);
 }
 
 void vga_clear(vga_screen_t *s, unsigned int b, unsigned int e)
