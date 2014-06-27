@@ -32,28 +32,15 @@ void init_task_entry()
     while(1)
     {
         i++;
-
-        if(i == id*100)
-        {
-            printk("---READ---%d\n", id);
-            debug_sem();
-            printk("---END----%d\n", id);
-        }
         printd(id+1, "task:%d    [%08x] cnt:%d preempt_cnt %d", id, current, i, current->preempt_cnt);
         int v = debug_wait_queue_get();
         printk("task:%d wait queue get %d\n", id, v);
-        //asm("sti;");
     }
 }
 
 
 void root_task_entry()
 {
-#if 0
-    while(1) {
-            asm("sti;hlt;");
-    }
-#endif
     {
         pt_regs_t regs;
         memset((void*)&regs, 0, sizeof(regs));
@@ -75,9 +62,8 @@ void root_task_entry()
     int cnt;
     while(1)
     {
-        printd(1, "root_task [%08x] cnt %d preempt_cnt %d", current, cnt++, root_task.preempt_cnt);
-        printd(9, "pid %d ppid %d state %d weight %d",
-            root_task.pid, root_task.ppid, root_task.state, root_task.weight);
+        printd(1, "root_task [%08x] cnt:%d preempt_cnt %d", current, cnt++, root_task.preempt_cnt);
+        printd(9, "pid %d ppid %d state %d weight %d", root_task.pid, root_task.ppid, root_task.state, root_task.weight);
         asm("sti;hlt;");
         //sysc_test();
         //syscall0(SYSC_TEST);

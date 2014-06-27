@@ -34,6 +34,7 @@ extern void setup_ext2();
 
 extern void reboot();
 extern void cnsl_init();
+extern void vga_init();
 
 #define HZ 10
 #define CLOCK_TICK_RATE 1193180
@@ -59,6 +60,8 @@ const char *version =
 void setup_kernel()
 {
     extern char kernel_begin, kernel_end;
+
+    vga_init();
 
     printk("kernel: %08x - %08x\n", &kernel_begin, &kernel_end);
 

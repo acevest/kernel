@@ -15,15 +15,16 @@
  *--------------------------------------------------------------------------
  */
 
-extern void vga_puts(const char *buf, unsigned char color);
+extern void vga_puts(unsigned int nr, const char *buf, unsigned char color);
 extern void vga_dbg_puts(unsigned long line, const char *buf, unsigned char color);
 
 char pkbuf[1024];
+extern int bvga;
 int printk(const char *fmtstr, ...)
 {
     char *args = (char*)(((char*)&fmtstr)+4);
     vsprintf(pkbuf, fmtstr, args);
-    vga_puts(pkbuf,0x2);
+    vga_puts(0, pkbuf,0x2);
     return 0;
 }
 
