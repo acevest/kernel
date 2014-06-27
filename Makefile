@@ -4,7 +4,7 @@ SYSTEMMAP	= System.map
 KERNELBIN	= KERNEL.BIN
 LINKSCRIPT	= scripts/link.ld
 
-SRC_DIRS = boot setup mm lib fs kernel drivers pci
+SRC_DIRS = boot mm lib fs kernel drivers
 INC_DIRS = include drivers
 
 CFLAGS += ${INC_DIRS:%=-I%}
@@ -16,7 +16,7 @@ OBJS := $(patsubst %,%.o,$(SOURCE_FILES))
 
 ${KERNELBIN}: ${OBJS}
 	ld -M -T$(LINKSCRIPT) $(OBJS) -o $@ > $(SYSTEMMAP)
-	rm setup/setup.c.o
+	rm kernel/setup.c.o
 
 %.S.o: %.S ${HEADER_FILES}
 	${CC} ${CFLAGS} $< -o $@

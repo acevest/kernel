@@ -1,6 +1,6 @@
 /*
  *--------------------------------------------------------------------------
- *   File Name: setuppci.c
+ *   File Name: pci.c
  * 
  * Description: none
  * 

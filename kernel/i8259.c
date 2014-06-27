@@ -24,8 +24,6 @@ void mask_i8259()
     //mask all of 8259
     outb_p(0xFF, PIC_MASTER_IMR);
     outb_p(0xFF, PIC_SLAVE_IMR);
-    //outb_p(0x0, PIC_MASTER_IMR);
-    //outb_p(0x0, PIC_SLAVE_IMR);
 }
 
 void init_i8259()

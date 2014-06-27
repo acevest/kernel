@@ -256,6 +256,7 @@ extern    System system;
 #define INT_VECT_PAGEFAULT       0xE
 #define INT_VECT_COPROCERR       0x10
 #endif
+
 #define INT_VECT_IRQ0    0x20
 #define INT_VECT_IRQ8    0x28
 
