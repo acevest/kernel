@@ -25,7 +25,7 @@ void poweroff();
 void ide_debug();
 void ide_status();
 void debug_sched();
-void vga_toggle();
+void vga_dbg_toggle();
 int debug_wait_queue_put(unsigned int v);
 void kbd_handler(unsigned int irq, pt_regs_t * regs, void *dev_id)
 {
@@ -46,24 +46,31 @@ void kbd_handler(unsigned int irq, pt_regs_t * regs, void *dev_id)
     if(scan_code == 0x14)   // t
         debug_sched();
 
-    if(scan_code == 0x3B)   // F1
-        vga_toggle();
+    if(scan_code == 0x39)   // Space
+        vga_dbg_toggle();
 
+
+    if(scan_code == 0x3B)   // F1
+        vga_switch(0);
     if(scan_code == 0x3C)   // F2
-        debug_wait_queue_put(0);
+        vga_switch(1);
     if(scan_code == 0x3D)   // F3
-        debug_wait_queue_put(1);
+        vga_switch(2);
     if(scan_code == 0x3E)   // F4
+        vga_switch(3);
+
+    if(scan_code == 0x43)   // F9
+        debug_wait_queue_put(0);
+    if(scan_code == 0x44)   // F10
+        debug_wait_queue_put(1);
+    if(scan_code == 0x57)   // F11
         debug_wait_queue_put(2);
+    if(scan_code == 0x58)   // F12
+        debug_wait_queue_put(7);
 
 #if 1
-    printd(10, "CNSL HEAD : %d", cnsl_rd_q.head);
-    if((cnsl_rd_q.head+1) == cnsl_rd_q.tail)
-        goto end;
-
-    cnsl_rd_q.data[cnsl_rd_q.head++] = (char) scan_code;
-
-end:
+    printd(10, "CNSL HEAD : %d", cnsl_rd_q.head++);
+    cnsl_rd_q.data[0] = (char) scan_code;
     wake_up(&cnsl_rd_q.wait);
 #endif
 }

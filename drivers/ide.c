@@ -116,15 +116,10 @@ void ide_debug()
 
     ide_cmd_out(0, nsect,  sect_nr, HD_CMD_READ_EXT);
 
-    printk("ide_debug\n");
+    printd(4, "ide_debug\n");
 }
 
 DECLARE_MUTEX(mutex);
-void debug_sem()
-{
-    down(&mutex);
-    ide_debug();
-}
 
 void init_pci_controller(unsigned int vendor, unsigned int device)
 {
