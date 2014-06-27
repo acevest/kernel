@@ -85,6 +85,5 @@ int sysc_read_kbd()
     DECLARE_WAIT_QUEUE(wait, current);
     add_wait_queue(&cnsl_rd_q.wait, &wait);
 
-
     return 0;
 }
