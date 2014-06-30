@@ -104,6 +104,15 @@ extern unsigned int HD_CHL1_CTL_BASE;
 
 
 #define PCI_IDE_CMD     0
+    #define PCI_IDE_CMD_STOP    0x00
+    #define PCI_IDE_CMD_READ    0x00
+    #define PCI_IDE_CMD_START   0x01
+    #define PCI_IDE_CMD_WRITE   0x08
 #define PCI_IDE_STATUS  2
-    #define PCI_IDE_STATUS_INTR 0x04
+    #define PCI_IDE_STATUS_ACT      0x01
+    #define PCI_IDE_STATUS_ERR      0x02
+    #define PCI_IDE_STATUS_INTR     0x04
+    #define PCI_IDE_STATUS_DRV0     0x20
+    #define PCI_IDE_STATUS_DRV1     0x40
+    #define PCI_IDE_STATUS_SIMPLEX  0x80
 #define PCI_IDE_PRDT    4

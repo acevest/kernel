@@ -61,6 +61,7 @@ void init_root_tsk()
     root_task.ppid   = 0;
     root_task.state  = TASK_RUNNING;
     root_task.weight = TASK_INIT_WEIGHT;
+    strcpy(root_task.name, "root_task");
     INIT_LIST_HEAD(&root_task.list);
 
     for(i=0; i<NR_OPENS; i++)

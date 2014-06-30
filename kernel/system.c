@@ -94,10 +94,15 @@ void setup_gate()
 }
 
 void ide_irq();
-void default_irq_handler(unsigned int irq, pt_regs_t * regs, void *dev_id)
+void default_ide_irq_handler(unsigned int irq, pt_regs_t * regs, void *dev_id)
 {
     printk("default irq handler %d \n", irq);
     ide_irq();
+}
+
+void default_irq_handler(unsigned int irq, pt_regs_t * regs, void *dev_id)
+{
+    printk("default irq handler %d \n", irq);
 }
 
 void setup_irqs()
@@ -119,17 +124,19 @@ void setup_irqs()
 
     request_irq(0x00, clk_handler,    "Intel 8254",    "Clock Chip");
     request_irq(0x01, kbd_handler,    "Intel 8042",    "PS/2 Keyboard");
-    for(i=3; i<16; i++)
+    request_irq(0x0A, default_ide_irq_handler,    "hard",    "IDE");
+    request_irq(0x0E, default_ide_irq_handler,    "hard",    "IDE");
+    for(i=0; i<16; i++)
     {
-        request_irq(i, default_irq_handler,   "default",    "default");
+        if(i != 0 && i != 1 && i != 10 && i != 14)
+            request_irq(i, default_irq_handler,   "default",    "default");
     }
 
     for(i=0; i<16; i++)
         open_irq(i);
 
     enable_irq();
-}
-
+} 
 void set_tss()
 {
     pTSS p = &tss;

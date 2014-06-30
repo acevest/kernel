@@ -35,26 +35,19 @@ void init_task_entry()
     }
 }
 
+void kernel_task(void *entry)
+{
+    pt_regs_t regs;
+    memset((void*)&regs, 0, sizeof(regs));
+    regs.edx = (unsigned long) entry;
+    int pid = do_fork(&regs, FORK_KRNL);
+    printk("kernel task pid is %d\n", pid);
+}
 
 void root_task_entry()
 {
-    {
-        pt_regs_t regs;
-        memset((void*)&regs, 0, sizeof(regs));
-        regs.edx = (unsigned long) init_task_entry;
-        int pid = do_fork(&regs, FORK_KRNL);
-        printk("a pid is %d\n", pid);
-    }
-
-
-    {
-        pt_regs_t regs;
-        memset((void*)&regs, 0, sizeof(regs));
-        regs.edx = (unsigned long) init_task_entry;
-        int pid = do_fork(&regs, FORK_KRNL);
-        printk("b pid is %d\n", pid);
-    }
-
+    kernel_task(init_task_entry);
+    kernel_task(init_task_entry);
 
     int cnt = 0;
     while(1)
