@@ -24,6 +24,7 @@ enum {
     MPL_CLOCK,
     MPL_KEYBOARD,
     MPL_IDE,
+    MPL_IDE_INTR,
     MPL_PREEMPT,
     MPL_ROOT,
     MPL_TASK_1,
