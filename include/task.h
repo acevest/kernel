@@ -30,32 +30,34 @@ enum
     TASK_UNUSED,
     TASK_RUNNING,
     TASK_WAIT,
-    //TASK_UNINTERRUPTIBLE,
-    //TASK_INTERRUPTIBLE,
     TASK_EXITING
 };
+
+#define TASK_NAME_SIZE  32
 
 typedef union task_union
 {
     struct
     {
-        unsigned long   preempt_cnt;
+        unsigned long preempt_cnt;
 
-        unsigned long    esp0;    /* kernel stack */
+        unsigned long esp0;    /* kernel stack */
 
         /* for context switch */
-        unsigned long    esp;
-        unsigned long    eip;
+        unsigned long esp;
+        unsigned long eip;
 
-        long   weight;
+        long weight;
 
-        pid_t        pid;
-        pid_t        ppid;
+        pid_t pid;
+        pid_t ppid;
         unsigned int state;
-        long        exit_code;
+        long exit_code;
         unsigned long cr3;
 
-        long        tty;
+        long tty;
+
+        char name[TASK_NAME_SIZE];
 
         list_head_t list;
 

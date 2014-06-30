@@ -27,6 +27,7 @@ void ide_status();
 void debug_sched();
 void vga_dbg_toggle();
 int debug_wait_queue_put(unsigned int v);
+void ide_dma_pci_lba48();
 
 unsigned long kbd_cnt = 0;
 void kbd_handler(unsigned int irq, pt_regs_t * regs, void *dev_id)
@@ -40,6 +41,15 @@ void kbd_handler(unsigned int irq, pt_regs_t * regs, void *dev_id)
         reboot();
     
     printk("[%02x]", scan_code);
+
+    if(scan_code == 0x09)   // 8
+        ide_dma_pci_lba48();
+
+    if(scan_code == 0x0B)   // 0
+    {
+        asm("cli;");
+        while(1);
+    }
 
     if(scan_code == 0x13)   // r
         ide_debug();
@@ -70,7 +80,8 @@ void kbd_handler(unsigned int irq, pt_regs_t * regs, void *dev_id)
 
     if(scan_code == 0x43);  // F9
     if(scan_code == 0x44);  // F10
-    if(scan_code == 0x57);  // F11
+    if(scan_code == 0x57)   // F11
+        poweroff();
     if(scan_code == 0x58)   // F12
         vga_dbg_toggle();
 

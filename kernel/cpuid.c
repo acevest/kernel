@@ -18,7 +18,7 @@
 #define TEST_FEATURE(val,bit,fea)\
 do{\
     if( ISSET_BIT(val,bit) )\
-        /*printk(" %s",fea)*/;\
+        printk(" %s",fea);\
 }while(0);
 
 typedef struct reg{ unsigned long eax,ebx,ecx,edx; }Reg,*pReg;
@@ -72,7 +72,7 @@ void    detect_cpu()
     memcpy(pbs + 36 , &r.ebx, 4);
     memcpy(pbs + 40 , &r.ecx, 4);
     memcpy(pbs + 44 , &r.edx, 4);
-    //printk("Model Name: %s\n",pbs);
+    printk("Model Name: %s\n",pbs);
     printk("%s", pbs);
 
      /**********************Get Number of Processors********************/
@@ -91,8 +91,8 @@ void    detect_cpu()
     TEST_FEATURE(fv, 7, "mce")
     TEST_FEATURE(fv, 8, "cxs")
     TEST_FEATURE(fv, 9, "apic")
-    //TEST_FEATURE(fv, 10, "Reserved")
-    //TEST_FEATURE(fv, 11, "SYSENTER/SYSEXIT")
+    TEST_FEATURE(fv, 10, "Reserved")
+    TEST_FEATURE(fv, 11, "SYSENTER/SYSEXIT")
     TEST_FEATURE(fv, 12, "mttr")
     TEST_FEATURE(fv, 13, "pge")    
     TEST_FEATURE(fv, 14, "mca")

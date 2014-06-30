@@ -34,6 +34,7 @@ typedef struct {
 
 #define TAB_ALIGN               4
 #define TAB_MASK                (TAB_ALIGN-1)
+
 typedef struct {
     unsigned int id;
     vga_char_t *base;
@@ -110,7 +111,7 @@ void vga_scroll_up(vga_screen_t *s)
     if(delta <= 0)
         return;
 
-    vga_char_t *base = s->base; //(vga_char_t *) VIDEO_ADDR;
+    vga_char_t *base = s->base;
     vga_char_t *head = base + delta*CHARS_PER_LINE;
     vga_char_t *empt = base + (LINES_PER_SCREEN-delta)*CHARS_PER_LINE;
 
@@ -197,8 +198,6 @@ void vga_init()
     }
     bvga = 1;
 }
-
-
 
 void vga_switch(unsigned int nr)
 {

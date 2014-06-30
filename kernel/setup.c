@@ -73,7 +73,6 @@ void setup_kernel()
 
     setup_i8253();
 
-    detect_cpu();
 
     set_tss();
 
@@ -89,8 +88,10 @@ void setup_kernel()
     
     void ide_init();
     ide_init();
-    printk("%s\n", version);
 
+    detect_cpu();
+
+    printk("%s\n", version);
 
     return;
     while(1); // TODO MODIFY CODE BELOW
