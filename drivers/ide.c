@@ -34,6 +34,8 @@ typedef struct _ide_drv
     unsigned int bus_cmd;
     unsigned int bus_status;
     unsigned int bus_prdt;
+
+    unsigned int read_mode;
 } ide_drive_t;
 
 ide_drive_t drv;
@@ -94,6 +96,7 @@ void ide_printd()
 void ide_cmd_out(Dev dev, u32 nsect, u64 sect_nr, u32 cmd)
 {
     drv.cmd_cnt++;
+    drv.read_mode = cmd;
 
     outb(0x00,                      REG_CTL(dev));
     outb(0x40,                      REG_DEVSEL(dev));
@@ -168,13 +171,22 @@ void ide_irq()
     outb(status, drv.bus_status);
     outb(0x00,   drv.bus_cmd);
 
-    insl(REG_DATA(0), buf, (512>>2));
-    u16_t sig = *((u16_t *) (buf+510));
-    printk("hard disk data %04x\n", sig);
-    sig = *((u16_t *) (data+510));
-    printk("hard disk data %04x\n", sig);
+    u16_t sig = 0;
+    if(drv.read_mode == HD_CMD_READ_EXT)
+    {
+        insl(REG_DATA(0), buf, (512>>2));
+        sig = *((u16_t *) (buf+510));
+    }
+    if(drv.read_mode == HD_CMD_READ_DMA)
+    {
+        sig = *((u16_t *) (data+510));
+    }
     ide_printd();
 
+    printk("hard disk sig %04x read mode %x cnt %d\n", sig, drv.read_mode, drv.irq_cnt);
+    printd(MPL_IDE_INTR, "hard disk sig %x read mode %x cnt %d", sig, drv.read_mode, drv.irq_cnt);
+
+    outb(PCI_IDE_CMD_STOP, drv.bus_cmd);
     up(&mutex);
 }
 
@@ -256,6 +268,7 @@ unsigned long gprdt = 0;
 
 void ide_dma_pci_lba48()
 {
+    drv.read_mode = HD_CMD_READ_DMA;
 #if 1
     memset((void *)&prd, 0, sizeof(prd));
     unsigned long addr = alloc_one_page(0);
@@ -269,23 +282,14 @@ void ide_dma_pci_lba48()
     printd(16, "gprdt %08x &prdt %08x prd.addr %08x addr %08x",
             gprdt, &prd, prd.addr, addr);
 
-#if 0
-    pci_write_config_word(PCI_IDE_CMD_STOP, drv.bus_cmd);
-    unsigned char status;
-    status = pci_read_config_long(drv.bus_status);
-    pci_write_config_word(status | PCI_IDE_STATUS_INTR | PCI_IDE_STATUS_ERR, drv.bus_status);
-    pci_write_config_long(gprdt, drv.bus_prdt);
-    pci_write_config_word(PCI_IDE_CMD_WRITE, drv.bus_cmd);
-#else
     outb(PCI_IDE_CMD_STOP, drv.bus_cmd);
     unsigned short status = inb(drv.bus_status);
     outb(status | PCI_IDE_STATUS_INTR | PCI_IDE_STATUS_ERR, drv.bus_status);
     outl(gprdt, drv.bus_prdt);
     outb(PCI_IDE_CMD_WRITE, drv.bus_cmd);
 #endif
-#endif
 
-#if 1
+#if 0
     while ( 1 )
     {
         status = inb(HD_CHL0_CMD_BASE+HD_STATUS);
@@ -295,12 +299,12 @@ void ide_dma_pci_lba48()
             break;
         }
     }
-
 #endif
+
     outb(0x00, HD_CHL0_CMD_BASE+HD_DEVSEL);
     DELAY400NS;
 
-#if 1
+#if 0
     while ( 1 )
     {
         status = inb(HD_CHL0_CMD_BASE+HD_STATUS);
@@ -330,22 +334,14 @@ void ide_dma_pci_lba48()
 
     outb(0x40,  HD_CHL0_CMD_BASE+HD_DEVSEL);
 
-    outb(0x25, HD_CHL0_CMD_BASE+HD_CMD);
+    outb(HD_CMD_READ_DMA,  HD_CHL0_CMD_BASE+HD_CMD);
 
-#if 0
-    pci_read_config_word(drv.bus_cmd);
-    pci_read_config_word(drv.bus_status);
-    pci_write_config_word(PCI_IDE_CMD_WRITE|PCI_IDE_CMD_START, drv.bus_cmd);
-    pci_read_config_word(drv.bus_cmd);
-    pci_read_config_word(drv.bus_status);
-#else
     inb(drv.bus_cmd);
     inb(drv.bus_status);
     unsigned short w = inb(drv.bus_cmd);
     outb(w|PCI_IDE_CMD_WRITE|PCI_IDE_CMD_START, drv.bus_cmd);
     inb(drv.bus_cmd);
     inb(drv.bus_status);
-#endif
 }
 
 void ide_init()
@@ -353,7 +349,7 @@ void ide_init()
     memset((void *)&drv, 0, sizeof(drv));
     init_pci_controller(PCI_VENDORID_INTEL, 0x2829);
     init_pci_controller(PCI_VENDORID_INTEL, 0x7010);
-#if 0
+#if 1
     ide_read_identify();
     ide_printd();
 #endif
