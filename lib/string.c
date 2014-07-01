@@ -18,7 +18,8 @@ size_t strlen(const char *str)
     while(*str++) i++;
     return i;
 }
-int    strcmp(const char *a, const char *b)
+
+int strcmp(const char *a, const char *b)
 {
     int delta;
     while (*a || *b)
@@ -30,7 +31,7 @@ int    strcmp(const char *a, const char *b)
     return 0;
 }
 
-int    strncmp(const char *a, const char *b, size_t count)
+int strncmp(const char *a, const char *b, size_t count)
 {
     unsigned char c1, c2;
     int delta;
@@ -52,7 +53,7 @@ int    strncmp(const char *a, const char *b, size_t count)
     return 0;
 }
 
-char    *strcat(char *dest, const char *src)
+char *strcat(char *dest, const char *src)
 {
     char *tmp = dest;
     while(*dest) dest++;

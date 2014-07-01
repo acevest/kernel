@@ -15,6 +15,9 @@ enum {
 
 int write_buf(char *buf, const char *str, char fillch, int charcnt, int align)
 {
+    if(str == 0)
+        return 0;
+
     int len = strlen(str);
     int delta_char_cnt = charcnt - len;
 

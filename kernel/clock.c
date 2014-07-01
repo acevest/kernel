@@ -15,10 +15,10 @@
 
 static unsigned int jiffies = 0;
 
-void    clk_handler(unsigned int irq, pt_regs_t * regs, void *dev_id)
+void clk_handler(unsigned int irq, pt_regs_t * regs, void *dev_id)
 {
     jiffies++;
 
     printk("^");
-    printd(0, "clock:%d", jiffies);
+    printd(MPL_CLOCK, "clock:%d", jiffies);
 }

@@ -75,6 +75,7 @@ typedef struct pci_device
     unsigned int command;
     unsigned int status;
     unsigned int revision;
+    unsigned int progif;
     unsigned int classcode;
     unsigned int hdr_type;
     //unsigned int bar0, bar1, bar2, bar3, bar4, bar5;
@@ -182,6 +183,7 @@ typedef union pci_device
 #define PCI_VENDORID_REALTEK        0x10EC
 
 pci_device_t *pci_find_device(unsigned int vendor, unsigned int device);
+pci_device_t *pci_find_device_by_classcode(unsigned int classcode);
 
 static inline u32 pci_cmd(pci_device_t *pci, unsigned int reg) {
     return PCI_CMD(pci->bus, pci->dev, pci->devfn, reg);
