@@ -77,7 +77,6 @@ void setup_kernel()
     set_tss();
 
     setup_sysc();
-    setup_pci();
 
     cnsl_init();
 
@@ -86,12 +85,15 @@ void setup_kernel()
 
     setup_irqs();
     
+    setup_pci();
+
     void ide_init();
     ide_init();
 
     detect_cpu();
 
     printk("%s\n", version);
+    printd(0, "-----------------------------------------------------------");
 
     return;
     while(1); // TODO MODIFY CODE BELOW

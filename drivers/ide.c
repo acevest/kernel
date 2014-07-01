@@ -26,7 +26,8 @@ unsigned int HD_CHL1_CTL_BASE = 0x376;
 typedef struct _ide_drv
 {
     pci_device_t *pci;
-    unsigned long cmd_cnt;
+    unsigned long pio_cnt;
+    unsigned long dma_cnt;
     unsigned long irq_cnt;
 
     unsigned int iobase;
@@ -91,12 +92,14 @@ void ide_pci_init(pci_device_t *pci)
 
 void ide_printd()
 {
-    printd(MPL_IDE, "ide cmd cnt %d irq cnt %d", drv.cmd_cnt,  drv.irq_cnt);
+    printd(MPL_IDE, "ide pio_cnt %d dma_cnt %d irq_cnt %d", drv.pio_cnt,  drv.dma_cnt, drv.irq_cnt);
 }
 void ide_cmd_out(Dev dev, u32 nsect, u64 sect_nr, u32 cmd)
 {
-    drv.cmd_cnt++;
+    drv.pio_cnt++;
     drv.read_mode = cmd;
+
+    ide_printd();
 
     outb(0x00,                      REG_CTL(dev));
     outb(0x40,                      REG_DEVSEL(dev));
@@ -112,8 +115,6 @@ void ide_cmd_out(Dev dev, u32 nsect, u64 sect_nr, u32 cmd)
     outb((u8)((sect_nr>>16)&0xFF),  REG_LBAH(dev));
 
     outb(cmd,                       REG_CMD(dev));
-
-    ide_printd();
 }
 
 
@@ -142,13 +143,13 @@ void ide_debug()
 
 DECLARE_MUTEX(mutex);
 
-void init_pci_controller(unsigned int vendor, unsigned int device)
+void init_pci_controller(unsigned int classcode)
 {
-    pci_device_t *pci = pci_find_device(vendor, device);
-    if(pci != 0)
+    pci_device_t *pci = pci_find_device_by_classcode(classcode);
+    if(pci != 0 && pci->intr_line < 16)
     {
-        printk("Found PCI Vendor %04x Device %04x Class %04x IntrLine %d\n", vendor, device, pci->classcode, pci->intr_line);
-        printd(17, "Found PCI Vendor %04x Device %04x Class %04x IntrLine %d", vendor, device, pci->classcode, pci->intr_line);
+        printk("Found PCI Vendor %04x Device %04x Class %04x IntrLine %d\n", pci->vendor, pci->device, pci->classcode, pci->intr_line);
+        printd(17, "Found PCI Vendor %04x Device %04x Class %04x IntrLine %d", pci->vendor, pci->device, pci->classcode, pci->intr_line);
         ide_pci_init(pci);
         drv.pci = pci;
     }
@@ -177,10 +178,12 @@ void ide_irq()
         insl(REG_DATA(0), buf, (512>>2));
         sig = *((u16_t *) (buf+510));
     }
+
     if(drv.read_mode == HD_CMD_READ_DMA)
     {
         sig = *((u16_t *) (data+510));
     }
+
     ide_printd();
 
     printk("hard disk sig %04x read mode %x cnt %d\n", sig, drv.read_mode, drv.irq_cnt);
@@ -268,6 +271,7 @@ unsigned long gprdt = 0;
 
 void ide_dma_pci_lba48()
 {
+    drv.dma_cnt ++;
     drv.read_mode = HD_CMD_READ_DMA;
 #if 1
     memset((void *)&prd, 0, sizeof(prd));
@@ -299,12 +303,10 @@ void ide_dma_pci_lba48()
             break;
         }
     }
-#endif
 
     outb(0x00, HD_CHL0_CMD_BASE+HD_DEVSEL);
     DELAY400NS;
 
-#if 0
     while ( 1 )
     {
         status = inb(HD_CHL0_CMD_BASE+HD_STATUS);
@@ -315,8 +317,6 @@ void ide_dma_pci_lba48()
         }
     }
 #endif
-
-    printd(16, "---------------------------------------");
 
     outb(0x00,  HD_CHL0_CTL_BASE);  // Device Control
 
@@ -347,8 +347,8 @@ void ide_dma_pci_lba48()
 void ide_init()
 {
     memset((void *)&drv, 0, sizeof(drv));
-    init_pci_controller(PCI_VENDORID_INTEL, 0x2829);
-    init_pci_controller(PCI_VENDORID_INTEL, 0x7010);
+    init_pci_controller(0x0106);
+    init_pci_controller(0x0101);
 #if 1
     ide_read_identify();
     ide_printd();

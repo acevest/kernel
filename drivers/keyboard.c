@@ -30,6 +30,7 @@ int debug_wait_queue_put(unsigned int v);
 void ide_dma_pci_lba48();
 
 unsigned long kbd_cnt = 0;
+
 void kbd_handler(unsigned int irq, pt_regs_t * regs, void *dev_id)
 {
     unsigned char scan_code;

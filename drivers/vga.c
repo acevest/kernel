@@ -229,11 +229,15 @@ void vga_dbg_toggle()
     __vga_switch(offset);
 }
 
+
 void vga_dbg_puts(unsigned int line, const char *buf, unsigned char color)
 {
     int i;
     char *p = (char *) buf;
     vga_char_t * const pv = (vga_char_t * const) (VIDEO_ADDR + (VIDEO_DBG_LINE + line) * BYTES_PER_LINE);
+
+    for(i=0; i<CHARS_PER_LINE; ++i)
+        pv[i] = vga_char(0, color);
 
     for(i=0; *p; ++i, ++p)
     {
