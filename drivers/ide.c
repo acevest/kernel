@@ -94,22 +94,23 @@ void ide_printd()
 {
     printd(MPL_IDE, "ide pio_cnt %d dma_cnt %d irq_cnt %d", drv.pio_cnt,  drv.dma_cnt, drv.irq_cnt);
 }
-void ide_cmd_out(Dev dev, u32 nsect, u64 sect_nr, u32 cmd)
+
+void _ide_cmd_out(dev_t dev, u32 sect_cnt, u64 sect_nr, u32 cmd, bool pio)
 {
     drv.pio_cnt++;
     drv.read_mode = cmd;
 
     ide_printd();
 
-    outb(0x00,                      REG_CTL(dev));
+    outb(0x00|(pio?0:HD_CTL_NIEN),  REG_CTL(dev));
     outb(0x40,                      REG_DEVSEL(dev));
 
-    outb(0,                         REG_NSECTOR(dev));    // High
+    outb((u8)((sect_cnt>>8)&0xFF),  REG_NSECTOR(dev));    // High
     outb((u8)((sect_nr>>24)&0xFF),  REG_LBAL(dev));
     outb((u8)((sect_nr>>32)&0xFF),  REG_LBAM(dev));
     outb((u8)((sect_nr>>40)&0xFF),  REG_LBAH(dev));
 
-    outb((u8)nsect,                 REG_NSECTOR(dev));    // Low
+    outb((u8)((sect_cnt>>0)&0xFF),  REG_NSECTOR(dev));    // Low
     outb((u8)((sect_nr>> 0)&0xFF),  REG_LBAL(dev));
     outb((u8)((sect_nr>> 8)&0xFF),  REG_LBAM(dev));
     outb((u8)((sect_nr>>16)&0xFF),  REG_LBAH(dev));
@@ -117,6 +118,36 @@ void ide_cmd_out(Dev dev, u32 nsect, u64 sect_nr, u32 cmd)
     outb(cmd,                       REG_CMD(dev));
 }
 
+void ide_wait_ready()
+{
+    u32 retires = 100;
+    
+    do
+    {
+        int drq_retires = 100000;
+        while(!hd_drq(dev) && --drq_retires)
+            /* do nothing */;
+
+        if(drq_retires != 0)
+            break;
+    }while(--retires);
+
+    if(retires == 0)
+        panic("hard disk is not ready");
+}
+
+
+void ide_cmd_out(dev_t dev, u32 sect_cnt, u64 sect_nr, u32 cmd)
+{
+    _ide_cmd_out(dev, sect_cnt, sect_nr, cmd, true);
+}
+
+void ide_wait_read(dev_t dev, u32 sect_cnt, u64 sect_nr, char *buf)
+{
+    _ide_cmd_out(dev, sect_cnt, sect_nr, HD_CMD_READ_EXT, false);
+    ide_wait_ready();
+    insl(REG_DATA(dev), buf, (sect_cnt*512)>>2);
+}
 
 void dump_pci_ide();
 
@@ -196,9 +227,10 @@ void ide_irq()
 
 void print_ide_identify(const char *buf)
 {
-    char    *p;
-    short    *ident;
-    int    i;
+    char *p;
+    short *ident;
+    int i, j;
+    unsigned char c;
 
     ident = (short *) buf;
 
@@ -209,15 +241,26 @@ void print_ide_identify(const char *buf)
 
     p = (char *) (ident+10);
     for(i=0; i<20; i++)
-    {
         hd_sn[i] = p[i];
+    for(j=0; j<20; j+=2)
+    {
+        c = hd_sn[j];
+        hd_sn[j] = hd_sn[j+1];
+        hd_sn[j+1] = c;
     }
+
     hd_sn[i] = 0;
 
     p = (char *) (ident+27);
     for(i=0; i<40; i++)
     {
         hd_model[i] = p[i];
+    }
+    for(j=0; j<20; j+=2)
+    {
+        c = hd_model[j];
+        hd_model[j] = hd_model[j+1];
+        hd_model[j+1] = c;
     }
     hd_model[i] = 0;
 
@@ -235,24 +278,11 @@ void print_ide_identify(const char *buf)
 
 void ide_read_identify()
 {
-    outb(0x02, REG_CTL(0));
-    outb(0x40,                      REG_DEVSEL(dev));
+    outb(HD_CTL_NIEN,               REG_CTL(0));
+    outb(0x00,                      REG_DEVSEL(dev));
     outb(HD_CMD_IDENTIFY,           REG_CMD(dev));
 
-    u32 retires = 100;
-    
-    do
-    {
-        int drq_retires = 100000;
-        while(!hd_drq(dev) && --drq_retires)
-            /* do nothing */;
-
-        if(drq_retires != 0)
-            break;
-    }while(--retires);
-
-    if(retires == 0)
-        panic("hard disk is not ready");
+    ide_wait_ready();
 
     insl(REG_DATA(0), buf, 512>>2);
     print_ide_identify(buf);
@@ -267,7 +297,6 @@ unsigned long gprdt = 0;
     inb(HD_CHL0_CTL_BASE);  \
     inb(HD_CHL0_CTL_BASE);  \
 }
-
 
 void ide_dma_pci_lba48()
 {
@@ -344,6 +373,13 @@ void ide_dma_pci_lba48()
     inb(drv.bus_status);
 }
 
+typedef struct {
+    unsigned int a;
+    unsigned int b;
+    unsigned int lba;
+    unsigned int sect_cnt;
+} hd_part_t ;
+
 void ide_init()
 {
     memset((void *)&drv, 0, sizeof(drv));
@@ -353,4 +389,16 @@ void ide_init()
     ide_read_identify();
     ide_printd();
 #endif
+    ide_wait_read(0, 1, 0, data);
+
+    hd_part_t *p = (hd_part_t *)(data+PARTITION_TABLE_OFFSET);
+    int i;
+    for(i=0; i<4; ++i)
+    {
+        printk(" Partition %d LBA %d SectCnt %d\n", i, p->lba, p->sect_cnt);
+        p++;
+    }
+
+    u16_t sig = *((u16_t *) (data+510));
+    printk("IDE_INIT______READ %04x\n", sig);
 }

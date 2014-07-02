@@ -18,13 +18,21 @@
 extern void vga_puts(unsigned int nr, const char *buf, unsigned char color);
 extern void vga_dbg_puts(unsigned long line, const char *buf, unsigned char color);
 
+unsigned int printk_screen_nr = 0;
+
+extern unsigned int vga_screen_cnt();
+void switch_printk_screen()
+{
+    printk_screen_nr++;
+    printk_screen_nr %= vga_screen_cnt();
+}
+
 char pkbuf[1024];
-extern int bvga;
 int printk(const char *fmtstr, ...)
 {
     char *args = (char*)(((char*)&fmtstr)+4);
     vsprintf(pkbuf, fmtstr, args);
-    vga_puts(0, pkbuf,0x2);
+    vga_puts(printk_screen_nr, pkbuf, 0x2);
     return 0;
 }
 
@@ -33,6 +41,6 @@ int printd(unsigned int line, const char *fmtstr, ...)
 {
     char *args = (char*)(((char*)&fmtstr)+4);
     vsprintf(pdbuf, fmtstr, args);
-    vga_dbg_puts(line, pdbuf,0x7);
+    vga_dbg_puts(line, pdbuf, 0x7);
     return 0;
 }
