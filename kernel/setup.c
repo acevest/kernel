@@ -84,9 +84,9 @@ void setup_kernel()
     setup_tasks();
 
     setup_irqs();
-    
+    switch_printk_screen();
     setup_pci();
-
+    switch_printk_screen();
     void ide_init();
     ide_init();
 

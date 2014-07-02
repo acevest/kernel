@@ -402,6 +402,8 @@ pci_info_t pci_info[] = {
 const char *pci_get_info(unsigned int classcode, unsigned int progif)
 {
     pci_info_t *p = pci_info;
+    const char *s = 0;
+
     while(p->code != 0 || p->flag != 0 || p->info != 0)
     {
         unsigned long code = classcode;
@@ -413,10 +415,19 @@ const char *pci_get_info(unsigned int classcode, unsigned int progif)
         }
 
         if(p->code == code)
-            return p->info;
+        {
+            if(p->flag == 0)
+            {
+                return p->info;
+            }
+            else
+            {
+                s = p->info;
+            }
+        }
 
         p++;
     }
 
-    return 0;
+    return s;
 }

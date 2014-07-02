@@ -53,11 +53,11 @@ extern unsigned int HD_CHL1_CTL_BASE;
 #define     HD_CMD_IDENTIFY     0xEC
 
 #define HD_CTL            0
-#define     HD_CTL_NORETRY      0x80    /* disable access retry */
-#define     HD_CTL_NOECC        0x40    /* disable ecc retry */
-#define     HD_CTL_EIGHTHEADS   0x08    /* more than 8 heads */
-#define     HD_CTL_RESET        0x04    /* reset controller */
-#define     HD_CTL_DISABLE_INT  0x02    /* disable interrupts */
+#define     HD_CTL_HOB          0x80    /* high order byte (LBA-48bit) */
+//#define     HD_CTL_NOECC        0x40  /* disable ecc retry */
+//#define     HD_CTL_EIGHTHEADS   0x08  /* more than 8 heads */
+#define     HD_CTL_SRST         0x04    /* soft reset controller */
+#define     HD_CTL_NIEN         0x02    /* disable interrupts */
 
 #define     HD_GET_CHL(dev)     (0)     /* only support channel 0 */
 #define     HD_GET_DEV(dev)     (0)     /* only support one hard disk */
@@ -116,3 +116,7 @@ extern unsigned int HD_CHL1_CTL_BASE;
     #define PCI_IDE_STATUS_DRV1     0x40
     #define PCI_IDE_STATUS_SIMPLEX  0x80
 #define PCI_IDE_PRDT    4
+
+
+
+#define PARTITION_TABLE_OFFSET  0x1BE

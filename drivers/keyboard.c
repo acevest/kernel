@@ -81,8 +81,7 @@ void kbd_handler(unsigned int irq, pt_regs_t * regs, void *dev_id)
 
     if(scan_code == 0x43);  // F9
     if(scan_code == 0x44);  // F10
-    if(scan_code == 0x57)   // F11
-        poweroff();
+    if(scan_code == 0x57);  // F11
     if(scan_code == 0x58)   // F12
         vga_dbg_toggle();
 

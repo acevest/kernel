@@ -154,26 +154,26 @@ typedef struct pt_regs
     u16    ss, _ss;
 } __attribute__((packed)) pt_regs_t;
 
-typedef    unsigned long    Dev, *pDev;
+typedef unsigned long dev_t;
 
 typedef struct system
 {
-    u32    mmap_addr;
-    u32    mmap_size;    // Byte
+    u32 mmap_addr;
+    u32 mmap_size;    // Byte
 
-    u32    mm_lower;    // KB
-    u32    mm_upper;    // KB
-    u64    mm_size;    // Byte
+    u32 mm_lower;    // KB
+    u32 mm_upper;    // KB
+    u64 mm_size;    // Byte
 
-    u32    page_count;
-    pPage    page_map;
-    u32    page_bitmap;
+    u32 page_count;
+    pPage page_map;
+    u32   page_bitmap;
 
     u32 *page_dir;
-    u32    *pte_start;
-    u32    *pte_end;
+    u32 *pte_start;
+    u32 *pte_end;
 
-    u32    kernel_end;
+    u32 kernel_end;
 
     // +-------+-------+-------+-------+
     // | drive | part1 | part2 | part3 |
@@ -181,13 +181,13 @@ typedef struct system
     // Partition numbers always start from zero.
     // Unused partition bytes must be set to 0xFF.
     // More Infomation see 'info multiboot'
-    u32    boot_device;
+    u32 boot_device;
 
-    Dev    root_dev;
+    dev_t root_dev;
 #define CMD_LINE_SIZE    128
-    char    *cmdline;
+    char *cmdline;
 
-    u32    debug;
+    u32 debug;
 } System, *pSystem;
 
 extern    System system;
