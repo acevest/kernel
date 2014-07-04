@@ -89,11 +89,11 @@ void setup_kernel()
     switch_printk_screen();
     void ide_init();
     ide_init();
+    switch_printk_screen();
 
     detect_cpu();
 
     printk("%s\n", version);
-    printd(0, "-----------------------------------------------------------");
 
     return;
     while(1); // TODO MODIFY CODE BELOW
