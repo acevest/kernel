@@ -90,37 +90,13 @@ int vsprintf(char *buf, const char *fmt, char *args)
         case 'd':
             itoa(tmp, *((int*)args));
             p += write_buf(p, tmp, char_fill, char_cnt, align);           
-#if 0
-            char_cnt -= strlen(tmp);
-            if(char_cnt > 0)
-            {
-                while(char_cnt--)
-                *p++ = char_fill;
-            }
-            strcpy(p, tmp);
-            p += strlen(tmp);
-#endif
             break;
         case 's':
             p += write_buf(p, (const char *)*((unsigned int *) args), char_fill, char_cnt, align);           
-#if 0
-            strcpy(p, (const char *)*((unsigned int *) args));
-            p += strlen((const char *)*((unsigned int *) args));
-#endif
             break;
         case 'x':
             itox(tmp, *((unsigned int *) args));
             p += write_buf(p, tmp, char_fill, char_cnt, align);           
-#if 0
-            char_cnt -= strlen(tmp);
-            if(char_cnt > 0)
-            {
-                while(char_cnt--)
-                 *p++ = char_fill;
-            }
-            strcpy(p, tmp);
-            p += strlen(tmp);
-#endif
             break;
         default:
             break;

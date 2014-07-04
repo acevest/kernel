@@ -103,7 +103,7 @@ void _ide_cmd_out(dev_t dev, u32 sect_cnt, u64 sect_nr, u32 cmd, bool pio)
     ide_printd();
 
     outb(0x00|(pio?0:HD_CTL_NIEN),  REG_CTL(dev));
-    outb(0x40,                      REG_DEVSEL(dev));
+    outb(0x40|0x10,                 REG_DEVSEL(dev));
 
     outb((u8)((sect_cnt>>8)&0xFF),  REG_NSECTOR(dev));    // High
     outb((u8)((sect_nr>>24)&0xFF),  REG_LBAL(dev));
@@ -278,7 +278,7 @@ void print_ide_identify(const char *buf)
 
 void ide_read_identify()
 {
-    outb(HD_CTL_NIEN,               REG_CTL(0));
+    outb(HD_CTL_NIEN,               REG_CTL(dev));
     outb(0x00,                      REG_DEVSEL(dev));
     outb(HD_CMD_IDENTIFY,           REG_CMD(dev));
 
@@ -374,11 +374,77 @@ void ide_dma_pci_lba48()
 }
 
 typedef struct {
-    unsigned int a;
-    unsigned int b;
+    unsigned char a;
+    unsigned char b;
+    unsigned char c;
+    unsigned char d;
+    unsigned char type;
+    unsigned char f;
+    unsigned char g;
+    unsigned char h;
     unsigned int lba;
     unsigned int sect_cnt;
 } hd_part_t ;
+
+#if 1
+void spartition(u64_t sect_nr, u64_t base)
+{
+    base += sect_nr;
+    printk("SECT NR %d\n", sect_nr);
+    char *part_buf=kmalloc(1024, 0);
+    ide_wait_read(0, 1, base, part_buf);
+
+    hd_part_t *p = (hd_part_t *)(part_buf+PARTITION_TABLE_OFFSET);
+    int i;
+    u64_t ext = ~0UL;
+    for(i=0; i<4; ++i)
+    {
+        if(p->type == 0)
+            continue;
+        printk(" Partition[%d] [%02x] LBA %d SectCnt %d\n", i, p->type, (unsigned int)(base+p->lba), (unsigned int)(base+p->lba+p->sect_cnt));
+        if(p->type == 0x05)
+            ext = p->lba;
+
+        p++;
+    }
+
+    printk("--------------------------------------------------%d\n", ext);
+    if(ext != ~0UL)
+        spartition(ext, base);
+}
+#endif
+
+static int f = 0;
+void partition(u64_t base)
+{
+    char *part_buf = kmalloc(1024, 0);
+    ide_wait_read(0, 1, base, part_buf);
+
+    hd_part_t *p = (hd_part_t *)(part_buf+PARTITION_TABLE_OFFSET);
+
+    u16_t sig = *((u16_t *) (part_buf+510));
+    //printk("---------------------------------------------%d    [%04x]\n", x, sig);
+    printk("---------------------------------------------<%d> \n", (unsigned int) base);
+
+    int i;
+    for(i=0; i<4; ++i)
+    {
+        if(p->type == 0)
+            continue;
+        printk(" Partition[%d] [%02x] LBA %d cnt %d LBABASE %d LBAEND %d\n", i, p->type, p->lba, p->sect_cnt, (unsigned int)(base+p->lba), (unsigned int)(base+p->lba+p->sect_cnt));
+
+        if(p->type == 0x05)
+        {
+            f++;
+            if(f > 1)
+                partition(p->lba+43008);
+            else
+                partition(p->lba+0);
+        }
+
+        p++;
+    }
+}
 
 void ide_init()
 {
@@ -389,15 +455,8 @@ void ide_init()
     ide_read_identify();
     ide_printd();
 #endif
-    ide_wait_read(0, 1, 0, data);
-
-    hd_part_t *p = (hd_part_t *)(data+PARTITION_TABLE_OFFSET);
-    int i;
-    for(i=0; i<4; ++i)
-    {
-        printk(" Partition %d LBA %d SectCnt %d\n", i, p->lba, p->sect_cnt);
-        p++;
-    }
+    //spartition(0, 0);
+    partition(0);
 
     u16_t sig = *((u16_t *) (data+510));
     printk("IDE_INIT______READ %04x\n", sig);
