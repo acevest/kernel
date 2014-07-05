@@ -25,7 +25,6 @@ extern void detect_cpu();
 extern void setup_sysc();
 extern void setup_pci();
 extern void set_tss();
-extern void show_logo();
 extern void setup_tasks();
 extern void setup_root_dev();
 extern void ide_init();
@@ -66,7 +65,7 @@ void setup_kernel()
     printk("kernel: %08x - %08x\n", &kernel_begin, &kernel_end);
 
     init_mm();
-    //while(1);
+
     setup_gdt();
     setup_idt();
     setup_gate();
@@ -95,7 +94,6 @@ void setup_kernel()
 
     printk("%s\n", version);
 
-    open_irq(0);
 
     return;
     while(1); // TODO MODIFY CODE BELOW
@@ -104,7 +102,5 @@ void setup_kernel()
     setup_root_dev();
     setup_fs();
     setup_ext2();
-
-    show_logo();
 }
 

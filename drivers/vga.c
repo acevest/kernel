@@ -242,6 +242,7 @@ void vga_dbg_puts(unsigned int line, const char *buf, unsigned char color)
 
     for(i=0; *p; ++i, ++p)
     {
+        color = 0x1F;
         pv[i] = vga_char(*p, color);
     }
 }

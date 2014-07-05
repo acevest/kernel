@@ -386,16 +386,14 @@ void ide_dma_pci_lba48()
 }
 
 typedef struct {
-    unsigned char a;
-    unsigned char b;
-    unsigned char c;
-    unsigned char d;
-    unsigned char type;
-    unsigned char f;
-    unsigned char g;
-    unsigned char h;
-    unsigned int lba;
-    unsigned int sect_cnt;
+    u8_t a;
+    u8_t b;
+    u16_t lbah;         // Lba High
+    u8_t type;
+    u8_t f;
+    u16_t scnth;        // Sector Count High
+    u32_t lba;   // Lba Low
+    u32_t scnt;  // Sector Count
 } hd_part_t ;
 
 
@@ -403,11 +401,24 @@ typedef struct {
 char *ide_init_buf = 0;
 void ide_init_intr()
 {
+    //printk("%s\n", __func__);
     drv.irq_cnt++;
 
     u8_t status = inb(REG_STATUS(0));
 
+    status = inb(drv.bus_status);
+    if(0 == (status & PCI_IDE_STATUS_INTR))
+    {
+        return ;
+    }
+
+    status |= PCI_IDE_STATUS_INTR;
+    outb(status, drv.bus_status);
+    outb(0x00,   drv.bus_cmd);
+
     insl(REG_DATA(0), ide_init_buf, (512>>2));
+
+    outb(PCI_IDE_CMD_STOP, drv.bus_cmd);
 
     ide_init_inted = true;
 }
@@ -426,55 +437,16 @@ void ide_init_wait_intr()
 void ide_init_wait_read(u64 lba, char *buf)
 {
     ide_init_buf = buf;
+    ide_intr_func = ide_init_intr;
     _ide_cmd_out(0, 1, lba, HD_CMD_READ_EXT, true);
     ide_init_wait_intr();
 }
 
-#if 0
-void ide_read_partition(u64_t lba, bool extended)
-{
-    unsigned int i;
-    char *buf = kmalloc(512, 0);
-    if(buf == 0)
-        panic("no memory");
-
-    ide_init_wait_read(lba, buf);
-
-    u16_t sig = *((u16_t *) (buf+510));
-    if(sig != 0xAA55)
-        panic("bad partition sect");
-
-    hd_part_t *p = (hd_part_t *)(buf+PARTITION_TABLE_OFFSET);
-    printk("-------------------------\n");
-    for(i=0; i<PARTITION_CNT; ++i, ++p)
-    {
-        if(p->type == 0)
-            continue;
-
-        u64_t   part_lba    = p->lba;       // TODO
-        u64_t   part_scnt   = p->sect_cnt;
-
-        if(p->type == 0x05)
-            printk(" Partition[%d] [%02x] LBA %d %d\n", i, p->type, (unsigned int)part_lba, (unsigned int)((extended?drv.ext_lba_base:0)+part_lba));
-        else
-            printk(" Partition[%d] [%02x] LBA %d %d\n", i, p->type, (unsigned int)part_lba, (unsigned int)(lba+part_lba));
-
-        if(p->type == 0x05)
-        {
-            if(drv.ext_lba_base == 0)
-                drv.ext_lba_base =part_lba; 
-
-
-            ide_read_partition(part_lba+(extended?drv.ext_lba_base:0), true);
-        }
-    }
-
-    kfree(buf);
-}
-#endif
-
 void ide_read_extended_partition(u64_t lba, unsigned int inx)
 {
+    if(inx >= MAX_SUPPORT_PARTITION_CNT)
+        return ;
+
     unsigned int i;
     char *buf = kmalloc(512, 0);
     if(buf == 0)
@@ -494,8 +466,10 @@ void ide_read_extended_partition(u64_t lba, unsigned int inx)
         if(p->type == 0)
             continue;
 
-        u64_t   part_lba = lba + p->lba;       // TODO
-        u64_t   part_scnt   = p->sect_cnt;
+        //u64_t   part_lba = lba + (p->lba|((p->lbah*1ULL)<<32));
+        //u64_t   part_scnt= p->scnt | ((p->scnth*1ULL)<<32);
+        u64_t   part_lba = lba + p->lba;
+        u64_t   part_scnt   = p->scnt;
 
         if(p->type != 0x05)
         {
@@ -532,13 +506,15 @@ void ide_read_partition()
 
     unsigned int ext_inx = ~0U;
 
-    for(i=1; i<PARTITION_CNT; ++i, ++p)
+    for(i=0; i<PARTITION_CNT; ++i, ++p)
     {
         if(p->type == 0)
             continue;
 
-        u64_t   part_lba    = p->lba;       // TODO
-        u64_t   part_scnt   = p->sect_cnt;
+        //u64_t   part_lba = p->lba|((p->lbah*1ULL)<<32);
+        //u64_t   part_scnt= p->scnt | ((p->scnth*1ULL)<<32);
+        u64_t   part_lba    = p->lba;
+        u64_t   part_scnt   = p->scnt;
 
         drv.part[i].lba_start  = part_lba;
         drv.part[i].lba_end    = part_lba+part_scnt;
@@ -559,18 +535,7 @@ void ide_read_partition()
     kfree(buf);
 
     if(ext_inx != ~0U)
-        ide_read_extended_partition(drv.part[ext_inx].lba_start, 5);
-}
-
-
-
-void ide_init_partition()
-{
-    ide_intr_func = ide_init_intr;
-
-    ide_read_partition();
-
-    ide_intr_func = ide_default_intr;
+        ide_read_extended_partition(drv.part[ext_inx].lba_start, 4);
 }
 
 void ide_init()
@@ -584,5 +549,7 @@ void ide_init()
     ide_printd();
 #endif
 
-    ide_init_partition();
+    ide_read_partition();
+
+    ide_intr_func = ide_default_intr;
 }
