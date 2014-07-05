@@ -63,7 +63,6 @@ int vsprintf(char *buf, const char *fmt, char *args)
             align = ALIGN_LEFT;
             ++fmt;
         }
-        
 
         char char_fill = ' ';
         if(*(fmt) == '0' || *(fmt) == ' ')
@@ -79,7 +78,6 @@ int vsprintf(char *buf, const char *fmt, char *args)
             char_cnt *= 10;
             ++fmt;
         }
-
         char_cnt /= 10;
 
         switch(*fmt)
@@ -107,7 +105,7 @@ int vsprintf(char *buf, const char *fmt, char *args)
     *p = 0;
 }
 
-char    *itoa(char *s, int n)
+char *itoa(char *s, int n)
 {
     int i;
     char tmp[64];
@@ -124,10 +122,9 @@ char    *itoa(char *s, int n)
     }while(n);
     while(i) *s++=tmp[--i];
     *s = 0;
-    
 }
 
-char    *itox(char *s, unsigned int n)
+char *itox(char *s, unsigned int n)
 {
     char *p = s;
     char ch,i,flag = 0;

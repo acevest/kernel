@@ -37,6 +37,10 @@ typedef struct _ide_drv
     unsigned int bus_prdt;
 
     unsigned int read_mode;
+
+
+    u64_t   ext_lba_base;
+    part_t  part[MAX_SUPPORT_PARTITION_CNT];
 } ide_drive_t;
 
 ide_drive_t drv;
@@ -50,6 +54,10 @@ typedef struct prd
 } prd_t;
 
 unsigned char *data = 0;
+
+unsigned int sys_clock();
+
+bool ide_init_inted = false;
 
 void ide_pci_init(pci_device_t *pci)
 {
@@ -97,13 +105,15 @@ void ide_printd()
 
 void _ide_cmd_out(dev_t dev, u32 sect_cnt, u64 sect_nr, u32 cmd, bool pio)
 {
+    ide_init_inted = false;
+
     drv.pio_cnt++;
     drv.read_mode = cmd;
 
     ide_printd();
 
     outb(0x00|(pio?0:HD_CTL_NIEN),  REG_CTL(dev));
-    outb(0x40|0x10,                 REG_DEVSEL(dev));
+    outb(0x40|0x00,                 REG_DEVSEL(dev));
 
     outb((u8)((sect_cnt>>8)&0xFF),  REG_NSECTOR(dev));    // High
     outb((u8)((sect_nr>>24)&0xFF),  REG_LBAL(dev));
@@ -142,13 +152,6 @@ void ide_cmd_out(dev_t dev, u32 sect_cnt, u64 sect_nr, u32 cmd)
     _ide_cmd_out(dev, sect_cnt, sect_nr, cmd, true);
 }
 
-void ide_wait_read(dev_t dev, u32 sect_cnt, u64 sect_nr, char *buf)
-{
-    _ide_cmd_out(dev, sect_cnt, sect_nr, HD_CMD_READ_EXT, false);
-    ide_wait_ready();
-    insl(REG_DATA(dev), buf, (sect_cnt*512)>>2);
-}
-
 void dump_pci_ide();
 
 void ide_status()
@@ -169,7 +172,7 @@ void ide_debug()
 
     nsect    = (count + SECT_SIZE -1)/SECT_SIZE;
 
-    ide_cmd_out(0, nsect,  sect_nr, HD_CMD_READ_EXT);
+    ide_cmd_out(0, nsect, sect_nr, HD_CMD_READ_EXT);
 }
 
 DECLARE_MUTEX(mutex);
@@ -186,8 +189,9 @@ void init_pci_controller(unsigned int classcode)
     }
 }
 
-char buf[1024];
-void ide_irq()
+
+char ide_buf[1024];
+void ide_default_intr()
 {
     u8_t status = inb(REG_STATUS(0));
 
@@ -206,8 +210,8 @@ void ide_irq()
     u16_t sig = 0;
     if(drv.read_mode == HD_CMD_READ_EXT)
     {
-        insl(REG_DATA(0), buf, (512>>2));
-        sig = *((u16_t *) (buf+510));
+        insl(REG_DATA(0), ide_buf, (512>>2));
+        sig = *((u16_t *) (ide_buf+510));
     }
 
     if(drv.read_mode == HD_CMD_READ_DMA)
@@ -224,6 +228,13 @@ void ide_irq()
     up(&mutex);
 }
 
+typedef void (*ide_intr_func_t)();
+ide_intr_func_t ide_intr_func = ide_default_intr;
+
+void ide_irq()
+{
+    ide_intr_func();
+}
 
 void print_ide_identify(const char *buf)
 {
@@ -284,8 +295,8 @@ void ide_read_identify()
 
     ide_wait_ready();
 
-    insl(REG_DATA(0), buf, 512>>2);
-    print_ide_identify(buf);
+    insl(REG_DATA(0), ide_buf, 512>>2);
+    print_ide_identify(ide_buf);
 }
 
 prd_t prd __attribute__((aligned(64*1024)));
@@ -300,6 +311,7 @@ unsigned long gprdt = 0;
 
 void ide_dma_pci_lba48()
 {
+    ide_init_inted = false;
     drv.dma_cnt ++;
     drv.read_mode = HD_CMD_READ_DMA;
 #if 1
@@ -386,64 +398,179 @@ typedef struct {
     unsigned int sect_cnt;
 } hd_part_t ;
 
-#if 1
-void spartition(u64_t sect_nr, u64_t base)
+
+
+char *ide_init_buf = 0;
+void ide_init_intr()
 {
-    base += sect_nr;
-    printk("SECT NR %d\n", sect_nr);
-    char *part_buf=kmalloc(1024, 0);
-    ide_wait_read(0, 1, base, part_buf);
+    drv.irq_cnt++;
 
-    hd_part_t *p = (hd_part_t *)(part_buf+PARTITION_TABLE_OFFSET);
-    int i;
-    u64_t ext = ~0UL;
-    for(i=0; i<4; ++i)
-    {
-        if(p->type == 0)
-            continue;
-        printk(" Partition[%d] [%02x] LBA %d SectCnt %d\n", i, p->type, (unsigned int)(base+p->lba), (unsigned int)(base+p->lba+p->sect_cnt));
-        if(p->type == 0x05)
-            ext = p->lba;
+    u8_t status = inb(REG_STATUS(0));
 
-        p++;
-    }
+    insl(REG_DATA(0), ide_init_buf, (512>>2));
 
-    printk("--------------------------------------------------%d\n", ext);
-    if(ext != ~0UL)
-        spartition(ext, base);
+    ide_init_inted = true;
 }
-#endif
 
-static int f = 0;
-void partition(u64_t base)
+void ide_init_wait_intr()
 {
-    char *part_buf = kmalloc(1024, 0);
-    ide_wait_read(0, 1, base, part_buf);
+    unsigned int clock_end = sys_clock() + 1000;
 
-    hd_part_t *p = (hd_part_t *)(part_buf+PARTITION_TABLE_OFFSET);
+    while(!ide_init_inted)
+    {
+        if(sys_clock() > clock_end)
+            panic("read hard disk timeout");
+    }
+}
 
-    u16_t sig = *((u16_t *) (part_buf+510));
-    //printk("---------------------------------------------%d    [%04x]\n", x, sig);
-    printk("---------------------------------------------<%d> \n", (unsigned int) base);
+void ide_init_wait_read(u64 lba, char *buf)
+{
+    ide_init_buf = buf;
+    _ide_cmd_out(0, 1, lba, HD_CMD_READ_EXT, true);
+    ide_init_wait_intr();
+}
 
-    int i;
-    for(i=0; i<4; ++i)
+#if 0
+void ide_read_partition(u64_t lba, bool extended)
+{
+    unsigned int i;
+    char *buf = kmalloc(512, 0);
+    if(buf == 0)
+        panic("no memory");
+
+    ide_init_wait_read(lba, buf);
+
+    u16_t sig = *((u16_t *) (buf+510));
+    if(sig != 0xAA55)
+        panic("bad partition sect");
+
+    hd_part_t *p = (hd_part_t *)(buf+PARTITION_TABLE_OFFSET);
+    printk("-------------------------\n");
+    for(i=0; i<PARTITION_CNT; ++i, ++p)
     {
         if(p->type == 0)
             continue;
-        printk(" Partition[%d] [%02x] LBA %d cnt %d LBABASE %d LBAEND %d\n", i, p->type, p->lba, p->sect_cnt, (unsigned int)(base+p->lba), (unsigned int)(base+p->lba+p->sect_cnt));
+
+        u64_t   part_lba    = p->lba;       // TODO
+        u64_t   part_scnt   = p->sect_cnt;
+
+        if(p->type == 0x05)
+            printk(" Partition[%d] [%02x] LBA %d %d\n", i, p->type, (unsigned int)part_lba, (unsigned int)((extended?drv.ext_lba_base:0)+part_lba));
+        else
+            printk(" Partition[%d] [%02x] LBA %d %d\n", i, p->type, (unsigned int)part_lba, (unsigned int)(lba+part_lba));
 
         if(p->type == 0x05)
         {
-            f++;
-            if(f > 1)
-                partition(p->lba+43008);
-            else
-                partition(p->lba+0);
+            if(drv.ext_lba_base == 0)
+                drv.ext_lba_base =part_lba; 
+
+
+            ide_read_partition(part_lba+(extended?drv.ext_lba_base:0), true);
+        }
+    }
+
+    kfree(buf);
+}
+#endif
+
+void ide_read_extended_partition(u64_t lba, unsigned int inx)
+{
+    unsigned int i;
+    char *buf = kmalloc(512, 0);
+    if(buf == 0)
+        panic("no memory");
+
+    ide_init_wait_read(lba, buf);
+
+    u16_t sig = *((u16_t *) (buf+510));
+    if(sig != 0xAA55)
+        panic("bad partition sect");
+
+    hd_part_t *p = (hd_part_t *)(buf+PARTITION_TABLE_OFFSET);
+    //printk("-------------------------%d \n", lba);
+
+    for(i=0; i<PARTITION_CNT; ++i, ++p)
+    {
+        if(p->type == 0)
+            continue;
+
+        u64_t   part_lba = lba + p->lba;       // TODO
+        u64_t   part_scnt   = p->sect_cnt;
+
+        if(p->type != 0x05)
+        {
+            drv.part[inx].lba_start  = part_lba;
+            drv.part[inx].lba_end    = part_lba+part_scnt;
+            printk("  Logic Partition[%02d] [%02x] LbaBase %10d LbaEnd %10d\n", inx, p->type, (unsigned int)(drv.part[inx].lba_start), (unsigned int)(drv.part[inx].lba_end - 1));
+        }
+        else
+        {
+            part_lba = drv.ext_lba_base + p->lba;
+            printk("        Extended      [%02x] LbaBase %10d LbaEnd %10d\n", p->type, (unsigned int)(part_lba), (unsigned int)(part_lba+part_scnt - 1));
+            ide_read_extended_partition(part_lba, inx+1);
+        }
+    }
+
+    kfree(buf);
+}
+
+void ide_read_partition()
+{
+    printk("Reading Partitions....\n");
+    unsigned int i;
+    char *buf = kmalloc(512, 0);
+    if(buf == 0)
+        panic("no memory");
+
+    ide_init_wait_read(0, buf);
+
+    u16_t sig = *((u16_t *) (buf+510));
+    if(sig != 0xAA55)
+        panic("bad partition sect");
+
+    hd_part_t *p = (hd_part_t *)(buf+PARTITION_TABLE_OFFSET);
+
+    unsigned int ext_inx = ~0U;
+
+    for(i=1; i<PARTITION_CNT; ++i, ++p)
+    {
+        if(p->type == 0)
+            continue;
+
+        u64_t   part_lba    = p->lba;       // TODO
+        u64_t   part_scnt   = p->sect_cnt;
+
+        drv.part[i].lba_start  = part_lba;
+        drv.part[i].lba_end    = part_lba+part_scnt;
+
+
+        if(p->type == 0x05)
+        {
+            if(drv.ext_lba_base == 0)
+            {
+                drv.ext_lba_base = drv.part[i].lba_start; 
+                ext_inx = i;
+            }
         }
 
-        p++;
+        printk("Primary Partition[%02d] [%02x] LbaBase %10d LbaEnd %10d\n", i, p->type, (unsigned int)(part_lba), (unsigned int)(part_lba+part_scnt - 1));
     }
+
+    kfree(buf);
+
+    if(ext_inx != ~0U)
+        ide_read_extended_partition(drv.part[ext_inx].lba_start, 5);
+}
+
+
+
+void ide_init_partition()
+{
+    ide_intr_func = ide_init_intr;
+
+    ide_read_partition();
+
+    ide_intr_func = ide_default_intr;
 }
 
 void ide_init()
@@ -451,13 +578,11 @@ void ide_init()
     memset((void *)&drv, 0, sizeof(drv));
     init_pci_controller(0x0106);
     init_pci_controller(0x0101);
+
 #if 1
     ide_read_identify();
     ide_printd();
 #endif
-    //spartition(0, 0);
-    partition(0);
 
-    u16_t sig = *((u16_t *) (data+510));
-    printk("IDE_INIT______READ %04x\n", sig);
+    ide_init_partition();
 }

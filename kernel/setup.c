@@ -95,6 +95,8 @@ void setup_kernel()
 
     printk("%s\n", version);
 
+    open_irq(0);
+
     return;
     while(1); // TODO MODIFY CODE BELOW
 

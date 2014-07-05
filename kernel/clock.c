@@ -15,6 +15,11 @@
 
 static unsigned int jiffies = 0;
 
+unsigned int sys_clock()
+{
+    return jiffies;
+}
+
 void clk_handler(unsigned int irq, pt_regs_t * regs, void *dev_id)
 {
     jiffies++;
