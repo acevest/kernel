@@ -96,7 +96,7 @@ void setup_gate()
 void ide_irq();
 void default_ide_irq_handler(unsigned int irq, pt_regs_t * regs, void *dev_id)
 {
-    printk("default irq handler %d \n", irq);
+    //printk("default irq handler %d \n", irq);
     ide_irq();
 }
 
@@ -132,7 +132,7 @@ void setup_irqs()
             request_irq(i, default_irq_handler,   "default",    "default");
     }
 
-    for(i=0; i<16; i++)
+    for(i=1; i<16; i++)
         open_irq(i);
 
     enable_irq();

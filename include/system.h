@@ -84,6 +84,7 @@ static inline void free_phys_pages(void *p)
 }
 
 #define panic(msg) do {                                     \
+    asm("cli;");                                            \
     printk("PANIC:\"%s\" file:%s function:%s line:%d\n",    \
         msg, __FILE__, __FUNCTION__, __LINE__);             \
     while(1);                                               \
