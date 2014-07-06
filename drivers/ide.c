@@ -63,33 +63,17 @@ typedef struct {
     u32_t   scnt;
     char    *buf;
     bool    finish;
-    list_head_t list;
     wait_queue_head_t wait;
 } ide_request_t;
 
-#define IDE_REQ_LIST 0
-
-#if IDE_REQ_LIST
-LIST_HEAD(ide_request);
-#else
 ide_request_t ide_request;
-#endif
-
 
 void ide_do_read(u64_t lba, u32_t scnt, char *buf)
 {
     bool finish = false;
     unsigned long flags;
 
-#if IDE_REQ_LIST
-    ide_request_t *r = kmalloc(sizeof(ide_request_t), 0);
-    if(r == 0)
-        panic("out of memory");
-
-    memset(r, 0, sizeof(ide_request_t));
-#else
     ide_request_t *r = &ide_request;
-#endif
 
     down(&mutex);
 
@@ -97,7 +81,6 @@ void ide_do_read(u64_t lba, u32_t scnt, char *buf)
     r->scnt= scnt;
     r->buf = buf;
     r->finish = false;
-    INIT_LIST_HEAD(&r->list);
     init_wait_queue(&r->wait);
 
     task_union * task = current;
@@ -124,10 +107,6 @@ void ide_do_read(u64_t lba, u32_t scnt, char *buf)
     printl("%s pid %d is really running\n", __func__, sysc_getpid());
     task->state = TASK_RUNNING;
     del_wait_queue(&r->wait, &wait);
-
-#if IDE_REQ_LIST
-    kfree(r);
-#endif
 }
 
 unsigned char *data = 0;
@@ -261,7 +240,6 @@ void init_pci_controller(unsigned int classcode)
 }
 
 
-char ide_buf[1024];
 void ide_default_intr()
 {
     u8_t status = inb(REG_STATUS(0));
@@ -281,12 +259,7 @@ void ide_default_intr()
     u16_t sig = 0;
     if(drv.read_mode == HD_CMD_READ_EXT)
     {
-#if IDE_REQ_LIST
-        insl(REG_DATA(0), ide_buf, (512>>2));
-        sig = *((u16_t *) (ide_buf+510));
-#else
         insl(REG_DATA(0), ide_request.buf, ((ide_request.scnt*SECT_SIZE)>>2));
-#endif
     }
 
     if(drv.read_mode == HD_CMD_READ_DMA)
@@ -300,11 +273,9 @@ void ide_default_intr()
     printd(MPL_IDE_INTR, "hard disk sig %x read mode %x cnt %d", sig, drv.read_mode, drv.irq_cnt);
 
     outb(PCI_IDE_CMD_STOP, drv.bus_cmd);
-#if IDE_REQ_LIST
-#else
+
     wake_up(&ide_request.wait);
     ide_request.finish = true;
-#endif
 
     up(&mutex);
 }
@@ -406,66 +377,14 @@ void ide_dma_pci_lba48()
 typedef struct {
     u8_t a;
     u8_t b;
-    u16_t lbah;         // Lba High
+    u16_t lbah;  // lba high
     u8_t type;
     u8_t f;
-    u16_t scnth;        // Sector Count High
-    u32_t lba;   // Lba Low
-    u32_t scnt;  // Sector Count
+    u16_t scnth; // sector count high
+    u32_t lba;   // lba low
+    u32_t scnt;  // sector count
 } hd_part_t ;
 
-
-
-char *ide_init_buf = 0;
-void ide_init_intr()
-{
-    //printk("%s\n", __func__);
-    drv.irq_cnt++;
-
-    u8_t status = inb(REG_STATUS(0));
-
-    status = inb(drv.bus_status);
-    if(0 == (status & PCI_IDE_STATUS_INTR))
-    {
-        return ;
-    }
-
-    status |= PCI_IDE_STATUS_INTR;
-    outb(status, drv.bus_status);
-    outb(0x00,   drv.bus_cmd);
-
-    insl(REG_DATA(0), ide_init_buf, (512>>2));
-
-    outb(PCI_IDE_CMD_STOP, drv.bus_cmd);
-
-    ide_init_inted = true;
-}
-
-void ide_init_wait_intr()
-{
-    unsigned int clock_end = sys_clock() + 1000;
-
-    while(!ide_init_inted)
-    {
-        if(sys_clock() > clock_end)
-            panic("read hard disk timeout");
-    }
-}
-
-#if 0
-void ide_init_wait_read(u64_t lba, char *buf)
-{
-    ide_init_buf = buf;
-    ide_intr_func = ide_init_intr;
-    ide_cmd_out(0, 1, lba, HD_CMD_READ_EXT);
-    ide_init_wait_intr();
-}
-#else
-void ide_init_wait_read(u64_t lba, char *buf)
-{
-    ide_do_read(lba, 1, buf);
-}
-#endif
 
 void ide_read_extended_partition(u64_t lba, unsigned int inx)
 {
@@ -477,14 +396,14 @@ void ide_read_extended_partition(u64_t lba, unsigned int inx)
     if(buf == 0)
         panic("no memory");
 
-    ide_init_wait_read(lba, buf);
+    ide_do_read(lba, 1, buf);
 
     u16_t sig = *((u16_t *) (buf+510));
     if(sig != 0xAA55)
         panic("bad partition sect");
 
     hd_part_t *p = (hd_part_t *)(buf+PARTITION_TABLE_OFFSET);
-    //printk("-------------------------%d \n", lba);
+    printl("%s:%d lba %d \n", __func__, __LINE__, lba);
 
     for(i=0; i<PARTITION_CNT; ++i, ++p)
     {
@@ -521,7 +440,7 @@ void ide_read_partition()
     if(buf == 0)
         panic("no memory");
 
-    ide_init_wait_read(0, buf);
+    ide_do_read(0, 1, buf);
 
     u16_t sig = *((u16_t *) (buf+510));
     if(sig != 0xAA55)
