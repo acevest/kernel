@@ -73,21 +73,8 @@ void scan_pci_bus(int bus)
         {
             cmd = PCI_CMD(bus, dev, devfn, PCI_VENDORID);
             v = pci_read_config_word(cmd);
-            //v = pci_read_config_long(cmd);
             if(v == 0xFFFF)
                 continue;
-
-#if 0
-            printk("dev %d ", dev);
-            unsigned int i;
-            for(i=0; i<16; ++i)
-            {
-                cmd = PCI_CMD(bus, dev, devfn, i*4);
-                printk("%08x ", pci_read_config_long(cmd));
-            }
-
-            printk("\n");
-#endif
 
             pci_device_t *pci = kmalloc(sizeof(pci_device_t), 0);
             if(0 == pci)
