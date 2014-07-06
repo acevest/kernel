@@ -180,7 +180,7 @@ void ide_printd()
     printd(MPL_IDE, "ide pio_cnt %d dma_cnt %d irq_cnt %d", drv.pio_cnt,  drv.dma_cnt, drv.irq_cnt);
 }
 
-void _ide_cmd_out(dev_t dev, u32 sect_cnt, u64 sect_nr, u32 cmd, bool pio)
+void ide_cmd_out(dev_t dev, u32 sect_cnt, u64 sect_nr, u32 cmd)
 {
     ide_init_inted = false;
 
@@ -189,8 +189,8 @@ void _ide_cmd_out(dev_t dev, u32 sect_cnt, u64 sect_nr, u32 cmd, bool pio)
 
     ide_printd();
 
-    outb(0x00|(pio?0:HD_CTL_NIEN),  REG_CTL(dev));
-    outb(0x40|0x10,                 REG_DEVSEL(dev));
+    outb(0x00,                      REG_CTL(dev));
+    outb(0x40|0x00,                 REG_DEVSEL(dev));
 
     outb((u8)((sect_cnt>>8)&0xFF),  REG_NSECTOR(dev));    // High
     outb((u8)((sect_nr>>24)&0xFF),  REG_LBAL(dev));
@@ -223,11 +223,6 @@ void ide_wait_ready()
         panic("hard disk is not ready");
 }
 
-
-void ide_cmd_out(dev_t dev, u32 sect_cnt, u64 sect_nr, u32 cmd)
-{
-    _ide_cmd_out(dev, sect_cnt, sect_nr, cmd, true);
-}
 
 void dump_pci_ide();
 
@@ -320,69 +315,6 @@ ide_intr_func_t ide_intr_func = ide_default_intr;
 void ide_irq()
 {
     ide_intr_func();
-}
-
-void print_ide_identify(const char *buf)
-{
-    char *p;
-    short *ident;
-    int i, j;
-    unsigned char c;
-
-    ident = (short *) buf;
-
-    char    hd_sn[32];    /* 20 bytes */
-    char    hd_model[64];    /* 40 bytes */
-    short   hd_capabilites = ident[49];
-    short   hd_supt_inst_set = ident[83];
-
-    p = (char *) (ident+10);
-    for(i=0; i<20; i++)
-        hd_sn[i] = p[i];
-    for(j=0; j<20; j+=2)
-    {
-        c = hd_sn[j];
-        hd_sn[j] = hd_sn[j+1];
-        hd_sn[j+1] = c;
-    }
-
-    hd_sn[i] = 0;
-
-    p = (char *) (ident+27);
-    for(i=0; i<40; i++)
-    {
-        hd_model[i] = p[i];
-    }
-    for(j=0; j<20; j+=2)
-    {
-        c = hd_model[j];
-        hd_model[j] = hd_model[j+1];
-        hd_model[j+1] = c;
-    }
-    hd_model[i] = 0;
-
-
-    printk("Hard Disk Vendor: %s\n", hd_sn);
-    printk("Hard Disk Model: %s\n", hd_model);
-    printk("Hard Disk Support LBA: %s\n",
-        (hd_capabilites & 0x0200) ? "Yes" : "No");
-    printk("Hard Disk Support LBA-48bit: %s\n",
-        (hd_supt_inst_set & 0x0400) ? "Yes" : "No");
-
-    if(!(hd_supt_inst_set & 0x0400))
-        panic("Your hard disk ");
-}
-
-void ide_read_identify()
-{
-    outb(HD_CTL_NIEN,               REG_CTL(dev));
-    outb(0x00,                      REG_DEVSEL(dev));
-    outb(HD_CMD_IDENTIFY,           REG_CMD(dev));
-
-    ide_wait_ready();
-
-    insl(REG_DATA(0), ide_buf, 512>>2);
-    print_ide_identify(ide_buf);
 }
 
 prd_t prd __attribute__((aligned(64*1024)));
@@ -525,7 +457,7 @@ void ide_init_wait_read(u64_t lba, char *buf)
 {
     ide_init_buf = buf;
     ide_intr_func = ide_init_intr;
-    _ide_cmd_out(0, 1, lba, HD_CMD_READ_EXT, true);
+    ide_cmd_out(0, 1, lba, HD_CMD_READ_EXT);
     ide_init_wait_intr();
 }
 #else
@@ -634,15 +566,11 @@ void ide_read_partition()
 void ide_init()
 {
     memset((void *)&drv, 0, sizeof(drv));
+
     init_pci_controller(0x0106);
     init_pci_controller(0x0101);
 
-#if 1
-    ide_read_identify();
-    ide_printd();
-#endif
-
     ide_read_partition();
 
-    ide_intr_func = ide_default_intr;
+    ide_printd();
 }
