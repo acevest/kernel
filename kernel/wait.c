@@ -59,7 +59,7 @@ int debug_wait_queue_get()
 
     while(1)
     {
-        printk("pid %d is going to wait\n", sysc_getpid());
+        printl("pid %d is going to wait\n", sysc_getpid());
         task->state = TASK_WAIT;
 
         disable_irq();
@@ -72,10 +72,10 @@ int debug_wait_queue_get()
             break;
 
         schedule();
-        printk("pid %d is running\n", sysc_getpid());
+        printl("pid %d is running\n", sysc_getpid());
     }
 
-    printk("pid %d is really running\n", sysc_getpid());
+    printl("pid %d is really running\n", sysc_getpid());
     task->state = TASK_RUNNING;
     del_wait_queue(&debug_wq, &wait);
 
