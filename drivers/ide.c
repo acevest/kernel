@@ -19,15 +19,6 @@
 #include <wait.h>
 #include <string.h>
 
-DECLARE_MUTEX(mutex);
-void ide_cmd_out(dev_t dev, u32 sect_cnt, u64 sect_nr, u32 cmd);
-
-unsigned int HD_CHL0_CMD_BASE = 0x1F0;
-unsigned int HD_CHL1_CMD_BASE = 0x170;
-
-unsigned int HD_CHL0_CTL_BASE = 0x3F6;
-unsigned int HD_CHL1_CTL_BASE = 0x376;
-
 typedef struct _ide_drv
 {
     pci_device_t *pci;
@@ -48,8 +39,6 @@ typedef struct _ide_drv
     part_t  part[MAX_SUPPORT_PARTITION_CNT];
 } ide_drive_t;
 
-ide_drive_t drv;
-
 typedef struct prd
 {
     unsigned int addr;
@@ -66,7 +55,51 @@ typedef struct {
     wait_queue_head_t wait;
 } ide_request_t;
 
+typedef void (*ide_intr_func_t)();
+
+void ide_default_intr();
+
+ide_drive_t drv;
+DECLARE_MUTEX(mutex);
 ide_request_t ide_request;
+
+ide_intr_func_t ide_intr_func = ide_default_intr;
+
+unsigned char *dma_data = 0;
+
+unsigned int HD_CHL0_CMD_BASE = 0x1F0;
+unsigned int HD_CHL1_CMD_BASE = 0x170;
+
+unsigned int HD_CHL0_CTL_BASE = 0x3F6;
+unsigned int HD_CHL1_CTL_BASE = 0x376;
+
+void ide_printd()
+{
+    printd(MPL_IDE, "ide pio_cnt %d dma_cnt %d irq_cnt %d", drv.pio_cnt,  drv.dma_cnt, drv.irq_cnt);
+}
+
+void ide_cmd_out(dev_t dev, u32 sect_cnt, u64 sect_nr, u32 cmd)
+{
+    drv.pio_cnt++;
+    drv.read_mode = cmd;
+
+    ide_printd();
+
+    outb(0x00,                      REG_CTL(dev));
+    outb(0x40|0x00,                 REG_DEVSEL(dev));
+
+    outb((u8)((sect_cnt>>8)&0xFF),  REG_NSECTOR(dev));    // High
+    outb((u8)((sect_nr>>24)&0xFF),  REG_LBAL(dev));
+    outb((u8)((sect_nr>>32)&0xFF),  REG_LBAM(dev));
+    outb((u8)((sect_nr>>40)&0xFF),  REG_LBAH(dev));
+
+    outb((u8)((sect_cnt>>0)&0xFF),  REG_NSECTOR(dev));    // Low
+    outb((u8)((sect_nr>> 0)&0xFF),  REG_LBAL(dev));
+    outb((u8)((sect_nr>> 8)&0xFF),  REG_LBAM(dev));
+    outb((u8)((sect_nr>>16)&0xFF),  REG_LBAH(dev));
+
+    outb(cmd,                       REG_CMD(dev));
+}
 
 void ide_do_read(u64_t lba, u32_t scnt, char *buf)
 {
@@ -109,11 +142,8 @@ void ide_do_read(u64_t lba, u32_t scnt, char *buf)
     del_wait_queue(&r->wait, &wait);
 }
 
-unsigned char *data = 0;
 
 unsigned int sys_clock();
-
-bool ide_init_inted = false;
 
 void ide_pci_init(pci_device_t *pci)
 {
@@ -154,57 +184,6 @@ void ide_pci_init(pci_device_t *pci)
 }
 
 
-void ide_printd()
-{
-    printd(MPL_IDE, "ide pio_cnt %d dma_cnt %d irq_cnt %d", drv.pio_cnt,  drv.dma_cnt, drv.irq_cnt);
-}
-
-void ide_cmd_out(dev_t dev, u32 sect_cnt, u64 sect_nr, u32 cmd)
-{
-    ide_init_inted = false;
-
-    drv.pio_cnt++;
-    drv.read_mode = cmd;
-
-    ide_printd();
-
-    outb(0x00,                      REG_CTL(dev));
-    outb(0x40|0x00,                 REG_DEVSEL(dev));
-
-    outb((u8)((sect_cnt>>8)&0xFF),  REG_NSECTOR(dev));    // High
-    outb((u8)((sect_nr>>24)&0xFF),  REG_LBAL(dev));
-    outb((u8)((sect_nr>>32)&0xFF),  REG_LBAM(dev));
-    outb((u8)((sect_nr>>40)&0xFF),  REG_LBAH(dev));
-
-    outb((u8)((sect_cnt>>0)&0xFF),  REG_NSECTOR(dev));    // Low
-    outb((u8)((sect_nr>> 0)&0xFF),  REG_LBAL(dev));
-    outb((u8)((sect_nr>> 8)&0xFF),  REG_LBAM(dev));
-    outb((u8)((sect_nr>>16)&0xFF),  REG_LBAH(dev));
-
-    outb(cmd,                       REG_CMD(dev));
-}
-
-void ide_wait_ready()
-{
-    u32 retires = 100;
-    
-    do
-    {
-        int drq_retires = 100000;
-        while(!hd_drq(dev) && --drq_retires)
-            /* do nothing */;
-
-        if(drq_retires != 0)
-            break;
-    }while(--retires);
-
-    if(retires == 0)
-        panic("hard disk is not ready");
-}
-
-
-void dump_pci_ide();
-
 void ide_status()
 {
     u8_t idest = inb(REG_STATUS(0));
@@ -212,13 +191,12 @@ void ide_status()
     printk(" ide status %02x pci status %02x\n", idest, pcist);
 }
 
-
 void ide_debug()
 {
     u32    device;
     u32    nsect = 1;
     u32    retires = 100;
-    u32    sect_nr = 0;
+    u64    sect_nr = 0;
     int count=SECT_SIZE;
 
     nsect    = (count + SECT_SIZE -1)/SECT_SIZE;
@@ -260,11 +238,12 @@ void ide_default_intr()
     if(drv.read_mode == HD_CMD_READ_EXT)
     {
         insl(REG_DATA(0), ide_request.buf, ((ide_request.scnt*SECT_SIZE)>>2));
+        sig = *((u16_t *) (ide_request.buf+510));
     }
 
     if(drv.read_mode == HD_CMD_READ_DMA)
     {
-        sig = *((u16_t *) (data+510));
+        sig = *((u16_t *) (dma_data+510));
     }
 
     ide_printd();
@@ -280,8 +259,6 @@ void ide_default_intr()
     up(&mutex);
 }
 
-typedef void (*ide_intr_func_t)();
-ide_intr_func_t ide_intr_func = ide_default_intr;
 
 void ide_irq()
 {
@@ -300,14 +277,13 @@ unsigned long gprdt = 0;
 
 void ide_dma_pci_lba48()
 {
-    ide_init_inted = false;
     drv.dma_cnt ++;
     drv.read_mode = HD_CMD_READ_DMA;
 #if 1
     memset((void *)&prd, 0, sizeof(prd));
     unsigned long addr = alloc_one_page(0);
-    data = (char *) addr;
-    memset(data, 0xBB, 512);
+    dma_data = (char *) addr;
+    memset(dma_data, 0xBB, 512);
     prd.addr = va2pa(addr);
     prd.cnt  = 512;
     prd.eot  = 1;

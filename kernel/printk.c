@@ -36,12 +36,14 @@ int printk(const char *fmtstr, ...)
     return 0;
 }
 
-char plbuf[1024];
+//char plbuf[1024];
 int printl(const char *fmtstr, ...)
 {
+    char *plbuf = (char *)kmalloc(1024, 0);
     char *args = (char*)(((char*)&fmtstr)+4);
     vsprintf(pkbuf, fmtstr, args);
     vga_puts(3, pkbuf, 0x4);
+    kfree(plbuf);
     return 0;
 }
 

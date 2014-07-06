@@ -187,20 +187,6 @@ void __vga_switch(unsigned int offset)
     outb((offset)&0xFF,         VGA_CRTC_DATA);
 }
 
-int bvga = 0;
-void vga_init()
-{
-    unsigned int i;
-    for(i=1; i<VGA_MAX_SCREEN_CNT; ++i)
-    {
-        memset(vga_screen + i, 0, sizeof(vga_screen_t));
-        vga_screen[i].id    = i;
-        vga_screen[i].base  = (vga_char_t *) (VIDEO_ADDR + i*MAX_LINES_PER_SCREEN*BYTES_PER_LINE);
-        memset(vga_screen[i].base, 0, MAX_LINES_PER_SCREEN*BYTES_PER_LINE);
-    }
-    bvga = 1;
-}
-
 void vga_switch(unsigned int nr)
 {
     if(nr >= VGA_MAX_SCREEN_CNT)
@@ -231,19 +217,46 @@ void vga_dbg_toggle()
     __vga_switch(offset);
 }
 
+unsigned char vga_dbg_color = 0x1F;
 
-void vga_dbg_puts(unsigned int line, const char *buf, unsigned char color)
+void vga_dbg_clear()
+{
+    int i;
+    int line;
+    for(line=0; line<MAX_LINES_PER_SCREEN; ++line)
+    {
+        vga_char_t * const pv = (vga_char_t * const) (VIDEO_ADDR + (VIDEO_DBG_LINE + line) * BYTES_PER_LINE);
+        for(i=0; i<CHARS_PER_LINE; ++i)
+            pv[i] = vga_char(0, vga_dbg_color);
+    }
+}
+
+void vga_dbg_puts(unsigned int line, const char *buf)
 {
     int i;
     char *p = (char *) buf;
     vga_char_t * const pv = (vga_char_t * const) (VIDEO_ADDR + (VIDEO_DBG_LINE + line) * BYTES_PER_LINE);
 
     for(i=0; i<CHARS_PER_LINE; ++i)
-        pv[i] = vga_char(0, color);
+        pv[i] = vga_char(0, vga_dbg_color);
 
     for(i=0; *p; ++i, ++p)
     {
-        color = 0x1F;
-        pv[i] = vga_char(*p, color);
+        pv[i] = vga_char(*p, vga_dbg_color);
     }
 }
+
+void vga_init()
+{
+    unsigned int i;
+    for(i=1; i<VGA_MAX_SCREEN_CNT; ++i)
+    {
+        memset(vga_screen + i, 0, sizeof(vga_screen_t));
+        vga_screen[i].id    = i;
+        vga_screen[i].base  = (vga_char_t *) (VIDEO_ADDR + i*MAX_LINES_PER_SCREEN*BYTES_PER_LINE);
+        memset(vga_screen[i].base, 0, MAX_LINES_PER_SCREEN*BYTES_PER_LINE);
+    }
+
+    vga_dbg_clear();   
+}
+
