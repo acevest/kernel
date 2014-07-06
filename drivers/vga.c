@@ -41,8 +41,9 @@ typedef struct {
     unsigned int offset;
 } vga_screen_t;
 
-#define VGA_MAX_SCREEN_CNT      4
-unsigned int vga_screen_cnt() {return VGA_MAX_SCREEN_CNT;}
+#define VGA_SCREEN_CNT          3
+#define VGA_MAX_SCREEN_CNT      ((VGA_SCREEN_CNT) + 1)
+unsigned int vga_screen_cnt() {return VGA_SCREEN_CNT;}
 vga_screen_t vga_screen[VGA_MAX_SCREEN_CNT] = {
     {
         0,

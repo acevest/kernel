@@ -68,7 +68,8 @@ void *memcpy(void *dest, const void *src, size_t size)
     return dest;
 }
 
-void memset(char *dest, char ch, size_t size)
+void memset(void *dest, char ch, size_t size)
 {
-    while(size--) *dest++ = ch;
+    char *d = (char *) dest;
+    while(size--) *d++ = ch;
 }

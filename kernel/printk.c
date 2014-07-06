@@ -36,6 +36,15 @@ int printk(const char *fmtstr, ...)
     return 0;
 }
 
+char plbuf[1024];
+int printl(const char *fmtstr, ...)
+{
+    char *args = (char*)(((char*)&fmtstr)+4);
+    vsprintf(pkbuf, fmtstr, args);
+    vga_puts(3, pkbuf, 0x4);
+    return 0;
+}
+
 char pdbuf[1024];
 int printd(unsigned int line, const char *fmtstr, ...)
 {

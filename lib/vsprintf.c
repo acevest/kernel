@@ -2,6 +2,7 @@
 // vsprintf.c (C) Zhao Yanbai
 //     wed, 30 Jul 2008 14:47 +0800
 //     Add %012d %012x %12d %12x Support  Mon, 20 Jul 2009 19:30:34
+//     Add %u Support                     Sun, 06 Jul 2014 12:07:54
 // ========================================================================
 #include "string.h"
 
@@ -174,8 +175,7 @@ char *itox(char *s, unsigned int n)
     char *p = s;
     char ch;
     int i;
-
-    if(n==0){*p++='0';*p=0;return s;}
+    bool flag = false;
 
     for(i=28; i>=0; i-=4)
     {
@@ -191,8 +191,15 @@ char *itox(char *s, unsigned int n)
             ch += 'A';
         }
 
-        *p++ = ch;
+        if(ch != '0')
+            flag = true;
+
+        if(flag || ch != '0')
+            *p++ = ch;
     }
+
+    if(s == p)
+        *p++ = '0';
 
     *p = 0;
 

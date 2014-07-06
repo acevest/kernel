@@ -14,7 +14,7 @@
  *--------------------------------------------------------------------------
  */
 
-#ifndef _EXT2_H
+#ifndef    _EXT2_H
 #define _EXT2_H
 
 #include <types.h>
@@ -28,7 +28,15 @@
 #define EXT2_MAX_BLOCK_SIZE     4096
 #define EXT2_MIN_BLOCK_LOG_SIZE 10
 
-#define EXT2_BLOCK_SIZE        (EXT2_MIN_BLOCK_SIZE << (EXT2_SB)->s_log_block_size)
+#define EXT2_SB            (&ext2_sb)
+#define EXT2_SECT        (ext2_start_sect)
+
+#ifndef    EXT2_SB
+#error "Please define EXT2_SB"
+#endif
+
+#define EXT2_BLOCK_SIZE        (EXT2_MIN_BLOCK_SIZE <<     \
+                (EXT2_SB)->s_log_block_size)
 
 #define EXT2_SECT_PER_BLOCK    (EXT2_BLOCK_SIZE/512)
 
@@ -55,31 +63,47 @@
  */
 typedef struct ext2_superblock
 {
-    u32    s_inodes_count;      /* Inodes count */
-    u32    s_blocks_count;      /* Blocks count */
+/*
+    u32    s_inodes_count;
+    u32    s_blocks_count;
+    u32    s_r_blocks_count;
+    u32    s_free_blocks_count;
+    u32    s_free_inodes_count;
+    u32    s_first_data_block;
+    u32    s_log_block_size;
+    u32    s_log_frag_size;
+    u32    s_blocks_per_group;
+    u32    s_frags_per_group;
+    u32    s_inodes_per_group;
+
+    // So Much Items
+    // I do not want to write down ...
+*/
+    u32    s_inodes_count;        /* Inodes count */
+    u32    s_blocks_count;        /* Blocks count */
     u32    s_r_blocks_count;    /* Reserved blocks count */
-    u32    s_free_blocks_count; /* Free blocks count */
-    u32    s_free_inodes_count; /* Free inodes count */
-    u32    s_first_data_block;  /* First Data Block */
+    u32    s_free_blocks_count;    /* Free blocks count */
+    u32    s_free_inodes_count;    /* Free inodes count */
+    u32    s_first_data_block;    /* First Data Block */
     u32    s_log_block_size;    /* Block size */
-    u32    s_log_frag_size;     /* Fragment size */
-    u32    s_blocks_per_group;  /* # Blocks per group */
-    u32    s_frags_per_group;   /* # Fragments per group */
-    u32    s_inodes_per_group;  /* # Inodes per group */
-    u32    s_mtime;             /* Mount time */
-    u32    s_wtime;             /* Write time */
-    u16    s_mnt_count;         /* Mount count */
-    u16    s_max_mnt_count;     /* Maximal mount count */
-    u16    s_magic;             /* Magic signature */
-    u16    s_state;             /* File system state */
-    u16    s_errors;            /* Behaviour when detecting errors */
-    u16    s_minor_rev_level;   /* minor revision level */
-    u32    s_lastcheck;         /* time of last check */
-    u32    s_checkinterval;     /* max. time between checks */
+    u32    s_log_frag_size;    /* Fragment size */
+    u32    s_blocks_per_group;    /* # Blocks per group */
+    u32    s_frags_per_group;    /* # Fragments per group */
+    u32    s_inodes_per_group;    /* # Inodes per group */
+    u32    s_mtime;        /* Mount time */
+    u32    s_wtime;        /* Write time */
+    u16    s_mnt_count;        /* Mount count */
+    u16    s_max_mnt_count;    /* Maximal mount count */
+    u16    s_magic;        /* Magic signature */
+    u16    s_state;        /* File system state */
+    u16    s_errors;    /* Behaviour when detecting errors */
+    u16    s_minor_rev_level;     /* minor revision level */
+    u32    s_lastcheck;        /* time of last check */
+    u32    s_checkinterval;    /* max. time between checks */
     u32    s_creator_os;        /* OS */
-    u32    s_rev_level;         /* Revision level */
-    u16    s_def_resuid;        /* Default uid for reserved blocks */
-    u16    s_def_resgid;        /* Default gid for reserved blocks */
+    u32    s_rev_level;        /* Revision level */
+    u16    s_def_resuid;    /* Default uid for reserved blocks */
+    u16    s_def_resgid;    /* Default gid for reserved blocks */
     /*
      * These fields are for EXT2_DYNAMIC_REV superblocks only.
      *
@@ -94,14 +118,14 @@ typedef struct ext2_superblock
      * things it doesn't understand...
      */
     u32    s_first_ino;         /* First non-reserved inode */
-    u16    s_inode_size;        /* size of inode structure */
-    u16    s_block_group_nr;    /* block group # of this superblock */
-    u32    s_feature_compat;    /* compatible feature set */
-    u32    s_feature_incompat;  /* incompatible feature set */
+    u16    s_inode_size;         /* size of inode structure */
+    u16    s_block_group_nr; /* block group # of this superblock */
+    u32    s_feature_compat;     /* compatible feature set */
+    u32    s_feature_incompat;     /* incompatible feature set */
     u32    s_feature_ro_compat; /* readonly-compatible feature set */
-    u8    s_uuid[16];           /* 128-bit uuid for volume */
-    char    s_volume_name[16];  /* volume name */
-    char    s_last_mounted[64]; /* directory where last mounted */
+    u8    s_uuid[16];        /* 128-bit uuid for volume */
+    char    s_volume_name[16];     /* volume name */
+    char    s_last_mounted[64];     /* directory where last mounted */
     u32    s_algorithm_usage_bitmap; /* For compression */
     /*
      * Performance hints.  Directory preallocation should only
@@ -113,18 +137,21 @@ typedef struct ext2_superblock
     /*
      * Journaling support valid if EXT3_FEATURE_COMPAT_HAS_JOURNAL set.
      */
-    u8    s_journal_uuid[16];   /* uuid of journal superblock */
-    u32    s_journal_inum;      /* inode number of journal file */
-    u32    s_journal_dev;       /* device number of journal file */
-    u32    s_last_orphan;       /* start of list of inodes to delete */
-    u32    s_hash_seed[4];      /* HTREE hash seed */
-    u8    s_def_hash_version;   /* Default hash version to use */
+    u8    s_journal_uuid[16];    /* uuid of journal superblock */
+    u32    s_journal_inum;        /* inode number of journal file */
+    u32    s_journal_dev;        /* device number of journal file */
+    u32    s_last_orphan;    /* start of list of inodes to delete */
+    u32    s_hash_seed[4];        /* HTREE hash seed */
+    u8    s_def_hash_version;    /* Default hash version to use */
     u8    s_reserved_char_pad;
     u16    s_reserved_word_pad;
     u32    s_default_mount_opts;
-     u32    s_first_meta_bg;    /* First metablock block group */
-    u32    s_reserved[190];     /* Padding to the end of the block */
-} ext2_sb_t;
+     u32    s_first_meta_bg;     /* First metablock block group */
+    u32    s_reserved[190];/* Padding to the end of the block */
+} SuperBlock,*pSuperBlock;
+
+extern SuperBlock ext2_sb;
+
 
 typedef struct ext2_group_descriptor
 {
@@ -165,7 +192,7 @@ typedef struct ext2_inode
     u32    i_dir_acl;
     u32    i_faddr;
     u8    i_osd2[12];
-} ext2_inode_t; 
+} Inode,*pInode;
 
 
 #define EXT2_NAME_LEN    255
@@ -176,7 +203,7 @@ typedef struct ext2_dir_ent
     u8    name_len;
     u8    file_type;        /* 目录类型 */
     char    name[EXT2_NAME_LEN];
-} ext2_dirent_t;
+} DirEnt, *pDirEnt;
 
 /*
  * Ext2 目录类型.
@@ -196,11 +223,16 @@ enum
 };
 
 
-#define EXT2_DIR_PAD                4
-#define EXT2_DIR_ROUND              (EXT2_DIR_PAD-1)
-#define EXT2_DIR_REC_LEN(name_len)  (((name_len)+8+EXT2_DIR_ROUND) & ~EXT2_DIR_ROUND)
-#define EXT2_MAX_REC_LEN            ((1<<16)-1)
+#define EXT2_DIR_PAD            4
+#define EXT2_DIR_ROUND            (EXT2_DIR_PAD-1)
+#define EXT2_DIR_REC_LEN(name_len)    (((name_len)+8+EXT2_DIR_ROUND) & \
+                        ~EXT2_DIR_ROUND)
+#define EXT2_MAX_REC_LEN        ((1<<16)-1)
 
+
+extern    int ext2_read_inode(unsigned int n, pInode inode);
+extern    int ext2_get_file_inode(const char *path, pInode inode);
+extern    int ext2_read_file(const pInode ino, void *buf, size_t count);
 
 
 #endif //_EXT2_H

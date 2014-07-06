@@ -16,6 +16,11 @@
 #include <pci.h>
 #include <system.h>
 #include <semaphore.h>
+#include <wait.h>
+#include <string.h>
+
+DECLARE_MUTEX(mutex);
+void ide_cmd_out(dev_t dev, u32 sect_cnt, u64 sect_nr, u32 cmd);
 
 unsigned int HD_CHL0_CMD_BASE = 0x1F0;
 unsigned int HD_CHL1_CMD_BASE = 0x170;
@@ -52,6 +57,78 @@ typedef struct prd
     unsigned int reserved : 15;
     unsigned int eot : 1;
 } prd_t;
+
+typedef struct {
+    u64_t   lba;
+    u32_t   scnt;
+    char    *buf;
+    bool    finish;
+    list_head_t list;
+    wait_queue_head_t wait;
+} ide_request_t;
+
+#define IDE_REQ_LIST 0
+
+#if IDE_REQ_LIST
+LIST_HEAD(ide_request);
+#else
+ide_request_t ide_request;
+#endif
+
+
+void ide_do_read(u64_t lba, u32_t scnt, char *buf)
+{
+    bool finish = false;
+    unsigned long flags;
+
+#if IDE_REQ_LIST
+    ide_request_t *r = kmalloc(sizeof(ide_request_t), 0);
+    if(r == 0)
+        panic("out of memory");
+
+    memset(r, 0, sizeof(ide_request_t));
+#else
+    ide_request_t *r = &ide_request;
+#endif
+
+    down(&mutex);
+
+    r->lba = lba;
+    r->scnt= scnt;
+    r->buf = buf;
+    r->finish = false;
+    INIT_LIST_HEAD(&r->list);
+    init_wait_queue(&r->wait);
+
+    task_union * task = current;
+    DECLARE_WAIT_QUEUE(wait, task);
+    add_wait_queue(&r->wait, &wait);
+
+    ide_cmd_out(0, scnt, lba, HD_CMD_READ_EXT);
+    
+    while(true)
+    {
+        printl("%s pid %d is going to wait\n", __func__, sysc_getpid());
+        task->state = TASK_WAIT;
+        irq_save(flags);
+        finish = r->finish;
+        irq_restore(flags);
+
+        if(finish)
+            break;
+
+        schedule();
+        printl("%s pid %d is running\n", __func__, sysc_getpid());
+    }
+
+    printl("%s pid %d is really running\n", __func__, sysc_getpid());
+    task->state = TASK_RUNNING;
+    del_wait_queue(&r->wait, &wait);
+
+#if IDE_REQ_LIST
+    kfree(r);
+#endif
+}
 
 unsigned char *data = 0;
 
@@ -113,7 +190,7 @@ void _ide_cmd_out(dev_t dev, u32 sect_cnt, u64 sect_nr, u32 cmd, bool pio)
     ide_printd();
 
     outb(0x00|(pio?0:HD_CTL_NIEN),  REG_CTL(dev));
-    outb(0x40|0x00,                 REG_DEVSEL(dev));
+    outb(0x40|0x10,                 REG_DEVSEL(dev));
 
     outb((u8)((sect_cnt>>8)&0xFF),  REG_NSECTOR(dev));    // High
     outb((u8)((sect_nr>>24)&0xFF),  REG_LBAL(dev));
@@ -175,7 +252,6 @@ void ide_debug()
     ide_cmd_out(0, nsect, sect_nr, HD_CMD_READ_EXT);
 }
 
-DECLARE_MUTEX(mutex);
 
 void init_pci_controller(unsigned int classcode)
 {
@@ -210,8 +286,12 @@ void ide_default_intr()
     u16_t sig = 0;
     if(drv.read_mode == HD_CMD_READ_EXT)
     {
+#if IDE_REQ_LIST
         insl(REG_DATA(0), ide_buf, (512>>2));
         sig = *((u16_t *) (ide_buf+510));
+#else
+        insl(REG_DATA(0), ide_request.buf, ((ide_request.scnt*SECT_SIZE)>>2));
+#endif
     }
 
     if(drv.read_mode == HD_CMD_READ_DMA)
@@ -221,10 +301,16 @@ void ide_default_intr()
 
     ide_printd();
 
-    printk("hard disk sig %04x read mode %x cnt %d\n", sig, drv.read_mode, drv.irq_cnt);
+    printl(" hard disk sig %04x read mode %x cnt %d\n", sig, drv.read_mode, drv.irq_cnt);
     printd(MPL_IDE_INTR, "hard disk sig %x read mode %x cnt %d", sig, drv.read_mode, drv.irq_cnt);
 
     outb(PCI_IDE_CMD_STOP, drv.bus_cmd);
+#if IDE_REQ_LIST
+#else
+    wake_up(&ide_request.wait);
+    ide_request.finish = true;
+#endif
+
     up(&mutex);
 }
 
@@ -434,13 +520,20 @@ void ide_init_wait_intr()
     }
 }
 
-void ide_init_wait_read(u64 lba, char *buf)
+#if 0
+void ide_init_wait_read(u64_t lba, char *buf)
 {
     ide_init_buf = buf;
     ide_intr_func = ide_init_intr;
     _ide_cmd_out(0, 1, lba, HD_CMD_READ_EXT, true);
     ide_init_wait_intr();
 }
+#else
+void ide_init_wait_read(u64_t lba, char *buf)
+{
+    ide_do_read(lba, 1, buf);
+}
+#endif
 
 void ide_read_extended_partition(u64_t lba, unsigned int inx)
 {
