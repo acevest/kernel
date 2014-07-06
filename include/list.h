@@ -96,4 +96,3 @@ static inline int list_empty(list_head_t *head)
 {
     return head->next == head;
 }
-

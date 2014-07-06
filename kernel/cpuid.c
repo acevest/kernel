@@ -21,10 +21,10 @@ do{\
         printk(" %s",fea);\
 }while(0);
 
-typedef struct reg{ unsigned long eax,ebx,ecx,edx; }Reg,*pReg;
-Reg    cpuid(unsigned long op)
+typedef struct reg{ unsigned long eax,ebx,ecx,edx; } reg_t;
+reg_t cpuid(unsigned long op)
 {
-    Reg    r;
+    reg_t r;
     asm("cpuid;"
     :"=a"(r.eax),
      "=b"(r.ebx),
@@ -39,15 +39,13 @@ Reg    cpuid(unsigned long op)
 void    detect_cpu()
 {
 
-    Reg    r;
+    reg_t r;
     unsigned short int cpu_sn[6];    //serial number
     int    i;
 
     /**********************Get CPU Name********************************/
-    char    cpu_name[13];
-
-    //printk("Detecting CPU...   ");
-
+    char cpu_name[13];
+    
     r=cpuid(0);
     memcpy(cpu_name + 0, &r.ebx, 4);
     memcpy(cpu_name + 4, &r.edx, 4);
@@ -56,7 +54,7 @@ void    detect_cpu()
     printk("%s ",cpu_name);
 
      /**********************Get Processor Brand String******************/
-    char    pbs[50];        //processor brand string
+    char pbs[50];        //processor brand string
     r = cpuid(0x80000002);
     memcpy(pbs + 0 , &r.eax, 4);
     memcpy(pbs + 4 , &r.ebx, 4);
@@ -72,13 +70,14 @@ void    detect_cpu()
     memcpy(pbs + 36 , &r.ebx, 4);
     memcpy(pbs + 40 , &r.ecx, 4);
     memcpy(pbs + 44 , &r.edx, 4);
-    printk("Model Name: %s\n",pbs);
-    printk("%s", pbs);
+    pbs[48] = 0;
+    printk("Model Name: %s",pbs);
 
      /**********************Get Number of Processors********************/
-    int    pn;//number of logical processors in one physical processor
+    int pn;//number of logical processors in one physical processor
     r=cpuid(1);
     pn    = ((r.ebx & 0x00FF0000) >> 16);
+    printk(" x %d Cores\n",pn);
 
      /**********************Get the CPU's Feature***********************/
     int    fv = r.edx;
@@ -114,12 +113,11 @@ void    detect_cpu()
     //TEST_FEATURE(fv, 30, "Reserved")
     TEST_FEATURE(fv, 31, "pbe")
 
-    printk(" x %d Cores\n",pn);
+    printk("\n");
 
     if(!((1UL<<11) & fv))
     {
         printk("Your CPU Do Not Support SYSENTER/SYSEXIT\n");
         while(1);
     }
-    
 }

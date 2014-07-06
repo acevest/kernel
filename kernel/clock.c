@@ -24,6 +24,6 @@ void clk_handler(unsigned int irq, pt_regs_t * regs, void *dev_id)
 {
     jiffies++;
 
-    printk("^");
+    printl("^");
     printd(MPL_CLOCK, "clock:%d", jiffies);
 }
