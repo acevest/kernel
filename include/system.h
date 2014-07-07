@@ -186,7 +186,7 @@ typedef struct system
 
     dev_t root_dev;
 #define CMD_LINE_SIZE    128
-    char *cmdline;
+    const char *cmdline;
 
     u32 debug;
 } System, *pSystem;

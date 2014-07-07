@@ -36,7 +36,7 @@ void kbd_handler(unsigned int irq, pt_regs_t * regs, void *dev_id)
     unsigned char scan_code;
     scan_code = inb(0x60);
 
-    printd(MPL_KEYBOARD, "keyboard:%d scan code %02x", kbd_cnt++, scan_code);
+    printl(MPL_KEYBOARD, "keyboard:%d scan code %02x", kbd_cnt++, scan_code);
 
     if(scan_code == 0x01) // Esc
         reboot();

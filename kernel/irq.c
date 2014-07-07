@@ -58,7 +58,7 @@ __attribute__ ((regparm(1))) void irq_handler(pt_regs_t *regs)
 
     unsigned long esp;
     asm("movl %%esp, %%eax":"=a"(esp));
-    printd(MPL_PREEMPT, "current %08x  preempt %d esp %08x", current, current->preempt_cnt, esp);
+    printl(MPL_PREEMPT, "current %08x  preempt %d esp %08x", current, current->preempt_cnt, esp);
 
     p->chip->ack(irq);
     sti();

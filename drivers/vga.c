@@ -231,14 +231,14 @@ void vga_dbg_clear()
     }
 }
 
-void vga_dbg_puts(unsigned int line, const char *buf)
+void vga_dbg_puts(unsigned int line, unsigned int offset, const char *buf)
 {
+    assert(line   < LINES_PER_SCREEN);
+    assert(offset < CHARS_PER_LINE);
+
     int i;
     char *p = (char *) buf;
-    vga_char_t * const pv = (vga_char_t * const) (VIDEO_ADDR + (VIDEO_DBG_LINE + line) * BYTES_PER_LINE);
-
-    for(i=0; i<CHARS_PER_LINE; ++i)
-        pv[i] = vga_char(0, vga_dbg_color);
+    vga_char_t * const pv = (vga_char_t * const) (VIDEO_ADDR + (VIDEO_DBG_LINE + line) * BYTES_PER_LINE + offset*sizeof(vga_char_t));
 
     for(i=0; *p; ++i, ++p)
     {

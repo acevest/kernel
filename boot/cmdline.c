@@ -15,99 +15,32 @@
 #include <string.h>
 #include <stdlib.h>
 
-void get_variable_value(const char *name, char *value);
-
-void parse_root_dev()
+static void get_value(const char *name, char *value)
 {
-    char    value[128];
-    int    n;
-    get_variable_value("root", value);
-
-    /* 目前只支持通道一的一个硬盘 */
-    /*
-    printk("D:%s\n", value);
-    assert(    value[0] == '(' &&
-        value[1] == 'h' &&
-        value[2] == 'd' &&
-        value[3] == '0' &&
-        value[4] == ',');
-    */
-    value[0] = '(';
-    value[1] = 'h';
-    value[2] = 'd';
-    value[3] = '0';
-    value[4] = ')';
-    value[5] = ',';
-    value[6] = '0';
-    value[7] = '\0';
-    n = atoi(value+5);
-
-    system.root_dev = MAKE_DEV(DEV_MAJOR_HD, n+1);
-}
-void parse_debug()
-{
-    char value[128];
-    int n;
-    get_variable_value("debug", value);
-    n = atoi(value);
-
-    system.debug = (n != 0);
-}
-
-
-void parse_cmdline(char *cmdline)
-{
-    system.cmdline = cmdline;
-    printk("cmdline: %s\n", system.cmdline);
-    parse_root_dev();
-    parse_debug();
-#if 0
-    get_variable_value("root", value);
-    printk("root : %s\n", value, n);
-    get_variable_value("debug", value);
-    n = atoi(value);
-    printk("debug : %s %d\n", value, n);
-    while(1);
-#endif
-}
-
-
-void get_variable_value(const char *name, char *value)
-{
-    char *p = system.cmdline;
-    char buf[256];
-    int  i;
-    *value = 0;
-
-    while(*p)
+    const char *p;
+    if(0 != (p = strstr(system.cmdline, name)) )
     {
-        while(*p != ' ')
+        if(0 != (p = strstr(p, "=")))
         {
-            if(*p++ == 0)
-                return;
-        }
-        p++;
-        i = 0;
-        while(*p != '=' && *p != 0)
-            buf[i++] = *p++;
-        if(*p++ == 0)
-            return;
-        buf[i] = 0;
-        //printk("%s %s %d\n",buf, name, strcmp(buf, name));
-
-        if(strcmp(buf, name) != 0)
-        {
+            p++;
             while(*p != ' ' && *p != 0)
-                p++;
-            continue;
+                *value++ = *p++;
         }
-
-        i = 0;
-        while(*p != ' ' && *p != 0)
-            value[i++] = *p++;
-        value[i] = 0;
-        //printk("DD %s", value);
-        return ;
     }
 
+    *value = 0;
+}
+
+
+void parse_cmdline(const char *cmdline)
+{
+    char value[128];
+    system.cmdline = cmdline;
+    printk("cmdline: %s\n", system.cmdline);
+
+    get_value("root", value);
+    printk("root device %s\n", value);
+    assert(value[0]=='h' && value[1]=='d' && value[2] == 'a');
+    system.root_dev = MAKE_DEV(DEV_MAJOR_HD, atoi(value+3));
+    printk("root device %08x\n", system.root_dev);
 }
