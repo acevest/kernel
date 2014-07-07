@@ -29,7 +29,7 @@ void init_task_entry()
 
     while(1)
     {
-        printd(MPL_TASK_1+id-1, "task:%d [%08x] weight %d cnt %d", id, current, current->weight, cnt++);
+        printl(MPL_TASK_1+id-1, "task:%d [%08x] weight %d cnt %d", id, current, current->weight, cnt++);
         int v = debug_wait_queue_get();
         printk("task:%d wait queue get %d\n", id, v);
     }
@@ -52,7 +52,7 @@ void root_task_entry()
     int cnt = 0;
     while(1)
     {
-        printd(MPL_ROOT, "root:0 [%08x] weight %d cnt %d", current, root_task.weight, cnt++);
+        printl(MPL_ROOT, "root:0 [%08x] weight %d cnt %d", current, root_task.weight, cnt++);
         asm("sti;hlt;");
         //sysc_test();
         //syscall0(SYSC_TEST);

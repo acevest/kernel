@@ -16,7 +16,7 @@
  */
 
 extern void vga_puts(unsigned int nr, const char *buf, unsigned char color);
-extern void vga_dbg_puts(unsigned long line, const char *buf, unsigned char color);
+extern void vga_dbg_puts(unsigned int line, unsigned int offset, const char *buf);
 
 unsigned int printk_screen_nr = 0;
 
@@ -36,22 +36,21 @@ int printk(const char *fmtstr, ...)
     return 0;
 }
 
-//char plbuf[1024];
-int printl(const char *fmtstr, ...)
+int printd(const char *fmtstr, ...)
 {
-    char *plbuf = (char *)kmalloc(1024, 0);
+    char *pdbuf = (char *)kmalloc(1024, 0);
     char *args = (char*)(((char*)&fmtstr)+4);
-    vsprintf(pkbuf, fmtstr, args);
-    vga_puts(3, pkbuf, 0x4);
-    kfree(plbuf);
+    vsprintf(pdbuf, fmtstr, args);
+    vga_puts(3, pdbuf, 0x4);
+    kfree(pdbuf);
     return 0;
 }
 
-char pdbuf[1024];
-int printd(unsigned int line, const char *fmtstr, ...)
+char plobuf[1024];
+int printlo(unsigned int line, unsigned int offset, const char *fmtstr, ...)
 {
     char *args = (char*)(((char*)&fmtstr)+4);
-    vsprintf(pdbuf, fmtstr, args);
-    vga_dbg_puts(line, pdbuf, 0x7);
+    vsprintf(plobuf, fmtstr, args);
+    vga_dbg_puts(line, offset, plobuf);
     return 0;
 }

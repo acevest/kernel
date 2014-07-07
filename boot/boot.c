@@ -19,9 +19,13 @@
 
 struct boot_params boot_params __attribute__((aligned(32)));
 
+void parse_cmdline(const char *cmdline);
+
 void init_boot_params(multiboot_info_t *p)
 {
     boot_params.cmdline = (char *) p->cmdline;
+
+    parse_cmdline(boot_params.cmdline);
 
     // KB to Bytes
     // no need to concern about 64bit

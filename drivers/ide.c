@@ -73,9 +73,9 @@ unsigned int HD_CHL1_CMD_BASE = 0x170;
 unsigned int HD_CHL0_CTL_BASE = 0x3F6;
 unsigned int HD_CHL1_CTL_BASE = 0x376;
 
-void ide_printd()
+void ide_printl()
 {
-    printd(MPL_IDE, "ide pio_cnt %d dma_cnt %d irq_cnt %d", drv.pio_cnt,  drv.dma_cnt, drv.irq_cnt);
+    printl(MPL_IDE, "ide pio_cnt %d dma_cnt %d irq_cnt %d", drv.pio_cnt,  drv.dma_cnt, drv.irq_cnt);
 }
 
 void ide_cmd_out(dev_t dev, u32 sect_cnt, u64 sect_nr, u32 cmd)
@@ -83,7 +83,7 @@ void ide_cmd_out(dev_t dev, u32 sect_cnt, u64 sect_nr, u32 cmd)
     drv.pio_cnt++;
     drv.read_mode = cmd;
 
-    ide_printd();
+    ide_printl();
 
     outb(0x00,                      REG_CTL(dev));
     outb(0x40|0x00,                 REG_DEVSEL(dev));
@@ -124,7 +124,7 @@ void ide_do_read(u64_t lba, u32_t scnt, char *buf)
     
     while(true)
     {
-        printl("%s pid %d is going to wait\n", __func__, sysc_getpid());
+        printd("%s pid %d is going to wait\n", __func__, sysc_getpid());
         task->state = TASK_WAIT;
         irq_save(flags);
         finish = r->finish;
@@ -134,10 +134,10 @@ void ide_do_read(u64_t lba, u32_t scnt, char *buf)
             break;
 
         schedule();
-        printl("%s pid %d is running\n", __func__, sysc_getpid());
+        printd("%s pid %d is running\n", __func__, sysc_getpid());
     }
 
-    printl("%s pid %d is really running\n", __func__, sysc_getpid());
+    printd("%s pid %d is really running\n", __func__, sysc_getpid());
     task->state = TASK_RUNNING;
     del_wait_queue(&r->wait, &wait);
 }
@@ -180,7 +180,7 @@ void ide_pci_init(pci_device_t *pci)
     HD_CHL1_CTL_BASE = pci->bars[3] ? pci->bars[3] : HD_CHL1_CTL_BASE;
 
     printk("channel0: cmd %04x ctl %04x channel1: cmd %04x ctl %04x\n", HD_CHL0_CMD_BASE, HD_CHL0_CTL_BASE, HD_CHL1_CMD_BASE, HD_CHL1_CTL_BASE);
-    printd(18, "channel0: cmd %04x ctl %04x channel1: cmd %04x ctl %04x", HD_CHL0_CMD_BASE, HD_CHL0_CTL_BASE, HD_CHL1_CMD_BASE, HD_CHL1_CTL_BASE);
+    printl(18, "channel0: cmd %04x ctl %04x channel1: cmd %04x ctl %04x", HD_CHL0_CMD_BASE, HD_CHL0_CTL_BASE, HD_CHL1_CMD_BASE, HD_CHL1_CTL_BASE);
 }
 
 
@@ -211,7 +211,7 @@ void init_pci_controller(unsigned int classcode)
     if(pci != 0 && pci->intr_line < 16)
     {
         printk("Found PCI Vendor %04x Device %04x Class %04x IntrLine %d\n", pci->vendor, pci->device, pci->classcode, pci->intr_line);
-        printd(17, "Found PCI Vendor %04x Device %04x Class %04x IntrLine %d", pci->vendor, pci->device, pci->classcode, pci->intr_line);
+        printl(17, "Found PCI Vendor %04x Device %04x Class %04x IntrLine %d", pci->vendor, pci->device, pci->classcode, pci->intr_line);
         ide_pci_init(pci);
         drv.pci = pci;
     }
@@ -246,10 +246,10 @@ void ide_default_intr()
         sig = *((u16_t *) (dma_data+510));
     }
 
-    ide_printd();
+    ide_printl();
 
-    printl(" hard disk sig %04x read mode %x cnt %d\n", sig, drv.read_mode, drv.irq_cnt);
-    printd(MPL_IDE_INTR, "hard disk sig %x read mode %x cnt %d", sig, drv.read_mode, drv.irq_cnt);
+    printd(" hard disk sig %04x read mode %x cnt %d\n", sig, drv.read_mode, drv.irq_cnt);
+    printl(MPL_IDE_INTR, "hard disk sig %x read mode %x cnt %d", sig, drv.read_mode, drv.irq_cnt);
 
     outb(PCI_IDE_CMD_STOP, drv.bus_cmd);
 
@@ -289,7 +289,7 @@ void ide_dma_pci_lba48()
     prd.eot  = 1;
     gprdt = va2pa(&prd);
 
-    printd(16, "gprdt %08x &prdt %08x prd.addr %08x addr %08x",
+    printl(16, "gprdt %08x &prdt %08x prd.addr %08x addr %08x",
             gprdt, &prd, prd.addr, addr);
 
     outb(PCI_IDE_CMD_STOP, drv.bus_cmd);
@@ -379,7 +379,7 @@ void ide_read_extended_partition(u64_t lba, unsigned int inx)
         panic("bad partition sect");
 
     hd_part_t *p = (hd_part_t *)(buf+PARTITION_TABLE_OFFSET);
-    printl("%s:%d lba %d \n", __func__, __LINE__, lba);
+    printd("%s:%d lba %d \n", __func__, __LINE__, lba);
 
     for(i=0; i<PARTITION_CNT; ++i, ++p)
     {
@@ -467,5 +467,5 @@ void ide_init()
 
     ide_read_partition();
 
-    ide_printd();
+    ide_printl();
 }

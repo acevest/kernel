@@ -73,3 +73,31 @@ void memset(void *dest, char ch, size_t size)
     char *d = (char *) dest;
     while(size--) *d++ = ch;
 }
+
+int memcmp(const void *a, const void *b, size_t count)
+{
+    const unsigned char *sa, *sb;
+    int delta = 0;
+    for(sa=a, sb=b; count>0; ++sa, ++sb, --count)
+        if((delta = *sa - *sb) != 0)
+            break;
+    return delta;
+}
+
+char *strstr(const char *a, const char *b)
+{
+    size_t la, lb;
+    lb = strlen(b);
+    if(lb == 0)
+        return (char *) a;
+    la = strlen(a);
+    while(la >= lb)
+    {
+        la--;
+        if(memcmp(a, b, lb) == 0)
+            return (char *)a;
+        a++;
+    }
+
+    return 0;
+}
