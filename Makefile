@@ -37,5 +37,5 @@ install:
 	md5sum /boot/KERNEL.BIN
 	md5sum KERNEL.BIN
 
-copy:
+cp:
 	./scripts/copy.sh

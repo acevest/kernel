@@ -19,6 +19,10 @@
 
 #include <types.h>
 
+#define EXT2_SUPER_MAGIC        0xEF53
+
+#define EXT2_SB_OFFSET          1024
+
 #define EXT2_BAD_INO            1
 #define EXT2_ROOT_INO           2
 #define EXT2_BOOT_LOADER_INO    5
@@ -28,6 +32,7 @@
 #define EXT2_MAX_BLOCK_SIZE     4096
 #define EXT2_MIN_BLOCK_LOG_SIZE 10
 
+#define EXT2_SB                 (&ext2_fs.ext2_sb)
 #define EXT2_BLOCK_SIZE        (EXT2_MIN_BLOCK_SIZE << (EXT2_SB)->s_log_block_size)
 
 #define EXT2_SECT_PER_BLOCK    (EXT2_BLOCK_SIZE/512)

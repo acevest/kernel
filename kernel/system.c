@@ -155,13 +155,6 @@ void set_tss()
     asm("ltr %%ax"::"a"((INDEX_TSS<<3)+3));
 }
 
-void setup_root_dev()
-{
-    unsigned char dev;
-    dev = (unsigned char)(system.boot_device >> 24);
-    printk("root device: %08x\n", system.root_dev);
-}
-
 int sysc_reboot(int mode)
 {
 

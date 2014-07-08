@@ -17,6 +17,7 @@
 
 int sysc_read(int fd, void *buf, size_t count)
 {
+#if 0
     if(fd<0 || fd>=NR_OPENS)
         return -EBADF;
 
@@ -30,4 +31,5 @@ int sysc_read(int fd, void *buf, size_t count)
 
 
     return read_file(inode, buf, count);
+#endif
 }

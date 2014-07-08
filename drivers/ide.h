@@ -9,6 +9,8 @@
 
 #pragma once
 
+#include <system.h>
+
 extern unsigned int HD_CHL0_CMD_BASE;
 extern unsigned int HD_CHL1_CMD_BASE;
 extern unsigned int HD_CHL0_CTL_BASE;
@@ -126,3 +128,6 @@ typedef struct {
     u64_t   lba_start;
     u64_t   lba_end;
 } part_t;
+
+void ide_do_read(u64_t lba, u32_t scnt, char *buf);
+part_t *ide_get_part(dev_t dev);

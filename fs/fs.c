@@ -15,13 +15,13 @@
 #include <system.h>
 #define SECT_SIZE    512
 
+#if 0
 File file_table[NR_FILES] __attribute__ ((__aligned__(PAGE_SIZE))) = {{0,},};
 extern unsigned int ext2_start_sect;
 void hd_read(dev_t dev, u64 sect_nr, void *buf, u32 count);
 void init_file_table();
 void save_boot_part(int n, pPartition p, u32 base_sect);
 void read_ext_part(u32 base, u32 offset);
-
 void setup_fs()
 {
     int i, minor;
@@ -122,3 +122,4 @@ void read_ext_part(u32 base, u32 offset)
 
     free_virt_pages(buf);
 }
+#endif

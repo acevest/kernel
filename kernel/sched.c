@@ -64,8 +64,10 @@ void init_root_tsk()
     strcpy(root_task.name, "root_task");
     INIT_LIST_HEAD(&root_task.list);
 
-    for(i=0; i<NR_OPENS; i++)
-        root_task.fps[i] = 0;
+
+    //  TODO
+    //for(i=0; i<NR_OPENS; i++)
+    //    root_task.fps[i] = 0;
 
     tss.esp0        = ((unsigned long)&root_task) + sizeof(root_task);
     root_task.esp0  = tss.esp0;

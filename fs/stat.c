@@ -17,6 +17,7 @@
 #include <memory.h>
 int sysc_stat(int fd, struct stat *stat)
 {
+#if 0
     if(fd<0 || fd>=NR_OPENS)
         return -EBADF;
 
@@ -39,6 +40,7 @@ int sysc_stat(int fd, struct stat *stat)
     stat->st_atime    = inode->i_atime;
     stat->st_mtime    = inode->i_mtime;
     stat->st_ctime    = inode->i_ctime;
+#endif
 
     return 0;
 }

@@ -20,6 +20,7 @@
 
 int sysc_open(const char *path, int flags, mode_t mode)
 {
+#if 0
     assert(mode == 0); // unsupport now...
     assert(flags == O_RDONLY);    // support only...
 
@@ -90,4 +91,5 @@ int sysc_open(const char *path, int flags, mode_t mode)
     current->fps[fd] = pf;
 
     return fd;
+#endif
 }

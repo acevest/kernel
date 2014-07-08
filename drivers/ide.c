@@ -14,7 +14,6 @@
 #include <ide.h>
 #include <irq.h>
 #include <pci.h>
-#include <system.h>
 #include <semaphore.h>
 #include <wait.h>
 #include <string.h>
@@ -50,6 +49,7 @@ typedef struct prd
 typedef struct {
     u64_t   lba;
     u32_t   scnt;
+    u32_t   read_scnt;
     char    *buf;
     bool    finish;
     wait_queue_head_t wait;
@@ -80,6 +80,7 @@ void ide_printl()
 
 void ide_cmd_out(dev_t dev, u32 sect_cnt, u64 sect_nr, u32 cmd)
 {
+    printk("sect_cnt %u sect_nr %u \n", sect_cnt, (u32)sect_nr);
     drv.pio_cnt++;
     drv.read_mode = cmd;
 
@@ -101,6 +102,14 @@ void ide_cmd_out(dev_t dev, u32 sect_cnt, u64 sect_nr, u32 cmd)
     outb(cmd,                       REG_CMD(dev));
 }
 
+part_t *ide_get_part(dev_t dev)
+{
+    assert(DEV_MAJOR(dev) == DEV_MAJOR_HDA);
+    assert(DEV_MINOR(dev) < MAX_SUPPORT_PARTITION_CNT);
+
+    return drv.part + DEV_MINOR(dev);
+}
+
 void ide_do_read(u64_t lba, u32_t scnt, char *buf)
 {
     bool finish = false;
@@ -112,6 +121,7 @@ void ide_do_read(u64_t lba, u32_t scnt, char *buf)
 
     r->lba = lba;
     r->scnt= scnt;
+    r->read_scnt= 0;
     r->buf = buf;
     r->finish = false;
     init_wait_queue(&r->wait);
@@ -220,6 +230,7 @@ void init_pci_controller(unsigned int classcode)
 
 void ide_default_intr()
 {
+    printk("%s\n", __func__);
     u8_t status = inb(REG_STATUS(0));
 
     drv.irq_cnt++;
@@ -237,7 +248,8 @@ void ide_default_intr()
     u16_t sig = 0;
     if(drv.read_mode == HD_CMD_READ_EXT)
     {
-        insl(REG_DATA(0), ide_request.buf, ((ide_request.scnt*SECT_SIZE)>>2));
+        insl(REG_DATA(0), ide_request.buf + ide_request.read_scnt*(SECT_SIZE), (SECT_SIZE)>>2);
+        ide_request.read_scnt++;
         sig = *((u16_t *) (ide_request.buf+510));
     }
 
@@ -254,7 +266,11 @@ void ide_default_intr()
     outb(PCI_IDE_CMD_STOP, drv.bus_cmd);
 
     wake_up(&ide_request.wait);
-    ide_request.finish = true;
+    if(drv.read_mode == HD_CMD_READ_EXT)
+    {
+        if(ide_request.read_scnt == ide_request.scnt)
+            ide_request.finish = true;
+    }
 
     up(&mutex);
 }
