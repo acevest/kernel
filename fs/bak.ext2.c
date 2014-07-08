@@ -10,6 +10,7 @@
  *--------------------------------------------------------------------------
  */
 
+#if 0
 #include <fs.h>
 #include <system.h>
 #include <string.h>
@@ -315,3 +316,4 @@ static void ext2_print_inode(pInode p)
     printk("i_mode:%04x i_size:%d i_blocks:%d\n",
         p->i_mode, p->i_size, p->i_blocks);
 }
+#endif

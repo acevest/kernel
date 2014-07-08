@@ -48,6 +48,8 @@ int sysc_pause()
     return 0;
 }
 
+int sysc_test() { }
+
 void    init_sysc_handler_table()
 {
     int i;

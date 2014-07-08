@@ -15,20 +15,6 @@
 
 #include <types.h>
 #include <page.h>
-#include <bak.ext2.h>
-
-typedef struct partition
-{
-    u8    State;
-    u8    Head;
-    u16    StartSC;
-    u8    Type;
-    u8    EndHead;
-    u16    EndSC;
-    u32    AbsoluteSectNo;
-    u32    PartitionSize;
-} Partition, *pPartition;
-
 
 /* 分区表开始的位置 */
 #define PARTS_POS    0x1BE
@@ -38,7 +24,7 @@ typedef struct partition
 #define DEV_MAJOR_MEM       0x0001
 #define DEV_MAJOR_TTY       0x0002
 #define DEV_MAJOR_IDE0      0x0003
-#define DEV_MAJOR_HD        DEV_MAJOR_IDE0
+#define DEV_MAJOR_HDA       DEV_MAJOR_IDE0
 #define DEV_MAJOR_IDE1      0x0004
 #define DEV_MAJOR_SCSI0     0x0005
 #define DEV_MAJOR_SCSI2     0x0006
@@ -53,13 +39,11 @@ typedef struct partition
 
 
 
-typedef struct
-{
-    int    count;
-    int    ino_nr;
-    pInode    inode;
-} File, *pFile;
+#define MAX_SUPT_FILE_SIZE    (1)
+#define NR_FILES    (1)
+#define NR_OPENS    (1)
 
+#if 0
 #define MAX_SUPT_FILE_SIZE    (EXT2_IND_BLOCK*EXT2_BLOCK_SIZE)
 #define NR_FILES    (PAGE_SIZE/sizeof(File))
 #define NR_INODES    (2*NR_FILES)
@@ -68,6 +52,12 @@ extern File file_table[NR_FILES];
 extern Inode inode_table[NR_INODES];
 
 
+typedef struct
+{
+    int    count;
+    int    ino_nr;
+    pInode    inode;
+} File, *pFile;
 
 
 static inline int get_inode_nr(const char *path)
@@ -103,5 +93,6 @@ static inline pInode find_empty_inode()
 
     return NULL;
 }
+#endif
 
 #endif //_FS_H

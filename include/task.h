@@ -61,7 +61,7 @@ typedef union task_union
 
         list_head_t list;
 
-        pFile        fps[NR_OPENS];
+        //pFile        fps[NR_OPENS];
 
     };
 

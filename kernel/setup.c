@@ -26,7 +26,6 @@ extern void setup_sysc();
 extern void setup_pci();
 extern void set_tss();
 extern void setup_tasks();
-extern void setup_root_dev();
 extern void ide_init();
 extern void setup_fs();
 extern void setup_ext2();
@@ -90,19 +89,11 @@ void setup_kernel()
     //switch_printk_screen();
     void ide_init();
     ide_init();
-    switch_printk_screen();
 
     detect_cpu();
 
     printk("%s\n", version);
 
-
-    return;
-    while(1); // TODO MODIFY CODE BELOW
-
-
-    setup_root_dev();
     setup_fs();
-    setup_ext2();
 }
 
