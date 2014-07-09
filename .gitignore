@@ -24,6 +24,6 @@
 *.map
 *.diff
 *.swp
-bin/hw
-bin/sh
+bin/hello
+bin/shell
 a.*

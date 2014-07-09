@@ -202,15 +202,17 @@ void ide_status()
 
 void ide_debug()
 {
-    u32    device;
-    u32    nsect = 1;
-    u32    retires = 100;
-    u64    sect_nr = 0;
-    int count=SECT_SIZE;
+    unsigned int nsect = 1;
+    char *buf = kmalloc(1*SECT_SIZE, 0);
+    if(buf == 0)
+        panic("out of memory");
 
-    nsect    = (count + SECT_SIZE -1)/SECT_SIZE;
+    ide_do_read(0, nsect, buf);
 
-    ide_cmd_out(0, nsect, sect_nr, HD_CMD_READ_EXT);
+    u16_t sig = *((u16_t *) (buf+510));
+    printk("%s SIG: %04x\n", __func__, sig);
+
+    kfree(buf);
 }
 
 

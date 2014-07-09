@@ -54,8 +54,6 @@ const char *version =
     " by "
     BUIDER;
 
-int main() { } // for libc
-
 void setup_kernel()
 {
     extern char kernel_begin, kernel_end;
