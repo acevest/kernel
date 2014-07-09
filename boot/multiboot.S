@@ -18,6 +18,7 @@
 #include "system.h"
 #include "task.h"
 .global kernel_entry
+.global main
 .extern check_kernel 
 .extern setup_kernel
 .extern init_pgd
@@ -42,6 +43,7 @@
 .code32
 .align 32
 kernel_entry:
+main:
     # Reset EFLAGS
     pushl   $0
     popf

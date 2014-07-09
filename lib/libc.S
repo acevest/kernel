@@ -9,7 +9,14 @@ _start:
     nop
     nop
 
+    pushl   $0  # env
+    pushl   $0  # argv
+    pushl   $1  # argc
+
     call main
+
+
+    add $12, %esp
 
     nop
     nop
