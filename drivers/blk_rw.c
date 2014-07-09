@@ -27,7 +27,7 @@ void blk_rw(dev_t dev, u64_t offset, u32_t size, char *buf)
 
     u32_t scnt = size / SECT_SIZE;
 
-    printk("%s lba %u scnt %u\n", __func__, (u32_t)lba, scnt);
+    printd("%s lba %u scnt %u\n", __func__, (u32_t)lba, scnt);
 
     ide_do_read(lba, scnt, buf);
 }

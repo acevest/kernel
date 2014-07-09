@@ -17,6 +17,7 @@ char cmd[CMD_SIZE];
 
 void get_cmd()
 {
+#if 0
     int i;
 
     i=0;
@@ -72,9 +73,10 @@ reinput:
     }
 
     cmd[CMD_SIZE-1] = 0;
+#endif
 }
 
-int shell()
+int main()
 {
     char buf[CMD_SIZE];
 
@@ -113,41 +115,3 @@ int shell()
 
     return 0;
 }
-
-#if 0
-int shell()
-{
-    pid_t pid;
-
-    pid = fork();
-
-    if(pid<0)
-    {
-        printf("shit happens in shell\n");
-        while(1);
-    }
-    else if(pid == 0)
-    {
-        execv("/bin/hw", NULL);
-    }
-    else
-    {
-
-        while(1)
-        {
-            int k;
-            char ch;
-            extern char ParseKbdInput(int k);
-            extern unsigned char read_kbd();
-            //asm("xchg %bx, %bx");
-            k = read_kbd();
-            ch = ParseKbdInput(k);
-            if(ch != -1)
-            printf("<%c>",ch);
-        }
-    }
-
-
-    return 0;
-}
-#endif

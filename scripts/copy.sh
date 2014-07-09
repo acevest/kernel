@@ -16,8 +16,8 @@ cp scripts/grub.cfg /mnt/boot/grub2/
 md5sum /mnt/boot/Kernel
 
 mkdir -p /mnt/bin/
-cp ./bin/hw /mnt/bin/
-cp ./bin/sh /mnt/bin/
+cp ./bin/shell /mnt/bin/
+cp ./bin/hello /mnt/bin/
 
 umount /mnt/
 

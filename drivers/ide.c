@@ -80,7 +80,6 @@ void ide_printl()
 
 void ide_cmd_out(dev_t dev, u32 sect_cnt, u64 sect_nr, u32 cmd)
 {
-    printk("sect_cnt %u sect_nr %u \n", sect_cnt, (u32)sect_nr);
     drv.pio_cnt++;
     drv.read_mode = cmd;
 
@@ -230,7 +229,7 @@ void init_pci_controller(unsigned int classcode)
 
 void ide_default_intr()
 {
-    printk("%s\n", __func__);
+    printd("%s\n", __func__);
     u8_t status = inb(REG_STATUS(0));
 
     drv.irq_cnt++;

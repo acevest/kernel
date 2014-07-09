@@ -71,7 +71,7 @@ void    detect_cpu()
     memcpy(pbs + 40 , &r.ecx, 4);
     memcpy(pbs + 44 , &r.edx, 4);
     pbs[48] = 0;
-    printk("Model Name: %s",pbs);
+    printk("%s",pbs);
 
      /**********************Get Number of Processors********************/
     int pn;//number of logical processors in one physical processor

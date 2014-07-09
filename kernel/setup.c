@@ -54,6 +54,7 @@ const char *version =
     " by "
     BUIDER;
 
+int main() { } // for libc
 
 void setup_kernel()
 {
@@ -92,8 +93,8 @@ void setup_kernel()
 
     detect_cpu();
 
-    printk("%s\n", version);
-
     setup_fs();
+
+    printk("%s\n", version);
 }
 
