@@ -26,8 +26,6 @@ void ext2_setup_fs()
     if(buf == 0)
         panic("out of memory");
 
-    printk("EXT2_BLOCK_SIZE %u\n", EXT2_BLOCK_SIZE);
-
     BLKRW(EXT2_SB_OFFSET, 1, buf);
 
     memcpy(EXT2_SB, buf, sizeof(*(EXT2_SB)));
@@ -39,11 +37,11 @@ void ext2_setup_fs()
     }
 
     printk("Ext2 File System Information:\n");
-    printk("inodes cnt %u blocks cnt %u free blocks %u free inodes %u\n",
+    printk(" inodes %u blocks %u free blocks %u free inodes %u\n",
         EXT2_SB->s_inodes_count, EXT2_SB->s_blocks_count, EXT2_SB->s_free_blocks_count, EXT2_SB->s_free_inodes_count);
-    printk("block size %u log block size %u first data block %u\n",
+    printk(" block size %u log block size %u first data block %u\n",
         EXT2_BLOCK_SIZE, EXT2_SB->s_log_block_size, EXT2_SB->s_first_data_block);
-    printk("blocks per group %u inodes per group %u\n", EXT2_SB->s_blocks_per_group, EXT2_SB->s_inodes_per_group);
+    printk(" blocks per group %u inodes per group %u\n", EXT2_SB->s_blocks_per_group, EXT2_SB->s_inodes_per_group);
 }
 
 

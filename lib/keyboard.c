@@ -13,6 +13,7 @@
  * 
  *--------------------------------------------------------------------------
  */
+#if 0
 #include <system.h>
 #include <syscall.h>
 #include <stdio.h>
@@ -227,3 +228,4 @@ End:
 
     return -1;
 }
+#endif

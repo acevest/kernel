@@ -1,6 +1,6 @@
 /*
  *--------------------------------------------------------------------------
- *   File Name: helloworld.c
+ *   File Name: hello.c
  * 
  *      Author: Zhao Yanbai [zhaoyanbai@126.com]
  *              Tue Feb 23 22:44:40 2010
@@ -12,7 +12,7 @@
 #include <unistd.h>
 #include <stdio.h>
 
-int hw()
+int main()
 {
     printf("hello world\n");
     //syscall3(SYSC_WRITE, 0, "fuck", 5);
