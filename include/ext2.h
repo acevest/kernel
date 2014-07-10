@@ -33,6 +33,7 @@
 #define EXT2_MIN_BLOCK_LOG_SIZE 10
 
 #define EXT2_SB                 (&ext2_fs.ext2_sb)
+#define EXT2_GD                 (ext2_fs.ext2_gd)
 #define EXT2_BLOCK_SIZE        (EXT2_MIN_BLOCK_SIZE << (EXT2_SB)->s_log_block_size)
 
 #define EXT2_SECT_PER_BLOCK    (EXT2_BLOCK_SIZE/512)
@@ -141,14 +142,13 @@ typedef struct ext2_group_descriptor
     u16    bg_used_dirs_count;
     u16    bg_pad;
     u32    bg_reserved[3];
-} GroupDesc,*pGroupDesc;
+} ext2_gd_t;
 
 #define EXT2_NDIR_BLOCKS    (12)
-#define EXT2_IND_BLOCK        (EXT2_NDIR_BLOCKS)
-#define EXT2_DIND_BLOCK        (EXT2_IND_BLOCK + 1)
-#define EXT2_TIND_BLOCK        (EXT2_DIND_BLOCK + 1)
-#define EXT2_N_BLOCKS        (EXT2_TIND_BLOCK + 1)
-
+#define EXT2_IND_BLOCK      (EXT2_NDIR_BLOCKS)
+#define EXT2_DIND_BLOCK     (EXT2_IND_BLOCK  + 1)
+#define EXT2_TIND_BLOCK     (EXT2_DIND_BLOCK + 1)
+#define EXT2_N_BLOCKS       (EXT2_TIND_BLOCK + 1)
 
 typedef struct ext2_inode
 {
@@ -169,7 +169,7 @@ typedef struct ext2_inode
     u32    i_file_acl;
     u32    i_dir_acl;
     u32    i_faddr;
-    u8    i_osd2[12];
+    u8     i_osd2[12];
 } ext2_inode_t; 
 
 

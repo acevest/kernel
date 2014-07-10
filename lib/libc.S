@@ -16,7 +16,7 @@ _start:
     call main
 
 
-    add $12, %esp
+    addl    $12, %esp
 
     nop
     nop
