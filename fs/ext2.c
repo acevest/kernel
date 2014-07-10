@@ -18,12 +18,15 @@ struct {
 
 extern void blk_rw(dev_t dev, u64_t offset, u32_t scnt, char *buf);
 
-#define BLKRW(blkid, blkcnt, buf) do { blk_rw(system.root_dev, (blkid)*EXT2_BLOCK_SIZE, (blkcnt)*EXT2_BLOCK_SIZE, buf); } while(0)
+#define BLKRW(blkid, blkcnt, buf) do { blk_rw(system.root_dev, 1ULL*(blkid)*EXT2_BLOCK_SIZE, (blkcnt)*EXT2_BLOCK_SIZE, buf); } while(0)
 
 kmem_cache_t *ext2_block_cache;
 kmem_cache_t *ext2_inode_cache;
 
 ext2_inode_t ext2_root_inode;
+
+static ext2_inode_t boot_inode;
+static ext2_inode_t krnl_inode;
 
 void *ext2_alloc_block()
 {
@@ -32,6 +35,7 @@ void *ext2_alloc_block()
 
 void *ext2_free_block(void *blk)
 {
+    return;
     kmem_cache_free(ext2_block_cache, blk);
 }
 
@@ -41,6 +45,7 @@ void *ext2_alloc_inode()
 }
 
 #define ext2_gd(n) ((ext2_gd_t*)(EXT2_GD) + (n))
+unsigned int sys_clock();
 void ext2_read_inode(unsigned int ino, ext2_inode_t *inode)
 {
     void *blk = ext2_alloc_block();
@@ -59,11 +64,11 @@ void ext2_read_inode(unsigned int ino, ext2_inode_t *inode)
     blkid += ext2_gd(gn)->bg_inode_table;
     inoff *= EXT2_INODE_SIZE;
 
-    printk("group %u %u blkid %u blkoff %u\n", gn, gi, blkid, inoff);
+    printd("group %u %u blkid %u blkoff %u clock %u\n", gn, gi, blkid, inoff, sys_clock());
 
     BLKRW(blkid, 1, blk);
 
-    memcpy(inode, blk+inoff, EXT2_INODE_SIZE);
+    memcpy(inode, blk+inoff, sizeof(ext2_inode_t));
 
     ext2_free_block(blk);
 }
@@ -97,6 +102,7 @@ unsigned int ext2_search_indir(const char *name, const ext2_inode_t *inode)
 
     return ino;
 }
+
 
 void ext2_setup_fs()
 {
@@ -151,8 +157,6 @@ void ext2_setup_fs()
     printk("root inode size %u \n", ext2_root_inode.i_size);
     printk("root blocks %u \n", ext2_root_inode.i_blocks);
 
-    static ext2_inode_t boot_inode;
-    static ext2_inode_t krnl_inode;
 
     ext2_read_inode(ext2_search_indir("boot", &ext2_root_inode), &boot_inode);
     ext2_read_inode(ext2_search_indir("Kernel", &boot_inode), &krnl_inode);

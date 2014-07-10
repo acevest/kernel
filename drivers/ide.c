@@ -137,6 +137,7 @@ void ide_do_read(u64_t lba, u32_t scnt, char *buf)
         task->state = TASK_WAIT;
         irq_save(flags);
         finish = r->finish;
+        printd("%s pid %d finish %u read_scnt %u scnt %u\n", __func__, sysc_getpid(), r->finish, r->read_scnt, r->scnt);
         irq_restore(flags);
 
         if(finish)
