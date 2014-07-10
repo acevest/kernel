@@ -33,7 +33,7 @@ PART=${lodev}p1
 
 sleep 1
 
-mkfs.ext2 $PART
+mke2fs -b 4096 $PART
 
 sleep 1
 
@@ -55,8 +55,6 @@ cp grub.cfg ${MNT}/boot/grub2/
 cp ../KERNEL.BIN ${MNT}/boot/Kernel
 
 mkdir -p ${MNT}/bin/
-cp ../bin/hw ${MNT}/bin/
-cp ../bin/sh ${MNT}/bin/
 
 sleep 1
 

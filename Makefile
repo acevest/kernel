@@ -36,6 +36,8 @@ install:
 	sync
 	md5sum /boot/KERNEL.BIN
 	md5sum KERNEL.BIN
-
+	mkdir -p /kernel/bin/
+	cp bin/hello /kernel/bin/
+	cp bin/shell /kernel/bin/
 cp:
 	./scripts/copy.sh
