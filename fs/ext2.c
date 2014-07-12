@@ -35,7 +35,6 @@ void *ext2_alloc_block()
 
 void *ext2_free_block(void *blk)
 {
-    return;
     kmem_cache_free(ext2_block_cache, blk);
 }
 
@@ -45,11 +44,12 @@ void *ext2_alloc_inode()
 }
 
 #define ext2_gd(n) ((ext2_gd_t*)(EXT2_GD) + (n))
-unsigned int sys_clock();
 void ext2_read_inode(unsigned int ino, ext2_inode_t *inode)
 {
     void *blk = ext2_alloc_block();
     assert(blk != 0);
+
+    printk("read_inode %u\n", ino);
 
     unsigned int in;    // inode number
     unsigned int gn;    // group number
@@ -64,32 +64,39 @@ void ext2_read_inode(unsigned int ino, ext2_inode_t *inode)
     blkid += ext2_gd(gn)->bg_inode_table;
     inoff *= EXT2_INODE_SIZE;
 
-    printd("group %u %u blkid %u blkoff %u clock %u\n", gn, gi, blkid, inoff, sys_clock());
+    printk("group %u %u blkid %u blkoff %u\n", gn, gi, blkid, inoff);
 
     BLKRW(blkid, 1, blk);
 
     memcpy(inode, blk+inoff, sizeof(ext2_inode_t));
 
+    printk(" inode size %u \n", inode->i_size);
+
     ext2_free_block(blk);
 }
 
-unsigned int ext2_search_indir(const char *name, const ext2_inode_t *inode)
+unsigned int ext2_search_indir(const char *name, const ext2_inode_t *inode, unsigned int io)
 {
     unsigned int ino = 0;
 
     void *blk = ext2_alloc_block();
     assert(blk != 0);
 
+
+    printk("ext2_search_indir inode no %u  search name %s block %u\n", io, name, inode->i_block[0]);
+
     BLKRW(inode->i_block[0], 1, blk); // only support the first direct blocks
 
     ext2_dirent_t *dirent = (ext2_dirent_t *) blk;
+    char tmp[64];
     while(dirent->name_len != 0)
     {
-        dirent->name[dirent->name_len] = 0;
+        memcpy(tmp, dirent->name, dirent->name_len);
+        tmp[dirent->name_len] = 0;
         printk("  dirent %s inode %u rec_len %u name_len %u type %02d\n",
-            dirent->name, dirent->inode, dirent->rec_len, dirent->name_len, dirent->file_type);
+            tmp, dirent->inode, dirent->rec_len, dirent->name_len, dirent->file_type);
 
-        if(strcmp(name, dirent->name) == 0)
+        if(strcmp(name, tmp) == 0)
         {
             ino = dirent->inode;
             break;
@@ -99,6 +106,60 @@ unsigned int ext2_search_indir(const char *name, const ext2_inode_t *inode)
     }
     
     ext2_free_block(blk);
+
+    return ino;
+}
+
+static int get_filename_from_path(const char *path, char *file)
+{
+    int i = 0;
+
+    while(*path == '/' && *path != '\0')
+        path++;
+
+    while(*path != '/' && *path != '\0')
+        file[i++] = *path++;
+
+    file[i] = 0;
+
+    return i;
+}
+
+unsigned int ext2_search_inpath(const char *path)
+{
+    assert(path != 0);
+    assert(strlen(path) > 0);
+    assert(path[0] == '/');
+
+    ext2_inode_t *inode = kmalloc(sizeof(ext2_inode_t), 0);
+    assert(inode != 0);
+    memcpy(inode, &ext2_root_inode, sizeof(ext2_inode_t));
+
+    unsigned int ino = EXT2_ROOT_INO;
+
+    #define MAX_FILE_NAME 64
+    char file[MAX_FILE_NAME];
+    int len;
+
+    printk("--- %s\n", path);
+    
+    while((len=get_filename_from_path(path, file)) != 0)
+    {
+        printk("name len %u\n", len);
+        ino = ext2_search_indir(file, inode, ino);
+        assert(ino != 0);
+        printk("FILE:%s inode %u\n", file, ino);
+
+        path += len;
+
+        if(*path != 0)
+        {
+            path++;
+            ext2_read_inode(ino, inode);
+        }
+        else
+            assert(0);
+    }
 
     return ino;
 }
@@ -152,16 +213,22 @@ void ext2_setup_fs()
             i, ext2_gd(i)->bg_inode_table, ext2_gd(i)->bg_free_blocks_count, ext2_gd(i)->bg_free_inodes_count, ext2_gd(i)->bg_used_dirs_count);
     }
 
-
     ext2_read_inode(2, &ext2_root_inode);
-    printk("root inode size %u \n", ext2_root_inode.i_size);
+#if 0
+    printk("root inode.i_size %u \n", ext2_root_inode.i_size);
     printk("root blocks %u \n", ext2_root_inode.i_blocks);
-
 
     ext2_read_inode(ext2_search_indir("boot", &ext2_root_inode), &boot_inode);
     ext2_read_inode(ext2_search_indir("Kernel", &boot_inode), &krnl_inode);
-    printk("krnl inode size %u \n", krnl_inode.i_size);
+    printk("krnl inode.i_size %u \n", krnl_inode.i_size);
     printk("krnl blocks %u \n", krnl_inode.i_blocks);
+#endif
+
+
+    //printk("----- ino %u\n", ext2_search_inpath("/bin/test/test.txt"));
+    printk("----- ino %u\n", ext2_search_inpath("/bin/hello"));
+    //printk("----- ino %u\n", ext2_search_inpath("/boot/Kernel"));
+    //printk("----- ino %u\n", ext2_search_inpath("/boot/grub2/fonts/unicode.pf2"));
 }
 
 
