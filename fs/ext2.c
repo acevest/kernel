@@ -75,15 +75,36 @@ void ext2_read_inode(unsigned int ino, ext2_inode_t *inode)
     ext2_free_block(blk);
 }
 
-unsigned int ext2_search_indir(const char *name, const ext2_inode_t *inode, unsigned int io)
+void ext2_read_file(const ext2_inode_t *inode, char *buf)
+{
+    assert(inode != 0);
+    assert(inode->i_size > 0 && inode->i_size<=MAX_SUPT_FILE_SIZE);
+
+    unsigned int blkcnt = inode->i_size / EXT2_BLOCK_SIZE;
+    int i;
+    for(i=0; i<blkcnt; ++i)
+    {
+        BLKRW(inode->i_block[i], 1, buf+i*EXT2_BLOCK_SIZE);
+        printk("read block\n");
+    }
+
+    unsigned int left = inode->i_size % EXT2_BLOCK_SIZE;
+    if(left)
+    {
+        void *blk = ext2_alloc_block();
+
+        memcpy(buf+i*EXT2_BLOCK_SIZE, blk, left);
+
+        ext2_free_block(blk);
+    }
+}
+
+unsigned int ext2_search_indir(const char *name, const ext2_inode_t *inode)
 {
     unsigned int ino = 0;
 
     void *blk = ext2_alloc_block();
     assert(blk != 0);
-
-
-    printk("ext2_search_indir inode no %u  search name %s block %u\n", io, name, inode->i_block[0]);
 
     BLKRW(inode->i_block[0], 1, blk); // only support the first direct blocks
 
@@ -146,7 +167,7 @@ unsigned int ext2_search_inpath(const char *path)
     while((len=get_filename_from_path(path, file)) != 0)
     {
         printk("name len %u\n", len);
-        ino = ext2_search_indir(file, inode, ino);
+        ino = ext2_search_indir(file, inode);
         assert(ino != 0);
         printk("FILE:%s inode %u\n", file, ino);
 
@@ -214,7 +235,7 @@ void ext2_setup_fs()
     }
 
     ext2_read_inode(2, &ext2_root_inode);
-#if 0
+#if 1
     printk("root inode.i_size %u \n", ext2_root_inode.i_size);
     printk("root blocks %u \n", ext2_root_inode.i_blocks);
 
@@ -237,4 +258,9 @@ void ext2_setup_fs()
 void setup_fs()
 {
     ext2_setup_fs();
+}
+
+unsigned int namei(const char *path)
+{
+    return ext2_search_inpath(path);
 }

@@ -48,7 +48,11 @@ int sysc_pause()
     return 0;
 }
 
-int sysc_test() { }
+int sysc_test()
+{
+    static unsigned int cnt;
+    printl(MPL_TEST, "sysc_test %u", cnt++);
+}
 
 void    init_sysc_handler_table()
 {

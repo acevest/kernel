@@ -27,6 +27,11 @@ void init_task_entry()
     int cnt = 0;
     pid_t id = sysc_getpid();
 
+    if(id == 1)
+    {
+        int r = sysc_exec("/bin/shell", 0);
+    }
+
     while(1)
     {
         printl(MPL_TASK_1+id-1, "task:%d [%08x] weight %d cnt %d", id, current, current->weight, cnt++);
@@ -47,7 +52,7 @@ void kernel_task(void *entry)
 void root_task_entry()
 {
     kernel_task(init_task_entry);
-    kernel_task(init_task_entry);
+    //kernel_task(init_task_entry);
 
     int cnt = 0;
     while(1)

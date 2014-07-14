@@ -176,10 +176,10 @@ typedef struct ext2_inode
 #define EXT2_NAME_LEN    255
 typedef struct ext2_dir_ent
 {
-    u32    inode;
-    u16    rec_len;
-    u8    name_len;
-    u8    file_type;        /* 目录类型 */
+    u32     inode;
+    u16     rec_len;
+    u8      name_len;
+    u8      file_type;
     char    name[EXT2_NAME_LEN];
 } ext2_dirent_t;
 
@@ -207,5 +207,7 @@ enum
 #define EXT2_MAX_REC_LEN            ((1<<16)-1)
 
 
+void ext2_read_inode(unsigned int ino, ext2_inode_t *inode);
+void ext2_read_file(const ext2_inode_t *inode, char *buf);
 
 #endif //_EXT2_H

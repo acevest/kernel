@@ -16,53 +16,43 @@
 #include <assert.h>
 #include <stat.h>
 #include <sched.h>
-#include <memory.h>
+#include <mm.h>
 #include <elf.h>
+#include <fs.h>
+#include <ext2.h>
 
 int sysc_exec(const char *path, char *const argv[])
 {
     assert(argv == NULL);    // unsupport now
 
-    int fd;
-    int i;
-
-    fd = sysc_open(path, O_RDONLY, 0);
-    if(fd == -1)
-    {
-        panic("can not find file");
-    }
-
-    int    filesz;
-    Stat    stat;
-    char    *buf;
-
-    sysc_stat(fd, &stat);
-    filesz    = stat.st_size;
-    if(stat.st_size <=0 || stat.st_size>MAX_SUPT_FILE_SIZE)
-    {
-        printk("file %s is not exist\n", path);
+    unsigned int ino = namei(path);
+    if(ino == 0)
         return -ENOENT;
-    }
-    buf = (void*)kmalloc_old(filesz);
-    sysc_read(fd, buf, filesz);
 
-#if 0    
-    for(i=0; i<filesz; i++)
-        printk("%02x ", (unsigned char)buf[i]);
-#endif
+    ext2_inode_t inode;
+
+    ext2_read_inode(ino, &inode);
+
+    //void *buf = (void*)kmalloc(inode.i_size, 0);
+    void *buf = (void *) alloc_pages(0, 5);
+    assert(buf != 0);
+
+    ext2_read_file(&inode, buf);
+
 
     pElf32_Ehdr ehdr = (pElf32_Ehdr) buf;
     //assert(strncmp(ELFMAG, ehdr->e_ident, sizeof(ELFMAG)-1) == 0);
     if(strncmp(ELFMAG, ehdr->e_ident, sizeof(ELFMAG)-1) != 0)
     {
         printk("file %s can not execute\n", path);
-        kfree_old(buf);
+        kfree(buf);
         return -ENOEXEC;
     }
     //printk("Entry: %08x phnum:%d\n", ehdr->e_entry, ehdr->e_phnum);
     
     int size = 0;
     char *pv = NULL;    // phdr 中第一个的VirtAddr
+    int i;
     for(i=0; i<ehdr->e_phnum; i++)
     {
         pElf32_Phdr phdr;
@@ -76,7 +66,7 @@ int sysc_exec(const char *path, char *const argv[])
         }
     }
 
-    char *exe = (char *) kmalloc_old(size);
+    char *exe = (char *) kmalloc(size, 0);
     for(i=0; i<ehdr->e_phnum; i++)
     {
         pElf32_Phdr phdr;
@@ -123,16 +113,17 @@ int sysc_exec(const char *path, char *const argv[])
      *  即12K~48K之间
      *  所以就以一个页目录项来简化处理
      */
-    u32    *pd = (u32*) pa2va(current->cr3);
+    u32    *pd = (u32*) current->cr3;
     u32    *pt;
     u32    pa_exe;
     u32    npd, npt;
     
-    pa_exe    = va2pa(exe);
-    npd    = get_npd(ehdr->e_entry);
-    pt    = get_phys_pages(1);
+    pa_exe  = va2pa(exe);
+    npd     = get_npd(ehdr->e_entry);
+    pt      = (u32*)va2pa(alloc_one_page(0));
     if(pt == NULL)
         panic("out of memory");
+
     //printk("npd: %d pt:%08x\n", npd, pt);
     memset(pa2va(pt), 0, PAGE_SIZE);
     pd[npd]    = (u32) pt | 7;
@@ -160,7 +151,6 @@ int sysc_exec(const char *path, char *const argv[])
     
     //printk("exe : %08x cr3:%08x\n", exe, pd);
 
-
     /* 准备内核栈的数据并从ret_from_fork返回 */
     pt_regs_t *    regs    = ((pt_regs_t *)(TASK_SIZE+(unsigned long)current)) - 1;
     extern void ret_from_fork_user();
@@ -176,26 +166,13 @@ int sysc_exec(const char *path, char *const argv[])
     regs->eip    = (unsigned long)ehdr->e_entry;
     current->esp    = (unsigned long) regs;
     current->eip    = (unsigned long)ret_from_fork_user;
+    *((unsigned long *)regs->esp) = (unsigned long)ehdr->e_entry;
 
-#if 0    /* 写完之后发现貌似不用 */
-    /* 准备用户栈数据 */
-    /* 先找到用户栈的位置 */
-    u32 pde = pd[get_npd(KRNLADDR)-1] & PAGE_MASK;
-    pt = pa2va(pde);
-    u32 *stack = (u32*)pa2va(pt[1023]);
-    stack[1023] = 0x00;
-    stack[1022] = 0x00;    /* ebp */
-    stack[1021] = 0x00;    /* edx */
-    stack[1020] = 0x00;    /* ecx */
-    printk("stack pt: %08x pde:%08x %08x %08x\n",
-        pt, pde, pd[get_npd(KRNLADDR)-1]);
-#endif
-    kfree_old(buf);
-
+    //kfree(buf);
 
     //printk("eip: %08x \n", regs->eip);
 
-    load_cr3(current);
+    //load_cr3(current);
 
     return 0;
 }

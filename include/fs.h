@@ -39,12 +39,14 @@
 
 
 
-#define MAX_SUPT_FILE_SIZE    (1)
+//#define MAX_SUPT_FILE_SIZE    (1)
 #define NR_FILES    (1)
 #define NR_OPENS    (1)
 
-#if 0
+unsigned int namei(const char *path);
+
 #define MAX_SUPT_FILE_SIZE    (EXT2_IND_BLOCK*EXT2_BLOCK_SIZE)
+#if 0
 #define NR_FILES    (PAGE_SIZE/sizeof(File))
 #define NR_INODES    (2*NR_FILES)
 #define NR_OPENS    (2)    /* 一个进程同时打开文件的限制数 */
