@@ -67,7 +67,7 @@ typedef unsigned long pte_t;
 #define PFN_UP(addr)    (((addr) + PAGE_SIZE - 1) >> PAGE_SHIFT)
 #define PFN_DW(addr)    ((addr) >> PAGE_SHIFT)
 
-#define MAX_ORDER       (5)
+#define MAX_ORDER       (11)
 #define MAX_OLD_ORDER   (11)
 
 #define LOAD_CR3(pde)   asm("movl %%edx, %%cr3"::"d"(va2pa(pde)))
