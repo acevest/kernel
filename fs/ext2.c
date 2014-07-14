@@ -64,7 +64,7 @@ void ext2_read_inode(unsigned int ino, ext2_inode_t *inode)
     blkid += ext2_gd(gn)->bg_inode_table;
     inoff *= EXT2_INODE_SIZE;
 
-    printk("group %u %u blkid %u blkoff %u\n", gn, gi, blkid, inoff);
+    printd("group %u %u blkid %u blkoff %u\n", gn, gi, blkid, inoff);
 
     BLKRW(blkid, 1, blk);
 
@@ -78,10 +78,11 @@ void ext2_read_inode(unsigned int ino, ext2_inode_t *inode)
 void ext2_read_file(const ext2_inode_t *inode, char *buf)
 {
     assert(inode != 0);
+    assert(buf != 0);
     assert(inode->i_size > 0 && inode->i_size<=MAX_SUPT_FILE_SIZE);
 
     unsigned int blkcnt = inode->i_size / EXT2_BLOCK_SIZE;
-    int i;
+    int i=0;
     for(i=0; i<blkcnt; ++i)
     {
         BLKRW(inode->i_block[i], 1, buf+i*EXT2_BLOCK_SIZE);
@@ -91,12 +92,15 @@ void ext2_read_file(const ext2_inode_t *inode, char *buf)
     unsigned int left = inode->i_size % EXT2_BLOCK_SIZE;
     if(left)
     {
+        printk("read left %u bytes\n", left);
+
         void *blk = ext2_alloc_block();
 
         memcpy(buf+i*EXT2_BLOCK_SIZE, blk, left);
 
         ext2_free_block(blk);
     }
+    printk("read file done\n");
 }
 
 unsigned int ext2_search_indir(const char *name, const ext2_inode_t *inode)
@@ -114,7 +118,7 @@ unsigned int ext2_search_indir(const char *name, const ext2_inode_t *inode)
     {
         memcpy(tmp, dirent->name, dirent->name_len);
         tmp[dirent->name_len] = 0;
-        printk("  dirent %s inode %u rec_len %u name_len %u type %02d\n",
+        printd("  dirent %s inode %u rec_len %u name_len %u type %02d\n",
             tmp, dirent->inode, dirent->rec_len, dirent->name_len, dirent->file_type);
 
         if(strcmp(name, tmp) == 0)
@@ -162,14 +166,10 @@ unsigned int ext2_search_inpath(const char *path)
     char file[MAX_FILE_NAME];
     int len;
 
-    printk("--- %s\n", path);
-    
     while((len=get_filename_from_path(path, file)) != 0)
     {
-        printk("name len %u\n", len);
         ino = ext2_search_indir(file, inode);
         assert(ino != 0);
-        printk("FILE:%s inode %u\n", file, ino);
 
         path += len;
 
@@ -247,7 +247,7 @@ void ext2_setup_fs()
 
 
     //printk("----- ino %u\n", ext2_search_inpath("/bin/test/test.txt"));
-    printk("----- ino %u\n", ext2_search_inpath("/bin/hello"));
+    //printk("----- ino %u\n", ext2_search_inpath("/bin/hello"));
     //printk("----- ino %u\n", ext2_search_inpath("/boot/Kernel"));
     //printk("----- ino %u\n", ext2_search_inpath("/boot/grub2/fonts/unicode.pf2"));
 }

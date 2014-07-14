@@ -133,21 +133,21 @@ void ide_do_read(u64_t lba, u32_t scnt, char *buf)
     
     while(true)
     {
-        printd("%s pid %d is going to wait\n", __func__, sysc_getpid());
+        //printd("%s pid %d is going to wait\n", __func__, sysc_getpid());
         task->state = TASK_WAIT;
         irq_save(flags);
         finish = r->finish;
-        printd("%s pid %d finish %u read_scnt %u scnt %u\n", __func__, sysc_getpid(), r->finish, r->read_scnt, r->scnt);
+        //printd("%s pid %d finish %u read_scnt %u scnt %u\n", __func__, sysc_getpid(), r->finish, r->read_scnt, r->scnt);
         irq_restore(flags);
 
         if(finish)
             break;
 
         schedule();
-        printd("%s pid %d is running\n", __func__, sysc_getpid());
+        //printd("%s pid %d is running\n", __func__, sysc_getpid());
     }
 
-    printd("%s pid %d is really running\n", __func__, sysc_getpid());
+    //printd("%s pid %d is really running\n", __func__, sysc_getpid());
     task->state = TASK_RUNNING;
     del_wait_queue(&r->wait, &wait);
 }
@@ -232,7 +232,7 @@ void init_pci_controller(unsigned int classcode)
 
 void ide_default_intr()
 {
-    printd("%s\n", __func__);
+    //printd("%s\n", __func__);
     u8_t status = inb(REG_STATUS(0));
 
     drv.irq_cnt++;
@@ -262,7 +262,7 @@ void ide_default_intr()
 
     ide_printl();
 
-    printd(" hard disk sig %04x read mode %x cnt %d\n", sig, drv.read_mode, drv.irq_cnt);
+    //printd(" hard disk sig %04x read mode %x cnt %d\n", sig, drv.read_mode, drv.irq_cnt);
     printl(MPL_IDE_INTR, "hard disk sig %x read mode %x cnt %d", sig, drv.read_mode, drv.irq_cnt);
 
     outb(PCI_IDE_CMD_STOP, drv.bus_cmd);

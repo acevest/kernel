@@ -15,7 +15,7 @@ list_head_t slub_caches = LIST_HEAD_INIT(slub_caches);
 
 
 #define SLUB_MIN_SHIFT          5
-#define SLUB_MAX_SHIFT          12
+#define SLUB_MAX_SHIFT          16
 #define SLUB_INIT_CACHE_SIZE    ((SLUB_MAX_SHIFT) - (SLUB_MIN_SHIFT))
 #define KMALLOC_MIN_SIZE        (1UL<<(SLUB_MIN_SHIFT))
 #define KMALLOC_MIN_ALIGN       (1UL<<(SLUB_MIN_SHIFT))

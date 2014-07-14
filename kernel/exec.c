@@ -37,7 +37,10 @@ int sysc_exec(const char *path, char *const argv[])
     void *buf = (void *) alloc_pages(0, 5);
     assert(buf != 0);
 
+    printk("exec buf %08x \n", buf);
+    printd("begin read elf\n");
     ext2_read_file(&inode, buf);
+    printd("end read elf\n");
 
 
     pElf32_Ehdr ehdr = (pElf32_Ehdr) buf;
@@ -51,60 +54,40 @@ int sysc_exec(const char *path, char *const argv[])
     //printk("Entry: %08x phnum:%d\n", ehdr->e_entry, ehdr->e_phnum);
     
     int size = 0;
-    char *pv = NULL;    // phdr 中第一个的VirtAddr
     int i;
     for(i=0; i<ehdr->e_phnum; i++)
     {
         pElf32_Phdr phdr;
         phdr = (pElf32_Phdr)(buf+ehdr->e_phoff+(i*ehdr->e_phentsize));
-        //printk(" %d %08x\n", i, phdr->p_type);
+
+        printk("Type %08x Off %08x Va %08x Pa %08x Fsz %08x Mmsz %08x\n",
+            phdr->p_type, phdr->p_offset, phdr->p_vaddr, phdr->p_paddr,
+            phdr->p_filesz, phdr->p_memsz);
+
         if(phdr->p_type == PT_LOAD)
         {
-            size += phdr->p_memsz;
-            if(i==0)
-                pv = (char *)phdr->p_vaddr;
+            if(phdr->p_offset > 0 && phdr->p_memsz > 0)
+            {
+                size = ALIGN(phdr->p_offset + phdr->p_memsz, 0x1000);
+            }
         }
     }
 
+    printk("ELF MEM SIZE %u\n", size);
+
     char *exe = (char *) kmalloc(size, 0);
+    assert(exe != 0);
+    printk("EXE ADDR %08x\n", exe);
     for(i=0; i<ehdr->e_phnum; i++)
     {
         pElf32_Phdr phdr;
         phdr = (pElf32_Phdr)(buf+ehdr->e_phoff+(i*ehdr->e_phentsize));
         if(phdr->p_type != PT_LOAD)
             continue;
-#if 0
-        printk("%08x ", exe+phdr->p_vaddr-pv);
-        printk("p_offset:%d\n", phdr->p_offset);
-
-        int j;
-        for(j=0; j<100;/*phdr->p_filesz*/ j++)
-            printk("%02x ", *((char *)(buf+phdr->p_offset)+j));
-#endif
         if(phdr->p_filesz != 0)
         {
-            memcpy((void*)(exe+phdr->p_vaddr-pv),
-                (void*)(buf+phdr->p_offset),
-                phdr->p_filesz);
+            memcpy((void*)(exe+phdr->p_offset), (void*)(buf+phdr->p_offset), phdr->p_filesz);
         }
-
-
-#if 0
-        u32    *pd =(u32*)pa2va(current->cr3);
-        u32    *pt;
-        u32    npd_min, npd_max, npt;
-        u32    pde, pte;
-        u32    vaddr = phdr->p_vaddr;
-        npd_min = get_npd(vaddr);
-        npd_max = get_npd(vaddr+phdr->p_memsz);
-        u32    npd;
-
-        for(npd=npd_min; npd<=npd_max; npd++)
-        {
-            void *tmp = get_phys_pages(1);
-            pd[npd] = tmp | 7;
-        }
-#endif
     }
 
 
@@ -149,7 +132,7 @@ int sysc_exec(const char *path, char *const argv[])
         }
     }
     
-    //printk("exe : %08x cr3:%08x\n", exe, pd);
+    printk("exe : %08x cr3:%08x\n", exe, pd);
 
     /* 准备内核栈的数据并从ret_from_fork返回 */
     pt_regs_t *    regs    = ((pt_regs_t *)(TASK_SIZE+(unsigned long)current)) - 1;
@@ -160,19 +143,16 @@ int sysc_exec(const char *path, char *const argv[])
     regs->es    = SELECTOR_USER_DS;
     regs->fs    = SELECTOR_USER_DS;
     regs->gs    = SELECTOR_USER_DS;
-    regs->esp    = (KRNLADDR-4*sizeof(unsigned long));
+    regs->esp   = (KRNLADDR-4*sizeof(unsigned long));
     regs->eflags    = 0x200;
-    regs->cs    = SELECTOR_USER_CS;
-    regs->eip    = (unsigned long)ehdr->e_entry;
+    regs->cs        = SELECTOR_USER_CS;
+    regs->eip       = (unsigned long)ehdr->e_entry;
     current->esp    = (unsigned long) regs;
     current->eip    = (unsigned long)ret_from_fork_user;
     *((unsigned long *)regs->esp) = (unsigned long)ehdr->e_entry;
 
-    //kfree(buf);
+    kfree(buf);
 
-    //printk("eip: %08x \n", regs->eip);
-
-    //load_cr3(current);
 
     return 0;
 }
