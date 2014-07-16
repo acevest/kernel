@@ -22,6 +22,7 @@ int sysc_exit(int status)
     /* 先简要实现 */
     current->state = TASK_EXITING;
 
+    task_union *t = current;
     
     schedule();
 

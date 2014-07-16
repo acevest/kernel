@@ -54,7 +54,9 @@ void do_wp_page(void *addr)
     int npde = get_npd(addr);
     int npte = get_npt(addr);
 
-    unsigned long *pd = (u32 *)pa2va(current->cr3);
+    //unsigned long *pd = (u32 *)pa2va(current->cr3);
+    //unsigned long *pd = (u32 *)va2pa(current->cr3);
+    unsigned long *pd = (u32 *)(current->cr3);
     unsigned long *pt = NULL;
 
     pt = pa2va(PAGE_ALIGN(pd[npde]));
@@ -78,6 +80,8 @@ void do_wp_page(void *addr)
         if(0 == dst)
             panic("out of memory");
 
+        dst = va2pa(dst);
+
         pt[npte] = dst | flags;
 
         dst = (unsigned long)pa2va(PAGE_ALIGN(dst));
@@ -86,7 +90,10 @@ void do_wp_page(void *addr)
     }
     else
     {
+        //pd[npde] |= PAGE_WR;
         pt[npte] |= PAGE_WR;
+        //pd[npde] |= PAGE_US;
+        //pt[npte] |= PAGE_US;
     }
 
     load_cr3(current);

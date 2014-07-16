@@ -114,7 +114,7 @@ main:
 
     # enable PG
     movl    %cr0,%eax
-    orl     $0x80000000,%eax
+    orl     $0x80010000,%eax
     movl    %eax,%cr0
 
 

@@ -50,7 +50,7 @@ int sysc_pause()
 
 int sysc_test()
 {
-    static unsigned int cnt;
+    static unsigned int cnt=0;
     printl(MPL_TEST, "sysc_test %u", cnt++);
 }
 

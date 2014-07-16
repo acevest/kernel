@@ -94,6 +94,13 @@ void doPageFault(pt_regs_t regs)
 
     a = 0;
 
+    //printd("do page fault errcode %x addr %08x\n", errcode, addr);
+
+    if(errcode & PAGE_US)
+    {
+        panic("user program try to access a page and cause a protection fault. addr %08x", addr);
+    }
+
     if((errcode & PAGE_P) == 0)
     {
         extern void do_no_page(void *);

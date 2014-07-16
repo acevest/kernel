@@ -94,3 +94,28 @@ sysexit:
     popl    %edx;
     popl    %ecx;
     ret
+
+.global ring3
+ring3:
+    nop;
+    nop;
+
+    movl $(ring3_stack+100), %esp
+
+    movl $11, %eax;
+
+    pushl $1f;
+    pushl %ecx;
+    pushl %edx;
+    pushl %ebp;
+    movl %esp,%ebp;
+    sysenter;
+    1:
+
+    nop;
+    nop;
+
+    jmp ring3
+
+ring3_stack:
+    .byte   200
