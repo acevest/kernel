@@ -35,18 +35,6 @@ inline void load_cr3(task_union *tsk)
     LOAD_CR3(tsk->cr3);
 }
 
-void init_tsk_cr3(task_union * tsk)
-{
-    tsk->cr3 = (unsigned long) pa2va(get_phys_pages(1));
-
-    if(tsk->cr3 == 0)
-        panic("failed init tsk cr3");
-
-    memset((void *)tsk->cr3, 0, PAGE_SIZE);
-    memcpy((void *)tsk->cr3, (void*)system.page_dir, PAGE_SIZE);
-    tsk->cr3 = va2pa(tsk->cr3);
-}
-
 extern pde_t __initdata init_pgd[PDECNT_PER_PAGE] __attribute__((__aligned__(PAGE_SIZE)));
 void init_root_tsk()
 {
@@ -170,8 +158,11 @@ unsigned long schedule()
     task_union *prev = current;
     task_union *next = sel;
 
-    if(prev != sel)
+    if(prev != next)
+    {
+        printd("select %08x\n", next);
         context_switch(prev, next);
+    }
 }
 
 void debug_sched()

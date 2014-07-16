@@ -29,8 +29,11 @@ int do_fork(pt_regs_t *regs, unsigned long flags)
     if(tsk == NULL)
         panic("can not malloc PCB");
 
+    memcpy(tsk, current, sizeof(task_union));
+
     {
         tsk->cr3 = (unsigned long) alloc_one_page(0);
+        printl(MPL_TEST+1, "cr3 %08x", tsk->cr3);
         if(tsk->cr3 == 0)
             panic("failed init tsk cr3");
 
@@ -46,10 +49,16 @@ int do_fork(pt_regs_t *regs, unsigned long flags)
         {
             unsigned long spde = (unsigned long) pde_src[i];
             unsigned long dpde = 0;
+
+            if(i>=768)
+            {
+                pde_dst[i] = pde_src[i];
+                continue;
+            }
+
             if(spde != 0)
                 dpde = PAGE_FLAGS(spde) | (unsigned long) va2pa(alloc_one_page(0));
             pde_dst[i] = dpde;
-
 
             pte_t *pte_src = pa2va(PAGE_ALIGN(spde));
             pte_t *pte_dst = pa2va(PAGE_ALIGN(dpde));
@@ -63,8 +72,6 @@ int do_fork(pt_regs_t *regs, unsigned long flags)
             }
         }
     }
-
-    memcpy(tsk, current, sizeof(task_union));
 
     tsk->pid    = get_next_pid();
     tsk->ppid   = current->pid;

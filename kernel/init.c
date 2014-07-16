@@ -23,29 +23,49 @@ char __initdata kernel_init_stack[KRNL_INIT_STACK_SIZE] __attribute__ ((__aligne
 
 int debug_wait_queue_get();
 
+#if 0
 void ring3()
 {
+    int i = 0;
     while(1)
     {
+        i++;
+//        printk("fuck\n");
         systest();
     }
 }
+#else
+void ring3();
+#endif
 static char user_task_stack[PAGE_SIZE] __attribute__ ((__aligned__(PAGE_SIZE)));
 void user_task_entry()
 {
     printk("user_task_entry\n");
-    asm("movl $0x23,%%eax; \
-    movw %%ax,%%ds; \
-    movw %%ax,%%es; \
-    movw %%ax,%%fs; \
-    movw %%ax,%%gs; \
-    pushl $0x23; \
-    pushl %%ebx; \
-    pushl $0x282; \
-    pushl $0x1B; \
-    leal ring3,%%eax; \
-    pushl %%eax; \
+    //while(1);
+#if 1
+    asm("cli;");
+    asm("movl $0x23,%%eax;  \
+    movw %%ax,%%ds;         \
+    movw %%ax,%%es;         \
+    movw %%ax,%%fs;         \
+    movw %%ax,%%gs;         \
+    pushl $0x23;            \
+    pushl %%ebx;            \
+    pushl $0x202;           \
+    pushl $0x1B;            \
+    leal ring3,%%eax;       \
+    pushl %%eax;            \
     iret;"::"b"(user_task_stack+PAGE_SIZE));
+#else
+    asm("xorl   %eax,%eax;  \
+        sti;                \
+        pushfl;             \
+        movw    %cs,%ax;    \
+        pushl   %eax;       \
+        leal    ring3,%eax; \
+        pushl   %eax;       \
+        iret;");
+#endif
 }
 
 void init_task_entry()
@@ -55,9 +75,9 @@ void init_task_entry()
 
     while(1)
     {
-        printl(MPL_TASK_1, "task:%d [%08x] weight %d cnt %d", id, current, current->weight, cnt++);
-        //int v = debug_wait_queue_get();
-        //printk("task:%d wait queue get %d\n", id, v);
+        printl(MPL_TASK_1+id-1, "task:%d [%08x] weight %d cnt %d", id, current, current->weight, cnt++);
+        int v = debug_wait_queue_get();
+        printk("task:%d wait queue get %d\n", id, v);
     }
 }
 
@@ -72,8 +92,11 @@ void kernel_task(void *entry)
 
 void root_task_entry()
 {
-    //kernel_task(init_task_entry);
+
+    kernel_task(init_task_entry);
+    kernel_task(init_task_entry);
     kernel_task(user_task_entry);
+
 
     int cnt = 0;
     while(1)

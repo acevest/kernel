@@ -17,8 +17,6 @@
 #ifndef _PAGE_H
 #define _PAGE_H
 
-
-
 #define PAGE_P      0x1
 #define PAGE_WR     0x2
 #define PAGE_US     0x4
@@ -102,7 +100,7 @@ typedef struct page
 void *page2va(page_t *page);
 page_t *va2page(unsigned long addr);
 
-#define pa2page(addr) va2page((unsigned long)pa2va(addr))
+#define pa2page(addr) va2page((unsigned long)pa2va(PAGE_ALIGN(addr)))
 
 static inline page_t *get_head_page(page_t *page) { return page->head_page; }
 
