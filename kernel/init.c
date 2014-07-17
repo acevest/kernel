@@ -23,27 +23,12 @@ char __initdata kernel_init_stack[KRNL_INIT_STACK_SIZE] __attribute__ ((__aligne
 
 int debug_wait_queue_get();
 
-void ring3();
+extern void *ring3;
 extern void *ring3_stack_top;
 void user_task_entry()
 {
     printk("user_task_entry: %08x %08x\n", ring3_stack_top, &ring3_stack_top);
-#if 1
-    asm("cli;");
-    asm("movl $0x23,%%eax;  \
-    movw %%ax,%%ds;         \
-    movw %%ax,%%es;         \
-    movw %%ax,%%fs;         \
-    movw %%ax,%%gs;         \
-    pushl $0x23;            \
-    pushl %%ebx;            \
-    pushl $0x202;           \
-    pushl $0x1B;            \
-    leal ring3,%%eax;       \
-    pushl %%eax;            \
-    iret;"::"b"(&ring3_stack_top));
-#else
-#endif
+    asm("sti;sysexit;"::"d"(&ring3), "c"(&ring3_stack_top));
 }
 
 void init_task_entry()
