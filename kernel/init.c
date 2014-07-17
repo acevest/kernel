@@ -23,25 +23,11 @@ char __initdata kernel_init_stack[KRNL_INIT_STACK_SIZE] __attribute__ ((__aligne
 
 int debug_wait_queue_get();
 
-#if 0
-void ring3()
-{
-    int i = 0;
-    while(1)
-    {
-        i++;
-//        printk("fuck\n");
-        systest();
-    }
-}
-#else
 void ring3();
-#endif
-static char user_task_stack[PAGE_SIZE] __attribute__ ((__aligned__(PAGE_SIZE)));
+extern void *ring3_stack_top;
 void user_task_entry()
 {
-    printk("user_task_entry\n");
-    //while(1);
+    printk("user_task_entry: %08x %08x\n", ring3_stack_top, &ring3_stack_top);
 #if 1
     asm("cli;");
     asm("movl $0x23,%%eax;  \
@@ -55,16 +41,8 @@ void user_task_entry()
     pushl $0x1B;            \
     leal ring3,%%eax;       \
     pushl %%eax;            \
-    iret;"::"b"(user_task_stack+PAGE_SIZE));
+    iret;"::"b"(&ring3_stack_top));
 #else
-    asm("xorl   %eax,%eax;  \
-        sti;                \
-        pushfl;             \
-        movw    %cs,%ax;    \
-        pushl   %eax;       \
-        leal    ring3,%eax; \
-        pushl   %eax;       \
-        iret;");
 #endif
 }
 

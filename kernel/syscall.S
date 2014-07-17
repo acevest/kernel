@@ -96,11 +96,12 @@ sysexit:
     ret
 
 .global ring3
+.global ring3_stack_top
 ring3:
     nop;
     nop;
 
-    movl $(ring3_stack+100), %esp
+    #movl $(ring3_stack+100), %esp
 
     movl $11, %eax;
 
@@ -118,4 +119,9 @@ ring3:
     jmp ring3
 
 ring3_stack:
-    .byte   200
+    .long   0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+    .long   0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+    .long   0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+    .long   0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+ring3_stack_top:
+    .long   0x12345678
