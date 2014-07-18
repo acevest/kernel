@@ -98,7 +98,7 @@ void doPageFault(pt_regs_t regs)
 
     if(errcode & PAGE_US)
     {
-        panic("user program try to access a page and cause a protection fault. addr %08x", addr);
+        //panic("user program try to access a page and cause a protection fault. addr %08x", addr);
     }
 
     if((errcode & PAGE_P) == 0)

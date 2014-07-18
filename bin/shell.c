@@ -16,8 +16,19 @@
 int systest();
 int main()
 {
+
     while(1)
     {
+#if 0
+    asm("movl $11, %eax;"   \
+        "pushl $1f;"        \
+        "pushl %ecx;"       \
+        "pushl %edx;"       \
+        "pushl %ebp;"       \
+        "movl  %esp,%ebp;"  \
+        "sysenter;"         \
+        "1:");
+#endif
         systest();
         asm("nop;nop;nop;");
     }

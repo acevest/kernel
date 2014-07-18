@@ -18,6 +18,7 @@ md5sum /mnt/boot/Kernel
 mkdir -p /mnt/bin/
 cp ./bin/shell /mnt/bin/
 cp ./bin/hello /mnt/bin/
+md5sum /mnt/bin/*
 
 umount /mnt/
 

@@ -28,7 +28,11 @@ extern void *ring3_stack_top;
 void user_task_entry()
 {
     printk("user_task_entry: %08x %08x\n", ring3_stack_top, &ring3_stack_top);
+#if 0
     asm("sti;sysexit;"::"d"(&ring3), "c"(&ring3_stack_top));
+#else
+    sysc_exec("/bin/shell", 0);
+#endif
 }
 
 void init_task_entry()

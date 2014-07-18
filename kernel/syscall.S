@@ -27,6 +27,7 @@
 .global ret_from_fork_user
 .global ret_from_fork_krnl
 .global sysexit
+.global syscall_exit
 
 syscall_entry:
     movl    (%esp),%esp
@@ -53,15 +54,14 @@ syscall_entry:
 
     call    *sysc_handler_table(,%eax,4)
 
+    leal    sysexit, %edx
+    movl    %edx, PT_REGS_EDX(%esp)
+    movl    %ebp, PT_REGS_ECX(%esp)
+
 syscall_exit:
     movl    %eax, PT_REGS_EAX(%esp)
 
     RESTORE_REGS
-
-    # addl    $20, %esp # no need now
-    
-    leal    sysexit, %edx
-    movl    %ebp, %ecx
 
     sti        /* sysenter have cleared IF, and sysexit will not set IF. */
     sysexit
