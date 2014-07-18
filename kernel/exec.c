@@ -21,6 +21,8 @@
 #include <fs.h>
 #include <ext2.h>
 
+extern void *syscall_exit;
+
 int sysc_exec(const char *path, char *const argv[])
 {
     assert(argv == NULL);    // unsupport now
@@ -100,9 +102,10 @@ int sysc_exec(const char *path, char *const argv[])
     u32    *pt;
     u32    pa_exe;
     u32    npd, npt;
-    
+    int    c;
     pa_exe  = va2pa(exe);
     npd     = get_npd(ehdr->e_entry);
+    npt     = get_npt(ehdr->e_entry);
     pt      = (u32*)va2pa(alloc_one_page(0));
     if(pt == NULL)
         panic("out of memory");
@@ -111,32 +114,16 @@ int sysc_exec(const char *path, char *const argv[])
     memset(pa2va(pt), 0, PAGE_SIZE);
     pd[npd]    = (u32) pt | 7;
     pt = pa2va(pt);
-    for(i=0; i<ehdr->e_phnum; i++)
+    for(i=npt, c=0; i<1024; i++, c++)
     {
-        pElf32_Phdr phdr;
-        phdr = (pElf32_Phdr)(buf+ehdr->e_phoff+(i*ehdr->e_phentsize));
-        if(phdr->p_type != PT_LOAD)
-            continue;
-
-        u32    npt_min, npt_max;
-
-        npt_min = get_npt(phdr->p_vaddr);
-        npt_max = get_npt(phdr->p_vaddr+phdr->p_memsz);
-        //printk("npt_min:%d npt_max:%d\n", npt_min, npt_max);
-        int j;
-        for(j=npt_min; j<=npt_max; j++)
-        {
-            pt[j] = (u32)(pa_exe | 7);    // 对于.text不能这样
-            //printk("pt[j] :%08x\n", pt[j]);
-            pa_exe = PAGE_SIZE+pa_exe;
-        }
+        pt[i] = va2pa(PAGE_ALIGN((unsigned long)exe)) + c * PAGE_SIZE;
+        pt[i] |= 7;
     }
     
+    load_cr3(current);
     printk("exe : %08x cr3:%08x\n", exe, pd);
 
-    /* 准备内核栈的数据并从ret_from_fork返回 */
-    pt_regs_t *    regs    = ((pt_regs_t *)(TASK_SIZE+(unsigned long)current)) - 1;
-    extern void ret_from_fork_user();
+    pt_regs_t *regs = ((pt_regs_t *)(TASK_SIZE+(unsigned long)current)) - 1;
     memset((void*)regs, 0, sizeof(pt_regs_t));
     regs->ss    = SELECTOR_USER_DS;
     regs->ds    = SELECTOR_USER_DS;
@@ -144,15 +131,15 @@ int sysc_exec(const char *path, char *const argv[])
     regs->fs    = SELECTOR_USER_DS;
     regs->gs    = SELECTOR_USER_DS;
     regs->esp   = (KRNLADDR-4*sizeof(unsigned long));
-    regs->eflags    = 0x200;
-    regs->cs        = SELECTOR_USER_CS;
-    regs->eip       = (unsigned long)ehdr->e_entry;
-    current->esp    = (unsigned long) regs;
-    current->eip    = (unsigned long)ret_from_fork_user;
-    *((unsigned long *)regs->esp) = (unsigned long)ehdr->e_entry;
+    regs->eflags= 0x200;
+    regs->cs    = SELECTOR_USER_CS;
+    regs->eip   = (unsigned long)ehdr->e_entry;
+    regs->edx   = regs->eip;
+    regs->ecx   = (0xC0000000 - 16);
 
     kfree(buf);
 
+    asm("movl $0, %%eax; movl %%ebx,%%ebp; movl %%ebp,%%esp;jmp syscall_exit;"::"b"((unsigned long)(regs)));
 
     return 0;
 }

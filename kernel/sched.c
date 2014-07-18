@@ -139,13 +139,18 @@ unsigned long schedule()
         p = list_entry(pos, task_union, list);
 
         if(p->state != TASK_RUNNING)
+        {
+            if(p->state == TASK_EXEC)
+                p->state = TASK_RUNNING;
             continue;
+        }
 
         if(p->weight > max_weight)
         {
             max_weight = p->weight;
             sel = p;
         }
+
         else if(p->weight == 0)
         {
             p->weight = TASK_INIT_WEIGHT;

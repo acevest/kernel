@@ -33,7 +33,6 @@ int do_fork(pt_regs_t *regs, unsigned long flags)
 
     {
         tsk->cr3 = (unsigned long) alloc_one_page(0);
-        printl(MPL_TEST+1, "cr3 %08x", tsk->cr3);
         if(tsk->cr3 == 0)
             panic("failed init tsk cr3");
 

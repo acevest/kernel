@@ -9,6 +9,21 @@ _start:
     nop
     nop
 
+/*
+    movl $11, %eax;
+
+    pushl $1f;
+    pushl %ecx;
+    pushl %edx;
+    pushl %ebp;
+    movl %esp,%ebp;
+    sysenter;
+    1:
+
+loop:
+    jmp loop
+    */
+
     pushl   $0  # env
     pushl   $0  # argv
     pushl   $1  # argc
@@ -25,5 +40,5 @@ _start:
     nop
     nop
     nop
-1:
-    jmp 1b
+die:
+    jmp die 

@@ -83,11 +83,13 @@ static inline void free_phys_pages(void *p)
     free_virt_pages((void*)va2pa(p));
 }
 
-#define panic(msg, ...) do {                                    \
-    asm("cli;");                                                \
-    printk("PANIC:\" # msg # \" file:%s function:%s line:%d\n",        \
-        ##__VA_ARGS__, __FILE__, __FUNCTION__, __LINE__);  \
-    while(1);                                                   \
+#define panic(msg, ...) do {                            \
+    asm("cli;");                                        \
+    printk("PANIC:"                                     \
+    msg                                                 \
+    " file:%s function:%s line:%d\n",                   \
+    ##__VA_ARGS__, __FILE__, __FUNCTION__, __LINE__);   \
+    while(1);                                           \
 } while(0);
 
 extern char etext, edata, end;
