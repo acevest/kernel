@@ -17,11 +17,12 @@
 #include <printk.h>
 #include <mm.h>
 
-void    do_no_page(void *addr)
+void do_no_page(void *addr)
 {
     pde_t *pde = (pde_t *)current->cr3;
     pte_t *pte;
     unsigned long page = alloc_one_page(0);
+    page = va2pa(page);
     if(page == 0)
         panic("failed alloc page");
 
