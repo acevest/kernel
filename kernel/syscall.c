@@ -67,9 +67,7 @@ void    init_sysc_handler_table()
         sysc_handler_table[nr] = (unsigned long) sym;    \
     }while(0);
 
-    /* 有没有一种宏定义可以把大写直接转成小写? */
     _sysc_(SYSC_WRITE,       sysc_write);
-    _sysc_(SYSC_READ_KBD,    sysc_read_kbd);
     _sysc_(SYSC_REBOOT,      sysc_reboot);
     _sysc_(SYSC_FORK,        sysc_fork);
     _sysc_(SYSC_EXEC,        sysc_exec);
@@ -81,7 +79,7 @@ void    init_sysc_handler_table()
     _sysc_(SYSC_TEST,        sysc_test);
 }
 
-int    sysc_bad_syscnr()
+int sysc_bad_syscnr()
 {
     int sysc_nr;
     asm("":"=a"(sysc_nr));

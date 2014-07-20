@@ -41,7 +41,6 @@ int _syscall5(int nr, unsigned long a, unsigned long b, unsigned long c, unsigne
 enum
 {
     SYSC_WRITE,
-    SYSC_READ_KBD,
     SYSC_REBOOT,
     SYSC_FORK,
     SYSC_CLONE,

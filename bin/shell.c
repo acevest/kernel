@@ -17,8 +17,12 @@ int systest();
 int main()
 {
 
+
     while(1)
     {
+    char buf[256];
+    read(0, buf, 256);
+    write(0, buf, 256);
 #if 0
     asm("movl $11, %eax;"   \
         "pushl $1f;"        \

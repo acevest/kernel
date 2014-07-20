@@ -11,7 +11,7 @@
 
 #include<wait.h>
 
-#define CNSL_QUEUE_SIZE 1024
+#define CNSL_QUEUE_SIZE 10
 
 typedef struct cnsl_queue
 {
@@ -21,6 +21,11 @@ typedef struct cnsl_queue
     char data[CNSL_QUEUE_SIZE];
 } cnsl_queue_t;
 
-extern cnsl_queue_t cnsl_rd_q;
-extern cnsl_queue_t cnsl_wr_q;
-extern cnsl_queue_t cnsl_sc_q;
+typedef struct cnsl
+{
+    cnsl_queue_t rd_q;
+    cnsl_queue_t wr_q;
+    cnsl_queue_t sc_q;
+} cnsl_t;
+
+int cnsl_kbd_write(char c);

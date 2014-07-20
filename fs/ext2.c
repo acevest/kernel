@@ -255,12 +255,3 @@ void ext2_setup_fs()
 
 
 
-void setup_fs()
-{
-    ext2_setup_fs();
-}
-
-unsigned int namei(const char *path)
-{
-    return ext2_search_inpath(path);
-}

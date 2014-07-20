@@ -127,11 +127,14 @@ void vga_scroll_up(vga_screen_t *s)
 
 
 
-void vga_putc(vga_screen_t *s, const unsigned char c, const unsigned char color)
+void vga_putc(unsigned int nr, unsigned char c, const unsigned char color)
 {
+    vga_screen_t *s = vga_screen + nr;
+
     vga_char_t *pv = s->base;
 
     bool need_clear = true;
+    bool need_forward = true;
     unsigned int old_offset = s->offset;
     
     switch(c)
@@ -145,10 +148,15 @@ void vga_putc(vga_screen_t *s, const unsigned char c, const unsigned char color)
     case '\t':
         set_offset(s, (xpos(s) + 1 + TAB_MASK) & ~TAB_MASK, ypos(s));
         break;
+    case '\b':
+        set_offset(s, xpos(s) - 1, ypos(s));
+        c = ' ';
+        need_forward = false;
+        // NO BREAK
     default:
         need_clear = false;
         pv[s->offset] = vga_char(c, color);
-        set_offset(s, xpos(s)+1, ypos(s));
+        set_offset(s, xpos(s)+(need_forward?1 : 0), ypos(s));
         break;
     }
 
@@ -170,11 +178,10 @@ void vga_puts(unsigned int nr, const char *buf, unsigned char color)
         return ;
 
     char *p = (char *) buf;
-    vga_screen_t *s = vga_screen + nr;
 
     while(*p)
     {
-        vga_putc(s, *p, color);
+        vga_putc(nr, *p, color);
         p++;
     }
 }

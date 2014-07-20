@@ -46,6 +46,28 @@
 unsigned int namei(const char *path);
 
 #define MAX_SUPT_FILE_SIZE    (EXT2_IND_BLOCK*EXT2_BLOCK_SIZE)
+
+
+
+typedef struct chrdev
+{
+    int (*read)(char *buf, size_t count);
+} chrdev_t;
+
+enum {
+    CHRDEV_CNSL,
+    CHRDEV_SIZE
+};
+
+extern chrdev_t *chrdev[];
+
+typedef struct 
+{
+    
+} file_t;
+
+
+
 #if 0
 #define NR_FILES    (PAGE_SIZE/sizeof(File))
 #define NR_INODES    (2*NR_FILES)
