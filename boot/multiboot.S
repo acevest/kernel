@@ -112,7 +112,7 @@ main:
     movl    $init_pgd-KRNLADDR,%ebx
     movl    %ebx,%cr3
 
-    # enable PG
+    # enable PG WP
     movl    %cr0,%eax
     orl     $0x80010000,%eax
     movl    %eax,%cr0
@@ -123,29 +123,14 @@ main:
 
     ljmp    $0x08,$Label
 Label:
+
     call    check_kernel
     addl    $8,%esp
     movl    $root_task + TASK_SIZE, %esp
     call    setup_kernel
 
-
-#if 0
-    movl    $0x23, %eax
-    movw    %ax, %ds
-    movw    %ax, %es
-    movw    %ax, %fs
-    movw    %ax, %gs
-    pushl   %eax
-    pushl   $KRNLADDR
-    pushl   $0x282
-    pushl   $0x1B
-    movl    $root_task_entry, %eax
-    pushl   %eax
-    iret
-#else
     movl    $root_task_entry, %eax
     jmpl    *%eax
-#endif
 
 Die:
     jmp     Die    # Should never come to here.
