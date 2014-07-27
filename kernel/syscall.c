@@ -51,10 +51,15 @@ int sysc_pause()
 int sysc_test()
 {
     static unsigned int cnt=0;
-    printl(MPL_TEST, "sysc_test %u", cnt++);
+    current->cnt++;
+    printl(MPL_TEST, "sysc_test cnt %u current %08x cnt %u",
+           cnt++, current, current->cnt);
+}
 
-    //unsigned long *pde = (unsigned long *)current->cr3;
-    //printk("sysctest %08x\n", pde[797]);
+int sysc_debug(unsigned int v)
+{
+    static unsigned int cnt=0;
+    printl(MPL_DEBUG, "Task Debug Syscall %u Value %08x", cnt++, v);
 }
 
 void    init_sysc_handler_table()
@@ -80,6 +85,7 @@ void    init_sysc_handler_table()
     _sysc_(SYSC_EXIT,        sysc_exit);
     _sysc_(SYSC_PAUSE,       sysc_pause);
     _sysc_(SYSC_TEST,        sysc_test);
+    _sysc_(SYSC_DEBUG,       sysc_debug);
 }
 
 int sysc_bad_syscnr()

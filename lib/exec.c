@@ -20,3 +20,9 @@ int systest()
 {
     return syscall0(SYSC_TEST);
 }
+
+int sysdebug(unsigned int v)
+{
+    //return syscall1(SYSC_DEBUG, v);
+    return syscall1(SYSC_DEBUG, 1);
+}

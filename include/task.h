@@ -64,6 +64,7 @@ typedef union task_union
 
         //pFile        fps[NR_OPENS];
 
+        unsigned int cnt;   // debug only
     };
 
     unsigned char stack[TASK_SIZE];
@@ -88,7 +89,7 @@ static inline pid_t sysc_getpid()
 
 #define ROOT_TSK_PID    (0)
 
-#define TASK_INIT_WEIGHT 10
+#define TASK_INIT_WEIGHT 0
 
 #define get_tsk_from_list(p)    list_entry((p), Task, list)
 #define del_tsk_from_list(tsk)    list_del((&tsk->list))

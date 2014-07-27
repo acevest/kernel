@@ -15,10 +15,7 @@
 int main()
 {
     printf("hello world\n");
-    //syscall3(SYSC_WRITE, 0, "fuck", 5);
-    //write(0, "hello world", sizeof("hello world"));
-    //write(0, "hello world", 12);
-    
+    while(1);
     exit(0);
 
     return 0;

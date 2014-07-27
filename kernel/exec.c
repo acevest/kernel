@@ -110,7 +110,6 @@ int sysc_exec(const char *path, char *const argv[])
 
     load_cr3(current);
 
-    disable_irq();
 
     pt_regs_t *regs = ((pt_regs_t *)(TASK_SIZE+(unsigned long)current)) - 1;
     memset((void*)regs, 0, sizeof(pt_regs_t));

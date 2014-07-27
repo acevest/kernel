@@ -14,34 +14,33 @@
 #include <string.h>
 
 int systest();
+int sysdebug();
 int main()
 {
-    char x[10];
-    x[0] = 'a';
-    x[1] = 'b';
-    x[2] = 'c';
-    x[3] = '\n';
-#if 1
-    //while(1) write(0, x, 4);
-    //while(1) systest();
     int pid = fork();
 
     if(pid > 0)
     {
-        //write(0, "parent\n", 7);
-        //write(0, x, 4);
-        while(1)
-        ;    systest();
-    }
-    else if(pid == 0)
-#endif
-    {
-        //write(0, "child\n", 6);
-        //write(0, x, 4);
+        printf("prarent child pid %u\n", pid);
         while(1)
         {
             systest();
+            sysdebug(0x112233);
         }
+    }
+    else if(pid == 0)
+    {
+        printf("child\n");
+        execv("/bin/hello", 0);
+        while(1)
+        {
+            systest();
+            sysdebug(0xAABBCCDD);
+        }
+    }
+    else
+    {
+
     }
 
     return 0;

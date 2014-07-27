@@ -34,10 +34,17 @@ enum {
     MPL_IDE,
     MPL_IDE_INTR,
     MPL_PREEMPT,
+    MPL_TEST,
+    MPL_DEBUG,
     MPL_ROOT,
     MPL_TASK_1,
     MPL_TASK_2,
-    MPL_TEST,
+    MPL_TASK_3,
+    MPL_TASK_4,
+    MPL_TASK_5,
+    MPL_TASK_6,
+    MPL_TASK_7,
+    MPL_TASK_8,
     MPL_END
 };
 

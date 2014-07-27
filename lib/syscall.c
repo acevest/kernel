@@ -10,7 +10,7 @@
 // "movl     $1f, %%edi;"
 //
 #define SYSENTER_ASM            \
-        "pushl  $1f;"   \
+        "pushl    $1f;"         \
         "pushl    %%ecx;"       \
         "pushl    %%edx;"       \
         "pushl    %%ebp;"       \
