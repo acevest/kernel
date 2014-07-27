@@ -124,6 +124,24 @@ inline void context_switch(task_union * prev, task_union * next)
     );
 }
 
+task_union *find_task(pid_t pid)
+{
+    task_union *p = 0;
+    list_head_t *pos = 0, *tmp=0;
+
+    unsigned long iflags;
+    irq_save(iflags);
+    list_for_each_safe(pos, tmp, &root_task.list)
+    {
+        p = list_entry(pos, task_union, list);
+        if(p->pid == pid)
+            break;
+    }
+    irq_restore(iflags);
+
+    return p;
+}
+
 unsigned long schedule()
 {
     static turn = 0;

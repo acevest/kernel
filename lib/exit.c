@@ -11,7 +11,7 @@
  */
 
 #include <syscall.h>
-int    exit(int status)
+int exit(int status)
 {
     syscall1(SYSC_EXIT, status);
 }

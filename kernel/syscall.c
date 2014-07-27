@@ -23,7 +23,7 @@ extern void init_sysc_handler_table();
 
 unsigned long sysc_handler_table[SYSC_NUM];
 
-void    setup_sysc()
+void setup_sysc()
 {
     wrmsr(MSR_SYSENTER_CS,  SELECTOR_KRNL_CS,   0);
     wrmsr(MSR_SYSENTER_EIP, syscall_entry,      0);
@@ -33,7 +33,7 @@ void    setup_sysc()
 }
 
 
-int    sysc_none()
+int sysc_none()
 {
     int sysc_nr;
     asm("":"=a"(sysc_nr));
@@ -42,7 +42,7 @@ int    sysc_none()
     return 0;
 }
 
-int sysc_pause()
+int sysc_pause(unsigned long tick)
 {
 
     return 0;
@@ -62,7 +62,7 @@ int sysc_debug(unsigned int v)
     printl(MPL_DEBUG, "Task Debug Syscall %u Value %08x", cnt++, v);
 }
 
-void    init_sysc_handler_table()
+void init_sysc_handler_table()
 {
     int i;
     for(i=0; i<SYSC_NUM; i++)
@@ -79,6 +79,7 @@ void    init_sysc_handler_table()
     _sysc_(SYSC_REBOOT,      sysc_reboot);
     _sysc_(SYSC_FORK,        sysc_fork);
     _sysc_(SYSC_EXEC,        sysc_exec);
+    _sysc_(SYSC_WAIT,        sysc_wait);
     _sysc_(SYSC_OPEN,        sysc_open);
     _sysc_(SYSC_READ,        sysc_read);
     _sysc_(SYSC_STAT,        sysc_stat);

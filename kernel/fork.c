@@ -35,10 +35,7 @@ int do_fork(pt_regs_t *regs, unsigned long flags)
 
     //{
         tsk->cr3 = (unsigned long) alloc_one_page(0);
-        if(tsk->cr3 == 0)
-            panic("failed init tsk cr3");
-
-        task_union *t = current;
+        assert(tsk->cr3 != 0);
 
         unsigned int i, j;
         pde_t *pde_src = (pde_t*) current->cr3;
@@ -78,8 +75,6 @@ int do_fork(pt_regs_t *regs, unsigned long flags)
             pte_t *pte_dst = pa2va(PAGE_ALIGN(dpde));
             for(j=0; j< PAGE_PTE_CNT; ++j)
             {
-
-                //printl(20, "[%d %d]", i, j);
                 pte_src[j] &= ~PAGE_WR;
                 pte_dst[j] = pte_src[j];
 
@@ -120,7 +115,6 @@ int do_fork(pt_regs_t *regs, unsigned long flags)
     irq_save(iflags);
     list_add(&tsk->list, &root_task.list);
     irq_restore(iflags);
-
 
     printk("%s:%d\n", __func__, __LINE__);
     return (int)tsk->pid;

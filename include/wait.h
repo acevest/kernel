@@ -13,13 +13,8 @@
 #pragma once
 
 #include <list.h>
-#include <task.h>
 #include <irq.h>
-
-typedef struct
-{
-    list_head_t task_list;
-} wait_queue_head_t;
+#include <task.h>
 
 typedef struct
 {

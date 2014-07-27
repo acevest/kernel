@@ -30,11 +30,16 @@ enum
     TASK_UNUSED,
     TASK_RUNNING,
     TASK_WAIT,
-    TASK_EXEC,
     TASK_EXITING
 };
 
 #define TASK_NAME_SIZE  32
+
+typedef struct wait_queue_head
+{
+    list_head_t task_list;
+} wait_queue_head_t;
+
 
 typedef union task_union
 {
@@ -62,7 +67,7 @@ typedef union task_union
 
         list_head_t list;
 
-        //pFile        fps[NR_OPENS];
+        wait_queue_head_t wait;
 
         unsigned int cnt;   // debug only
     };
@@ -86,6 +91,7 @@ static inline pid_t sysc_getpid()
     return current->pid;
 }
 
+task_union *find_task(pid_t pid);
 
 #define ROOT_TSK_PID    (0)
 

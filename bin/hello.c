@@ -15,7 +15,6 @@
 int main()
 {
     printf("hello world\n");
-    while(1);
     exit(0);
 
     return 0;
