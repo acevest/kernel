@@ -15,14 +15,3 @@ int execv(const char *path, char *const argv[])
 {
     return syscall2(SYSC_EXEC, path, argv);
 }
-
-int systest()
-{
-    return syscall0(SYSC_TEST);
-}
-
-int sysdebug(unsigned int v)
-{
-    //return syscall1(SYSC_DEBUG, v);
-    return syscall1(SYSC_DEBUG, 1);
-}

@@ -43,6 +43,7 @@ enum
     SYSC_FORK,
     SYSC_CLONE,
     SYSC_EXEC,
+    SYSC_WAIT,
     SYSC_OPEN,
     SYSC_READ,
     SYSC_STAT,

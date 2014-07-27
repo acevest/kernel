@@ -15,11 +15,7 @@
 
 int sysc_exit(int status)
 {
-
-    //if(current == &RootTsk)
-    //    panic("Root Task is Exiting...");
-
-    /* 先简要实现 */
+    // simple implement.
     current->state = TASK_EXITING;
 
     task_union *t = current;

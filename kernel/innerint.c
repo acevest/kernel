@@ -82,38 +82,42 @@ void doGeneralProtection(pt_regs_t regs)
 {
     DIE_MSG();
 }
+
+void do_no_page(void *);
+void do_wp_page(void *);
 void doPageFault(pt_regs_t regs)
 {
+#if 0
+US RW  P - Description
+0  0  0 - Supervisory process tried to read a non-present page entry
+0  0  1 - Supervisory process tried to read a page and caused a protection fault
+0  1  0 - Supervisory process tried to write to a non-present page entry
+0  1  1 - Supervisory process tried to write a page and caused a protection fault
+1  0  0 - User process tried to read a non-present page entry
+1  0  1 - User process tried to read a page and caused a protection fault
+1  1  0 - User process tried to write to a non-present page entry
+1  1  1 - User process tried to write a page and caused a protection fault
+#endif
     //DIE_MSG();
     void    *addr;
     u32    errcode = regs.errcode;
 
     asm("movl %%cr2,%%eax":"=a"(addr));
 
-    unsigned long a = (unsigned long) addr;
+    printk("do page fault errcode %x addr %08x [%08x]\n", errcode, addr, current);
 
-    a = 0;
-
-    //printd("do page fault errcode %x addr %08x\n", errcode, addr);
-
-    if(errcode == 0 || errcode == 2)
-    {
-        unsigned long *pde_src = (unsigned long *) current->cr3;
-        printk("p=%x\n", pde_src[796]);
-        //panic("errcode %08x addr %08x", errcode, addr);
-    }
+    //assert(errcode != 2 && errcode != 6);
 
     if((errcode & PAGE_P) == 0)
     {
-        extern void do_no_page(void *);
         do_no_page(addr);
     }
     else
     {
-        extern void do_wp_page(void *);
         do_wp_page(addr);
     }
 }
+
 void doCoprocError(pt_regs_t regs)
 {
     DIE_MSG();

@@ -87,3 +87,31 @@ int debug_wait_queue_put(unsigned int v)
     debug_global_var = v;
     wake_up(&debug_wq);
 }
+
+
+int sysc_wait(unsigned long pid)
+{
+    task_union *p = find_task(pid);
+
+    if(p == 0)
+        return 0;
+
+    task_union * task = current;
+    DECLARE_WAIT_QUEUE(wait, task);
+    add_wait_queue(&p->wait, &wait);
+
+    while(true)
+    {
+        task->state = TASK_WAIT;
+        
+        if(p->state == TASK_EXITING)    // no need irq_save
+            break;
+
+        schedule();
+    }
+
+    task->state = TASK_RUNNING;
+    del_wait_queue(&p->wait, &wait);
+
+    return 0;
+}

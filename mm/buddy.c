@@ -13,6 +13,7 @@
 struct buddy_system
 {
     page_t      *page_map;
+    page_t      *page_map_end;
     free_area_t free_area[MAX_ORDER];
 };
 
@@ -29,6 +30,10 @@ int buddy_is_free(page_t *page, unsigned int order)
 page_t *va2page(unsigned long addr)
 {
     page_t *page = buddy_system.page_map + va2pfn(addr);
+
+    assert(page >= buddy_system.page_map);
+    assert(page < buddy_system.page_map_end);
+
     return page;
 }
 
@@ -217,10 +222,12 @@ void init_buddy_system()
         while(1);
     }
 
-    printk("page_map begin %08x end %08x pfncnt %u page_t size %u\n", buddy_system.page_map, buddy_system.page_map + pfn_cnt + 1, pfn_cnt, sizeof(page_t));
+    buddy_system.page_map_end = buddy_system.page_map + pfn_cnt + 1;
+    printk("page_map begin %08x end %08x pfncnt %u page_t size %u\n", buddy_system.page_map, buddy_system.page_map_end, pfn_cnt, sizeof(page_t));
     for(i=0; i<pfn_cnt; ++i)
     {
         page = buddy_system.page_map + i;
+        memset((void *) page, 0, sizeof(page_t));
         page->private = 0;
         page->index   = i;
         INIT_LIST_HEAD(&(page->lru));

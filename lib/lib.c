@@ -38,3 +38,18 @@ void poweroff()
 {
     syscall1(SYSC_REBOOT,1);
 }
+
+int systest()
+{
+    return syscall0(SYSC_TEST);
+}
+
+int sysdebug(unsigned int v)
+{
+    return syscall1(SYSC_DEBUG, v);
+}
+
+int pause(unsigned long tick)
+{
+    return syscall1(SYSC_PAUSE, tick);
+}
