@@ -29,14 +29,12 @@ int _syscall1(int nr, unsigned long a);
 int _syscall2(int nr, unsigned long a, unsigned long b);
 int _syscall3(int nr, unsigned long a, unsigned long b, unsigned long c);
 int _syscall4(int nr, unsigned long a, unsigned long b, unsigned long c, unsigned long d);
-int _syscall5(int nr, unsigned long a, unsigned long b, unsigned long c, unsigned long d, unsigned long e);
 
 #define syscall0(nr)                _syscall0(nr)
 #define syscall1(nr, a)             _syscall1(nr, (unsigned long)a)
 #define syscall2(nr, a, b)          _syscall2(nr, (unsigned long)a, (unsigned long)b)
 #define syscall3(nr, a, b, c)       _syscall3(nr, (unsigned long)a, (unsigned long)b, (unsigned long)c)
 #define syscall4(nr, a, b, c, d)    _syscall4(nr, (unsigned long)a, (unsigned long)b, (unsigned long)c, (unsigned long)d)
-#define syscall5(nr, a, b, c, d, e) _syscall5(nr, (unsigned long)a, (unsigned long)b, (unsigned long)c, (unsigned long)d, (unsigned long)e)
 
 enum
 {

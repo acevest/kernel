@@ -28,6 +28,11 @@ ext2_inode_t ext2_root_inode;
 static ext2_inode_t boot_inode;
 static ext2_inode_t krnl_inode;
 
+unsigned long ext2_block_size()
+{
+    return (EXT2_MIN_BLOCK_SIZE << (EXT2_SB)->s_log_block_size);
+}
+
 void *ext2_alloc_block()
 {
     return (void *) kmem_cache_alloc(ext2_block_cache, 0);
@@ -86,13 +91,13 @@ void ext2_read_file(const ext2_inode_t *inode, char *buf)
     for(i=0; i<blkcnt; ++i)
     {
         BLKRW(inode->i_block[i], 1, buf+i*EXT2_BLOCK_SIZE);
-        printk("read block\n");
+        printd("read block\n");
     }
 
     unsigned int left = inode->i_size % EXT2_BLOCK_SIZE;
     if(left)
     {
-        printk("read left %u bytes\n", left);
+        printd("read left %u bytes\n", left);
 
         void *blk = ext2_alloc_block();
 
@@ -100,8 +105,25 @@ void ext2_read_file(const ext2_inode_t *inode, char *buf)
 
         ext2_free_block(blk);
     }
-    printk("read file done\n");
+    printd("read file done\n");
 }
+
+void ext2_read_data(const ext2_inode_t *inode, unsigned int offset, size_t size, char *buf)
+{
+    assert(inode != 0);
+    assert(buf != 0);
+    assert(inode->i_size > 0 && inode->i_size<=MAX_SUPT_FILE_SIZE);
+    assert(offset+size <= inode->i_size);
+    assert(offset % EXT2_BLOCK_SIZE == 0);  // for easy
+    printk("offset %x size %x  %x\n", offset, size, offset+size);
+    assert((offset+size) % EXT2_BLOCK_SIZE == 0);
+
+    unsigned int blkid  = offset / EXT2_BLOCK_SIZE;
+    unsigned int blkcnt = size   / EXT2_BLOCK_SIZE;
+    printk("id %u cnt %u\n", blkid, blkcnt);
+    BLKRW(inode->i_block[blkid], blkcnt, buf);
+}
+
 
 unsigned int ext2_search_indir(const char *name, const ext2_inode_t *inode)
 {

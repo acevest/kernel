@@ -54,9 +54,11 @@ syscall_entry:
 
     call    *sysc_handler_table(,%eax,4)
 
+normal_syscall_exit:
     leal    sysexit, %edx
     movl    %edx, PT_REGS_EDX(%esp)
-    movl    %ebp, PT_REGS_ECX(%esp)
+    movl    PT_REGS_EBP(%esp), %edx
+    movl    %edx, PT_REGS_ECX(%esp)
 
 syscall_exit:
     movl    %eax, PT_REGS_EAX(%esp)
@@ -72,7 +74,7 @@ bad_sysc_nr:
 
 ret_from_fork_user:
     xorl    %eax, %eax
-    jmp     syscall_exit
+    jmp     normal_syscall_exit
 
 ret_from_fork_krnl:
     movl    PT_REGS_EDX(%esp), %edx

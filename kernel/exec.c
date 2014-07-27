@@ -20,8 +20,32 @@
 #include <elf.h>
 #include <fs.h>
 #include <ext2.h>
+#include <page.h>
 
 extern void *syscall_exit;
+
+void put_paging(unsigned long vaddr, unsigned long paddr, unsigned long flags)
+{
+    assert(PAGE_ALIGN(vaddr) == vaddr);
+    assert(PAGE_ALIGN(paddr) == paddr);
+
+    unsigned int npde = get_npd(vaddr);
+    unsigned int npte = get_npt(vaddr);
+
+    pde_t *page_dir = (pde_t *) current->cr3;
+    pte_t *page_table = (pte_t *) PAGE_ALIGN(page_dir[npde]);
+
+    if(page_table == 0)
+    {
+        page_table = (pte_t *) va2pa(alloc_one_page(0));
+        assert(page_table != 0);
+    }
+
+
+    page_dir[npde] = (unsigned long) page_table | flags;
+    page_table = pa2va(page_table);
+    page_table[npte] = paddr | flags;
+}
 
 int sysc_exec(const char *path, char *const argv[])
 {
@@ -35,93 +59,58 @@ int sysc_exec(const char *path, char *const argv[])
 
     ext2_read_inode(ino, &inode);
 
-    //void *buf = (void*)kmalloc(inode.i_size, 0);
-    void *buf = (void *) alloc_pages(0, 5);
-    assert(buf != 0);
-
-    printk("exec buf %08x \n", buf);
-    printd("begin read elf\n");
-    ext2_read_file(&inode, buf);
-    printd("end read elf\n");
+    Elf32_Ehdr *ehdr= (Elf32_Ehdr *)alloc_one_page(0);
+    assert(ehdr != 0);
+    ext2_read_data(&inode, 0, PAGE_SIZE, (char *)ehdr);
+    printk("%08x\n", *((unsigned long *)ehdr->e_ident));
+    assert(strncmp(ELFMAG, ehdr->e_ident, sizeof(ELFMAG)-1) == 0);
+    printk("Elf Entry: %08x\n", ehdr->e_entry);
 
 
-    pElf32_Ehdr ehdr = (pElf32_Ehdr) buf;
-    //assert(strncmp(ELFMAG, ehdr->e_ident, sizeof(ELFMAG)-1) == 0);
-    if(strncmp(ELFMAG, ehdr->e_ident, sizeof(ELFMAG)-1) != 0)
+
+    int i, j;
+    for(i=0; i<ehdr->e_phnum; ++i)
     {
-        printk("file %s can not execute\n", path);
-        kfree(buf);
-        return -ENOEXEC;
-    }
-    //printk("Entry: %08x phnum:%d\n", ehdr->e_entry, ehdr->e_phnum);
-    
-    int size = 0;
-    int i;
-    for(i=0; i<ehdr->e_phnum; i++)
-    {
-        pElf32_Phdr phdr;
-        phdr = (pElf32_Phdr)(buf+ehdr->e_phoff+(i*ehdr->e_phentsize));
+        Elf32_Phdr *phdr;
+        phdr = (Elf32_Phdr*)(((unsigned long)ehdr) + ehdr->e_phoff + (i*ehdr->e_phentsize));
 
         printk("Type %08x Off %08x Va %08x Pa %08x Fsz %08x Mmsz %08x\n",
-            phdr->p_type, phdr->p_offset, phdr->p_vaddr, phdr->p_paddr,
-            phdr->p_filesz, phdr->p_memsz);
+                phdr->p_type, phdr->p_offset, phdr->p_vaddr, phdr->p_paddr,
+                phdr->p_filesz, phdr->p_memsz);
 
-        if(phdr->p_type == PT_LOAD)
-        {
-            if(phdr->p_offset > 0 && phdr->p_memsz > 0)
-            {
-                size = ALIGN(phdr->p_offset + phdr->p_memsz, 0x1000);
-            }
-        }
-    }
 
-    printk("ELF MEM SIZE %u\n", size);
+        unsigned long vaddr = phdr->p_vaddr;
+        unsigned long offset= phdr->p_offset;
+        unsigned long mmsz  = phdr->p_memsz;
+        unsigned long filesz= phdr->p_filesz;
 
-    char *exe = (char *) kmalloc(size, 0);
-    assert(exe != 0);
-    printk("EXE ADDR %08x\n", exe);
-    for(i=0; i<ehdr->e_phnum; i++)
-    {
-        pElf32_Phdr phdr;
-        phdr = (pElf32_Phdr)(buf+ehdr->e_phoff+(i*ehdr->e_phentsize));
         if(phdr->p_type != PT_LOAD)
             continue;
-        if(phdr->p_filesz != 0)
+
+        assert(mmsz >= filesz);
+
+        unsigned int pgcnt = (mmsz + PAGE_SIZE - 1) / PAGE_SIZE;
+        unsigned int blkcnt= (filesz + EXT2_BLOCK_SIZE - 1) / EXT2_BLOCK_SIZE;
+
+        void *buf = kmalloc(pgcnt*PAGE_SIZE, PAGE_SIZE);
+        assert(PAGE_ALIGN(buf) == (unsigned long)buf);
+        assert(buf != 0);
+
+
+        printk("vvvbufsz %08x datasz %08x\n", pgcnt*PAGE_SIZE, blkcnt*EXT2_BLOCK_SIZE);
+
+        if(filesz > 0)
+            ext2_read_data(&inode, offset, blkcnt*EXT2_BLOCK_SIZE, buf);
+
+        for(j=0; j<pgcnt; ++j)
         {
-            memcpy((void*)(exe+phdr->p_offset), (void*)(buf+phdr->p_offset), phdr->p_filesz);
+            put_paging(vaddr + j*PAGE_SIZE, (unsigned long) (va2pa(buf)) + j*PAGE_SIZE, 7);
         }
     }
 
-
-    /*
-     *  因为目前文件支持最大为12*EXT2_BLOCK_SIZE
-     *  即12K~48K之间
-     *  所以就以一个页目录项来简化处理
-     */
-    u32    *pd = (u32*) current->cr3;
-    u32    *pt;
-    u32    pa_exe;
-    u32    npd, npt;
-    int    c;
-    pa_exe  = va2pa(exe);
-    npd     = get_npd(ehdr->e_entry);
-    npt     = get_npt(ehdr->e_entry);
-    pt      = (u32*)va2pa(alloc_one_page(0));
-    if(pt == NULL)
-        panic("out of memory");
-
-    //printk("npd: %d pt:%08x\n", npd, pt);
-    memset(pa2va(pt), 0, PAGE_SIZE);
-    pd[npd]    = (u32) pt | 7;
-    pt = pa2va(pt);
-    for(i=npt, c=0; i<1024; i++, c++)
-    {
-        pt[i] = va2pa(PAGE_ALIGN((unsigned long)exe)) + c * PAGE_SIZE;
-        pt[i] |= 7;
-    }
-    
     load_cr3(current);
-    printk("exe : %08x cr3:%08x\n", exe, pd);
+
+    disable_irq();
 
     pt_regs_t *regs = ((pt_regs_t *)(TASK_SIZE+(unsigned long)current)) - 1;
     memset((void*)regs, 0, sizeof(pt_regs_t));
@@ -137,7 +126,9 @@ int sysc_exec(const char *path, char *const argv[])
     regs->edx   = regs->eip;
     regs->ecx   = (0xC0000000 - 16);
 
-    kfree(buf);
+    //kfree(buf);
+
+    free_pages((unsigned long)ehdr);
 
     asm("movl $0, %%eax; movl %%ebx,%%ebp; movl %%ebp,%%esp;jmp syscall_exit;"::"b"((unsigned long)(regs)));
 

@@ -22,7 +22,7 @@ int write(int fd, const char *buf, unsigned long size)
     //sysenter(0);
     //syscall3(0, fd, buf, size);
     //asm("nop;nop;nop;");
-
+    
     syscall3(SYSC_WRITE, fd, buf, size);
 
     return size;

@@ -11,6 +11,7 @@
  */
 
 #include <sched.h>
+#include <page.h>
 
 int sysc_fork(pt_regs_t regs)
 {
@@ -23,6 +24,7 @@ extern pid_t get_next_pid();
 
 int do_fork(pt_regs_t *regs, unsigned long flags)
 {
+    static int forkcnt = 7;
     task_union *tsk;
     tsk = alloc_task_union();
     printk("fork task %08x flags %08x\n", tsk, flags);
@@ -31,7 +33,7 @@ int do_fork(pt_regs_t *regs, unsigned long flags)
 
     memcpy(tsk, current, sizeof(task_union));
 
-    {
+    //{
         tsk->cr3 = (unsigned long) alloc_one_page(0);
         if(tsk->cr3 == 0)
             panic("failed init tsk cr3");
@@ -55,22 +57,38 @@ int do_fork(pt_regs_t *regs, unsigned long flags)
                 continue;
             }
 
-            if(spde != 0)
-                dpde = PAGE_FLAGS(spde) | (unsigned long) va2pa(alloc_one_page(0));
+            if(pde_src[i] == 0)
+                continue;
+
+            if(PAGE_ALIGN(spde) != 0)
+            {
+                dpde = alloc_one_page(0);
+                assert(dpde != 0);
+                memset((void*)dpde, 0, PAGE_SIZE);
+                dpde = PAGE_FLAGS(spde) | (unsigned long) va2pa(dpde);
+            }
+            else
+            {
+                pde_dst[i] = 0;
+                continue;
+            }
             pde_dst[i] = dpde;
 
             pte_t *pte_src = pa2va(PAGE_ALIGN(spde));
             pte_t *pte_dst = pa2va(PAGE_ALIGN(dpde));
             for(j=0; j< PAGE_PTE_CNT; ++j)
             {
+
+                //printl(20, "[%d %d]", i, j);
                 pte_src[j] &= ~PAGE_WR;
                 pte_dst[j] = pte_src[j];
 
                 page_t *page = pa2page(pte_src[j]);
                 page->count ++;
             }
+
         }
-    }
+    //}
 
     tsk->pid    = get_next_pid();
     tsk->ppid   = current->pid;
@@ -81,7 +99,6 @@ int do_fork(pt_regs_t *regs, unsigned long flags)
 
     child_regs->eax = 0;
     child_regs->eflags |= 0x200; //enable IF
-
 
     tsk->esp0   = TASK_SIZE + (unsigned long) tsk;
     tsk->esp    = (unsigned long) child_regs;
@@ -104,5 +121,7 @@ int do_fork(pt_regs_t *regs, unsigned long flags)
     list_add(&tsk->list, &root_task.list);
     irq_restore(iflags);
 
+
+    printk("%s:%d\n", __func__, __LINE__);
     return (int)tsk->pid;
 }

@@ -16,25 +16,32 @@
 int systest();
 int main()
 {
+    char x[10];
+    x[0] = 'a';
+    x[1] = 'b';
+    x[2] = 'c';
+    x[3] = '\n';
+#if 1
+    //while(1) write(0, x, 4);
+    //while(1) systest();
+    int pid = fork();
 
-
-    while(1)
+    if(pid > 0)
     {
-    char buf[256];
-    read(0, buf, 256);
-    write(0, buf, 256);
-#if 0
-    asm("movl $11, %eax;"   \
-        "pushl $1f;"        \
-        "pushl %ecx;"       \
-        "pushl %edx;"       \
-        "pushl %ebp;"       \
-        "movl  %esp,%ebp;"  \
-        "sysenter;"         \
-        "1:");
+        //write(0, "parent\n", 7);
+        //write(0, x, 4);
+        while(1)
+        ;    systest();
+    }
+    else if(pid == 0)
 #endif
-        systest();
-        asm("nop;nop;nop;");
+    {
+        //write(0, "child\n", 6);
+        //write(0, x, 4);
+        while(1)
+        {
+            systest();
+        }
     }
 
     return 0;

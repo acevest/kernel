@@ -52,6 +52,9 @@ int sysc_test()
 {
     static unsigned int cnt=0;
     printl(MPL_TEST, "sysc_test %u", cnt++);
+
+    //unsigned long *pde = (unsigned long *)current->cr3;
+    //printk("sysctest %08x\n", pde[797]);
 }
 
 void    init_sysc_handler_table()
@@ -60,11 +63,11 @@ void    init_sysc_handler_table()
     for(i=0; i<SYSC_NUM; i++)
         sysc_handler_table[i] = (unsigned long) sysc_none;
 
-#define _sysc_(nr, sym)                                    \
-    do                                                    \
-    {                                                    \
-        extern int sym ();                                \
-        sysc_handler_table[nr] = (unsigned long) sym;    \
+#define _sysc_(nr, sym)                                 \
+    do                                                  \
+    {                                                   \
+        extern int sym ();                              \
+        sysc_handler_table[nr] = (unsigned long) sym;   \
     }while(0);
 
     _sysc_(SYSC_WRITE,       sysc_write);
