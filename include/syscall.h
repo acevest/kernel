@@ -48,7 +48,8 @@ enum
     SYSC_STAT,
     SYSC_EXIT,
     SYSC_PAUSE,
-    SYSC_TEST
+    SYSC_TEST,
+    SYSC_DEBUG
 };
 
 #endif    // ASM

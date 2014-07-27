@@ -126,11 +126,10 @@ inline void context_switch(task_union * prev, task_union * next)
 
 unsigned long schedule()
 {
+    static turn = 0;
     task_union *sel = &root_task;
     task_union *p = 0;
     list_head_t *pos = 0, *t=0;
-
-    unsigned int max_weight = 0;
 
     unsigned long iflags;
     irq_save(iflags);
@@ -140,32 +139,33 @@ unsigned long schedule()
 
         if(p->state != TASK_RUNNING)
         {
-            if(p->state == TASK_EXEC)
-                p->state = TASK_RUNNING;
             continue;
         }
 
-        if(p->weight > max_weight)
-        {
-            max_weight = p->weight;
-            sel = p;
-        }
+        printd("%08x weight %d\n", p, p->weight);
 
-        else if(p->weight == 0)
+        if(p->weight != turn)
         {
-            p->weight = TASK_INIT_WEIGHT;
+            p->weight = turn;
+            sel = p;
+            break;
         }
     }
     irq_restore(iflags);
 
-    sel->weight--;
+    if(sel == &root_task)
+    {
+        turn ++;
+    }
+
+    printl(MPL_ROOT+sel->pid, "task:%d [%08x] turn %d cnt %u", sel->pid, sel, sel->weight, sel->cnt);
 
     task_union *prev = current;
     task_union *next = sel;
 
     if(prev != next)
     {
-        printd("select %08x\n", next);
+        printd("[s:%08x]\n", next);
         context_switch(prev, next);
     }
 }
