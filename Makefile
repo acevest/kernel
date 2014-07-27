@@ -40,4 +40,5 @@ install:
 	cp bin/hello /kernel/bin/
 	cp bin/shell /kernel/bin/
 cp:
+	cd bin && make
 	./scripts/copy.sh

@@ -174,6 +174,7 @@ void vga_putc(unsigned int nr, unsigned char c, const unsigned char color)
 
 void vga_puts(unsigned int nr, const char *buf, unsigned char color)
 {
+    assert(buf != 0);
     if(nr >= VGA_MAX_SCREEN_CNT)
         return ;
 

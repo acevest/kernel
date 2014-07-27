@@ -83,7 +83,7 @@ typedef struct bootmem_data {
 
 bootmem_data_t bootmem_data;
 
-unsigned long bootmem_total_pages()
+unsigned long bootmem_max_pfn()
 {
     return bootmem_data.max_pfn;
 }
@@ -308,6 +308,8 @@ extern void sysexit();
 
 void init_paging()
 {
+    printk("max_pfn %u", bootmem_data.max_pfn);
+    //while(1);
     unsigned int i;
     unsigned long pfn = 0;
     pte_t *pte = 0;
@@ -330,7 +332,6 @@ void init_paging()
         pte = ((pte_t *) pa2va(pgtb_addr)) + ti;
         *pte = (pte_t) (page_addr | PAGE_P | PAGE_WR);
     }
-
 
     // paging for kernel space
     unsigned long delta = get_npd(PAGE_OFFSET);

@@ -94,5 +94,6 @@ void setup_kernel()
     setup_fs();
 
     printk("%s\n", version);
+    //vga_dbg_toggle();
 }
 

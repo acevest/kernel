@@ -14,6 +14,7 @@
  *--------------------------------------------------------------------------
  */
 
+#include<assert.h>
 
 extern void vga_puts(unsigned int nr, const char *buf, unsigned char color);
 int sysc_write(int fd, const char *buf, unsigned long size)

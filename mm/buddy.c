@@ -28,7 +28,8 @@ int buddy_is_free(page_t *page, unsigned int order)
 
 page_t *va2page(unsigned long addr)
 {
-    return buddy_system.page_map + va2pfn(addr);
+    page_t *page = buddy_system.page_map + va2pfn(addr);
+    return page;
 }
 
 void *page2va(page_t *page)
@@ -99,7 +100,8 @@ unsigned long alloc_pages(unsigned int gfp_mask, unsigned int order)
     page_t *page = __alloc_pages(order);
     irq_restore(flags);
 
-    return (unsigned long) page2va(page);
+    unsigned long addr = (unsigned long) page2va(page);
+    return addr;
 }
 
 void __free_pages(page_t *page, unsigned int order)
@@ -196,7 +198,7 @@ void init_buddy_system()
 {
     page_t *page;
     unsigned long i;
-    unsigned long pfn_cnt = bootmem_total_pages();
+    unsigned long pfn_cnt = bootmem_max_pfn();
 
     // init free area
     memset(&buddy_system, 0, sizeof(buddy_system));
@@ -215,8 +217,7 @@ void init_buddy_system()
         while(1);
     }
 
-    printk("page_map begin %08x end %08x\n", buddy_system.page_map, buddy_system.page_map + pfn_cnt);
-
+    printk("page_map begin %08x end %08x pfncnt %u page_t size %u\n", buddy_system.page_map, buddy_system.page_map + pfn_cnt + 1, pfn_cnt, sizeof(page_t));
     for(i=0; i<pfn_cnt; ++i)
     {
         page = buddy_system.page_map + i;

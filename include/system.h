@@ -21,12 +21,12 @@
 #include <assert.h>
 #define KRNLADDR    PAGE_OFFSET
 
-#define PT_REGS_EDI     0
-#define PT_REGS_ESI     4
-#define PT_REGS_EBP     8
-#define PT_REGS_EBX     12
-#define PT_REGS_EDX     16
-#define PT_REGS_ECX     20
+#define PT_REGS_EBX     0
+#define PT_REGS_ECX     4
+#define PT_REGS_EDX     8
+#define PT_REGS_ESI     12
+#define PT_REGS_EDI     16
+#define PT_REGS_EBP     20
 #define PT_REGS_EAX     24
 #define PT_REGS_DS      28
 #define PT_REGS_ES      32
@@ -131,6 +131,7 @@ enum GDTSelectorIndex
     INDEX_EMP8,
     INDEX_TSS,
 };
+#if 0
 // pushal push eax, ecx, edx, ebx, esp, ebp, esi, edi
 typedef struct pt_regs
 {
@@ -156,16 +157,42 @@ typedef struct pt_regs
     u32    esp;
     u16    ss, _ss;
 } __attribute__((packed)) pt_regs_t;
+#else
+typedef struct pt_regs
+{
+    u32    ebx;
+    u32    ecx;
+    u32    edx;
+    u32    esi;
+    u32    edi;
+    u32    ebp;
+    u32    eax;
+    u16    ds, _ds;
+    u16    es, _es;
+    u16    fs, _fs;
+    u16    gs, _gs;
+    union
+    {
+        u32    irq;
+        u32    errcode;
+    };
+    u32    eip;
+    u16    cs, _cs;
+    u32    eflags;
+    u32    esp;
+    u16    ss, _ss;
+} __attribute__((packed)) pt_regs_t;
+#endif
 
 typedef unsigned long dev_t;
 
 typedef struct system
 {
     u32 mmap_addr;
-    u32 mmap_size;    // Byte
+    u32 mmap_size;  // Byte
 
-    u32 mm_lower;    // KB
-    u32 mm_upper;    // KB
+    u32 mm_lower;   // KB
+    u32 mm_upper;   // KB
     u64 mm_size;    // Byte
 
     u32 page_count;
@@ -206,20 +233,20 @@ extern    System system;
     pushl   %es;        \
     pushl   %ds;        \
     pushl   %eax;       \
-    pushl   %ecx;       \
-    pushl   %edx;       \
-    pushl   %ebx;       \
     pushl   %ebp;       \
     pushl   %esi;       \
-    pushl   %edi;
+    pushl   %edi;       \
+    pushl   %edx;       \
+    pushl   %ecx;       \
+    pushl   %ebx;
 
 #define RESTORE_REGS    \
+    popl    %ebx;       \
+    popl    %ecx;       \
+    popl    %edx;       \
     popl    %edi;       \
     popl    %esi;       \
     popl    %ebp;       \
-    popl    %ebx;       \
-    popl    %edx;       \
-    popl    %ecx;       \
     popl    %eax;       \
     popl    %ds;        \
     popl    %es;        \

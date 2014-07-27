@@ -34,7 +34,10 @@
 
 #define EXT2_SB                 (&ext2_fs.ext2_sb)
 #define EXT2_GD                 (ext2_fs.ext2_gd)
-#define EXT2_BLOCK_SIZE        (EXT2_MIN_BLOCK_SIZE << (EXT2_SB)->s_log_block_size)
+
+unsigned long ext2_block_size();
+#define EXT2_BLOCK_SIZE ext2_block_size()
+//#define EXT2_BLOCK_SIZE        (EXT2_MIN_BLOCK_SIZE << (EXT2_SB)->s_log_block_size)
 
 #define EXT2_SECT_PER_BLOCK    (EXT2_BLOCK_SIZE/512)
 
@@ -209,5 +212,6 @@ enum
 
 void ext2_read_inode(unsigned int ino, ext2_inode_t *inode);
 void ext2_read_file(const ext2_inode_t *inode, char *buf);
+void ext2_read_data(const ext2_inode_t *inode, unsigned int offset, size_t size, char *buf);
 
 #endif //_EXT2_H

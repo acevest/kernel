@@ -19,6 +19,7 @@
 
 void do_no_page(void *addr)
 {
+    printk("%s   addr %08x\n", __func__, (unsigned long)addr);
     pde_t *pde = (pde_t *)current->cr3;
     pte_t *pte;
     unsigned long page = alloc_one_page(0);
@@ -52,6 +53,7 @@ void do_no_page(void *addr)
 
 void do_wp_page(void *addr)
 {
+    //printk("%s   addr %08x\n", __func__, (unsigned long)addr);
     int npde = get_npd(addr);
     int npte = get_npt(addr);
 
@@ -84,6 +86,8 @@ void do_wp_page(void *addr)
         dst = va2pa(dst);
 
         pt[npte] = dst | flags;
+        pt[npte] |= PAGE_WR;
+        pd[npde] |= PAGE_WR;
 
         dst = (unsigned long)pa2va(PAGE_ALIGN(dst));
 
@@ -91,7 +95,7 @@ void do_wp_page(void *addr)
     }
     else
     {
-        //pd[npde] |= PAGE_WR;
+        pd[npde] |= PAGE_WR;
         pt[npte] |= PAGE_WR;
         //pd[npde] |= PAGE_US;
         //pt[npte] |= PAGE_US;

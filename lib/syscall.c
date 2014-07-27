@@ -7,9 +7,10 @@
  * ------------------------------------------------------------------------
  */
 
-
+// "movl     $1f, %%edi;"
+//
 #define SYSENTER_ASM            \
-        "pushl  $1f;"           \
+        "pushl  $1f;"   \
         "pushl    %%ecx;"       \
         "pushl    %%edx;"       \
         "pushl    %%ebp;"       \
@@ -52,15 +53,6 @@ static int __syscall4(int nr, unsigned long a, unsigned long b, unsigned long c,
     return __sysc_ret__;
 }
 
-static int __syscall5(int nr, unsigned long a, unsigned long b, unsigned long c, unsigned long d, unsigned long e)
-{
-    int __sysc_ret__ = 0;
-    asm(SYSENTER_ASM:"=a"(__sysc_ret__):"a"(nr), "b"(a), "c"(b), "d"(c), "S"(d), "D"(e));
-    return __sysc_ret__;
-}
-
-
-
 int _syscall0(int nr)
 {
     return __syscall0(nr);
@@ -84,9 +76,4 @@ int _syscall3(int nr, unsigned long a, unsigned long b, unsigned long c)
 int _syscall4(int nr, unsigned long a, unsigned long b, unsigned long c, unsigned long d)
 {
     return __syscall4(nr, a, b, c, d);
-}
-
-int _syscall5(int nr, unsigned long a, unsigned long b, unsigned long c, unsigned long d, unsigned long e)
-{
-    return __syscall5(nr, a, b, c, d, e);
 }

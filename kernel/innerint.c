@@ -96,9 +96,11 @@ void doPageFault(pt_regs_t regs)
 
     //printd("do page fault errcode %x addr %08x\n", errcode, addr);
 
-    if(errcode & PAGE_US)
+    if(errcode == 0 || errcode == 2)
     {
-        //panic("user program try to access a page and cause a protection fault. addr %08x", addr);
+        unsigned long *pde_src = (unsigned long *) current->cr3;
+        printk("p=%x\n", pde_src[796]);
+        //panic("errcode %08x addr %08x", errcode, addr);
     }
 
     if((errcode & PAGE_P) == 0)
