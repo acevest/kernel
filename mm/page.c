@@ -79,12 +79,19 @@ void do_no_page(void *addr)
 void do_wp_page(void *addr)
 {
     printk("%s   addr %08x\n", __func__, (unsigned long)addr);
+    if((unsigned long) addr >= PAGE_OFFSET)
+    {
+        panic("%s invalid addr", __func__);
+    }
 #if 1
     int npde = get_npd(addr);
     int npte = get_npt(addr);
 
     pde_t *page_dir = (pde_t *)current->cr3;
     pte_t *page_tbl = pa2va(PAGE_ALIGN(page_dir[npde]));
+
+    //printk("%s   addr %08x dirent %08x\n", __func__, (unsigned long)addr, page_dir[npde]);
+    //assert(page_dir[npde] != 0);
 
     unsigned long wp_pa_addr = PAGE_ALIGN(page_tbl[npte]);
    
@@ -104,6 +111,11 @@ void do_wp_page(void *addr)
     }
 
     page_tbl[npte] |= PAGE_WR;
+#if 0
+    page_tbl[npte] |= PAGE_US;
+    page_dir[npde] |= PAGE_WR;
+    page_dir[npde] |= PAGE_US;
+#endif
 
     load_cr3(current);
 
