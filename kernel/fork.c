@@ -78,8 +78,17 @@ int do_fork(pt_regs_t *regs, unsigned long flags)
                 pte_src[j] &= ~PAGE_WR;
                 pte_dst[j] = pte_src[j];
 
+                if(pte_src[j] == 0)
+                    continue;
+                printk("----pde[%u] pte_src[%u] %08x\n", i, j, pte_src[j]);
                 page_t *page = pa2page(pte_src[j]);
                 page->count ++;
+                //assert(page->count <= 1);
+                if(page->count > 1)
+                {
+                    printk("page %08x count %d\n", page, page->count);
+                    panic("----");
+                }
             }
 
         }
