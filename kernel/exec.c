@@ -37,7 +37,9 @@ void put_paging(unsigned long vaddr, unsigned long paddr, unsigned long flags)
 
     if(page_table == 0)
     {
-        page_table = (pte_t *) va2pa(alloc_one_page(0));
+        page_table = (pte_t *) alloc_one_page(0);
+        memset(page_table, 0, PAGE_SIZE);
+        page_table = (pte_t *) va2pa(page_table);
         assert(page_table != 0);
     }
 
@@ -110,8 +112,10 @@ int sysc_exec(const char *path, char *const argv[])
 
     load_cr3(current);
 
+    disable_irq();
 
     pt_regs_t *regs = ((pt_regs_t *)(TASK_SIZE+(unsigned long)current)) - 1;
+#if 0
     memset((void*)regs, 0, sizeof(pt_regs_t));
     regs->ss    = SELECTOR_USER_DS;
     regs->ds    = SELECTOR_USER_DS;
@@ -121,6 +125,7 @@ int sysc_exec(const char *path, char *const argv[])
     regs->esp   = (KRNLADDR-4*sizeof(unsigned long));
     regs->eflags= 0x200;
     regs->cs    = SELECTOR_USER_CS;
+#endif
     regs->eip   = (unsigned long)ehdr->e_entry;
     regs->edx   = regs->eip;
     regs->ecx   = (0xC0000000 - 16);

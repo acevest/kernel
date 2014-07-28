@@ -104,7 +104,7 @@ US RW  P - Description
 
     asm("movl %%cr2,%%eax":"=a"(addr));
 
-    printk("do page fault errcode %x addr %08x [%08x]\n", errcode, addr, current);
+    //printk("do page fault errcode %x addr %08x [%08x]\n", errcode, addr, current);
 
     //assert(errcode != 2 && errcode != 6);
 

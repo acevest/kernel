@@ -98,9 +98,11 @@ typedef struct page
 } page_t;
 
 void *page2va(page_t *page);
-page_t *va2page(unsigned long addr);
+page_t *_va2page(unsigned long addr);
+page_t *_pa2page(unsigned long addr);
 
-#define pa2page(addr) va2page((unsigned long)pa2va(PAGE_ALIGN(addr)))
+#define va2page(addr) _va2page(PAGE_ALIGN(addr))
+#define pa2page(addr) _pa2page(PAGE_ALIGN(addr))
 
 static inline page_t *get_head_page(page_t *page) { return page->head_page; }
 
