@@ -28,6 +28,11 @@
 
 #define EC_CALLDO(name)     \
     SAVE_REGS                \
+    movw    %ss, %ax;    \
+    movw    %ax, %ds;    \
+    movw    %ax, %es;    \
+    movw    %ax, %fs;    \
+    movw    %ax, %gs;    \
     call    do##name;        \
     RESTORE_REGS;            \
     addl    $4,%esp;        \
