@@ -59,7 +59,11 @@ int sysc_test()
 int sysc_debug(unsigned int v)
 {
     static unsigned int cnt=0;
-    printl(MPL_DEBUG, "Task Debug Syscall %u Value %08x", cnt++, v);
+#if 1
+    printl(MPL_DEBUG, "task debug syscall %u", cnt++);
+#else
+    printl(MPL_DEBUG, "task debug syscall %u value %08x", cnt++, v);
+#endif
 }
 
 void init_sysc_handler_table()
