@@ -42,7 +42,7 @@ int main()
             sysdebug(0x0A0B0C0D);
         }
     }
- 
+
     if(pid > 0)
     {
         printf("prarent child pid %u\n", pid);

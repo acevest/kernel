@@ -27,14 +27,26 @@ int buddy_is_free(page_t *page, unsigned int order)
     return 0;
 }
 
-page_t *va2page(unsigned long addr)
+page_t *_va2page(unsigned long addr)
 {
     page_t *page = buddy_system.page_map + va2pfn(addr);
 
     assert(page >= buddy_system.page_map);
-    assert(page < buddy_system.page_map_end);
+    //assert(page < buddy_system.page_map_end);
+    if(page >= buddy_system.page_map_end)
+    {
+        printk("buddy_system.page_map %08x buddy_system.page_map_end %08x\n", buddy_system.page_map, buddy_system.page_map_end);
+        printk("error %s page %08x addr %08x\n", __func__, page, addr);
+        panic("error");
+    }
 
     return page;
+}
+page_t *_pa2page(unsigned long paddr)
+{
+    unsigned long vaddr = (unsigned long) pa2va(paddr);
+    printk("%s paddr %08x vaddr %08x\n", __func__, paddr, vaddr);
+    return va2page(vaddr);
 }
 
 void *page2va(page_t *page)
@@ -90,7 +102,7 @@ found:
         p->order = order;
     }
 
-    page->count = 1;
+    page->count = 0;
 
     return page;
 }
