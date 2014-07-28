@@ -22,7 +22,7 @@ int main()
     if(pid > 0)
     {
         int n = 10000000;
-        while(n--);
+        //while(n--);
         printf("parent\n");
         while(1)
         {

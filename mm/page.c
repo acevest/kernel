@@ -19,8 +19,7 @@
 
 void do_no_page(void *addr)
 {
-    //printk("%s   addr %08x\n", __func__, (unsigned long)addr);
-
+    printk("%s   addr %08x\n", __func__, (unsigned long)addr);
 #if 1
     pde_t *page_dir = (pde_t *)current->cr3;
     pte_t *page_tbl = 0;
@@ -79,6 +78,7 @@ void do_no_page(void *addr)
 
 void do_wp_page(void *addr)
 {
+    printk("%s   addr %08x\n", __func__, (unsigned long)addr);
 #if 1
     int npde = get_npd(addr);
     int npte = get_npt(addr);

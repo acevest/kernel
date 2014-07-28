@@ -43,8 +43,7 @@ void put_paging(unsigned long vaddr, unsigned long paddr, unsigned long flags)
         assert(page_table != 0);
     }
 
-
-    page_dir[npde] = (unsigned long) page_table | flags;
+    page_dir[npde] = (unsigned long) page_table | flags | PAGE_P | PAGE_WR;
     page_table = pa2va(page_table);
     page_table[npte] = paddr | flags;
 }
@@ -115,7 +114,7 @@ int sysc_exec(const char *path, char *const argv[])
     disable_irq();
 
     pt_regs_t *regs = ((pt_regs_t *)(TASK_SIZE+(unsigned long)current)) - 1;
-#if 0
+#if 1
     memset((void*)regs, 0, sizeof(pt_regs_t));
     regs->ss    = SELECTOR_USER_DS;
     regs->ds    = SELECTOR_USER_DS;
