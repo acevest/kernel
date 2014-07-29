@@ -54,16 +54,15 @@ int sysc_test()
     current->cnt++;
     printl(MPL_TEST, "sysc_test cnt %u current %08x cnt %u",
            cnt++, current, current->cnt);
+
+    return 0;
 }
 
 int sysc_debug(unsigned int v)
 {
     static unsigned int cnt=0;
-#if 1
-    printl(MPL_DEBUG, "task debug syscall %u", cnt++);
-#else
     printl(MPL_DEBUG, "task debug syscall %u value %08x", cnt++, v);
-#endif
+    return 0;
 }
 
 void init_sysc_handler_table()

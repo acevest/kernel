@@ -56,6 +56,7 @@ void kernel_task(void *entry)
     regs.edx = (unsigned long) entry;
     int pid = do_fork(&regs, FORK_KRNL);
     printk("kernel task pid is %d\n", pid);
+    enable_irq();
 }
 
 void root_task_entry()
@@ -70,7 +71,7 @@ void root_task_entry()
     {
         sysc_test();
         //printl(MPL_ROOT, "root:0 [%08x] weight %d cnt %d", current, root_task.weight, cnt++);
-        asm("sti;hlt;");
+        //asm("sti;hlt;");
         //sysc_test();
         //syscall0(SYSC_TEST);
     }
