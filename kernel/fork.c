@@ -120,11 +120,14 @@ int do_fork(pt_regs_t *regs, unsigned long flags)
 
     INIT_LIST_HEAD(&tsk->list);
 
+    disable_irq();
+
     unsigned long iflags;
     irq_save(iflags);
     list_add(&tsk->list, &root_task.list);
     irq_restore(iflags);
 
     printk("%s:%d\n", __func__, __LINE__);
+
     return (int)tsk->pid;
 }

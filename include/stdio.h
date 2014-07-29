@@ -14,14 +14,14 @@
  *--------------------------------------------------------------------------
  */
 
-#ifndef    _STDIO_H
+#ifndef _STDIO_H
 #define _STDIO_H
 #include <string.h>
 #include <syscall.h>
 extern int write(int fd, const char *buf, unsigned long size);
-char ptfbuf[1024];
 static inline int printf(const char *fmt, ...)
 {
+    char ptfbuf[512];
     char *args = (char*)(((char*)&fmt)+4);
     vsprintf(ptfbuf, fmt, args);
 

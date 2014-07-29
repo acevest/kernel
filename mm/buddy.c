@@ -45,7 +45,7 @@ page_t *_va2page(unsigned long addr)
 page_t *_pa2page(unsigned long paddr)
 {
     unsigned long vaddr = (unsigned long) pa2va(paddr);
-    printk("%s paddr %08x vaddr %08x\n", __func__, paddr, vaddr);
+    //printk("%s paddr %08x vaddr %08x\n", __func__, paddr, vaddr);
     return va2page(vaddr);
 }
 
