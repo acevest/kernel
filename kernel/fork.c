@@ -94,6 +94,8 @@ int do_fork(pt_regs_t *regs, unsigned long flags)
         }
     //}
 
+    load_cr3(current);
+
     tsk->pid    = get_next_pid();
     tsk->ppid   = current->pid;
 

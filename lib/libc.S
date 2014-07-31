@@ -24,9 +24,9 @@ loop:
     jmp loop
     */
 
-    pushl   $0  # env
-    pushl   $0  # argv
-    pushl   $1  # argc
+
+    pushl   $0xAAAAAAAA
+    pushl   $0x11111111
 
     call main
 
