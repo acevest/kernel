@@ -13,17 +13,14 @@
 #include <types.h>
 #include <string.h>
 
-int systest();
-int sysdebug();
-int pause(unsigned long tick);
 int main()
 {
 
     while(1)
     {
         printf("shell#");
-        char buf[256];
-        read(0, buf, 256);
+        char cmd[256];
+        read(0, cmd, 256);
 
         int pid = fork();
         if(pid > 0)
@@ -32,30 +29,12 @@ int main()
         }
         else
         {
-            execv(buf, 0);
+            execv(cmd, 0);
+            printf("failed to execute cmd: %s\n", cmd);
+            exit(0);
         }
     }
 
-
-
-    int pid = fork();
-    printf("pid %u\n", pid);
-    if(pid > 0)
-    {
-        printf("parent. child pid %u\n", pid);
-        while(1) {
-            systest();
-            sysdebug(0x44444444);
-        }
-    }
-    else
-    {
-        printf("child\n");
-        while(1) {
-            systest();
-            sysdebug(0xAABBCCDD);
-        }
-    }
 
     return 0;
 }
