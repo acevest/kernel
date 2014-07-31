@@ -45,12 +45,12 @@ void setup_i8253()
     outb(LATCH >> 8, 0x40);
 }
 
-#define VERSION    "0.2.5 Final"
-#define BUIDER    "Zhao Yanbai"
+#define VERSION "0.3.0"
+#define BUIDER  "Zhao Yanbai"
 const char *version = 
-    "Kernel "
+    "Kernel version "
     VERSION
-    " Build on "__DATE__ " " __TIME__
+    " ["__DATE__ " " __TIME__ "]"
     " @ "
     BUIDER
     "\n";
