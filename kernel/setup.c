@@ -51,8 +51,9 @@ const char *version =
     "Kernel "
     VERSION
     " Build on "__DATE__ " " __TIME__
-    " by "
-    BUIDER;
+    " @ "
+    BUIDER
+    "\n";
 
 void setup_kernel()
 {
@@ -93,7 +94,8 @@ void setup_kernel()
 
     setup_fs();
 
-    printk("%s\n", version);
-    //vga_dbg_toggle();
+    vga_puts(0, version, 0x2F);
+
+    switch_printk_screen();
 }
 

@@ -18,20 +18,40 @@ int sysdebug();
 int pause(unsigned long tick);
 int main()
 {
+
+    while(1)
+    {
+        printf("shell#");
+        char buf[256];
+        read(0, buf, 256);
+
+        int pid = fork();
+        if(pid > 0)
+        {
+            wait(pid);
+        }
+        else
+        {
+            execv(buf, 0);
+        }
+    }
+
+
+
     int pid = fork();
     printf("pid %u\n", pid);
     if(pid > 0)
     {
+        printf("parent. child pid %u\n", pid);
         while(1) {
-            printf("parent. child pid %u\n", pid);
             systest();
             sysdebug(0x44444444);
         }
     }
     else
     {
+        printf("child\n");
         while(1) {
-            printf("child\n");
             systest();
             sysdebug(0xAABBCCDD);
         }

@@ -145,7 +145,7 @@ task_union *find_task(pid_t pid)
 unsigned long schedule()
 {
     static turn = 0;
-    task_union *sel = &root_task;
+    task_union *sel = 0;
     task_union *p = 0;
     list_head_t *pos = 0, *t=0;
 
@@ -155,6 +155,8 @@ unsigned long schedule()
     {
         p = list_entry(pos, task_union, list);
 
+        printl(MPL_ROOT+p->pid, "task:%d [%08x] state %02x TURN %d turn %d cnt %u", p->pid, p, p->state, turn, p->weight, p->cnt);
+
         if(p->state != TASK_RUNNING)
         {
             continue;
@@ -162,21 +164,22 @@ unsigned long schedule()
 
         printd("%08x weight %d\n", p, p->weight);
 
-        if(p->weight != turn)
+
+        if(sel == 0 && p->weight != turn)
         {
             p->weight = turn;
             sel = p;
-            break;
         }
     }
     irq_restore(iflags);
 
-    if(sel == &root_task)
+
+    if(sel == 0)
     {
+        sel = &root_task;
         turn ++;
     }
 
-    printl(MPL_ROOT+sel->pid, "task:%d [%08x] turn %d cnt %u", sel->pid, sel, sel->weight, sel->cnt);
 
     task_union *prev = current;
     task_union *next = sel;

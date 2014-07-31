@@ -82,10 +82,13 @@ void cnsl_init()
 
 int cnsl_kbd_write(char ch)
 {
+    if(ch == 0)
+        return 0;
+
     if(ch == '\b')
     {
         if(!empty(&cnsl.wr_q))
-            vga_putc(0, '\b', 0x2);
+            vga_putc(0, '\b', 0xF);
         erase(&cnsl.wr_q);
         erase(&cnsl.sc_q);
     }
@@ -93,7 +96,7 @@ int cnsl_kbd_write(char ch)
     {
         put(&cnsl.wr_q, ch);
         put(&cnsl.sc_q, ch);
-        vga_putc(0, ch, 0x2);
+        vga_putc(0, ch, 0xF);
     }
 
 
@@ -104,20 +107,6 @@ int cnsl_kbd_write(char ch)
             put(&cnsl.rd_q, ch);
         wake_up(&rdwq);
     }
-
-#if 0
-    printl(23, "rd: %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x",
-    cnsl.rd_q.data[0],
-    cnsl.rd_q.data[1],
-    cnsl.rd_q.data[2],
-    cnsl.rd_q.data[3],
-    cnsl.rd_q.data[4],
-    cnsl.rd_q.data[5],
-    cnsl.rd_q.data[6],
-    cnsl.rd_q.data[7],
-    cnsl.rd_q.data[8],
-    cnsl.rd_q.data[9]);
-#endif
 }
 
 
@@ -143,7 +132,8 @@ int cnsl_read(char *buf, size_t count)
 
             if(r)
             {
-                buf[cnt++] = ch;
+                if(ch != '\n')
+                    buf[cnt++] = ch;
 
                 task->state = TASK_RUNNING;
                 del_wait_queue(&rdwq, &wait);
