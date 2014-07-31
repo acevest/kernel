@@ -12,15 +12,17 @@
 
 #include <sched.h>
 #include <system.h>
+#include <wait.h>
 
 int sysc_exit(int status)
 {
-    // simple implement.
+    unsigned long flags;
+    irq_save(flags);
     current->state = TASK_EXITING;
 
     task_union *t = current;
-    
-    schedule();
+
+    irq_restore(flags);
 
     return 0;
 }

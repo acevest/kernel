@@ -54,7 +54,7 @@ void ext2_read_inode(unsigned int ino, ext2_inode_t *inode)
     void *blk = ext2_alloc_block();
     assert(blk != 0);
 
-    printk("read_inode %u\n", ino);
+    printd("read_inode %u\n", ino);
 
     unsigned int in;    // inode number
     unsigned int gn;    // group number
@@ -75,7 +75,7 @@ void ext2_read_inode(unsigned int ino, ext2_inode_t *inode)
 
     memcpy(inode, blk+inoff, sizeof(ext2_inode_t));
 
-    printk(" inode size %u \n", inode->i_size);
+    printd(" inode size %u \n", inode->i_size);
 
     ext2_free_block(blk);
 }
@@ -115,12 +115,12 @@ void ext2_read_data(const ext2_inode_t *inode, unsigned int offset, size_t size,
     assert(inode->i_size > 0 && inode->i_size<=MAX_SUPT_FILE_SIZE);
     assert(offset+size <= inode->i_size);
     assert(offset % EXT2_BLOCK_SIZE == 0);  // for easy
-    printk("offset %x size %x  %x\n", offset, size, offset+size);
+    printd("offset %x size %x  %x\n", offset, size, offset+size);
     assert((offset+size) % EXT2_BLOCK_SIZE == 0);
 
     unsigned int blkid  = offset / EXT2_BLOCK_SIZE;
     unsigned int blkcnt = size   / EXT2_BLOCK_SIZE;
-    printk("id %u cnt %u\n", blkid, blkcnt);
+    printd("id %u cnt %u\n", blkid, blkcnt);
     BLKRW(inode->i_block[blkid], blkcnt, buf);
 }
 
@@ -191,7 +191,7 @@ unsigned int ext2_search_inpath(const char *path)
     while((len=get_filename_from_path(path, file)) != 0)
     {
         ino = ext2_search_indir(file, inode);
-        assert(ino != 0);
+        //assert(ino != 0);
 
         path += len;
 
@@ -257,7 +257,7 @@ void ext2_setup_fs()
     }
 
     ext2_read_inode(2, &ext2_root_inode);
-#if 1
+#if 0
     printk("root inode.i_size %u \n", ext2_root_inode.i_size);
     printk("root blocks %u \n", ext2_root_inode.i_blocks);
 

@@ -11,7 +11,7 @@
 
 #include<wait.h>
 
-#define CNSL_QUEUE_SIZE 10
+#define CNSL_QUEUE_SIZE 1024
 
 typedef struct cnsl_queue
 {

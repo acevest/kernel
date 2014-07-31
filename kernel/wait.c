@@ -96,15 +96,23 @@ int sysc_wait(unsigned long pid)
     if(p == 0)
         return 0;
 
+    if(p->state == TASK_EXITING)
+        return 0;
+
     task_union * task = current;
     DECLARE_WAIT_QUEUE(wait, task);
     add_wait_queue(&p->wait, &wait);
 
     while(true)
     {
-        task->state = TASK_WAIT;
+        //task->state = TASK_WAIT;
         
-        if(p->state == TASK_EXITING)    // no need irq_save
+        unsigned long flags;
+        irq_save(flags);
+        unsigned int state = p->state;
+        irq_restore(flags);
+
+        if(state == TASK_EXITING)    // no need irq_save
             break;
 
         schedule();
