@@ -183,7 +183,6 @@ unsigned long schedule()
 
     if(prev != next)
     {
-        printd("[s:%08x]\n", next);
         context_switch(prev, next);
     }
 }

@@ -67,8 +67,6 @@ int sysc_exec(const char *path, char *const argv[])
     assert(strncmp(ELFMAG, ehdr->e_ident, sizeof(ELFMAG)-1) == 0);
     printk("Elf Entry: %08x\n", ehdr->e_entry);
 
-
-
     int i, j;
     for(i=0; i<ehdr->e_phnum; ++i)
     {
@@ -109,6 +107,7 @@ int sysc_exec(const char *path, char *const argv[])
         }
     }
 
+
     load_cr3(current);
 
     disable_irq();
@@ -127,7 +126,7 @@ int sysc_exec(const char *path, char *const argv[])
 #endif
     regs->eip   = (unsigned long)ehdr->e_entry;
     regs->edx   = regs->eip;
-    regs->ecx   = (0xC0000000 - 16);
+    regs->ecx   = KRNLADDR; //(0xC0000000 - 16);
 
     //kfree(buf);
 
