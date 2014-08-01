@@ -82,6 +82,8 @@ void setup_kernel()
     printl(MPL_TITLE, "                                 SYSTEM MONITOR");
     printl(MPL_ROOTDEV, "root device %08x", system.root_dev);
 
+    system_delay();
+
     setup_tasks();
 
     setup_irqs();

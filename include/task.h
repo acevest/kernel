@@ -30,7 +30,8 @@ enum
     TASK_UNUSED,
     TASK_RUNNING,
     TASK_WAIT,
-    TASK_EXITING
+    TASK_EXITING,
+    TASK_END,
 };
 
 #define TASK_NAME_SIZE  32

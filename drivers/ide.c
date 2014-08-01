@@ -75,7 +75,7 @@ unsigned int HD_CHL1_CTL_BASE = 0x376;
 
 void ide_printl()
 {
-    printl(MPL_IDE, "ide pio_cnt %d dma_cnt %d irq_cnt %d", drv.pio_cnt,  drv.dma_cnt, drv.irq_cnt);
+    printl(MPL_IDE, "ide pio cnt %d dma cnt %d irq cnt %d", drv.pio_cnt,  drv.dma_cnt, drv.irq_cnt);
 }
 
 void ide_cmd_out(dev_t dev, u32 sect_cnt, u64 sect_nr, u32 cmd)
@@ -190,7 +190,7 @@ void ide_pci_init(pci_device_t *pci)
     HD_CHL1_CTL_BASE = pci->bars[3] ? pci->bars[3] : HD_CHL1_CTL_BASE;
 
     printk("channel0: cmd %04x ctl %04x channel1: cmd %04x ctl %04x\n", HD_CHL0_CMD_BASE, HD_CHL0_CTL_BASE, HD_CHL1_CMD_BASE, HD_CHL1_CTL_BASE);
-    printl(18, "channel0: cmd %04x ctl %04x channel1: cmd %04x ctl %04x", HD_CHL0_CMD_BASE, HD_CHL0_CTL_BASE, HD_CHL1_CMD_BASE, HD_CHL1_CTL_BASE);
+    //printl(18, "channel0: cmd %04x ctl %04x channel1: cmd %04x ctl %04x", HD_CHL0_CMD_BASE, HD_CHL0_CTL_BASE, HD_CHL1_CMD_BASE, HD_CHL1_CTL_BASE);
 }
 
 
@@ -223,7 +223,7 @@ void init_pci_controller(unsigned int classcode)
     if(pci != 0 && pci->intr_line < 16)
     {
         printk("found pci vendor %04x device %04x class %04x intr %d\n", pci->vendor, pci->device, pci->classcode, pci->intr_line);
-        printl(17, "found pci vendor %04x device %04x class %04x intr %d", pci->vendor, pci->device, pci->classcode, pci->intr_line);
+        //printl(17, "found pci vendor %04x device %04x class %04x intr %d", pci->vendor, pci->device, pci->classcode, pci->intr_line);
         ide_pci_init(pci);
         drv.pci = pci;
     }
