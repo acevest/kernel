@@ -50,9 +50,9 @@ void setup_i8253()
 const char *version = 
     "Kernel version "
     VERSION
-    " ["__DATE__ " " __TIME__ "]"
     " @ "
     BUIDER
+    " ["__DATE__ " " __TIME__ "]"
     "\n";
 
 void setup_kernel()
@@ -74,6 +74,7 @@ void setup_kernel()
 
     set_tss();
 
+
     setup_sysc();
 
     cnsl_init();
@@ -87,15 +88,18 @@ void setup_kernel()
     //switch_printk_screen();
     setup_pci();
     //switch_printk_screen();
+    system_delay();
     void ide_init();
     ide_init();
+
+    system_delay();
 
     detect_cpu();
 
     setup_fs();
 
-    vga_puts(0, version, 0x2F);
+    //vga_puts(0, version, 0x2F);
+    printk(version);
 
     switch_printk_screen();
 }
-

@@ -261,5 +261,5 @@ void init_buddy_system()
     // free bootmem bitmap pages to buddy system
     // ...
 
-    dump_buddy_system();
+    //dump_buddy_system();
 }

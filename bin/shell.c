@@ -18,7 +18,7 @@ int main()
 
     while(1)
     {
-        printf("shell#");
+        printf("shell# ");
         char cmd[256];
         read(0, cmd, 256);
 

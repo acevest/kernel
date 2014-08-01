@@ -218,9 +218,14 @@ typedef struct system
     const char *cmdline;
 
     u32 debug;
+
+    u32 delay;
 } System, *pSystem;
 
+
 extern    System system;
+
+void system_delay();
 
 #define pgmap system.page_map
 
