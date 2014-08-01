@@ -43,4 +43,7 @@ void parse_cmdline(const char *cmdline)
     assert(value[0]=='h' && value[1]=='d' && value[2] == 'a');
     system.root_dev = MAKE_DEV(DEV_MAJOR_HDA, atoi(value+3));
     printk("root device %08x\n", system.root_dev);
+
+    get_value("delay", value);
+    system.delay = atoi(value);
 }

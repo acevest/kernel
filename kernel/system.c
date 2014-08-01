@@ -174,4 +174,16 @@ int sysc_reboot(int mode)
     return 0;
 }
 
-
+void system_delay()
+{
+    unsigned long flags;
+    irq_save(flags);
+    unsigned int n = system.delay;
+    while(n--)
+    {
+        unsigned long cr0;
+        asm("movl %%cr0, %%eax;":"=a"(cr0));
+        asm("movl %%eax, %%cr0;"::"a"(cr0));
+    }
+    irq_restore(flags);
+}

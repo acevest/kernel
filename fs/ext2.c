@@ -272,7 +272,7 @@ void ext2_setup_fs()
     unsigned int i;
     for(i=0; i<gps; ++i)
     {
-        printk("  [%2u] inode table %u free blocks %u free inode %u used dir %u\n",
+        printd("  [%2u] inode table %u free blocks %u free inode %u used dir %u\n",
             i, ext2_gd(i)->bg_inode_table, ext2_gd(i)->bg_free_blocks_count, ext2_gd(i)->bg_free_inodes_count, ext2_gd(i)->bg_used_dirs_count);
     }
 

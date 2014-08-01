@@ -222,8 +222,8 @@ void init_pci_controller(unsigned int classcode)
     pci_device_t *pci = pci_find_device_by_classcode(classcode);
     if(pci != 0 && pci->intr_line < 16)
     {
-        printk("Found PCI Vendor %04x Device %04x Class %04x IntrLine %d\n", pci->vendor, pci->device, pci->classcode, pci->intr_line);
-        printl(17, "Found PCI Vendor %04x Device %04x Class %04x IntrLine %d", pci->vendor, pci->device, pci->classcode, pci->intr_line);
+        printk("found pci vendor %04x device %04x class %04x intr %d\n", pci->vendor, pci->device, pci->classcode, pci->intr_line);
+        printl(17, "found pci vendor %04x device %04x class %04x intr %d", pci->vendor, pci->device, pci->classcode, pci->intr_line);
         ide_pci_init(pci);
         drv.pci = pci;
     }
@@ -413,12 +413,12 @@ void ide_read_extended_partition(u64_t lba, unsigned int inx)
         {
             drv.part[inx].lba_start  = part_lba;
             drv.part[inx].lba_end    = part_lba+part_scnt;
-            printk("  Logic Partition[%02d] [%02x] LbaBase %10d LbaEnd %10d\n", inx, p->type, (unsigned int)(drv.part[inx].lba_start), (unsigned int)(drv.part[inx].lba_end - 1));
+            printk("  logic partition[%02d] [%02x] LBA base %10d end %10d\n", inx, p->type, (unsigned int)(drv.part[inx].lba_start), (unsigned int)(drv.part[inx].lba_end - 1));
         }
         else
         {
             part_lba = drv.ext_lba_base + p->lba;
-            printk("        Extended      [%02x] LbaBase %10d LbaEnd %10d\n", p->type, (unsigned int)(part_lba), (unsigned int)(part_lba+part_scnt - 1));
+            printk("        extended      [%02x] LBA base %10d end %10d\n", p->type, (unsigned int)(part_lba), (unsigned int)(part_lba+part_scnt - 1));
             ide_read_extended_partition(part_lba, inx+1);
         }
     }
@@ -428,7 +428,7 @@ void ide_read_extended_partition(u64_t lba, unsigned int inx)
 
 void ide_read_partition()
 {
-    printk("Reading Partitions....\n");
+    printk("reading partitions....\n");
     unsigned int i;
     char *buf = kmalloc(512, 0);
     if(buf == 0)
@@ -467,7 +467,7 @@ void ide_read_partition()
             }
         }
 
-        printk("Primary Partition[%02d] [%02x] LbaBase %10d LbaEnd %10d\n", i, p->type, (unsigned int)(part_lba), (unsigned int)(part_lba+part_scnt - 1));
+        printk("primary partition[%02d] [%02x] LBA base %10d end %10d\n", i, p->type, (unsigned int)(part_lba), (unsigned int)(part_lba+part_scnt - 1));
     }
 
     kfree(buf);

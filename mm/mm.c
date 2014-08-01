@@ -61,7 +61,7 @@ void e820_print_map()
     {
         struct e820_entry *p = boot_params.e820map.map + i;
 
-        printk("[%02d] 0x%08x - 0x%08x size %- 10d %8dKB %5dMB ", i, p->addr, p->addr + p->size, p->size, p->size>>10, p->size>>20);
+        printk("[%02d] 0x%08x - 0x%08x size %- 10d %8dKB %5dMB ", i, p->addr, p->addr + p->size - 1, p->size, p->size>>10, p->size>>20);
 
         e820_print_type(p->type);
 
@@ -308,8 +308,6 @@ extern void sysexit();
 
 void init_paging()
 {
-    printk("max_pfn %u", bootmem_data.max_pfn);
-    //while(1);
     unsigned int i;
     unsigned long pfn = 0;
     pte_t *pte = 0;
@@ -353,8 +351,10 @@ void init_mm()
     init_bootmem();
     printk("init global paging...\n");
     init_paging();
+
     printk("init buddy system...\n");
     init_buddy_system();
+
     printk("init slub system...\n");
     init_slub_system();
     printk("memory init finished...\n");

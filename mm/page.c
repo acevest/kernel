@@ -19,7 +19,6 @@
 
 void do_no_page(void *addr)
 {
-    //printk("%s   addr %08x current %08x", __func__, (unsigned long)addr, current);
     pde_t *page_dir = (pde_t *)current->cr3;
     pte_t *page_tbl = 0;
 
@@ -60,13 +59,9 @@ void do_wp_page(void *addr)
     pde_t *page_dir = (pde_t *)current->cr3;
     pte_t *page_tbl = pa2va(PAGE_ALIGN(page_dir[npde]));
 
-    //printk("%s   addr %08x dirent %08x\n", __func__, (unsigned long)addr, page_dir[npde]);
-    //assert(page_dir[npde] != 0);
-
     unsigned long wp_pa_addr = PAGE_ALIGN(page_tbl[npte]);
    
     page_t *page = pa2page(wp_pa_addr);
-    //printk("page count %u\n", page->count);
     if(page->count > 0)
     {
         page->count --;
