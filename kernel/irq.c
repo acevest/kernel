@@ -58,7 +58,7 @@ __attribute__ ((regparm(1))) void irq_handler(pt_regs_t *regs)
 
     unsigned long esp;
     asm("movl %%esp, %%eax":"=a"(esp));
-    printl(MPL_PREEMPT, "current %08x  cr3 %08x preempt %d esp %08x", current, current->cr3, current->preempt_cnt, esp);
+    printl(MPL_PREEMPT, "current %08x cr3 %08x preempt %d esp %08x", current, current->cr3, current->preempt_cnt, esp);
 
     p->chip->ack(irq);
     sti();
@@ -79,7 +79,7 @@ int request_irq(unsigned int irq,
                 const char *devname,
                 void *dev_id)
 {
-    irq_action_t *    p;
+    irq_action_t *p;
 
     if(irq >= NR_IRQS)
         return -EINVAL;

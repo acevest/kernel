@@ -61,7 +61,7 @@ void e820_print_map()
     {
         struct e820_entry *p = boot_params.e820map.map + i;
 
-        printk("[%02d] 0x%08x - 0x%08x size %- 10d %8dKB %5dMB ", i, p->addr, p->addr + p->size - 1, p->size, p->size>>10, p->size>>20);
+        printk(" [%02d] 0x%08x - 0x%08x size %- 10d %8dKB %5dMB ", i, p->addr, p->addr + p->size - 1, p->size, p->size>>10, p->size>>20);
 
         e820_print_type(p->type);
 

@@ -67,8 +67,6 @@ void scan_pci_bus(int bus)
     int i;
     printk("scanning pci bus %d\n", bus);
     
-    system_delay();
-
     for(dev=0; dev<32; dev++)
     {
         for(devfn =0; devfn<8; devfn++)
@@ -169,7 +167,7 @@ void dump_pci_dev()
     list_for_each(p, &pci_devs)
     {
         pci_device_t *pci = list_entry(p, pci_device_t, list);
-        printk("vendor %04x device %04x class %04x intr %02d ", pci->vendor, pci->device, pci->classcode, pci->intr_line);
+        printk("vendor %04x device %04x class %04x intr %3d ", pci->vendor, pci->device, pci->classcode, pci->intr_line);
         printk("%s\n", pci_get_info(pci->classcode, pci->progif));
         continue;
         switch(pci->hdr_type)

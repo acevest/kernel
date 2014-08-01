@@ -13,11 +13,16 @@
 #include <types.h>
 #include <string.h>
 
+void systest();
+void sysdebug(unsigned int v);
 int main()
 {
 
     while(1)
     {
+        systest();
+        sysdebug(0xAABBCCDD);
+
         printf("shell# ");
         char cmd[256];
         read(0, cmd, 256);

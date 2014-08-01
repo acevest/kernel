@@ -52,8 +52,8 @@ int sysc_test()
 {
     static unsigned int cnt=0;
     current->cnt++;
-    printl(MPL_TEST, "sysc_test cnt %u current %08x cnt %u",
-           cnt++, current, current->cnt);
+    printl(MPL_TEST, "systest cnt %u current %08x cnt %u          ",
+           cnt++, current, cnt);
 
     return 0;
 }
