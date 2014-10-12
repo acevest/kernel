@@ -132,8 +132,7 @@ int cnsl_read(char *buf, size_t count)
 
             if(r)
             {
-                if(ch != '\n')
-                    buf[cnt++] = ch;
+                buf[cnt++] = ch;
 
                 task->state = TASK_RUNNING;
                 del_wait_queue(&rdwq, &wait);

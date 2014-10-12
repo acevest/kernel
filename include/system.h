@@ -56,33 +56,6 @@
 void    *kmalloc(size_t size, gfp_t gfpflags);
 void    kfree(void *addr);
 
-void    *kmalloc_old(size_t size);
-void    kfree_old(void *p);
-
-static inline void *get_virt_pages(unsigned int n)
-{
-    assert(n>0);
-    size_t    size = n << PAGE_SHIFT;
-    return (void*) kmalloc_old(size);
-}
-static inline void free_virt_pages(void *p)
-{
-    kfree_old((void *)p);
-}
-static inline void *get_phys_pages(unsigned int n)
-{
-/*
-    assert(n>0);
-    size_t    size = n << PAGE_SHIFT;
-    return (void*) va2pa(kmalloc_old(size));
-*/
-    return (void *)va2pa(get_virt_pages(n));
-}
-static inline void free_phys_pages(void *p)
-{
-    free_virt_pages((void*)va2pa(p));
-}
-
 #define panic(msg, ...) do {                            \
     asm("cli;");                                        \
     printk("PANIC:"                                     \
@@ -107,7 +80,6 @@ char gdtr[6],idtr[6];
 
 #define ALIGN(x, a)    (((x)+(a)-1) & ~((a)-1))
 
-
 // 1 GB
 #define MAX_SUPT_PHYMM_SIZE    (1UL<<30)
 
@@ -131,33 +103,7 @@ enum GDTSelectorIndex
     INDEX_EMP8,
     INDEX_TSS,
 };
-#if 0
-// pushal push eax, ecx, edx, ebx, esp, ebp, esi, edi
-typedef struct pt_regs
-{
-    u32    edi;
-    u32    esi;
-    u32    ebp;
-    u32    ebx;
-    u32    edx;
-    u32    ecx;
-    u32    eax;
-    u16    ds, _ds;
-    u16    es, _es;
-    u16    fs, _fs;
-    u16    gs, _gs;
-    union
-    {
-        u32    irq;
-        u32    errcode;
-    };
-    u32    eip;
-    u16    cs, _cs;
-    u32    eflags;
-    u32    esp;
-    u16    ss, _ss;
-} __attribute__((packed)) pt_regs_t;
-#else
+
 typedef struct pt_regs
 {
     u32    ebx;
@@ -182,7 +128,6 @@ typedef struct pt_regs
     u32    esp;
     u16    ss, _ss;
 } __attribute__((packed)) pt_regs_t;
-#endif
 
 typedef unsigned long dev_t;
 
@@ -297,9 +242,6 @@ void system_delay();
 
 #define REBOOT_RESTART   0x00
 #define REBOOT_POWEROFF  0x01
-
-
-#define ROOT_DEV    system.root_dev
 
 #define KRNL_INIT_STACK_SIZE    4096
 
