@@ -1,4 +1,5 @@
 .extern main
+.extern exit
 .global _start
 
 _start:
@@ -9,29 +10,17 @@ _start:
     nop
     nop
 
-/*
-    movl $11, %eax;
-
-    pushl $1f;
-    pushl %ecx;
-    pushl %edx;
-    pushl %ebp;
-    movl %esp,%ebp;
-    sysenter;
-    1:
-
-loop:
-    jmp loop
-    */
-
-
     pushl   $0xAAAAAAAA
+    pushl   $0x22222222
     pushl   $0x11111111
 
     call main
 
-
     addl    $12, %esp
+
+    pushl   $0
+    call    exit
+    addl    $4, %esp
 
     nop
     nop
