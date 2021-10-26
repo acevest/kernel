@@ -30,7 +30,7 @@ pid_t get_next_pid()
     return pid;
 }
 
-inline void load_cr3(task_union *tsk)
+void load_cr3(task_union *tsk)
 {
     LOAD_CR3(tsk->cr3);
 }
@@ -87,18 +87,18 @@ inline task_union *get_next_tsk()
     return 0;
 }
 
-inline void set_esp0(task_union * tsk)
+void set_esp0(task_union * tsk)
 {
     tss.esp0 = tsk->esp0;
 }
 
-inline void switch_to()
+void switch_to()
 {
     LOAD_CR3(current->cr3);
     set_esp0(current);
 }
 
-inline void context_switch(task_union * prev, task_union * next)
+void context_switch(task_union * prev, task_union * next)
 {
     unsigned long eax, ebx, ecx, edx, esi, edi;
     asm volatile(

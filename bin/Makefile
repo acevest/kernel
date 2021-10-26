@@ -1,6 +1,6 @@
 CC = gcc
 LDFLAG = -e _start
-CFLAGS = -c -I../include -fno-builtin
+CFLAGS = -m32 -c -I../include -fno-builtin
 LIBC_DIRS = ../lib
 LIBC_SRCS := $(foreach DIR, $(LIBC_DIRS), $(wildcard $(DIR)/*.[cS]))
 LIBC_OBJS := $(patsubst %,%.o,$(LIBC_SRCS))

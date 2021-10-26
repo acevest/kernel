@@ -14,7 +14,6 @@
 #include <errno.h>
 #include <fs.h>
 #include <sched.h>
-#include <memory.h>
 int sysc_stat(int fd, struct stat *stat)
 {
 #if 0

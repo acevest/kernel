@@ -1,5 +1,5 @@
 CC			= gcc
-CFLAGS		= -g -c -fno-builtin
+CFLAGS		= -g -c -fno-builtin -m32
 SYSTEMMAP	= System.map
 KERNELBIN	= KERNEL.BIN
 LINKSCRIPT	= scripts/link.ld
@@ -15,7 +15,7 @@ HEADER_FILES := $(foreach DIR, $(INC_DIRS), $(wildcard $(DIR)/*.h))
 OBJS := $(patsubst %,%.o,$(SOURCE_FILES))
 
 ${KERNELBIN}: ${OBJS}
-	ld -M -T$(LINKSCRIPT) $(OBJS) -o $@ > $(SYSTEMMAP)
+	ld -m elf_i386 -M -T$(LINKSCRIPT) $(OBJS) -o $@ > $(SYSTEMMAP)
 	rm kernel/setup.c.o
 
 %.S.o: %.S ${HEADER_FILES}
