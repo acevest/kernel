@@ -23,9 +23,9 @@ parted ${lodev} set 1 boot on
 
 sleep 1
 
-partx -a ${lodev}
+#partx -a ${lodev}
 
-sleep 1
+#sleep 1
 
 ls -l ${lodev}*
 
@@ -44,6 +44,8 @@ mount $PART $MNT
 sleep 1
 
 echo "(hd0) ${lodev}" > ${TMP}/device.map
+
+mkdir -p ${MNT}/boot/grub2/
 
 grub2-install --target=i386-pc              \
               --grub-mkdevicemap=${TMP}/device.map                                  \
