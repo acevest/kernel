@@ -10,10 +10,10 @@ all:$(BINS)
 
 shell: shell.o
 	gcc $(CFLAGS) shell.c -o shell.o
-	ld ${LIBC_OBJS} shell.o -o shell
+	ld  -m elf_i386 ${LIBC_OBJS} shell.o -o shell
 hello: hello.o
 	gcc $(CFLAGS) hello.c -o hello.o
-	ld $(LIBC_OBJS) hello.o -o hello
+	ld  -m elf_i386 $(LIBC_OBJS) hello.o -o hello
 
 
 .PHONY:clean
