@@ -67,7 +67,7 @@ void    kfree(void *addr);
 
 extern char etext, edata, end;
 
-char gdtr[6],idtr[6];
+extern char gdtr[6],idtr[6];
 #define lgdt()    __asm__    __volatile__("lgdt gdtr")
 #define sgdt()    __asm__    __volatile__("sgdt gdtr")
 #define lidt()    __asm__    __volatile__("lidt idtr")

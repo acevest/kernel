@@ -5,6 +5,8 @@ HDIMG=out.img
 TMP=build/tmp
 MNT=$TMP/mnt
 
+mkdir -p ${MNT}
+
 
 # 生成硬盘
 dd if=/dev/zero of=$HDIMG bs=512 count=24576
