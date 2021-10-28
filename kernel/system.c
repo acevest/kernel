@@ -187,3 +187,6 @@ void system_delay()
     }
     irq_restore(flags);
 }
+
+
+char gdtr[6],idtr[6];
