@@ -45,7 +45,7 @@ void setup_i8253()
     outb(LATCH >> 8, 0x40);
 }
 
-#define VERSION "0.3.0"
+#define VERSION "0.3.1"
 #define BUIDER  "Zhao Yanbai"
 const char *version = 
     "Kernel version "
