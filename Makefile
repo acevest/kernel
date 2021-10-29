@@ -1,4 +1,10 @@
 CC			= gcc
+LD			= ld
+UNAME := $(shell uname -s)
+ifeq ($(UNAME), Darwin)
+	CC		= i686-elf-gcc
+	LD		= i686-elf-ld
+endif
 CFLAGS		= -g -c -fno-builtin -m32
 SYSTEMMAP	= System.map
 KERNELBIN	= KERNEL.BIN
@@ -15,7 +21,7 @@ HEADER_FILES := $(foreach DIR, $(INC_DIRS), $(wildcard $(DIR)/*.h))
 OBJS := $(patsubst %,%.o,$(SOURCE_FILES))
 
 ${KERNELBIN}: ${OBJS}
-	ld -m elf_i386 -M -T$(LINKSCRIPT) $(OBJS) -o $@ > $(SYSTEMMAP)
+	${LD} -m elf_i386 -M -T$(LINKSCRIPT) $(OBJS) -o $@ > $(SYSTEMMAP)
 	rm kernel/setup.c.o
 
 %.S.o: %.S ${HEADER_FILES}
