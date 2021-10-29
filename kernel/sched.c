@@ -57,9 +57,10 @@ void init_root_tsk()
     //for(i=0; i<NR_OPENS; i++)
     //    root_task.fps[i] = 0;
 
-    tss.esp0        = ((unsigned long)&root_task) + sizeof(root_task);
-    root_task.esp0  = tss.esp0;
+    root_task.esp0  = ((unsigned long)&root_task) + sizeof(root_task);
     root_task.cr3   = (unsigned long)init_pgd;
+
+    tss.esp0        = root_task.esp0;
 
     printk("init_root_task tss.esp0 %08x\n", tss.esp0);
 }
@@ -87,15 +88,11 @@ inline task_union *get_next_tsk()
     return 0;
 }
 
-void set_esp0(task_union * tsk)
-{
-    tss.esp0 = tsk->esp0;
-}
 
 void switch_to()
 {
     LOAD_CR3(current->cr3);
-    set_esp0(current);
+    tss.esp0 = current->esp0;
 }
 
 void context_switch(task_union * prev, task_union * next)
