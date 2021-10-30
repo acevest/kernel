@@ -28,4 +28,5 @@ bin/hello
 bin/shell
 a.*
 snapshot.txt
+bochsout.txt
 *.lock
