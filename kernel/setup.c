@@ -46,12 +46,11 @@ void setup_i8253()
 }
 
 #define VERSION "0.3.1"
-#define BUIDER  "Zhao Yanbai"
 const char *version = 
     "Kernel version "
     VERSION
     " @ "
-    BUIDER
+    BUILDER
     " ["__DATE__ " " __TIME__ "]"
     "\n";
 

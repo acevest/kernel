@@ -5,7 +5,7 @@ ifeq ($(UNAME), Darwin)
 	CC		= i686-elf-gcc
 	LD		= i686-elf-ld
 endif
-CFLAGS		= -g -c -fno-builtin -m32
+CFLAGS		= -g -c -fno-builtin -m32 -DBUILDER='"$(shell whoami)"'
 SYSTEMMAP	= System.map
 KERNELBIN	= KERNEL.BIN
 LINKSCRIPT	= scripts/link.ld
