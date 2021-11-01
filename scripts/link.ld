@@ -26,6 +26,7 @@ SECTIONS
     {
         code = .;
         phys_addr = . - kernel_virtual_addr_start;
+        boot/multiboot.S.o(.text)
         *(.multiboot_header)
         *(.text)
 

@@ -27,17 +27,6 @@
 .extern root_task
 .extern root_task_entry
 
-.section .multiboot_header
-.align 32
-    # Multiboot Header
-    # Align 32 bits boundary
-    .align 4
-    # Magic
-    .long MULTIBOOT_HEADER_MAGIC
-    # Flags
-    .long MULTIBOOT_HEADER_FLAGS
-    # Checksum
-    .long -(MULTIBOOT_HEADER_MAGIC + MULTIBOOT_HEADER_FLAGS)
 
 .text
 .code32
@@ -146,3 +135,17 @@ GDTR:
     GDTRBase:  .long BootGDT-KRNLADDR
 
     .comm stack, MULTIBOOT_STACK_SIZE
+
+
+
+.section .multiboot_header
+.align 32
+    # Multiboot Header
+    # Align 32 bits boundary
+    .align 4
+    # Magic
+    .long MULTIBOOT_HEADER_MAGIC
+    # Flags
+    .long MULTIBOOT_HEADER_FLAGS
+    # Checksum
+    .long -(MULTIBOOT_HEADER_MAGIC + MULTIBOOT_HEADER_FLAGS)
