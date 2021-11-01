@@ -20,6 +20,7 @@
 #define ASM
 #include <system.h>
 #include <syscall.h>
+#include <task.h>
 
 .code32
 .text
@@ -27,9 +28,11 @@
 .global ret_from_fork_user
 .global ret_from_fork_krnl
 .global sysexit
-.global syscall_exit
+//.global syscall_exit
 
 syscall_entry:
+    // 这段代码纯是为了pt_regs_t准备的
+    // 后续看看直接优化掉
     pushl   $(SELECTOR_USER_SS)
     pushl   %ebp
     pushfl
@@ -54,23 +57,31 @@ syscall_entry:
  .normal_syscall:
     call    *sysc_handler_table(,%eax,4)
 
-normal_syscall_exit:
-    leal    sysexit, %edx
-    movl    %edx, PT_REGS_EDX(%esp)
-    movl    PT_REGS_EBP(%esp), %edx
-    movl    %edx, PT_REGS_ECX(%esp)
+// normal_syscall_exit:
+//     leal    sysexit, %edx
+//     movl    %edx, PT_REGS_EDX(%esp)
+//     movl    PT_REGS_EBP(%esp), %edx
+//     movl    %edx, PT_REGS_ECX(%esp)
 
-syscall_exit:
+//syscall_exit:
+
+    // 保存返回值
     movl    %eax, PT_REGS_EAX(%esp)
+
+ret_from_fork_user:
 
     RESTORE_REGS
 
+    // 返回用户态的eip
+    // sysexit指令从edx中恢复用户态eip
+    leal    sysexit, %edx
+
+    // 在系统调用前，用户态的esp保存在ebp中
+    // sysexit指令从ecx中恢复用户态esp
+    movl    %ebp, %ecx
+
     sti        /* sysenter have cleared IF, and sysexit will not set IF. */
     sysexit
-
-ret_from_fork_user:
-    xorl    %eax, %eax
-    jmp     normal_syscall_exit
 
 ret_from_fork_krnl:
     movl    PT_REGS_EDX(%esp), %edx

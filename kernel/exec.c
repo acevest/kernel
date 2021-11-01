@@ -129,7 +129,8 @@ int sysc_exec(const char *path, char *const argv[])
 
     free_pages((unsigned long)ehdr);
 
-    asm("movl $0, %%eax; movl %%ebx,%%ebp; movl %%ebp,%%esp;jmp syscall_exit;" ::"b"((unsigned long)(regs)));
+    // TODO FIXME
+    //asm("movl $0, %%eax; movl %%ebx,%%ebp; movl %%ebp,%%esp;jmp syscall_exit;" ::"b"((unsigned long)(regs)));
 
     return 0;
 }
