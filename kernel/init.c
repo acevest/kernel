@@ -62,7 +62,7 @@ void kernel_task(void *entry)
 void root_task_entry()
 {
 
-    //kernel_task(init_task_entry);
+    kernel_task(init_task_entry);
     //kernel_task(user_task_entry);
     //kernel_task(init_task_entry);
 

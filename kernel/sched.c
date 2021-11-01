@@ -167,7 +167,35 @@ unsigned long schedule()
     irq_save(iflags);
     printl(MPL_ROOT, "root:%d [%08x] cnt %u", root_task.pid, &root_task, root_task.cnt);
 
-    unsigned int min_ratio = ~0U;
+    float min_ratio = 1.0;
+
+    bool need_reset_weight = true;
+    list_for_each_safe(pos, t, &all_tasks)
+    {
+        p = list_entry(pos, task_union, list);
+        if (p->state != TASK_RUNNING)
+        {
+            continue;
+        }
+        if (p->weight < p->priority)
+        {
+            need_reset_weight = false;
+            break;
+        }
+    }
+
+    if (need_reset_weight)
+    {
+        list_for_each_safe(pos, t, &all_tasks)
+        {
+            p = list_entry(pos, task_union, list);
+            if (p->state != TASK_RUNNING)
+            {
+                continue;
+            }
+            p->weight = 0;
+        }
+    }
 
     list_for_each_safe(pos, t, &all_tasks)
     {
@@ -180,24 +208,19 @@ unsigned long schedule()
             continue;
         }
 
-        printd("%08x %s weight %d\n", p, p->name, p->weight);
+        //printd("%08x %s weight %d\n", p, p->name, p->weight);
 
-        unsigned int ratio = p->weight / p->priority;
+        float ratio = (float)(p->weight * 1.0) / (p->priority * 1.0);
         if (ratio < min_ratio)
         {
             sel = p;
             min_ratio = ratio;
         }
-
-        p->weight++;
-        if (p->weight > p->priority)
-        {
-            p->weight = 0;
-        }
     }
     irq_restore(iflags);
 
-    sel = &root_task;
+    sel->weight++;
+    printd("%08x %s weight %d\n", sel, sel->name, sel->weight);
 
     task_union *prev = current;
     task_union *next = sel;
