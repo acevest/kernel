@@ -61,11 +61,13 @@ __attribute__((regparm(1))) void irq_handler(pt_regs_t *regs)
 
     p->chip->ack(irq);
     sti();
+
     while (action && action->handler)
     {
         action->handler(irq, regs, action->dev_id);
         action = action->next;
     }
+
     cli();
     p->chip->enable(irq);
 

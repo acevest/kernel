@@ -21,16 +21,19 @@ int sysc_fork(pt_regs_t regs)
 extern void ret_from_fork_user();
 extern void ret_from_fork_krnl();
 extern pid_t get_next_pid();
-
+extern list_head_t all_tasks;
 int do_fork(pt_regs_t *regs, unsigned long flags)
 {
     task_union *tsk;
     tsk = alloc_task_union();
+
     printk("fork task %08x flags %08x\n", tsk, flags);
     if (tsk == NULL)
         panic("can not malloc PCB");
 
     memcpy(tsk, current, sizeof(task_union));
+    strcpy(tsk->name, "init");
+    tsk->priority = 61;
 
     //{
     tsk->cr3 = (unsigned long)alloc_one_page(0);
@@ -118,7 +121,7 @@ int do_fork(pt_regs_t *regs, unsigned long flags)
 
     unsigned long iflags;
     irq_save(iflags);
-    list_add(&tsk->list, &root_task.list);
+    list_add(&tsk->list, &all_tasks);
     irq_restore(iflags);
 
     printk("%s:%d\n", __func__, __LINE__);

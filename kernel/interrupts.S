@@ -56,6 +56,10 @@ DEF_IRQ(0,F)
 _irq_handler:
     SAVE_REGS
 
+    // ebp指向栈桢
+    movl    $-TASK_SIZE, %ebp
+    andl    %esp, %ebp
+
     movw    %ss, %ax
     movw    %ax, %ds
     movw    %ax, %es
@@ -65,29 +69,12 @@ _irq_handler:
     movl    %esp, %eax
     call    irq_handler
 
-    movl    $-TASK_SIZE, %ebp
-    andl    %esp, %ebp
-
-    movl    PT_REGS_CS(%esp), %eax
-    testl   $0x0003, %eax
-    jz      resume_kernel
-
-return:
     cmpl    $0, TI_preempt_cnt(%ebp)
     jnz     restore_regs
-
-resched:
 
     call    schedule
 
 restore_regs:
-
     RESTORE_REGS
-    
     addl    $4, %esp
-
     iret
-
-resume_kernel:
-    # ... 
-    jmp     return

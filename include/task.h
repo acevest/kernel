@@ -54,6 +54,7 @@ typedef union task_union
         unsigned long eip;
 
         long weight;
+        long priority;
 
         pid_t pid;
         pid_t ppid;

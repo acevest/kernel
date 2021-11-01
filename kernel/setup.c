@@ -34,7 +34,7 @@ extern void reboot();
 extern void cnsl_init();
 extern void vga_init();
 
-#define HZ 10
+#define HZ 100
 #define CLOCK_TICK_RATE 1193180
 #define LATCH ((CLOCK_TICK_RATE + HZ / 2) / HZ)
 
@@ -84,6 +84,8 @@ void setup_kernel()
     setup_tasks();
 
     setup_irqs();
+    return;
+
     //switch_printk_screen();
     setup_pci();
     //switch_printk_screen();

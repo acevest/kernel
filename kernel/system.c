@@ -71,6 +71,9 @@ void setup_gate()
     set_sys_int(0x0E, TRAP_GATE, PRIVILEGE_KRNL, PageFault);
     set_sys_int(0x10, TRAP_GATE, PRIVILEGE_KRNL, CoprocError);
 
+    for (i = 0x11; i < 0x20; i++)
+        set_sys_int(i, INTR_GATE, PRIVILEGE_KRNL, no_irq_handler);
+
     for (i = 0x20; i < 256; i++)
         set_sys_int(i, INTR_GATE, PRIVILEGE_KRNL, no_irq_handler);
 

@@ -25,7 +25,7 @@ pid_t get_next_pid()
 {
     static pid_t g_pid = ROOT_TSK_PID;
 
-    pid_t pid = g_pid++;
+    pid_t pid = ++g_pid;
 
     return pid;
 }
@@ -36,6 +36,9 @@ void load_cr3(task_union *tsk)
 }
 
 extern pde_t __initdata init_pgd[PDECNT_PER_PAGE] __attribute__((__aligned__(PAGE_SIZE)));
+
+list_head_t all_tasks;
+
 void init_root_tsk()
 {
     int i;
@@ -49,8 +52,11 @@ void init_root_tsk()
     root_task.ppid = 0;
     root_task.state = TASK_RUNNING;
     root_task.weight = TASK_INIT_WEIGHT;
-    strcpy(root_task.name, "root_task");
-    INIT_LIST_HEAD(&root_task.list);
+    root_task.priority = 100;
+    strcpy(root_task.name, "root");
+
+    INIT_LIST_HEAD(&all_tasks);
+    list_add(&root_task.list, &all_tasks);
 
     //  TODO
     //for(i=0; i<NR_OPENS; i++)
@@ -124,7 +130,7 @@ task_union *find_task(pid_t pid)
 
     unsigned long iflags;
     irq_save(iflags);
-    list_for_each_safe(pos, tmp, &root_task.list)
+    list_for_each_safe(pos, tmp, &all_tasks)
     {
         p = list_entry(pos, task_union, list);
         if (p->pid == pid)
@@ -153,14 +159,17 @@ static const char *task_state(unsigned int state)
 unsigned long schedule()
 {
     static turn = 0;
-    task_union *sel = 0;
+    task_union *sel = &root_task;
     task_union *p = 0;
     list_head_t *pos = 0, *t = 0;
 
     unsigned long iflags;
     irq_save(iflags);
     printl(MPL_ROOT, "root:%d [%08x] cnt %u", root_task.pid, &root_task, root_task.cnt);
-    list_for_each_safe(pos, t, &root_task.list)
+
+    unsigned int min_ratio = ~0U;
+
+    list_for_each_safe(pos, t, &all_tasks)
     {
         p = list_entry(pos, task_union, list);
 
@@ -173,19 +182,22 @@ unsigned long schedule()
 
         printd("%08x %s weight %d\n", p, p->name, p->weight);
 
-        if (sel == 0 && p->weight != turn)
+        unsigned int ratio = p->weight / p->priority;
+        if (ratio < min_ratio)
         {
-            p->weight = turn;
             sel = p;
+            min_ratio = ratio;
+        }
+
+        p->weight++;
+        if (p->weight > p->priority)
+        {
+            p->weight = 0;
         }
     }
     irq_restore(iflags);
 
-    if (sel == 0)
-    {
-        sel = &root_task;
-        turn++;
-    }
+    sel = &root_task;
 
     task_union *prev = current;
     task_union *next = sel;

@@ -311,6 +311,10 @@ void init_paging()
     unsigned long pfn = 0;
     pte_t *pte = 0;
     unsigned long pgtb_addr = 0;
+
+    // 在multiboot.S是已经初始化了BOOT_INIT_PAGETBL_CNT个页
+    // 这里接着初始化剩余的页
+    // 最大限制内存1G
     for (pfn = pa2pfn(BOOT_INIT_PAGETBL_CNT << 22); pfn < bootmem_data.max_pfn; ++pfn)
     {
         unsigned long ti = pfn % PAGE_PTE_CNT;
