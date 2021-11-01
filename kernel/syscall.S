@@ -48,8 +48,10 @@ syscall_entry:
     popl    %eax
 
     cmpl    $SYSC_NUM, %eax
-    jae     bad_sysc_nr
+    jb      .normal_syscall
+    mov     $SYSC_BAD_NR, %eax
 
+ .normal_syscall:
     call    *sysc_handler_table(,%eax,4)
 
 normal_syscall_exit:
@@ -65,10 +67,6 @@ syscall_exit:
 
     sti        /* sysenter have cleared IF, and sysexit will not set IF. */
     sysexit
-
-bad_sysc_nr:
-    call    sysc_bad_syscnr
-    jmp     syscall_exit
 
 ret_from_fork_user:
     xorl    %eax, %eax

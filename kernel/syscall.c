@@ -90,14 +90,17 @@ void init_sysc_handler_table()
     _sysc_(SYSC_PAUSE, sysc_pause);
     _sysc_(SYSC_TEST, sysc_test);
     _sysc_(SYSC_DEBUG, sysc_debug);
+    _sysc_(SYSC_BAD_NR, sysc_bad_nr)
 }
 
-int sysc_bad_syscnr()
+int sysc_bad_nr()
 {
     int sysc_nr;
+
     asm(""
         : "=a"(sysc_nr));
+
     printk("bad syscall nr:%d\n", sysc_nr);
 
-    return 0;
+    return -1;
 }

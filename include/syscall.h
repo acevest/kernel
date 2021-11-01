@@ -36,23 +36,21 @@ int _syscall4(int nr, unsigned long a, unsigned long b, unsigned long c, unsigne
 #define syscall3(nr, a, b, c) _syscall3(nr, (unsigned long)a, (unsigned long)b, (unsigned long)c)
 #define syscall4(nr, a, b, c, d) _syscall4(nr, (unsigned long)a, (unsigned long)b, (unsigned long)c, (unsigned long)d)
 
-enum
-{
-    SYSC_WRITE,
-    SYSC_REBOOT,
-    SYSC_FORK,
-    SYSC_CLONE,
-    SYSC_EXEC,
-    SYSC_WAIT,
-    SYSC_OPEN,
-    SYSC_READ,
-    SYSC_STAT,
-    SYSC_EXIT,
-    SYSC_PAUSE,
-    SYSC_TEST,
-    SYSC_DEBUG
-};
-
 #endif // ASM
+
+#define SYSC_WRITE (0)
+#define SYSC_REBOOT (1)
+#define SYSC_FORK (2)
+#define SYSC_CLONE (3)
+#define SYSC_EXEC (4)
+#define SYSC_WAIT (5)
+#define SYSC_OPEN (6)
+#define SYSC_READ (7)
+#define SYSC_STAT (8)
+#define SYSC_EXIT (9)
+#define SYSC_PAUSE (10)
+#define SYSC_TEST (11)
+#define SYSC_DEBUG (12)
+#define SYSC_BAD_NR (SYSC_NUM - 1)
 
 #endif //_SYSCALL_H
