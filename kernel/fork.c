@@ -22,6 +22,7 @@ extern void ret_from_fork_user();
 extern void ret_from_fork_krnl();
 extern pid_t get_next_pid();
 extern list_head_t all_tasks;
+
 int do_fork(pt_regs_t *regs, unsigned long flags)
 {
     task_union *tsk;

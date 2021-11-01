@@ -49,12 +49,30 @@ void init_task_entry()
     }
 }
 
+int kernel_fork()
+{
+    int pid = 0;
+
+    pt_regs_t *regs = ((pt_regs_t *)(TASK_SIZE + ((unsigned long)current))) - 1;
+    unsigned long *pedx = &(regs->edx);
+
+    asm volatile(
+        "movl $1f, %[pedx];"
+        "call do_fork;"
+        "1:"
+        : "=a"(pid)
+        : [pedx] "m"(pedx));
+
+    return pid;
+}
+
 void kernel_task(void *entry)
 {
     pt_regs_t regs;
     memset((void *)&regs, 0, sizeof(regs));
     regs.edx = (unsigned long)entry;
-    int pid = do_fork(&regs, FORK_KRNL);
+    //int pid = do_fork(&regs, FORK_KRNL);
+    int pid = kernel_fork();
     printk("kernel task pid is %d\n", pid);
     enable_irq();
 }
