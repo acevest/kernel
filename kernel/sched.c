@@ -18,6 +18,7 @@
 #include "assert.h"
 #include "mm.h"
 #include "init.h"
+#include "msr.h"
 
 task_union root_task __attribute__((__aligned__(PAGE_SIZE)));
 
@@ -66,6 +67,7 @@ void init_root_tsk()
     root_task.cr3 = (unsigned long)init_pgd;
 
     tss.esp0 = root_task.esp0;
+    wrmsr(MSR_SYSENTER_ESP, root_task.esp0, 0);
 
     printk("init_root_task tss.esp0 %08x\n", tss.esp0);
 }
@@ -96,6 +98,7 @@ void switch_to()
 {
     LOAD_CR3(current->cr3);
     tss.esp0 = current->esp0;
+    wrmsr(MSR_SYSENTER_ESP, current->esp0, 0);
 }
 
 void context_switch(task_union *prev, task_union *next)

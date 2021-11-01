@@ -27,7 +27,7 @@ void setup_sysc()
 {
     wrmsr(MSR_SYSENTER_CS, SELECTOR_KRNL_CS, 0);
     wrmsr(MSR_SYSENTER_EIP, syscall_entry, 0);
-    wrmsr(MSR_SYSENTER_ESP, &(tss.esp0), 0);
+    //wrmsr(MSR_SYSENTER_ESP, &(tss.esp0), 0);
 
     init_sysc_handler_table();
 }

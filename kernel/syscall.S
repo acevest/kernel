@@ -30,8 +30,6 @@
 .global syscall_exit
 
 syscall_entry:
-    movl    (%esp),%esp
-
     pushl   $(SELECTOR_USER_SS)
     pushl   %ebp
     pushfl
