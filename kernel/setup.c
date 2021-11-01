@@ -36,7 +36,7 @@ extern void vga_init();
 
 #define HZ 10
 #define CLOCK_TICK_RATE 1193180
-#define LATCH ((CLOCK_TICK_RATE + HZ/2) / HZ)
+#define LATCH ((CLOCK_TICK_RATE + HZ / 2) / HZ)
 
 void setup_i8253()
 {
@@ -46,12 +46,12 @@ void setup_i8253()
 }
 
 #define VERSION "0.3.1"
-const char *version = 
-    "Kernel version "
-    VERSION
-    " @ "
-    BUILDER
-    " ["__DATE__ " " __TIME__ "]"
+const char *version =
+    "Kernel version " VERSION
+    " @ " BUILDER
+    " ["__DATE__
+    " " __TIME__ "]"
+
     "\n";
 
 void setup_kernel()
@@ -70,9 +70,7 @@ void setup_kernel()
 
     setup_i8253();
 
-
     set_tss();
-
 
     setup_sysc();
 
@@ -102,5 +100,5 @@ void setup_kernel()
     //vga_puts(0, version, 0x2F);
     printk(version);
 
-    switch_printk_screen();
+    //switch_printk_screen();
 }

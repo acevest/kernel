@@ -14,23 +14,25 @@
  *--------------------------------------------------------------------------
  */
 
-#ifndef    _BITS_H
+#ifndef _BITS_H
 #define _BITS_H
 
 //#define    SET_BIT(bit) (1UL<<bit)
 //#define    CLR_BIT(bit) (~(1UL<<bit))
 //#define    ISSET_BIT(val,bit) ((val) & SET_BIT(bit))
-#define SET_BIT(val, bit)    (val |= (1UL<<bit))
-#define CLR_BIT(val, bit)    (val &= (~(1UL<<bit)))
-#define XOR_BIT(val, bit)    (btc((unsigned int *)&val, bit), val)
-#define ISSET_BIT(val, bit)    (val & (1UL<<bit))
-#define ISCLR_BIT(val, bit)    (!ISSET_BIT(val, bit))
+#define SET_BIT(val, bit) (val |= (1UL << bit))
+#define CLR_BIT(val, bit) (val &= (~(1UL << bit)))
+#define XOR_BIT(val, bit) (btc((unsigned int *)&val, bit), val)
+#define ISSET_BIT(val, bit) (val & (1UL << bit))
+#define ISCLR_BIT(val, bit) (!ISSET_BIT(val, bit))
 
-#define BITS_PER_LONG (sizeof(unsigned long)*8)
+#define BITS_PER_LONG (sizeof(unsigned long) * 8)
 
 static inline void btc(unsigned int *v, unsigned int b)
 {
-    asm ("btc %1,%0":"=m"(*v): "Ir"(b));
+    asm("btc %1,%0"
+        : "=m"(*v)
+        : "Ir"(b));
 }
 
 static inline int test_and_set_bit(long nr, volatile unsigned long *addr)
@@ -39,8 +41,8 @@ static inline int test_and_set_bit(long nr, volatile unsigned long *addr)
 
     asm("bts %2,%1\n\t"
         "sbb %0,%0"
-        : "=r" (oldbit), "+m" (*(volatile long *) (addr))
-        : "Ir" (nr));
+        : "=r"(oldbit), "+m"(*(volatile long *)(addr))
+        : "Ir"(nr));
     return oldbit;
 }
 
@@ -49,9 +51,10 @@ static inline int test_and_clear_bit(int nr, volatile unsigned long *addr)
     int oldbit;
 
     asm volatile("btr %2,%1\n\t"
-             "sbb %0,%0"
-             : "=r" (oldbit), "+m" (*(volatile long *) (addr)) 
-             : "Ir" (nr) : "memory");
+                 "sbb %0,%0"
+                 : "=r"(oldbit), "+m"(*(volatile long *)(addr))
+                 : "Ir"(nr)
+                 : "memory");
 
     return oldbit;
 }
@@ -68,9 +71,10 @@ static inline int test_and_change_bit(int nr, volatile unsigned long *addr)
     int oldbit;
 
     asm volatile("btc %2,%1\n\t"
-             "sbb %0,%0"
-             : "=r" (oldbit), "+m" (*(volatile long *) (addr)) 
-             : "Ir" (nr) : "memory");
+                 "sbb %0,%0"
+                 : "=r"(oldbit), "+m"(*(volatile long *)(addr))
+                 : "Ir"(nr)
+                 : "memory");
 
     return oldbit;
 }
@@ -86,14 +90,15 @@ static inline int test_and_change_bit(int nr, volatile unsigned long *addr)
  */
 static inline void change_bit(int nr, volatile unsigned long *addr)
 {
-    asm volatile("btc %1,%0": "+m" (*(volatile long *) (addr)) 
-                : "Ir" (nr));
+    asm volatile("btc %1,%0"
+                 : "+m"(*(volatile long *)(addr))
+                 : "Ir"(nr));
 }
 
 static inline int constant_test_bit(unsigned int nr, const volatile unsigned long *addr)
 {
-   return ((1UL << (nr % BITS_PER_LONG)) &
-       (((unsigned long *)addr)[nr / BITS_PER_LONG])) != 0;
+    return ((1UL << (nr % BITS_PER_LONG)) &
+            (((unsigned long *)addr)[nr / BITS_PER_LONG])) != 0;
 }
 
 /**
@@ -119,8 +124,9 @@ static inline int find_first_bit(const unsigned long *addr, unsigned size)
         "1:\tsubl %%ebx,%%edi\n\t"
         "shll $3,%%edi\n\t"
         "addl %%edi,%%eax"
-        :"=a" (res), "=&c" (d0), "=&D" (d1)
-        :"1" ((size + 31) >> 5), "2" (addr), "b" (addr) : "memory");
+        : "=a"(res), "=&c"(d0), "=&D"(d1)
+        : "1"((size + 31) >> 5), "2"(addr), "b"(addr)
+        : "memory");
     return res;
 }
 
@@ -151,8 +157,9 @@ static inline int find_first_zero_bit(const unsigned long *addr, unsigned size)
         "1:\tsubl %%ebx,%%edi\n\t"
         "shll $3,%%edi\n\t"
         "addl %%edi,%%edx"
-        :"=d" (res), "=&c" (d0), "=&D" (d1), "=&a" (d2)
-        :"1" ((size + 31) >> 5), "2" (addr), "b" (addr) : "memory");
+        : "=d"(res), "=&c"(d0), "=&D"(d1), "=&a"(d2)
+        : "1"((size + 31) >> 5), "2"(addr), "b"(addr)
+        : "memory");
     return res;
 }
 
@@ -164,19 +171,20 @@ static inline int find_first_zero_bit(const unsigned long *addr, unsigned size)
  */
 static inline int find_next_zero_bit(const unsigned long *addr, int size, int offset)
 {
-    unsigned long * p = ((unsigned long *) addr) + (offset >> 5);
+    unsigned long *p = ((unsigned long *)addr) + (offset >> 5);
     int set = 0, bit = offset & 31, res;
 
-    if (bit) {
+    if (bit)
+    {
         /*
          * Look for zero in the first 32 bits.
          */
         __asm__("bsfl %1,%0\n\t"
-            "jne 1f\n\t"
-            "movl $32, %0\n"
-            "1:"
-            : "=r" (set)
-            : "r" (~(*p >> bit)));
+                "jne 1f\n\t"
+                "movl $32, %0\n"
+                "1:"
+                : "=r"(set)
+                : "r"(~(*p >> bit)));
         if (set < (32 - bit))
             return set + offset;
         set = 32 - bit;
@@ -185,7 +193,7 @@ static inline int find_next_zero_bit(const unsigned long *addr, int size, int of
     /*
      * No zero yet, search remaining full bytes for a zero
      */
-    res = find_first_zero_bit (p, size - 32 * (p - (unsigned long *) addr));
+    res = find_first_zero_bit(p, size - 32 * (p - (unsigned long *)addr));
     return (offset + set + res);
 }
 
@@ -194,9 +202,9 @@ static inline int variable_test_bit(int nr, volatile const unsigned long *addr)
     int oldbit;
 
     asm volatile("bt %2,%1\n\t"
-             "sbb %0,%0"
-             : "=r" (oldbit)
-             : "m" (*(unsigned long *)addr), "Ir" (nr));
+                 "sbb %0,%0"
+                 : "=r"(oldbit)
+                 : "m"(*(unsigned long *)addr), "Ir"(nr));
 
     return oldbit;
 }

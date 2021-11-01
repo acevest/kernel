@@ -17,7 +17,7 @@
 
 int sysc_read(int fd, void *buf, size_t count)
 {
-    if(fd<0 || fd>=NR_OPENS)
+    if (fd < 0 || fd >= NR_OPENS)
         return -EBADF;
 
     // only support char device

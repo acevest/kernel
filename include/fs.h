@@ -17,61 +17,56 @@
 #include <page.h>
 
 /* 分区表开始的位置 */
-#define PARTS_POS    0x1BE
+#define PARTS_POS 0x1BE
 
 /* 设备的主设备号. 占用两个字节. */
-#define DEV_MAJOR_UNUSED    0x0000
-#define DEV_MAJOR_MEM       0x0001
-#define DEV_MAJOR_TTY       0x0002
-#define DEV_MAJOR_IDE0      0x0003
-#define DEV_MAJOR_HDA       DEV_MAJOR_IDE0
-#define DEV_MAJOR_IDE1      0x0004
-#define DEV_MAJOR_SCSI0     0x0005
-#define DEV_MAJOR_SCSI2     0x0006
+#define DEV_MAJOR_UNUSED 0x0000
+#define DEV_MAJOR_MEM 0x0001
+#define DEV_MAJOR_TTY 0x0002
+#define DEV_MAJOR_IDE0 0x0003
+#define DEV_MAJOR_HDA DEV_MAJOR_IDE0
+#define DEV_MAJOR_IDE1 0x0004
+#define DEV_MAJOR_SCSI0 0x0005
+#define DEV_MAJOR_SCSI2 0x0006
 
-#define DEV_MAJOR_BITS        (16)
-#define DEV_MINOR_MASK        ((1UL << DEV_MAJOR_BITS) - 1)
+#define DEV_MAJOR_BITS (16)
+#define DEV_MINOR_MASK ((1UL << DEV_MAJOR_BITS) - 1)
 
-#define MAKE_DEV(major, minor)    ((major) << DEV_MAJOR_BITS | minor)
+#define MAKE_DEV(major, minor) ((major) << DEV_MAJOR_BITS | minor)
 
-#define DEV_MAJOR(dev)        ((unsigned int)((dev) >> DEV_MAJOR_BITS))
-#define DEV_MINOR(dev)        ((unsigned int)((dev) &  DEV_MINOR_MASK))
-
-
+#define DEV_MAJOR(dev) ((unsigned int)((dev) >> DEV_MAJOR_BITS))
+#define DEV_MINOR(dev) ((unsigned int)((dev)&DEV_MINOR_MASK))
 
 //#define MAX_SUPT_FILE_SIZE    (1)
-#define NR_FILES    (1)
-#define NR_OPENS    (1)
+#define NR_FILES (1)
+#define NR_OPENS (1)
 
 unsigned int namei(const char *path);
 
-#define MAX_SUPT_FILE_SIZE    (EXT2_IND_BLOCK*EXT2_BLOCK_SIZE)
-
-
+#define MAX_SUPT_FILE_SIZE (EXT2_IND_BLOCK * EXT2_BLOCK_SIZE)
 
 typedef struct chrdev
 {
     int (*read)(char *buf, size_t count);
 } chrdev_t;
 
-enum {
+enum
+{
     CHRDEV_CNSL,
     CHRDEV_SIZE
 };
 
 extern chrdev_t *chrdev[];
 
-typedef struct 
+typedef struct
 {
-    
+
 } file_t;
 
-
-
 #if 0
-#define NR_FILES    (PAGE_SIZE/sizeof(File))
-#define NR_INODES    (2*NR_FILES)
-#define NR_OPENS    (2)    /* 一个进程同时打开文件的限制数 */
+#define NR_FILES (PAGE_SIZE / sizeof(File))
+#define NR_INODES (2 * NR_FILES)
+#define NR_OPENS (2) /* 一个进程同时打开文件的限制数 */
 extern File file_table[NR_FILES];
 extern Inode inode_table[NR_INODES];
 

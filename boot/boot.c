@@ -10,7 +10,6 @@
  *--------------------------------------------------------------------------
  */
 
-
 #include <system.h>
 #include <boot/boot.h>
 #include <page.h>
@@ -23,7 +22,7 @@ void parse_cmdline(const char *cmdline);
 
 void init_boot_params(multiboot_info_t *p)
 {
-    boot_params.cmdline = (char *) p->cmdline;
+    boot_params.cmdline = (char *)p->cmdline;
 
     parse_cmdline(boot_params.cmdline);
 
@@ -34,11 +33,11 @@ void init_boot_params(multiboot_info_t *p)
 
     boot_params.boot_device = p->boot_device;
 
-    memory_map_t *mmap = (memory_map_t *) pa2va(p->mmap_addr);
+    memory_map_t *mmap = (memory_map_t *)pa2va(p->mmap_addr);
 
     unsigned int i;
     boot_params.e820map.map_cnt = p->mmap_length / sizeof(memory_map_t);
-    for(i=0; i<boot_params.e820map.map_cnt; ++i, ++mmap)
+    for (i = 0; i < boot_params.e820map.map_cnt; ++i, ++mmap)
     {
         boot_params.e820map.map[i].addr = mmap->base_addr_low;
         boot_params.e820map.map[i].size = mmap->length_low;
@@ -48,18 +47,20 @@ void init_boot_params(multiboot_info_t *p)
 
 void check_kernel(unsigned long addr, unsigned long magic)
 {
-    if(magic != MULTIBOOT_BOOTLOADER_MAGIC)
+    if (magic != MULTIBOOT_BOOTLOADER_MAGIC)
     {
         printk("Your boot loader does not support multiboot.\n");
-        while(1);
+        while (1)
+            ;
     }
 
-    multiboot_info_t *mbi = (multiboot_info_t *) addr;
+    multiboot_info_t *mbi = (multiboot_info_t *)addr;
 
-    if( (mbi->flags & 0x47) != 0x47)
+    if ((mbi->flags & 0x47) != 0x47)
     {
         printk("Kernel Need More Information\n");
-        while(1);
+        while (1)
+            ;
     }
 
     init_boot_params(mbi);

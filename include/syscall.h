@@ -17,9 +17,9 @@
 #ifndef _SYSCALL_H
 #define _SYSCALL_H
 
-#define SYSC_NUM    256
+#define SYSC_NUM 256
 
-#ifndef    ASM
+#ifndef ASM
 
 #include "page.h"
 #include "errno.h"
@@ -30,11 +30,11 @@ int _syscall2(int nr, unsigned long a, unsigned long b);
 int _syscall3(int nr, unsigned long a, unsigned long b, unsigned long c);
 int _syscall4(int nr, unsigned long a, unsigned long b, unsigned long c, unsigned long d);
 
-#define syscall0(nr)                _syscall0(nr)
-#define syscall1(nr, a)             _syscall1(nr, (unsigned long)a)
-#define syscall2(nr, a, b)          _syscall2(nr, (unsigned long)a, (unsigned long)b)
-#define syscall3(nr, a, b, c)       _syscall3(nr, (unsigned long)a, (unsigned long)b, (unsigned long)c)
-#define syscall4(nr, a, b, c, d)    _syscall4(nr, (unsigned long)a, (unsigned long)b, (unsigned long)c, (unsigned long)d)
+#define syscall0(nr) _syscall0(nr)
+#define syscall1(nr, a) _syscall1(nr, (unsigned long)a)
+#define syscall2(nr, a, b) _syscall2(nr, (unsigned long)a, (unsigned long)b)
+#define syscall3(nr, a, b, c) _syscall3(nr, (unsigned long)a, (unsigned long)b, (unsigned long)c)
+#define syscall4(nr, a, b, c, d) _syscall4(nr, (unsigned long)a, (unsigned long)b, (unsigned long)c, (unsigned long)d)
 
 enum
 {
@@ -53,6 +53,6 @@ enum
     SYSC_DEBUG
 };
 
-#endif    // ASM
+#endif // ASM
 
 #endif //_SYSCALL_H

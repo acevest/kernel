@@ -1308,3 +1308,4 @@ speaker: enabled=1, mode=sound, volume=15
 #megs: 32
 #megs: 16
 #megs: 8
+megs: 32

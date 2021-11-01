@@ -22,11 +22,11 @@ extern int write(int fd, const char *buf, unsigned long size);
 static inline int printf(const char *fmt, ...)
 {
     char ptfbuf[512];
-    char *args = (char*)(((char*)&fmt)+4);
+    char *args = (char *)(((char *)&fmt) + 4);
     vsprintf(ptfbuf, fmt, args);
 
     //asm("xchg %bx,%bx;");
-    
+
     return write(0, ptfbuf, strlen(ptfbuf));
 }
 

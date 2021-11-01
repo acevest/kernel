@@ -28,12 +28,12 @@ void do_no_page(void *addr)
     int npde = get_npd(addr);
     int npte = get_npt(addr);
 
-    if(page_dir[npde] == 0)
+    if (page_dir[npde] == 0)
     {
-        page_tbl = (pte_t *) alloc_one_page(0);
+        page_tbl = (pte_t *)alloc_one_page(0);
         assert(page_tbl != 0);
 
-        memset((void *) page_tbl, 0, PAGE_SIZE);
+        memset((void *)page_tbl, 0, PAGE_SIZE);
 
         page_dir[npde] = va2pa(page_tbl) | PAGE_P | PAGE_WR | PAGE_US;
     }
@@ -44,11 +44,10 @@ void do_no_page(void *addr)
     load_cr3(current);
 }
 
-
 void do_wp_page(void *addr)
 {
     //printk("%s   addr %08x current %08x\n", __func__, (unsigned long)addr, current);
-    if((unsigned long) addr >= PAGE_OFFSET)
+    if ((unsigned long)addr >= PAGE_OFFSET)
     {
         panic("%s invalid addr", __func__);
     }
@@ -60,13 +59,13 @@ void do_wp_page(void *addr)
     pte_t *page_tbl = pa2va(PAGE_ALIGN(page_dir[npde]));
 
     unsigned long wp_pa_addr = PAGE_ALIGN(page_tbl[npte]);
-   
+
     page_t *page = pa2page(wp_pa_addr);
-    if(page->count > 0)
+    if (page->count > 0)
     {
-        page->count --;
+        page->count--;
         unsigned long flags = PAGE_FLAGS(page_tbl[npte]);
-        unsigned long wp_va_addr = (unsigned long) pa2va(wp_pa_addr);
+        unsigned long wp_va_addr = (unsigned long)pa2va(wp_pa_addr);
         unsigned long newtbl = alloc_one_page(0);
         assert(newtbl != 0);
 

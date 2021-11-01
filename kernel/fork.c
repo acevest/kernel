@@ -24,95 +24,93 @@ extern pid_t get_next_pid();
 
 int do_fork(pt_regs_t *regs, unsigned long flags)
 {
-    static int forkcnt = 7;
     task_union *tsk;
     tsk = alloc_task_union();
     printk("fork task %08x flags %08x\n", tsk, flags);
-    if(tsk == NULL)
+    if (tsk == NULL)
         panic("can not malloc PCB");
 
     memcpy(tsk, current, sizeof(task_union));
 
     //{
-        tsk->cr3 = (unsigned long) alloc_one_page(0);
-        assert(tsk->cr3 != 0);
+    tsk->cr3 = (unsigned long)alloc_one_page(0);
+    assert(tsk->cr3 != 0);
 
-        unsigned int i, j;
-        pde_t *pde_src = (pde_t*) current->cr3;
-        pde_t *pde_dst = (pde_t*) tsk->cr3;
+    unsigned int i, j;
+    pde_t *pde_src = (pde_t *)current->cr3;
+    pde_t *pde_dst = (pde_t *)tsk->cr3;
 
-        memcpy((void *)tsk->cr3, (void*)current->cr3, PAGE_SIZE);
+    memcpy((void *)tsk->cr3, (void *)current->cr3, PAGE_SIZE);
 
-        for(i=0; i<PAGE_PDE_CNT; ++i)
+    for (i = 0; i < PAGE_PDE_CNT; ++i)
+    {
+        unsigned long spde = (unsigned long)pde_src[i];
+        unsigned long dpde = 0;
+
+        if (i >= 768)
         {
-            unsigned long spde = (unsigned long) pde_src[i];
-            unsigned long dpde = 0;
-
-            if(i>=768)
-            {
-                pde_dst[i] = pde_src[i];
-                continue;
-            }
-
-            if(pde_src[i] == 0)
-                continue;
-
-            if(PAGE_ALIGN(spde) != 0)
-            {
-                dpde = alloc_one_page(0);
-                assert(dpde != 0);
-                memset((void*)dpde, 0, PAGE_SIZE);
-                dpde = PAGE_FLAGS(spde) | (unsigned long) va2pa(dpde);
-            }
-            else
-            {
-                pde_dst[i] = 0;
-                continue;
-            }
-            pde_dst[i] = dpde;
-
-            pte_t *pte_src = pa2va(PAGE_ALIGN(spde));
-            pte_t *pte_dst = pa2va(PAGE_ALIGN(dpde));
-            for(j=0; j< PAGE_PTE_CNT; ++j)
-            {
-                pte_src[j] &= ~PAGE_WR;
-                pte_dst[j] = pte_src[j];
-
-                if(pte_src[j] == 0)
-                    continue;
-                printk("----pde[%u] pte_src[%u] %08x\n", i, j, pte_src[j]);
-                page_t *page = pa2page(pte_src[j]);
-                page->count ++;
-            }
-
+            pde_dst[i] = pde_src[i];
+            continue;
         }
+
+        if (pde_src[i] == 0)
+            continue;
+
+        if (PAGE_ALIGN(spde) != 0)
+        {
+            dpde = alloc_one_page(0);
+            assert(dpde != 0);
+            memset((void *)dpde, 0, PAGE_SIZE);
+            dpde = PAGE_FLAGS(spde) | (unsigned long)va2pa(dpde);
+        }
+        else
+        {
+            pde_dst[i] = 0;
+            continue;
+        }
+        pde_dst[i] = dpde;
+
+        pte_t *pte_src = pa2va(PAGE_ALIGN(spde));
+        pte_t *pte_dst = pa2va(PAGE_ALIGN(dpde));
+        for (j = 0; j < PAGE_PTE_CNT; ++j)
+        {
+            pte_src[j] &= ~PAGE_WR;
+            pte_dst[j] = pte_src[j];
+
+            if (pte_src[j] == 0)
+                continue;
+            printk("----pde[%u] pte_src[%u] %08x\n", i, j, pte_src[j]);
+            page_t *page = pa2page(pte_src[j]);
+            page->count++;
+        }
+    }
     //}
 
     load_cr3(current);
 
-    tsk->pid    = get_next_pid();
-    tsk->ppid   = current->pid;
+    tsk->pid = get_next_pid();
+    tsk->ppid = current->pid;
 
-    pt_regs_t *child_regs = ((pt_regs_t *) (TASK_SIZE+(unsigned long) tsk)) - 1;
+    pt_regs_t *child_regs = ((pt_regs_t *)(TASK_SIZE + (unsigned long)tsk)) - 1;
 
     *child_regs = *regs;
 
     child_regs->eax = 0;
     child_regs->eflags |= 0x200; //enable IF
 
-    tsk->esp0   = TASK_SIZE + (unsigned long) tsk;
-    tsk->esp    = (unsigned long) child_regs;
-    tsk->eip    = (unsigned long) ret_from_fork_user;
+    tsk->esp0 = TASK_SIZE + (unsigned long)tsk;
+    tsk->esp = (unsigned long)child_regs;
+    tsk->eip = (unsigned long)ret_from_fork_user;
 
-    if(flags & FORK_KRNL)
+    if (flags & FORK_KRNL)
     {
-        tsk->eip= (unsigned long) ret_from_fork_krnl;
+        tsk->eip = (unsigned long)ret_from_fork_krnl;
     }
 
     printk("tsk %08x child_regs esp %08x esp0 %08x\n", tsk, tsk->esp, tsk->esp0);
 
     tsk->state = TASK_RUNNING;
-    tsk->weight= TASK_INIT_WEIGHT;
+    tsk->weight = TASK_INIT_WEIGHT;
 
     INIT_LIST_HEAD(&tsk->list);
 

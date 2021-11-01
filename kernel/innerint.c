@@ -19,12 +19,15 @@
 #include <system.h>
 #include <sched.h>
 
-#define DIE_MSG() do{\
-    printk("Unsupport Now...[%s]\n", __FUNCTION__);        \
-    printk("EFLAGS:%08x CS:%02x EIP:%08x ERRCODE:%x",     \
-    regs.eflags, regs.cs, regs.eip, regs.errcode);        \
-    while(1);                        \
-}while(0);
+#define DIE_MSG()                                             \
+    do                                                        \
+    {                                                         \
+        printk("Unsupport Now...[%s]\n", __FUNCTION__);       \
+        printk("EFLAGS:%08x CS:%02x EIP:%08x ERRCODE:%x",     \
+               regs.eflags, regs.cs, regs.eip, regs.errcode); \
+        while (1)                                             \
+            ;                                                 \
+    } while (0);
 
 void doDivideError(pt_regs_t regs)
 {
@@ -99,16 +102,17 @@ US RW  P - Description
 1  1  1 - User process tried to write a page and caused a protection fault
 #endif
     //DIE_MSG();
-    void    *addr;
-    u32    errcode = regs.errcode;
+    void *addr;
+    u32 errcode = regs.errcode;
 
-    asm("movl %%cr2,%%eax":"=a"(addr));
+    asm("movl %%cr2,%%eax"
+        : "=a"(addr));
 
     //printk("do page fault errcode %x addr %08x [%08x]\n", errcode, addr, current);
 
     //assert(errcode != 2 && errcode != 6);
 
-    if((errcode & PAGE_P) == 0)
+    if ((errcode & PAGE_P) == 0)
     {
         do_no_page(addr);
     }

@@ -14,14 +14,15 @@
  *--------------------------------------------------------------------------
  */
 
-#include<assert.h>
+#include <assert.h>
 
 extern void vga_puts(unsigned int nr, const char *buf, unsigned char color);
 int sysc_write(int fd, const char *buf, unsigned long size)
 {
-    if(size < 0) return -1;
+    if (size < 0)
+        return -1;
 
-    switch(fd)
+    switch (fd)
     {
     case 0:
         vga_puts(0, buf, 0xF);

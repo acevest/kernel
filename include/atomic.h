@@ -9,8 +9,7 @@
 
 #pragma once
 
-#define atomic_inc(x) __sync_add_and_fetch((x),1)  
-#define atomic_dec(x) __sync_sub_and_fetch((x),1)  
-#define atomic_add(x,y) __sync_add_and_fetch((x),(y))  
-#define atomic_sub(x,y) __sync_sub_and_fetch((x),(y))
-
+#define atomic_inc(x) __sync_add_and_fetch((x), 1)
+#define atomic_dec(x) __sync_sub_and_fetch((x), 1)
+#define atomic_add(x, y) __sync_add_and_fetch((x), (y))
+#define atomic_sub(x, y) __sync_sub_and_fetch((x), (y))

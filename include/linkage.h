@@ -13,16 +13,14 @@
  * 
  *--------------------------------------------------------------------------
  */
-#ifndef    __LINKAGE_H
+#ifndef __LINKAGE_H
 #define __LINKAGE_H
 
-#define ALIGN        .align    0x04,0x90
-#define ALIGN_STR    ".align    0x04,0x90"
-#define ENTRY(symbol)    \
-    .global    symbol;    \
-    ALIGN;        \
+#define ALIGN .align 0x04, 0x90
+#define ALIGN_STR ".align    0x04,0x90"
+#define ENTRY(symbol) \
+    .global symbol;   \
+    ALIGN;            \
     symbol:
-
-
 
 #endif

@@ -9,7 +9,7 @@
 
 #pragma once
 
-#include<wait.h>
+#include <wait.h>
 
 #define CNSL_QUEUE_SIZE 1024
 

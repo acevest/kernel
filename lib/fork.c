@@ -13,7 +13,7 @@
 #include <types.h>
 #include <syscall.h>
 #include <stdio.h>
-pid_t    fork()
+pid_t fork()
 {
 #if 0
     pid_t pid;
@@ -26,5 +26,5 @@ pid_t    fork()
     pid = syscall0(SYSC_FORK);
     return pid;
 #endif
-    return (pid_t) syscall0(SYSC_FORK);
+    return (pid_t)syscall0(SYSC_FORK);
 }

@@ -21,12 +21,13 @@ int printk(const char *fmtstr, ...);
 int printd(const char *fmtstr, ...);
 int printlo(unsigned int line, unsigned int offset, const char *fmtstr, ...);
 
-#define printl(line, fmt, args...) printlo(line, 1, fmt, ## args)
-#define printll(line, fmt, args...) printlo(line, 0, fmt, ## args)
-#define printlr(line, fmt, args...) printlo(line, 40, fmt, ## args)
+#define printl(line, fmt, args...) printlo(line, 1, fmt, ##args)
+#define printll(line, fmt, args...) printlo(line, 0, fmt, ##args)
+#define printlr(line, fmt, args...) printlo(line, 40, fmt, ##args)
 
 // monitor print line
-enum {
+enum
+{
     MPL_TITLE,
     MPL_ROOTDEV,
     MPL_CLOCK,
@@ -47,4 +48,3 @@ enum {
     MPL_TASK_8,
     MPL_END
 };
-

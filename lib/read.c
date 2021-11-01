@@ -13,5 +13,5 @@
 #include <syscall.h>
 ssize_t read(int fd, void *buf, size_t count)
 {
-    return (ssize_t) syscall3(SYSC_READ, fd, buf, count);
+    return (ssize_t)syscall3(SYSC_READ, fd, buf, count);
 }

@@ -15,72 +15,75 @@
  */
 #include <bits.h>
 
-#define TEST_FEATURE(val,bit,fea)\
-do{\
-    if( ISSET_BIT(val,bit) )\
-        printk(" %s",fea);\
-}while(0);
+#define TEST_FEATURE(val, bit, fea) \
+    do                              \
+    {                               \
+        if (ISSET_BIT(val, bit))    \
+            printk(" %s", fea);     \
+    } while (0);
 
-typedef struct reg{ unsigned long eax,ebx,ecx,edx; } reg_t;
+typedef struct reg
+{
+    unsigned long eax, ebx, ecx, edx;
+} reg_t;
 reg_t cpuid(unsigned long op)
 {
     reg_t r;
     asm("cpuid;"
-    :"=a"(r.eax),
-     "=b"(r.ebx),
-     "=c"(r.ecx),
-     "=d"(r.edx)
-    :"a"(op)
-    );
+        : "=a"(r.eax),
+          "=b"(r.ebx),
+          "=c"(r.ecx),
+          "=d"(r.edx)
+        : "a"(op));
 
-    return     r;
+    return r;
 }
 
-void    detect_cpu()
+void detect_cpu()
 {
 
     reg_t r;
-    unsigned short int cpu_sn[6];    //serial number
-    int    i;
+    unsigned short int cpu_sn[6]; //serial number
+    int i;
 
     /**********************Get CPU Name********************************/
     char cpu_name[13];
-    
-    r=cpuid(0);
+
+    r = cpuid(0);
     memcpy(cpu_name + 0, &r.ebx, 4);
     memcpy(cpu_name + 4, &r.edx, 4);
     memcpy(cpu_name + 8, &r.ecx, 4);
     cpu_name[12] = 0;
-    printk("%s ",cpu_name);
+    printk("%s ", cpu_name);
 
-     /**********************Get Processor Brand String******************/
-    char pbs[50];        //processor brand string
+    /**********************Get Processor Brand String******************/
+    char pbs[50]; //processor brand string
     r = cpuid(0x80000002);
-    memcpy(pbs + 0 , &r.eax, 4);
-    memcpy(pbs + 4 , &r.ebx, 4);
-    memcpy(pbs + 8 , &r.ecx, 4);
+    memcpy(pbs + 0, &r.eax, 4);
+    memcpy(pbs + 4, &r.ebx, 4);
+    memcpy(pbs + 8, &r.ecx, 4);
     memcpy(pbs + 12, &r.edx, 4);
-    r=cpuid(0x80000003);
-    memcpy(pbs + 16 , &r.eax, 4);
-    memcpy(pbs + 20 , &r.ebx, 4);
-    memcpy(pbs + 24 , &r.ecx, 4);
-    memcpy(pbs + 28 , &r.edx, 4);
-    r=cpuid(0x80000004);
-    memcpy(pbs + 32 , &r.eax, 4);
-    memcpy(pbs + 36 , &r.ebx, 4);
-    memcpy(pbs + 40 , &r.ecx, 4);
-    memcpy(pbs + 44 , &r.edx, 4);
+    r = cpuid(0x80000003);
+    memcpy(pbs + 16, &r.eax, 4);
+    memcpy(pbs + 20, &r.ebx, 4);
+    memcpy(pbs + 24, &r.ecx, 4);
+    memcpy(pbs + 28, &r.edx, 4);
+    r = cpuid(0x80000004);
+    memcpy(pbs + 32, &r.eax, 4);
+    memcpy(pbs + 36, &r.ebx, 4);
+    memcpy(pbs + 40, &r.ecx, 4);
+    memcpy(pbs + 44, &r.edx, 4);
     pbs[48] = 0;
-    printk("%s",pbs);
+    printk("%s", pbs);
 
-     /**********************Get Number of Processors********************/
-    int pn;//number of logical processors in one physical processor
-    r=cpuid(1);
-    pn    = ((r.ebx & 0x00FF0000) >> 16);
-    printk(" x %d Cores\n",pn);
+    /**********************Get Number of Processors********************/
+    int pn; //number of logical processors in one physical processor
+    r = cpuid(1);
+    pn = ((r.ebx & 0x00FF0000) >> 16);
+    printk(" x %d Cores\n", pn);
 
-     /**********************Get the CPU's Feature***********************/
-    int    fv = r.edx;
+    /**********************Get the CPU's Feature***********************/
+    int fv = r.edx;
     TEST_FEATURE(fv, 1, "fpu")
     TEST_FEATURE(fv, 2, "vme")
     TEST_FEATURE(fv, 3, "de")
@@ -93,7 +96,7 @@ void    detect_cpu()
     TEST_FEATURE(fv, 10, "Reserved")
     TEST_FEATURE(fv, 11, "SYSENTER/SYSEXIT")
     TEST_FEATURE(fv, 12, "mttr")
-    TEST_FEATURE(fv, 13, "pge")    
+    TEST_FEATURE(fv, 13, "pge")
     TEST_FEATURE(fv, 14, "mca")
     TEST_FEATURE(fv, 15, "cmov")
     TEST_FEATURE(fv, 16, "pat")
@@ -115,9 +118,10 @@ void    detect_cpu()
 
     printk("\n");
 
-    if(!((1UL<<11) & fv))
+    if (!((1UL << 11) & fv))
     {
         printk("Your CPU Do Not Support SYSENTER/SYSEXIT\n");
-        while(1);
+        while (1)
+            ;
     }
 }

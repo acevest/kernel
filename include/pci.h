@@ -18,8 +18,8 @@
 
 #include <list.h>
 
-#define PCI_ADDR    0xCF8   // CONFIG_ADDRESS
-#define PCI_DATA    0xCFC   // CONFIG_DATA
+#define PCI_ADDR 0xCF8 // CONFIG_ADDRESS
+#define PCI_DATA 0xCFC // CONFIG_DATA
 
 // PCI Device
 /*
@@ -66,9 +66,8 @@ extern list_head_t pci_devs;
 
 typedef struct pci_device
 {
-    list_head_t   list;
+    list_head_t list;
     unsigned int bus, dev, devfn;
-
 
     unsigned int vendor;
     unsigned int device;
@@ -85,10 +84,9 @@ typedef struct pci_device
     unsigned int intr_line;
     unsigned int intr_pin;
 
-    unsigned int primary_bus_nr;   /* only for pci bridge */
+    unsigned int primary_bus_nr; /* only for pci bridge */
     unsigned int secondary_bus_nr;
 } __attribute__((packed)) pci_device_t;
-
 
 #if 0
 typedef union pci_device
@@ -114,78 +112,78 @@ typedef union pci_device
 } __attribute__((packed)) pci_device_t;
 #endif
 
-#define PCI_VENDORID        0x00
-#define PCI_DEVICEID        0x02
-#define PCI_COMMAND         0x04
-    #define     PCI_COMMAND_IO              0x01
-    #define     PCI_COMMAND_MEMORY          0x02
-    #define     PCI_COMMAND_MASTER          0x04
-    #define     PCI_COMMAND_SPECIAL         0x08
-    #define     PCI_COMMAND_INVALIDATE      0x10
-    #define     PCI_COMMAND_VGA_PALETTE     0x20
-    #define     PCI_COMMAND_PARITY          0x40
-    #define     PCI_COMMAND_WAIT            0x80
-    #define     PCI_COMMAND_SERR            0x100
-    #define     PCI_COMMAND_FAST_BACK       0x200
-    #define     PCI_COMMAND_INTR_DISABLE    0x400
-#define PCI_STATUS          0x06
-#define PCI_REVISION        0x08
-#define PCI_PROGIF          0x09
-#define PCI_CLASSCODE       0x0A
-#define PCI_HDRTYPE         0x0E
-    #define    PCI_HDRTYPE_MASK     0x7F
-    #define    PCI_HDRTYPE_NORMAL   0x00
-    #define    PCI_HDRTYPE_BRIDGE   0x01    /* PCI-to-PCI Bridge */
-    #define    PCI_HDRTYPE_CARDBUS  0x02    /* CardBus Bridge */
-#define PCI_BAR0            0x10
-#define PCI_BAR1            0x14
-#define PCI_BAR2            0x18
-#define PCI_BAR3            0x1C
-#define PCI_BAR4            0x20
-#define PCI_BAR5            0x24
-#define PCI_PRIMARY_BUS_NUMBER    0x18
-#define PCI_SECONDARY_BUS_NUMBER  0x19
-#define PCI_INTRLINE        0x3C
-#define PCI_INTRPIN         0x3D
-#define PCI_MINGNT          0x3E
-#define PCI_MAXLAT          0x3F
+#define PCI_VENDORID 0x00
+#define PCI_DEVICEID 0x02
+#define PCI_COMMAND 0x04
+#define PCI_COMMAND_IO 0x01
+#define PCI_COMMAND_MEMORY 0x02
+#define PCI_COMMAND_MASTER 0x04
+#define PCI_COMMAND_SPECIAL 0x08
+#define PCI_COMMAND_INVALIDATE 0x10
+#define PCI_COMMAND_VGA_PALETTE 0x20
+#define PCI_COMMAND_PARITY 0x40
+#define PCI_COMMAND_WAIT 0x80
+#define PCI_COMMAND_SERR 0x100
+#define PCI_COMMAND_FAST_BACK 0x200
+#define PCI_COMMAND_INTR_DISABLE 0x400
+#define PCI_STATUS 0x06
+#define PCI_REVISION 0x08
+#define PCI_PROGIF 0x09
+#define PCI_CLASSCODE 0x0A
+#define PCI_HDRTYPE 0x0E
+#define PCI_HDRTYPE_MASK 0x7F
+#define PCI_HDRTYPE_NORMAL 0x00
+#define PCI_HDRTYPE_BRIDGE 0x01  /* PCI-to-PCI Bridge */
+#define PCI_HDRTYPE_CARDBUS 0x02 /* CardBus Bridge */
+#define PCI_BAR0 0x10
+#define PCI_BAR1 0x14
+#define PCI_BAR2 0x18
+#define PCI_BAR3 0x1C
+#define PCI_BAR4 0x20
+#define PCI_BAR5 0x24
+#define PCI_PRIMARY_BUS_NUMBER 0x18
+#define PCI_SECONDARY_BUS_NUMBER 0x19
+#define PCI_INTRLINE 0x3C
+#define PCI_INTRPIN 0x3D
+#define PCI_MINGNT 0x3E
+#define PCI_MAXLAT 0x3F
 
 // PCI Command Register
-#define PCI_CMD(bus, dev, devfn, reg) (0x80000000 | (bus << 16) | (dev << 11) | (devfn << 8) | (reg/* & 0xFC */))
+#define PCI_CMD(bus, dev, devfn, reg) (0x80000000 | (bus << 16) | (dev << 11) | (devfn << 8) | (reg /* & 0xFC */))
 
 #define PCI_CONFIG_CMD(cmd) (cmd & ~3)
 #define PCI_GET_CMD_REG(cmd) (cmd & 0xFF)
 
-
 /*   PCI IDS   */
 // Display
-#define PCI_BASE_CLASS_DISPLAY      0x03
-#define PCI_CLASS_DISPLAY_VGA       0x0300
+#define PCI_BASE_CLASS_DISPLAY 0x03
+#define PCI_CLASS_DISPLAY_VGA 0x0300
 // Bridge
-#define PCI_BASE_CLASS_BRIDGE       0x06
-#define PCI_CLASS_BRIDGE_HOST       0x0600
-#define PCI_CLASS_BRIDGE_ISA        0x0601
-#define PCI_CLASS_BRIDGE_PCI        0x0604
-#define PCI_CLASS_BRIDGE_CARDBUS    0x0607
+#define PCI_BASE_CLASS_BRIDGE 0x06
+#define PCI_CLASS_BRIDGE_HOST 0x0600
+#define PCI_CLASS_BRIDGE_ISA 0x0601
+#define PCI_CLASS_BRIDGE_PCI 0x0604
+#define PCI_CLASS_BRIDGE_CARDBUS 0x0607
 
 /* Vendors*/
-#define PCI_VENDORID_COMPAQ         0x0E11
-#define PCI_VENDORID_INTEL          0x8086
-#define PCI_VENDORID_ATI            0x1002
-#define PCI_VENDORID_IBM            0x1014
-#define PCI_VENDORID_AMD            0x1022
-#define PCI_VENDORID_HP             0x103C
-#define PCI_VENDORID_SONY           0x104D
-#define PCI_VENDORID_MOTOROLA       0x1057
-#define PCI_VENDORID_APPLE          0x106B
-#define PCI_VENDORID_SUN            0x108E
-#define PCI_VENDORID_NVIDIA         0x10DE
-#define PCI_VENDORID_REALTEK        0x10EC
+#define PCI_VENDORID_COMPAQ 0x0E11
+#define PCI_VENDORID_INTEL 0x8086
+#define PCI_VENDORID_ATI 0x1002
+#define PCI_VENDORID_IBM 0x1014
+#define PCI_VENDORID_AMD 0x1022
+#define PCI_VENDORID_HP 0x103C
+#define PCI_VENDORID_SONY 0x104D
+#define PCI_VENDORID_MOTOROLA 0x1057
+#define PCI_VENDORID_APPLE 0x106B
+#define PCI_VENDORID_SUN 0x108E
+#define PCI_VENDORID_NVIDIA 0x10DE
+#define PCI_VENDORID_REALTEK 0x10EC
 
 pci_device_t *pci_find_device(unsigned int vendor, unsigned int device);
 pci_device_t *pci_find_device_by_classcode(unsigned int classcode);
 
-static inline u32 pci_cmd(pci_device_t *pci, unsigned int reg) {
+static inline u32 pci_cmd(pci_device_t *pci, unsigned int reg)
+{
     return PCI_CMD(pci->bus, pci->dev, pci->devfn, reg);
 }
 
@@ -195,9 +193,6 @@ int pci_read_config_long(int cmd);
 void pci_write_config_byte(int value, int cmd);
 void pci_write_config_word(int value, int cmd);
 void pci_write_config_long(int value, int cmd);
-
-
-
 
 // PCI Bridge
 /*

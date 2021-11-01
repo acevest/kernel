@@ -30,7 +30,7 @@ void switch_printk_screen()
 char pkbuf[1024];
 int printk(const char *fmtstr, ...)
 {
-    char *args = (char*)(((char*)&fmtstr)+4);
+    char *args = (char *)(((char *)&fmtstr) + 4);
     vsprintf(pkbuf, fmtstr, args);
     vga_puts(printk_screen_nr, pkbuf, 0x2);
     return 0;
@@ -39,7 +39,7 @@ int printk(const char *fmtstr, ...)
 int printd(const char *fmtstr, ...)
 {
     char *pdbuf = (char *)kmalloc(1024, 0);
-    char *args = (char*)(((char*)&fmtstr)+4);
+    char *args = (char *)(((char *)&fmtstr) + 4);
     vsprintf(pdbuf, fmtstr, args);
     vga_puts(3, pdbuf, 0x4);
     kfree(pdbuf);
@@ -49,7 +49,7 @@ int printd(const char *fmtstr, ...)
 char plobuf[1024];
 int printlo(unsigned int line, unsigned int offset, const char *fmtstr, ...)
 {
-    char *args = (char*)(((char*)&fmtstr)+4);
+    char *args = (char *)(((char *)&fmtstr) + 4);
     vsprintf(plobuf, fmtstr, args);
     vga_dbg_puts(line, offset, plobuf);
     return 0;

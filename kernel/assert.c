@@ -13,7 +13,8 @@
 void assert_fail(char *exp, char *file, unsigned int line, char *func)
 {
     printk("%s:%d: %s: Assertion \'%s\' failed.\n",
-        file, line, func, exp);
+           file, line, func, exp);
 
-    while(1);
+    while (1)
+        ;
 }

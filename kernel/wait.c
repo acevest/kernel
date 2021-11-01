@@ -46,29 +46,28 @@ void wake_up(wait_queue_head_t *wqh)
     // no schedule() here.
 }
 
-
-#include<irq.h>
+#include <irq.h>
 DECLARE_WAIT_QUEUE_HEAD(debug_wq);
 unsigned int debug_global_var = 0;
 int debug_wait_queue_get()
 {
     unsigned int v = 0;
-    task_union * task = current;
+    task_union *task = current;
     DECLARE_WAIT_QUEUE(wait, task);
     add_wait_queue(&debug_wq, &wait);
 
-    while(1)
+    while (1)
     {
         printd("pid %d is going to wait\n", sysc_getpid());
         task->state = TASK_WAIT;
 
         disable_irq();
         v = debug_global_var;
-        if(debug_global_var != 0)
+        if (debug_global_var != 0)
             debug_global_var--;
         enable_irq();
 
-        if(v != 0)
+        if (v != 0)
             break;
 
         schedule();
@@ -88,31 +87,30 @@ int debug_wait_queue_put(unsigned int v)
     wake_up(&debug_wq);
 }
 
-
 int sysc_wait(unsigned long pid)
 {
     task_union *p = find_task(pid);
 
-    if(p == 0)
+    if (p == 0)
         return 0;
 
-    if(p->state == TASK_EXITING)
+    if (p->state == TASK_EXITING)
         return 0;
 
-    task_union * task = current;
+    task_union *task = current;
     DECLARE_WAIT_QUEUE(wait, task);
     add_wait_queue(&p->wait, &wait);
 
-    while(true)
+    while (true)
     {
         //task->state = TASK_WAIT;
-        
+
         unsigned long flags;
         irq_save(flags);
         unsigned int state = p->state;
         irq_restore(flags);
 
-        if(state == TASK_EXITING)    // no need irq_save
+        if (state == TASK_EXITING) // no need irq_save
             break;
 
         schedule();

@@ -18,37 +18,37 @@
 #include <syscall.h>
 #include <stdio.h>
 #include <io.h>
-#define EXT_KEY        0x80000000    /* None Print Key */
-#define L_SHIFT_DOWN    0x00000100
-#define R_SHIFT_DOWN    0x00000200
-#define L_CTRL_DOWN    0x00000400
-#define R_CTRL_DOWN    0x00000800
-#define L_ALT_DOWN    0x00001000
-#define R_ALT_DOWN    0x00002000
-#define L_SHIFT_UP    (~L_SHIFT_DOWN)
-#define R_SHIFT_UP    (~R_SHIFT_DOWN)
-#define L_CTRL_UP    (~L_CTRL_DOWN)
-#define R_CTRL_UP    (~R_CTRL_DOWN)
-#define L_ALT_UP    (~L_ALT_DOWN)
-#define R_ALT_UP    (~R_ALT_DOWN)
-#define SET_L_SHIFT_DOWN(key)    (key |= L_SHIFT_DOWN)
-#define SET_R_SHIFT_DOWN(key)    (key |= R_SHIFT_DOWN)
-#define SET_L_CTRL_DOWN(key)    (key |= L_CTRL_DOWN)
-#define SET_R_CTRL_DOWN(key)    (key |= R_CTRL_DOWN)
-#define SET_L_ALT_DOWN(key)    (key |= L_ALT_DOWN)
-#define SET_R_ALT_DOWN(key)    (key |= R_ALT_DOWN)
-#define SET_L_SHIFT_UP(key)    (key &= L_SHIFT_UP)
-#define SET_R_SHIFT_UP(key)    (key &= R_SHIFT_UP)
-#define SET_L_CTRL_UP(key)    (key &= L_CTRL_UP)
-#define SET_R_CTRL_UP(key)    (key &= R_CTRL_UP)
-#define SET_L_ALT_UP(key)    (key &= L_ALT_UP)
-#define SET_R_ALT_UP(key)    (key &= R_ALT_UP)
-#define IS_L_SHIFT_DOWN(key)    (key & L_SHIFT_DOWN)
-#define IS_R_SHIFT_DOWN(key)    (key & R_SHIFT_DOWN)
-#define IS_L_CTRL_DOWN(key)    (key & L_CTRL_DOWN)
-#define IS_R_CTRL_DOWN(key)    (key & R_CTRL_DOWN)
-#define IS_L_ALT_DOWN(key)    (key & L_ALT_DOWN)
-#define IS_R_ALT_DOWN(key)    (key & R_ALT_DOWN)
+#define EXT_KEY 0x80000000 /* None Print Key */
+#define L_SHIFT_DOWN 0x00000100
+#define R_SHIFT_DOWN 0x00000200
+#define L_CTRL_DOWN 0x00000400
+#define R_CTRL_DOWN 0x00000800
+#define L_ALT_DOWN 0x00001000
+#define R_ALT_DOWN 0x00002000
+#define L_SHIFT_UP (~L_SHIFT_DOWN)
+#define R_SHIFT_UP (~R_SHIFT_DOWN)
+#define L_CTRL_UP (~L_CTRL_DOWN)
+#define R_CTRL_UP (~R_CTRL_DOWN)
+#define L_ALT_UP (~L_ALT_DOWN)
+#define R_ALT_UP (~R_ALT_DOWN)
+#define SET_L_SHIFT_DOWN(key) (key |= L_SHIFT_DOWN)
+#define SET_R_SHIFT_DOWN(key) (key |= R_SHIFT_DOWN)
+#define SET_L_CTRL_DOWN(key) (key |= L_CTRL_DOWN)
+#define SET_R_CTRL_DOWN(key) (key |= R_CTRL_DOWN)
+#define SET_L_ALT_DOWN(key) (key |= L_ALT_DOWN)
+#define SET_R_ALT_DOWN(key) (key |= R_ALT_DOWN)
+#define SET_L_SHIFT_UP(key) (key &= L_SHIFT_UP)
+#define SET_R_SHIFT_UP(key) (key &= R_SHIFT_UP)
+#define SET_L_CTRL_UP(key) (key &= L_CTRL_UP)
+#define SET_R_CTRL_UP(key) (key &= R_CTRL_UP)
+#define SET_L_ALT_UP(key) (key &= L_ALT_UP)
+#define SET_R_ALT_UP(key) (key &= R_ALT_UP)
+#define IS_L_SHIFT_DOWN(key) (key & L_SHIFT_DOWN)
+#define IS_R_SHIFT_DOWN(key) (key & R_SHIFT_DOWN)
+#define IS_L_CTRL_DOWN(key) (key & L_CTRL_DOWN)
+#define IS_R_CTRL_DOWN(key) (key & R_CTRL_DOWN)
+#define IS_L_ALT_DOWN(key) (key & L_ALT_DOWN)
+#define IS_R_ALT_DOWN(key) (key & R_ALT_DOWN)
 
 const unsigned char kbdCharTable[]={0,0,
 '1','2','3','4','5','6','7','8','9','0','-','=','\b',0,
@@ -66,20 +66,20 @@ const unsigned char kbdShiftCharTable[]={0,0,
 };
 
 /* Make Code */
-#define MC_BACKSPACE    0x0E
-#define MC_CTRL        0x1D
-#define MC_L_SHIFT    0x2A
-#define MC_R_SHIFT    0x36
-#define MC_ALT        0x38
-#define MC_CAPSLOCK    0x3A
-#define MC_DELETE    0x53
-#define BC_BACKSPACE    (0x80 | MC_BACKSPACE)
-#define BC_CTRL        (0x80 | MC_CTRL)
-#define BC_L_SHIFT    (0x80 | MC_L_SHIFT)
-#define BC_R_SHIFT    (0x80 | MC_R_SHIFT)
-#define BC_ALT        (0x80 | MC_ALT)
-#define BC_DELETE    (0x80 | MC_DELETE)
-#define BC_CAPSLOCK    (0x80 | MC_CAPSLOCK)
+#define MC_BACKSPACE 0x0E
+#define MC_CTRL 0x1D
+#define MC_L_SHIFT 0x2A
+#define MC_R_SHIFT 0x36
+#define MC_ALT 0x38
+#define MC_CAPSLOCK 0x3A
+#define MC_DELETE 0x53
+#define BC_BACKSPACE (0x80 | MC_BACKSPACE)
+#define BC_CTRL (0x80 | MC_CTRL)
+#define BC_L_SHIFT (0x80 | MC_L_SHIFT)
+#define BC_R_SHIFT (0x80 | MC_R_SHIFT)
+#define BC_ALT (0x80 | MC_ALT)
+#define BC_DELETE (0x80 | MC_DELETE)
+#define BC_CAPSLOCK (0x80 | MC_CAPSLOCK)
 
 static unsigned char E0Flag = 0;
 

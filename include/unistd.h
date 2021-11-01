@@ -10,12 +10,12 @@
  *--------------------------------------------------------------------------
  */
 
-#ifndef    _UNISTD_H
+#ifndef _UNISTD_H
 #define _UNISTD_H
 
 #include <types.h>
 
-extern    pid_t    fork();
-extern    int    exit(int status);
+extern pid_t fork();
+extern int exit(int status);
 
 #endif //_UNISTD_H

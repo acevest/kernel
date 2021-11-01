@@ -10,12 +10,11 @@
  *--------------------------------------------------------------------------
  */
 
-#ifndef    _GLOBAL_H
+#ifndef _GLOBAL_H
 #define _GLOBAL_H
 
-
-#ifndef    __STRING
-#define __STRING(x)    #x
+#ifndef __STRING
+#define __STRING(x) #x
 #endif
 
 #endif //_GLOBAL_H

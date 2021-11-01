@@ -14,13 +14,13 @@
 
 int isdigit(char c)
 {
-    return ('0'<=c && c<='9');
+    return ('0' <= c && c <= '9');
 }
 
 int atoi(const char *s)
 {
-    int i=0;
-    while(isdigit(*s))
+    int i = 0;
+    while (isdigit(*s))
     {
         i *= 10;
         i += (*s++ - '0');
@@ -31,12 +31,12 @@ int atoi(const char *s)
 
 void reboot()
 {
-    syscall1(SYSC_REBOOT,0);
+    syscall1(SYSC_REBOOT, 0);
 }
 
 void poweroff()
 {
-    syscall1(SYSC_REBOOT,1);
+    syscall1(SYSC_REBOOT, 1);
 }
 
 int systest()

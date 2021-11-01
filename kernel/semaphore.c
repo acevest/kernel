@@ -6,8 +6,8 @@
  * Description: none
  * ------------------------------------------------------------------------
  */
-#include<semaphore.h>
-#include<irq.h>
+#include <semaphore.h>
+#include <irq.h>
 
 typedef struct semaphore_waiter
 {
@@ -16,16 +16,15 @@ typedef struct semaphore_waiter
     int up;
 } semaphore_waiter_t;
 
-#define SEMAPHORE_WAITER_INITIALIZER(name, task)    \
-{                                                   \
-    .list   = LIST_HEAD_INIT((name).list),          \
-    .task   = task,                                 \
-    .up     = 0                                     \
-}
+#define SEMAPHORE_WAITER_INITIALIZER(name, task) \
+    {                                            \
+        .list = LIST_HEAD_INIT((name).list),     \
+        .task = task,                            \
+        .up = 0                                  \
+    }
 
-#define DECLARE_SEMAPHORE_WAITER(name, task)        \
+#define DECLARE_SEMAPHORE_WAITER(name, task) \
     semaphore_waiter_t name = SEMAPHORE_WAITER_INITIALIZER(name, task)
-
 
 void __down(semaphore_t *s)
 {
@@ -41,8 +40,8 @@ void __down(semaphore_t *s)
         schedule();
         disable_irq();
 
-        if(waiter.up)
-            ;//break;
+        if (waiter.up)
+            ; //break;
     }
 }
 
@@ -52,9 +51,9 @@ void down(semaphore_t *s)
 
     irq_save(iflags);
 
-    if(likely(s->cnt>0))
+    if (likely(s->cnt > 0))
     {
-        s->cnt --;
+        s->cnt--;
     }
     else
     {
@@ -73,15 +72,14 @@ void __up(semaphore_t *s)
     waiter->task->state = TASK_RUNNING;
 }
 
-
 void up(semaphore_t *s)
 {
     unsigned long iflags;
 
     irq_save(iflags);
-    if(likely(list_empty(&s->wait_list)))
+    if (likely(list_empty(&s->wait_list)))
     {
-        s->cnt ++;
+        s->cnt++;
     }
     else
     {

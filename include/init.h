@@ -9,6 +9,4 @@
 
 #pragma once
 
-
-#define __initdata __attribute__ ((__section__ (".init.data")))
-
+#define __initdata __attribute__((__section__(".init.data")))

@@ -17,8 +17,7 @@
 extern chrdev_t cnsl_chrdev;
 
 chrdev_t *chrdev[CHRDEV_SIZE] = {
-    &cnsl_chrdev
-};
+    &cnsl_chrdev};
 
 void ext2_setup_fs();
 unsigned int ext2_search_inpath(const char *path);
