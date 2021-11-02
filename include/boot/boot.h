@@ -48,6 +48,19 @@ struct boot_params
     struct e820map e820map;
 };
 
+typedef struct bootmem_data
+{
+    unsigned long min_pfn;
+    unsigned long max_pfn;
+
+    unsigned long last_offset;  // offset to pfn2pa(this->min_pfn);
+    unsigned long last_hit_pfn; // last hit index in bitmap
+
+    void *bitmap;
+    unsigned long mapsize;
+} bootmem_data_t;
+
 extern struct boot_params boot_params;
+extern bootmem_data_t bootmem_data;
 
 #endif
