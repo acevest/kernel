@@ -1,24 +1,23 @@
 /*
  *--------------------------------------------------------------------------
  *   File Name: page.c
- * 
+ *
  *      Author: Zhao Yanbai [zhaoyanbai@126.com]
  *              Sun Jan 24 15:14:24 2010
- * 
+ *
  * Description: none
- * 
+ *
  *--------------------------------------------------------------------------
  */
 
-#include <page.h>
-#include <types.h>
-#include <sched.h>
 #include <assert.h>
-#include <printk.h>
 #include <mm.h>
+#include <page.h>
+#include <printk.h>
+#include <sched.h>
+#include <types.h>
 
-void do_no_page(void *addr)
-{
+void do_no_page(void *addr) {
     pde_t *page_dir = (pde_t *)current->cr3;
     pte_t *page_tbl = 0;
 
@@ -28,8 +27,7 @@ void do_no_page(void *addr)
     int npde = get_npd(addr);
     int npte = get_npt(addr);
 
-    if (page_dir[npde] == 0)
-    {
+    if (page_dir[npde] == 0) {
         page_tbl = (pte_t *)alloc_one_page(0);
         assert(page_tbl != 0);
 
@@ -44,11 +42,9 @@ void do_no_page(void *addr)
     load_cr3(current);
 }
 
-void do_wp_page(void *addr)
-{
-    //printk("%s   addr %08x current %08x\n", __func__, (unsigned long)addr, current);
-    if ((unsigned long)addr >= PAGE_OFFSET)
-    {
+void do_wp_page(void *addr) {
+    // printk("%s   addr %08x current %08x\n", __func__, (unsigned long)addr, current);
+    if ((unsigned long)addr >= PAGE_OFFSET) {
         panic("%s invalid addr", __func__);
     }
 
@@ -61,8 +57,7 @@ void do_wp_page(void *addr)
     unsigned long wp_pa_addr = PAGE_ALIGN(page_tbl[npte]);
 
     page_t *page = pa2page(wp_pa_addr);
-    if (page->count > 0)
-    {
+    if (page->count > 0) {
         page->count--;
         unsigned long flags = PAGE_FLAGS(page_tbl[npte]);
         unsigned long wp_va_addr = (unsigned long)pa2va(wp_pa_addr);

@@ -1,24 +1,24 @@
 /*
  *--------------------------------------------------------------------------
  *   File Name: system.h
- * 
+ *
  * Description: none
- * 
- * 
+ *
+ *
  *      Author: Zhao Yanbai [zhaoyanbai@126.com]
- * 
+ *
  *     Version:    1.0
  * Create Date: Sat Feb  7 18:57:58 2009
  * Last Update: Sat Feb  7 18:57:58 2009
- * 
+ *
  *--------------------------------------------------------------------------
  */
 
 #ifndef _SYSTEM_H
 #define _SYSTEM_H
 
-#include <page.h>
 #include <assert.h>
+#include <page.h>
 #define KRNLADDR PAGE_OFFSET
 
 #define PT_REGS_EBX 0
@@ -40,33 +40,29 @@
 #define PT_REGS_SS 64
 
 #ifndef ASM
-#include "types.h"
 #include "printk.h"
+#include "types.h"
 
 #define likely(x) __builtin_expect(!!(x), 1)
 #define unlikely(x) __builtin_expect(!!(x), 0)
 
-#define typecheck(type, x)                 \
-    (                                      \
-        {                                  \
-            type __dummy;                  \
-            typeof(x) __dummy2;            \
-            (void)(&__dummy == &__dummy2); \
-            1;                             \
-        })
+#define typecheck(type, x)             \
+    ({                                 \
+        type __dummy;                  \
+        typeof(x) __dummy2;            \
+        (void)(&__dummy == &__dummy2); \
+        1;                             \
+    })
 
 void *kmalloc(size_t size, gfp_t gfpflags);
 void kfree(void *addr);
 
-#define panic(msg, ...)                                          \
-    do                                                           \
-    {                                                            \
-        asm("cli;");                                             \
-        printk("PANIC:" msg                                      \
-               " file:%s function:%s line:%d\n",                 \
-               ##__VA_ARGS__, __FILE__, __FUNCTION__, __LINE__); \
-        while (1)                                                \
-            ;                                                    \
+#define panic(msg, ...)                                                                                         \
+    do {                                                                                                        \
+        asm("cli;");                                                                                            \
+        printk("PANIC:" msg " file:%s function:%s line:%d\n", ##__VA_ARGS__, __FILE__, __FUNCTION__, __LINE__); \
+        while (1)                                                                                               \
+            ;                                                                                                   \
     } while (0);
 
 extern char etext, edata, end;
@@ -89,8 +85,7 @@ extern char gdtr[6], idtr[6];
 
 #define INT_STACK_SIZE PAGE_SIZE
 
-enum GDTSelectorIndex
-{
+enum GDTSelectorIndex {
     INDEX_SPACE = 0,
     INDEX_KCODE,
     INDEX_KDATA,
@@ -107,21 +102,19 @@ enum GDTSelectorIndex
     INDEX_TSS,
 };
 
-typedef struct pt_regs
-{
+typedef struct pt_regs {
     u32 ebx;
     u32 ecx;
     u32 edx;
-    u32 esi;
     u32 edi;
+    u32 esi;
     u32 ebp;
     u32 eax;
     u16 ds, _ds;
     u16 es, _es;
     u16 fs, _fs;
     u16 gs, _gs;
-    union
-    {
+    union {
         u32 irq;
         u32 errcode;
     };
@@ -134,14 +127,13 @@ typedef struct pt_regs
 
 typedef unsigned long dev_t;
 
-typedef struct system
-{
+typedef struct system {
     u32 mmap_addr;
-    u32 mmap_size; // Byte
+    u32 mmap_size;  // Byte
 
-    u32 mm_lower; // KB
-    u32 mm_upper; // KB
-    u64 mm_size;  // Byte
+    u32 mm_lower;  // KB
+    u32 mm_upper;  // KB
+    u64 mm_size;   // Byte
 
     u32 page_count;
     pPage page_map;
@@ -245,4 +237,4 @@ void system_delay();
 
 #define KRNL_INIT_STACK_SIZE 4096
 
-#endif //_SYSTEM_H
+#endif  //_SYSTEM_H

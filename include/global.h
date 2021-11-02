@@ -1,12 +1,12 @@
 /*
  *--------------------------------------------------------------------------
  *   File Name: global.h
- * 
+ *
  *      Author: Zhao Yanbai [zhaoyanbai@126.com]
  *              Sat Jan 23 14:12:40 2010
- * 
+ *
  * Description: none
- * 
+ *
  *--------------------------------------------------------------------------
  */
 
@@ -17,4 +17,4 @@
 #define __STRING(x) #x
 #endif
 
-#endif //_GLOBAL_H
+#endif  //_GLOBAL_H

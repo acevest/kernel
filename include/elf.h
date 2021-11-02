@@ -1,17 +1,19 @@
 /*
  *--------------------------------------------------------------------------
  *   File Name: elf.h
- * 
+ *
  *      Author: Zhao Yanbai [zhaoyanbai@126.com]
  *              Sat Jan 30 19:36:15 2010
- * 
+ *
  * Description: none
- * 
+ *
  *--------------------------------------------------------------------------
  */
 
 #ifndef _ELF_H
 #define _ELF_H
+
+#include <types.h>
 
 typedef u16 Elf32_Half;
 typedef u32 Elf32_Word;
@@ -31,8 +33,7 @@ typedef Elf32_Half Elf32_Versym;
  */
 
 #define EI_NIDENT (16)
-typedef struct
-{
+typedef struct {
     unsigned char e_ident[EI_NIDENT];
     Elf32_Half e_type;
     Elf32_Half e_machine;
@@ -41,12 +42,12 @@ typedef struct
     Elf32_Off e_phoff;
     Elf32_Off e_shoff;
     Elf32_Word e_flags;
-    Elf32_Half e_ehsize;    // ELF Header Size in bytes
-    Elf32_Half e_phentsize; // Program header table entry size
+    Elf32_Half e_ehsize;     // ELF Header Size in bytes
+    Elf32_Half e_phentsize;  // Program header table entry size
     Elf32_Half e_phnum;
     Elf32_Half e_shentsize;
     Elf32_Half e_shnum;
-    Elf32_Half e_shstrndx; //Section Header String Table Index
+    Elf32_Half e_shstrndx;  // Section Header String Table Index
 } Elf32_Ehdr, *pElf32_Ehdr;
 
 #define ELFMAG "\177ELF"
@@ -127,8 +128,7 @@ typedef struct
  * Section header
  *--------------------------------------------------------------------------
  */
-typedef struct
-{
+typedef struct {
     Elf32_Word sh_name;      /* Section name(string tbl index) */
     Elf32_Word sh_type;      /* Section type */
     Elf32_Word sh_flags;     /* Section flags */
@@ -147,8 +147,7 @@ typedef struct
  *--------------------------------------------------------------------------
  */
 
-typedef struct
-{
+typedef struct {
     Elf32_Word p_type;
     Elf32_Off p_offset;
     Elf32_Addr p_vaddr;
@@ -181,4 +180,4 @@ typedef struct
 #define PT_LOPROC 0x70000000 /* Start of processor-specific */
 #define PT_HIPROC 0x7FFFFFFF /* End of processor-specific */
 
-#endif //_ELF_H
+#endif  //_ELF_H

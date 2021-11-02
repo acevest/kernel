@@ -1,36 +1,33 @@
 /*
  *--------------------------------------------------------------------------
  *   File Name: fork.c
- * 
+ *
  *      Author: Zhao Yanbai [zhaoyanbai@126.com]
  *              Sun Feb  7 13:25:28 2010
- * 
+ *
  * Description: none
- * 
+ *
  *--------------------------------------------------------------------------
  */
 
-#include <sched.h>
 #include <page.h>
+#include <sched.h>
 
-int sysc_fork(pt_regs_t regs)
-{
-    return do_fork(&regs, 0);
-}
+int sysc_fork(pt_regs_t regs) { return do_fork(&regs, 0); }
 
 extern void ret_from_fork_user();
 extern void ret_from_fork_krnl();
 extern pid_t get_next_pid();
 extern list_head_t all_tasks;
 
-int do_fork(pt_regs_t *regs, unsigned long flags)
-{
+int do_fork(pt_regs_t *regs, unsigned long flags) {
     task_union *tsk;
     tsk = alloc_task_union();
 
     printk("fork task %08x flags %08x\n", tsk, flags);
-    if (tsk == NULL)
+    if (tsk == NULL) {
         panic("can not malloc PCB");
+    }
 
     memcpy(tsk, current, sizeof(task_union));
     strcpy(tsk->name, "init");
@@ -46,29 +43,25 @@ int do_fork(pt_regs_t *regs, unsigned long flags)
 
     memcpy((void *)tsk->cr3, (void *)current->cr3, PAGE_SIZE);
 
-    for (i = 0; i < PAGE_PDE_CNT; ++i)
-    {
+    for (i = 0; i < PAGE_PDE_CNT; ++i) {
         unsigned long spde = (unsigned long)pde_src[i];
         unsigned long dpde = 0;
 
-        if (i >= 768)
-        {
+        if (i >= 768) {
             pde_dst[i] = pde_src[i];
             continue;
         }
 
-        if (pde_src[i] == 0)
+        if (pde_src[i] == 0) {
             continue;
+        }
 
-        if (PAGE_ALIGN(spde) != 0)
-        {
+        if (PAGE_ALIGN(spde) != 0) {
             dpde = alloc_one_page(0);
             assert(dpde != 0);
             memset((void *)dpde, 0, PAGE_SIZE);
             dpde = PAGE_FLAGS(spde) | (unsigned long)va2pa(dpde);
-        }
-        else
-        {
+        } else {
             pde_dst[i] = 0;
             continue;
         }
@@ -76,13 +69,13 @@ int do_fork(pt_regs_t *regs, unsigned long flags)
 
         pte_t *pte_src = pa2va(PAGE_ALIGN(spde));
         pte_t *pte_dst = pa2va(PAGE_ALIGN(dpde));
-        for (j = 0; j < PAGE_PTE_CNT; ++j)
-        {
+        for (j = 0; j < PAGE_PTE_CNT; ++j) {
             pte_src[j] &= ~PAGE_WR;
             pte_dst[j] = pte_src[j];
 
-            if (pte_src[j] == 0)
+            if (pte_src[j] == 0) {
                 continue;
+            }
             printk("----pde[%u] pte_src[%u] %08x\n", i, j, pte_src[j]);
             page_t *page = pa2page(pte_src[j]);
             page->count++;
@@ -100,14 +93,13 @@ int do_fork(pt_regs_t *regs, unsigned long flags)
     *child_regs = *regs;
 
     child_regs->eax = 0;
-    child_regs->eflags |= 0x200; //enable IF
+    child_regs->eflags |= 0x200;  // enable IF
 
     tsk->esp0 = TASK_SIZE + (unsigned long)tsk;
     tsk->esp = (unsigned long)child_regs;
     tsk->eip = (unsigned long)ret_from_fork_user;
 
-    if (flags & FORK_KRNL)
-    {
+    if (flags & FORK_KRNL) {
         tsk->eip = (unsigned long)ret_from_fork_krnl;
     }
 

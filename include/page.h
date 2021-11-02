@@ -1,16 +1,16 @@
 /*
  *--------------------------------------------------------------------------
  *   File Name: page.h
- * 
+ *
  * Description: none
- * 
- * 
+ *
+ *
  *      Author: Zhao Yanbai [zhaoyanbai@126.com]
- * 
+ *
  *     Version:    1.0
  * Create Date: Sat Feb  7 21:47:42 2009
  * Last Update: Sat Feb  7 21:47:42 2009
- * 
+ *
  *--------------------------------------------------------------------------
  */
 
@@ -29,8 +29,8 @@
 #define PAGE_PTE_CNT 1024
 
 #ifndef ASM
-#include <types.h>
 #include <bits.h>
+#include <types.h>
 #define get_npd(addr) (((u32)(addr)) >> 22)
 #define get_npt(addr) ((((u32)(addr)) >> 12) & 0x3FF)
 
@@ -70,16 +70,14 @@ typedef unsigned long pte_t;
 
 typedef unsigned int gfp_t;
 
-enum page_flags
-{
+enum page_flags {
     PG_Private,
 };
 
 struct kmem_cache;
 typedef struct kmem_cache kmem_cache_t;
 
-typedef struct page
-{
+typedef struct page {
     unsigned long count;
     unsigned long flags;
     unsigned long private;
@@ -89,7 +87,7 @@ typedef struct page
     struct page *head_page;
     unsigned int order;
 
-    void **freelist; // for slub
+    void **freelist;  // for slub
     kmem_cache_t *cache;
 
     unsigned long inuse;
@@ -102,35 +100,22 @@ page_t *_pa2page(unsigned long addr);
 #define va2page(addr) _va2page(PAGE_ALIGN(addr))
 #define pa2page(addr) _pa2page(PAGE_ALIGN(addr))
 
-static inline page_t *get_head_page(page_t *page)
-{
-    return page->head_page;
-}
+static inline page_t *get_head_page(page_t *page) { return page->head_page; }
 
-#define __GETPAGEFLAG(name)                                \
-    static inline int Page##name(page_t *page)             \
-    {                                                      \
-        return constant_test_bit(PG_##name, &page->flags); \
-    }
+#define __GETPAGEFLAG(name) \
+    static inline int Page##name(page_t *page) { return constant_test_bit(PG_##name, &page->flags); }
 
-#define __SETPAGEFLAG(name)                               \
-    static inline int SetPage##name(page_t *page)         \
-    {                                                     \
-        return test_and_set_bit(PG_##name, &page->flags); \
-    }
+#define __SETPAGEFLAG(name) \
+    static inline int SetPage##name(page_t *page) { return test_and_set_bit(PG_##name, &page->flags); }
 
-#define __CLEARPAGEFLAG(name)                               \
-    static inline int ClearPage##name(page_t *page)         \
-    {                                                       \
-        return test_and_clear_bit(PG_##name, &page->flags); \
-    }
+#define __CLEARPAGEFLAG(name) \
+    static inline int ClearPage##name(page_t *page) { return test_and_clear_bit(PG_##name, &page->flags); }
 
 __GETPAGEFLAG(Private)
 __SETPAGEFLAG(Private)
 __CLEARPAGEFLAG(Private)
 
-typedef struct free_area
-{
+typedef struct free_area {
     unsigned long free_count;
     list_head_t free_list;
 } free_area_t;
@@ -140,8 +125,7 @@ void free_pages(unsigned long addr);
 
 #define alloc_one_page(gfp_mask) alloc_pages(gfp_mask, 0)
 
-struct kmem_cache
-{
+struct kmem_cache {
     const char *name;
 
     unsigned long objsize;
@@ -159,18 +143,16 @@ struct kmem_cache
 };
 
 // TODO Remove
-typedef struct page_
-{
-    //struct page *prev, *next;
+typedef struct page_ {
+    // struct page *prev, *next;
     ListHead list;
     unsigned int order;
     unsigned int mapNR;
     unsigned int count;
 } Page, *pPage;
 
-typedef struct free_area_
-{
-    //struct page *prev, *next;
+typedef struct free_area_ {
+    // struct page *prev, *next;
     ListHead freeList;
     unsigned char *map;
     unsigned int mapSize;
@@ -179,9 +161,9 @@ typedef struct free_area_
 
 pPage old_alloc_pages(unsigned int order);
 void old_free_pages(pPage page);
-//void    free_pages(pPage page, unsigned int order);
+// void    free_pages(pPage page, unsigned int order);
 void disp_free_area();
 
-#endif // ASM
+#endif  // ASM
 
-#endif //_PAGE_H
+#endif  //_PAGE_H

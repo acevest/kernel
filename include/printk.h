@@ -1,16 +1,16 @@
 /*
  *--------------------------------------------------------------------------
  *   File Name: printk.h
- * 
+ *
  * Description: none
- * 
- * 
+ *
+ *
  *      Author: Zhao Yanbai [zhaoyanbai@126.com]
- * 
+ *
  *     Version:    1.0
  * Create Date: Wed Mar  4 21:49:19 2009
  * Last Update: Wed Mar  4 21:49:19 2009
- * 
+ *
  *--------------------------------------------------------------------------
  */
 
@@ -26,8 +26,7 @@ int printlo(unsigned int line, unsigned int offset, const char *fmtstr, ...);
 #define printlr(line, fmt, args...) printlo(line, 40, fmt, ##args)
 
 // monitor print line
-enum
-{
+enum {
     MPL_TITLE,
     MPL_ROOTDEV,
     MPL_CLOCK,

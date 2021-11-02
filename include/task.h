@@ -1,12 +1,12 @@
 /*
  *--------------------------------------------------------------------------
  *   File Name: task.h
- * 
+ *
  *      Author: Zhao Yanbai [zhaoyanbai@126.com]
  *              Thu Dec 31 16:54:48 2009
- * 
+ *
  * Description: none
- * 
+ *
  *--------------------------------------------------------------------------
  */
 
@@ -18,15 +18,14 @@
 #define TI_preempt_cnt 0
 
 #ifndef ASM
-#include <page.h>
+#include <fs.h>
 #include <list.h>
-#include <types.h>
+#include <page.h>
 #include <processor.h>
 #include <system.h>
-#include <fs.h>
+#include <types.h>
 
-enum
-{
+enum {
     TASK_UNUSED,
     TASK_RUNNING,
     TASK_WAIT,
@@ -36,15 +35,12 @@ enum
 
 #define TASK_NAME_SIZE 32
 
-typedef struct wait_queue_head
-{
+typedef struct wait_queue_head {
     list_head_t task_list;
 } wait_queue_head_t;
 
-typedef union task_union
-{
-    struct
-    {
+typedef union task_union {
+    struct {
         unsigned long preempt_cnt;
 
         unsigned long esp0; /* kernel stack */
@@ -70,7 +66,7 @@ typedef union task_union
 
         wait_queue_head_t wait;
 
-        unsigned int cnt; // debug only
+        unsigned int cnt;  // debug only
     };
 
     unsigned char stack[TASK_SIZE];
@@ -78,21 +74,15 @@ typedef union task_union
 
 task_union *alloc_task_union();
 
-static inline task_union *get_current()
-{
+static inline task_union *get_current() {
     task_union *tsk;
-    asm("andl %%esp, %0;"
-        : "=r"(tsk)
-        : "0"(~(TASK_SIZE - 1)));
+    asm("andl %%esp, %0;" : "=r"(tsk) : "0"(~(TASK_SIZE - 1)));
     return tsk;
 }
 
 #define current get_current()
 
-static inline pid_t sysc_getpid()
-{
-    return current->pid;
-}
+static inline pid_t sysc_getpid() { return current->pid; }
 
 task_union *find_task(pid_t pid);
 
@@ -104,4 +94,4 @@ task_union *find_task(pid_t pid);
 #define del_tsk_from_list(tsk) list_del((&tsk->list))
 #endif
 
-#endif //_TASK_H
+#endif  //_TASK_H

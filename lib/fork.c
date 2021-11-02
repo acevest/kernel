@@ -1,20 +1,19 @@
 /*
  *--------------------------------------------------------------------------
  *   File Name: fork.c
- * 
+ *
  *      Author: Zhao Yanbai [zhaoyanbai@126.com]
  *              Sun Feb  7 13:30:24 2010
- * 
+ *
  * Description: none
- * 
+ *
  *--------------------------------------------------------------------------
  */
 
-#include <types.h>
-#include <syscall.h>
 #include <stdio.h>
-pid_t fork()
-{
+#include <syscall.h>
+#include <types.h>
+pid_t fork() {
 #if 0
     pid_t pid;
     //asm("xchg %bx, %bx;");

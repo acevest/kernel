@@ -1,16 +1,16 @@
 /*
  *--------------------------------------------------------------------------
  *   File Name: pci.h
- * 
+ *
  * Description: none
- * 
- * 
+ *
+ *
  *      Author: Zhao Yanbai [zhaoyanbai@126.com]
- * 
+ *
  *     Version:    1.0
  * Create Date: Sun Mar  8 21:32:16 2009
  * Last Update: Sun Mar  8 21:32:16 2009
- * 
+ *
  *--------------------------------------------------------------------------
  */
 
@@ -18,8 +18,8 @@
 
 #include <list.h>
 
-#define PCI_ADDR 0xCF8 // CONFIG_ADDRESS
-#define PCI_DATA 0xCFC // CONFIG_DATA
+#define PCI_ADDR 0xCF8  // CONFIG_ADDRESS
+#define PCI_DATA 0xCFC  // CONFIG_DATA
 
 // PCI Device
 /*
@@ -46,7 +46,7 @@
  * |                Base Address Register 5                |
  * +-------------------------------------------------------+ 28H
  * |                  CardBus CIS Pointer                  |
- * +---------------------------+---------------------------+ 2CH 
+ * +---------------------------+---------------------------+ 2CH
  * |        System ID          |        Subsystem ID       |
  * +---------------------------+---------------------------+ 30H
  * |               Expansion ROM Base Address              |
@@ -64,8 +64,7 @@ extern list_head_t pci_devs;
 
 #define BARS_CNT 6
 
-typedef struct pci_device
-{
+typedef struct pci_device {
     list_head_t list;
     unsigned int bus, dev, devfn;
 
@@ -77,7 +76,7 @@ typedef struct pci_device
     unsigned int progif;
     unsigned int classcode;
     unsigned int hdr_type;
-    //unsigned int bar0, bar1, bar2, bar3, bar4, bar5;
+    // unsigned int bar0, bar1, bar2, bar3, bar4, bar5;
     unsigned int bars[BARS_CNT];
     unsigned int sub_system_id;
     unsigned int system_id;
@@ -182,10 +181,7 @@ typedef union pci_device
 pci_device_t *pci_find_device(unsigned int vendor, unsigned int device);
 pci_device_t *pci_find_device_by_classcode(unsigned int classcode);
 
-static inline u32 pci_cmd(pci_device_t *pci, unsigned int reg)
-{
-    return PCI_CMD(pci->bus, pci->dev, pci->devfn, reg);
-}
+static inline u32 pci_cmd(pci_device_t *pci, unsigned int reg) { return PCI_CMD(pci->bus, pci->dev, pci->devfn, reg); }
 
 int pci_read_config_byte(int cmd);
 int pci_read_config_word(int cmd);
@@ -221,7 +217,7 @@ void pci_write_config_long(int value, int cmd);
  * | Prefetchable Memory Limit | Prefetchable Memory Base  |
  * +---------------------------+---------------------------+ 28H
  * |           Prefetchable Base  Upper 32bit              |
- * +---------------------------+---------------------------+ 2CH 
+ * +---------------------------+---------------------------+ 2CH
  * |           Prefetchable Limit Upper 32bit               |
  * +---------------------------+---------------------------+ 30H
  * |   IO Limit Upper 16bit    |  IO Base Upper 16bit      |

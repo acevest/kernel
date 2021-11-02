@@ -1,22 +1,22 @@
 /*
  *--------------------------------------------------------------------------
  *   File Name: setup.c
- * 
+ *
  * Description: none
- * 
- * 
+ *
+ *
  *      Author: Zhao Yanbai [zhaoyanbai@126.com]
- * 
+ *
  *     Version:    1.0
  * Create Date: Wed Mar  4 20:34:36 2009
  * Last Update: Wed Mar  4 20:34:36 2009
- * 
+ *
  *--------------------------------------------------------------------------
  */
 #include <bits.h>
+#include <io.h>
 #include <printk.h>
 #include <system.h>
-#include <io.h>
 
 extern void setup_gdt();
 extern void setup_idt();
@@ -38,24 +38,21 @@ extern void vga_init();
 #define CLOCK_TICK_RATE 1193180
 #define LATCH ((CLOCK_TICK_RATE + HZ / 2) / HZ)
 
-void setup_i8253()
-{
+void setup_i8253() {
     outb_p(0x34, 0x43);
     outb_p(LATCH & 0xFF, 0x40);
     outb(LATCH >> 8, 0x40);
 }
 
 #define VERSION "0.3.1"
-const char *version =
-    "Kernel version " VERSION
-    " @ " BUILDER
-    " ["__DATE__
-    " " __TIME__ "]"
+const char *version = "Kernel version " VERSION " @ " BUILDER
+                      " ["__DATE__
+                      " " __TIME__
+                      "]"
 
-    "\n";
+                      "\n";
 
-void setup_kernel()
-{
+void setup_kernel() {
     extern char kernel_begin, kernel_end;
 
     vga_init();
@@ -86,9 +83,9 @@ void setup_kernel()
     setup_irqs();
     return;
 
-    //switch_printk_screen();
+    // switch_printk_screen();
     setup_pci();
-    //switch_printk_screen();
+    // switch_printk_screen();
     system_delay();
     void ide_init();
     ide_init();
@@ -99,8 +96,8 @@ void setup_kernel()
 
     setup_fs();
 
-    //vga_puts(0, version, 0x2F);
+    // vga_puts(0, version, 0x2F);
     printk(version);
 
-    //switch_printk_screen();
+    // switch_printk_screen();
 }

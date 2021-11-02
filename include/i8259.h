@@ -1,25 +1,25 @@
 /*
  *--------------------------------------------------------------------------
  *   File Name: i8259.h
- * 
+ *
  * Description: none
- * 
- * 
+ *
+ *
  *      Author: Zhao Yanbai [zhaoyanbai@126.com]
- * 
+ *
  *     Version:    1.0
  * Create Date: Sun Nov  9 11:37:09 2008
  *     Version: 1.1
  * Last Update: Tue Feb 10 20:28:47 2009
- * 
+ *
  *--------------------------------------------------------------------------
  */
 
 #ifndef _I8259_H
 #define _I8259_H
 
-#include "irq.h"
 #include "io.h"
+#include "irq.h"
 
 #define PIC_MASTER_CMD 0x20
 #define PIC_MASTER_IMR 0x21
@@ -29,7 +29,7 @@
 #define PIC_MASTER_ISR PIC_MASTER_CMD
 #define PIC_SLAVE_ISR PIC_SLAVE_CMD
 
-#define PIC_CASCADE_IR 0x2 //The IR2 on Master Connect to Slave.
+#define PIC_CASCADE_IR 0x2  // The IR2 on Master Connect to Slave.
 
 #define PIC_AEOI 0
 
@@ -195,4 +195,4 @@ _PORT 0x20 : 0xA0_
 }}}
 #endif
 
-#endif //_I8259_H
+#endif  //_I8259_H

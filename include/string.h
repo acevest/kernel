@@ -1,16 +1,16 @@
 /*
  *--------------------------------------------------------------------------
  *   File Name: string.h
- * 
+ *
  * Description: none
- * 
- * 
+ *
+ *
  *      Author: Zhao Yanbai [zhaoyanbai@126.com]
- * 
+ *
  *     Version:    1.0
  * Create Date: Wed Jul 30 16:03:27 2008
  * Last Update: Wed Jul 30 16:03:27 2008
- * 
+ *
  *--------------------------------------------------------------------------
  */
 
@@ -29,4 +29,4 @@ void *memcpy(void *dest, const void *src, size_t size);
 void memset(void *dest, char ch, size_t size);
 int memcmp(const void *a, const void *b, size_t count);
 
-#endif //_STRING_H
+#endif  //_STRING_H

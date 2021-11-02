@@ -1,20 +1,19 @@
 /*
  *--------------------------------------------------------------------------
  *   File Name: stat.h
- * 
+ *
  *      Author: Zhao Yanbai [zhaoyanbai@126.com]
  *              Fri Feb 12 18:01:27 2010
- * 
+ *
  * Description: none
- * 
+ *
  *--------------------------------------------------------------------------
  */
 
 #ifndef _STAT_H
 #define _STAT_H
 
-typedef struct stat
-{
+typedef struct stat {
     unsigned long st_dev;
     unsigned long st_ino;
     unsigned short st_mode;
@@ -55,4 +54,4 @@ typedef struct stat
 #define S_ISFIFO(m) (((m)&S_IFMT) == S_IFIFO)
 #define S_ISSOCK(m) (((m)&S_IFMT) == S_IFSOCK)
 
-#endif //_STAT_H
+#endif  //_STAT_H

@@ -1,21 +1,20 @@
 /*
  *--------------------------------------------------------------------------
  *   File Name: stat.c
- * 
+ *
  *      Author: Zhao Yanbai [zhaoyanbai@126.com]
  *              Tue Feb 23 19:56:08 2010
- * 
+ *
  * Description: none
- * 
+ *
  *--------------------------------------------------------------------------
  */
-#include <types.h>
-#include <stat.h>
 #include <errno.h>
 #include <fs.h>
 #include <sched.h>
-int sysc_stat(int fd, struct stat *stat)
-{
+#include <stat.h>
+#include <types.h>
+int sysc_stat(int fd, struct stat *stat) {
 #if 0
     if(fd<0 || fd>=NR_OPENS)
         return -EBADF;

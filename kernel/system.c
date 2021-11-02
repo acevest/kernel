@@ -1,38 +1,36 @@
 /*
  *--------------------------------------------------------------------------
  *   File Name: system.c
- * 
+ *
  * Description: none
- * 
- * 
+ *
+ *
  *      Author: Zhao Yanbai [zhaoyanbai@126.com]
- * 
+ *
  *     Version:    1.0
  * Create Date: Wed Mar  4 21:34:47 2009
  * Last Update: Wed Mar  4 21:34:47 2009
- * 
+ *
  *--------------------------------------------------------------------------
  */
 
-#include <system.h>
-#include <string.h>
-#include <processor.h>
-#include <page.h>
-#include <irq.h>
-#include <sched.h>
 #include <assert.h>
-#include <i8259.h>
 #include <fs.h>
+#include <i8259.h>
 #include <ide.h>
+#include <irq.h>
+#include <page.h>
+#include <processor.h>
+#include <sched.h>
+#include <string.h>
 #include <syscall.h>
+#include <system.h>
 
-void setup_gdt()
-{
+void setup_gdt() {
     pDesc pdesc;
-    //change to new gdt.
+    // change to new gdt.
     sgdt();
-    memcpy(gdt, (void *)pa2va(*((unsigned long *)(gdtr + 2))),
-           *((unsigned short *)gdtr));
+    memcpy(gdt, (void *)pa2va(*((unsigned long *)(gdtr + 2))), *((unsigned short *)gdtr));
     *((unsigned short *)gdtr) = NGDT * sizeof(Desc);
     *((unsigned long *)(gdtr + 2)) = (unsigned long)gdt;
     lgdt();
@@ -44,15 +42,13 @@ void setup_gdt()
     pdesc->seg.DPL = 3;
 }
 
-void setup_idt()
-{
+void setup_idt() {
     *((unsigned short *)idtr) = NIDT * sizeof(Gate);
     *((unsigned long *)(idtr + 2)) = (unsigned long)idt;
     lidt();
 }
 
-void setup_gate()
-{
+void setup_gate() {
     int i;
     set_sys_int(0x00, TRAP_GATE, PRIVILEGE_KRNL, DivideError);
     set_sys_int(0x01, TRAP_GATE, PRIVILEGE_KRNL, Debug);
@@ -71,11 +67,9 @@ void setup_gate()
     set_sys_int(0x0E, TRAP_GATE, PRIVILEGE_KRNL, PageFault);
     set_sys_int(0x10, TRAP_GATE, PRIVILEGE_KRNL, CoprocError);
 
-    for (i = 0x11; i < 0x20; i++)
-        set_sys_int(i, INTR_GATE, PRIVILEGE_KRNL, no_irq_handler);
+    for (i = 0x11; i < 0x20; i++) set_sys_int(i, INTR_GATE, PRIVILEGE_KRNL, no_irq_handler);
 
-    for (i = 0x20; i < 256; i++)
-        set_sys_int(i, INTR_GATE, PRIVILEGE_KRNL, no_irq_handler);
+    for (i = 0x20; i < 256; i++) set_sys_int(i, INTR_GATE, PRIVILEGE_KRNL, no_irq_handler);
 
     set_sys_int(0x20, INTR_GATE, PRIVILEGE_KRNL, irq_0x00_handler);
     set_sys_int(0x21, INTR_GATE, PRIVILEGE_KRNL, irq_0x01_handler);
@@ -96,29 +90,22 @@ void setup_gate()
 }
 
 void ide_irq();
-void default_ide_irq_handler(unsigned int irq, pt_regs_t *regs, void *dev_id)
-{
-    //printk("default irq handler %d \n", irq);
+void default_ide_irq_handler(unsigned int irq, pt_regs_t *regs, void *dev_id) {
+    // printk("default irq handler %d \n", irq);
     ide_irq();
 }
 
-void default_irq_handler(unsigned int irq, pt_regs_t *regs, void *dev_id)
-{
-    printk("default irq handler %d \n", irq);
-}
+void default_irq_handler(unsigned int irq, pt_regs_t *regs, void *dev_id) { printk("default irq handler %d \n", irq); }
 
-void setup_irqs()
-{
+void setup_irqs() {
     extern void init_i8259();
     init_i8259();
 
     int i;
-    for (i = 0; i < NR_IRQS; i++)
-    {
+    for (i = 0; i < NR_IRQS; i++) {
         irq_desc[i] = no_irq_desc;
 
-        if (i < 16)
-            irq_desc[i].chip = &i8259_chip;
+        if (i < 16) irq_desc[i].chip = &i8259_chip;
     }
 
     void kbd_handler(unsigned int irq, pt_regs_t *regs, void *dev_id);
@@ -128,22 +115,18 @@ void setup_irqs()
     request_irq(0x01, kbd_handler, "Intel 8042", "PS/2 Keyboard");
     request_irq(0x0A, default_ide_irq_handler, "hard", "IDE");
     request_irq(0x0E, default_ide_irq_handler, "hard", "IDE");
-    for (i = 0; i < 16; i++)
-    {
-        if (i != 0 && i != 1 && i != 10 && i != 14)
-            request_irq(i, default_irq_handler, "default", "default");
+    for (i = 0; i < 16; i++) {
+        if (i != 0 && i != 1 && i != 10 && i != 14) request_irq(i, default_irq_handler, "default", "default");
     }
 
-    for (i = 0; i < 16; i++)
-        open_irq(i);
+    for (i = 0; i < 16; i++) open_irq(i);
 
     enable_irq();
 }
-void set_tss()
-{
+void set_tss() {
     pTSS p = &tss;
     memset((void *)p, sizeof(TSS), 0);
-    p->esp0 = 0; // delay to init root_task
+    p->esp0 = 0;  // delay to init root_task
     p->ss0 = SELECTOR_KRNL_DS;
     p->ss = SELECTOR_KRNL_DS;
     p->gs = SELECTOR_KRNL_DS;
@@ -157,14 +140,11 @@ void set_tss()
     asm("ltr %%ax" ::"a"((INDEX_TSS << 3) + 3));
 }
 
-int sysc_reboot(int mode)
-{
-
+int sysc_reboot(int mode) {
     void do_reboot();
     void do_poweroff();
 
-    switch (mode)
-    {
+    switch (mode) {
     case 0:
         do_reboot();
         break;
@@ -176,16 +156,13 @@ int sysc_reboot(int mode)
     return 0;
 }
 
-void system_delay()
-{
+void system_delay() {
     unsigned long flags;
     irq_save(flags);
     unsigned int n = system.delay;
-    while (n--)
-    {
+    while (n--) {
         unsigned long cr0;
-        asm("movl %%cr0, %%eax;"
-            : "=a"(cr0));
+        asm("movl %%cr0, %%eax;" : "=a"(cr0));
         asm("movl %%eax, %%cr0;" ::"a"(cr0));
     }
     irq_restore(flags);

@@ -1,16 +1,16 @@
 /*
  *--------------------------------------------------------------------------
  *   File Name: ext2.h
- * 
+ *
  * Description: 当然.几乎来自Linux 内核.
- * 
- * 
+ *
+ *
  *      Author: Zhao Yanbai [zhaoyanbai@126.com]
- * 
+ *
  *     Version:    1.0
  * Create Date: Fri Dec 26 22:43:43 2008
  * Last Update: Fri Dec 26 22:43:43 2008
- * 
+ *
  *--------------------------------------------------------------------------
  */
 
@@ -45,7 +45,7 @@ unsigned long ext2_block_size();
 #define EXT2_INODE_SIZE ((EXT2_SB)->s_inode_size)
 #define EXT2_INODES_PER_BLOCK (EXT2_BLOCK_SIZE / EXT2_INODE_SIZE)
 #define EXT2_FIRST_INO ((EXT2_SB)->s_first_ino)
-/* 
+/*
  * 表示第一个块号. 因为SuperBlock总是从第三个扇区开始的所以如果块的大小
  * 是1024的话SuperBlock的块号是1.而如果块的大小是2048或4096则SuperBlock
  * 的块号是0
@@ -62,8 +62,7 @@ unsigned long ext2_block_size();
  *  EXT2 FILE SYSTEM PART
  * ------------------------------------------------------------------------
  */
-typedef struct ext2_superblock
-{
+typedef struct ext2_superblock {
     u32 s_inodes_count;      /* Inodes count */
     u32 s_blocks_count;      /* Blocks count */
     u32 s_r_blocks_count;    /* Reserved blocks count */
@@ -96,7 +95,7 @@ typedef struct ext2_superblock
      * the incompatible feature set is that if there is a bit set
      * in the incompatible feature set that the kernel doesn't
      * know about, it should refuse to mount the filesystem.
-     * 
+     *
      * e2fsck's requirements are more strict; if it doesn't know
      * about a feature in either the compatible or incompatible
      * feature set, it must abort and not try to meddle with
@@ -135,8 +134,7 @@ typedef struct ext2_superblock
     u32 s_reserved[190]; /* Padding to the end of the block */
 } ext2_sb_t;
 
-typedef struct ext2_group_descriptor
-{
+typedef struct ext2_group_descriptor {
     u32 bg_block_bitmap;
     u32 bg_inode_bitmap;
     u32 bg_inode_table;
@@ -153,8 +151,7 @@ typedef struct ext2_group_descriptor
 #define EXT2_TIND_BLOCK (EXT2_DIND_BLOCK + 1)
 #define EXT2_N_BLOCKS (EXT2_TIND_BLOCK + 1)
 
-typedef struct ext2_inode
-{
+typedef struct ext2_inode {
     u16 i_mode;
     u16 i_uid;
     u32 i_size;
@@ -176,8 +173,7 @@ typedef struct ext2_inode
 } ext2_inode_t;
 
 #define EXT2_NAME_LEN 255
-typedef struct ext2_dir_ent
-{
+typedef struct ext2_dir_ent {
     u32 inode;
     u16 rec_len;
     u8 name_len;
@@ -189,8 +185,7 @@ typedef struct ext2_dir_ent
  * Ext2 目录类型.
  * 到目前为止只有低3位有效.
  */
-enum
-{
+enum {
     EXT2_FT_UNKNOWN,
     EXT2_FT_REG_FILE,
     EXT2_FT_DIR,
@@ -211,4 +206,4 @@ void ext2_read_inode(unsigned int ino, ext2_inode_t *inode);
 void ext2_read_file(const ext2_inode_t *inode, char *buf);
 void ext2_read_data(const ext2_inode_t *inode, unsigned int offset, size_t size, char *buf);
 
-#endif //_EXT2_H
+#endif  //_EXT2_H

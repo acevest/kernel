@@ -9,5 +9,5 @@
 
 #pragma once
 
-#include <system.h>
 #include <bug.h>
+#include <system.h>

@@ -7,9 +7,9 @@
  * ------------------------------------------------------------------------
  */
 
+#include <irq.h>
 #include <mm.h>
 #include <system.h>
-#include <irq.h>
 
 list_head_t slub_caches = LIST_HEAD_INIT(slub_caches);
 
@@ -21,8 +21,7 @@ list_head_t slub_caches = LIST_HEAD_INIT(slub_caches);
 
 static kmem_cache_t kmalloc_caches[SLUB_INIT_CACHE_SIZE];
 
-static bool calculate_params(kmem_cache_t *cache)
-{
+static bool calculate_params(kmem_cache_t *cache) {
     // calculate size
     unsigned long size = cache->objsize;
     unsigned long align = cache->align;
@@ -33,35 +32,26 @@ static bool calculate_params(kmem_cache_t *cache)
 
     // calculate order
     unsigned long order;
-    for (order = 1; order < MAX_ORDER; ++order)
-    {
-        if ((PAGE_SIZE << order) / cache->size >= 4)
-        {
+    for (order = 1; order < MAX_ORDER; ++order) {
+        if ((PAGE_SIZE << order) / cache->size >= 4) {
             cache->order = order;
             break;
         }
     }
 
-    if (0 == cache->order)
-    {
+    if (0 == cache->order) {
         printk("can not find a valid order\n");
         return false;
     }
 
     cache->objects = (PAGE_SIZE << cache->order) / cache->size;
 
-    if (0 == cache->objects)
-        return false;
+    if (0 == cache->objects) return false;
 
     return true;
 }
 
-static bool kmem_cache_init(kmem_cache_t *cache,
-                            const char *name,
-                            size_t size,
-                            size_t align)
-{
-
+static bool kmem_cache_init(kmem_cache_t *cache, const char *name, size_t size, size_t align) {
     memset(cache, 0, sizeof(kmem_cache_t));
 
     cache->name = name;
@@ -71,8 +61,7 @@ static bool kmem_cache_init(kmem_cache_t *cache,
     cache->partial_cnt = 0;
     INIT_LIST_HEAD(&(cache->partial));
 
-    if (!calculate_params(cache))
-        goto err;
+    if (!calculate_params(cache)) goto err;
 
     return true;
 err:
@@ -80,10 +69,8 @@ err:
     return false;
 }
 
-static page_t *get_partial(kmem_cache_t *cache, gfp_t gfpflags)
-{
-    if (list_empty(&cache->partial))
-        return 0;
+static page_t *get_partial(kmem_cache_t *cache, gfp_t gfpflags) {
+    if (list_empty(&cache->partial)) return 0;
 
     list_head_t *p = cache->partial.next;
     list_del(p);
@@ -95,22 +82,19 @@ static page_t *get_partial(kmem_cache_t *cache, gfp_t gfpflags)
     return page;
 }
 
-static page_t *new_slub(kmem_cache_t *cache, gfp_t gfpflags)
-{
+static page_t *new_slub(kmem_cache_t *cache, gfp_t gfpflags) {
     // alloc pages from buddy system
     unsigned long bgn = alloc_pages(gfpflags, cache->order);
     unsigned long end = 0;
     page_t *page = va2page(bgn);
 
-    if (0 == page)
-        return 0;
+    if (0 == page) return 0;
 
     end = bgn + cache->objects * cache->size;
 
     unsigned long last = bgn;
     unsigned long addr;
-    for (addr = bgn; addr < end; addr += cache->size)
-    {
+    for (addr = bgn; addr < end; addr += cache->size) {
         *((void **)last) = (void *)addr;
         last = addr;
     }
@@ -124,39 +108,29 @@ static page_t *new_slub(kmem_cache_t *cache, gfp_t gfpflags)
     return page;
 }
 
-static void *__slub_alloc(kmem_cache_t *cache, gfp_t gfpflags)
-{
+static void *__slub_alloc(kmem_cache_t *cache, gfp_t gfpflags) {
     void **object = 0;
     page_t *page = 0;
 
-    if (cache->page == 0)
-    {
+    if (cache->page == 0) {
         page = get_partial(cache, gfpflags);
-        if (page == 0)
-        {
+        if (page == 0) {
             page = new_slub(cache, gfpflags);
-            if (page != 0)
-            {
+            if (page != 0) {
                 cache->page = page;
             }
-        }
-        else
-        {
+        } else {
             cache->page = page;
         }
     }
 
-    if (cache->page == 0)
-        return 0;
+    if (cache->page == 0) return 0;
 
     object = cache->page->freelist;
 
-    if (object == 0)
-    {
+    if (object == 0) {
         cache->page = 0;
-    }
-    else
-    {
+    } else {
         cache->page->freelist = object[0];
         cache->page->inuse++;
     }
@@ -164,23 +138,18 @@ static void *__slub_alloc(kmem_cache_t *cache, gfp_t gfpflags)
     return object;
 }
 
-static void *slub_alloc(kmem_cache_t *cache, gfp_t gfpflags)
-{
+static void *slub_alloc(kmem_cache_t *cache, gfp_t gfpflags) {
     void **object = 0;
 
-    if (cache == 0)
-        return 0;
+    if (cache == 0) return 0;
 
     unsigned long flags;
     irq_save(flags);
 
-    if (cache->page == 0 || cache->page->freelist == 0)
-    {
+    if (cache->page == 0 || cache->page->freelist == 0) {
         cache->page = 0;
         object = __slub_alloc(cache, gfpflags);
-    }
-    else
-    {
+    } else {
         object = cache->page->freelist;
         cache->page->freelist = object[0];
         cache->page->inuse++;
@@ -191,28 +160,24 @@ static void *slub_alloc(kmem_cache_t *cache, gfp_t gfpflags)
     return object;
 }
 
-static void __slub_free(kmem_cache_t *cache, page_t *page, void *addr)
-{
+static void __slub_free(kmem_cache_t *cache, page_t *page, void *addr) {
     void *prior;
     void **object = addr;
 
     prior = object[0] = page->freelist;
     page->freelist = object;
 
-    if (page->inuse == 0)
-    {
+    if (page->inuse == 0) {
         list_del(&page->lru);
         free_pages((unsigned long)page2va(page));
     }
 
-    if (prior == 0)
-    {
+    if (prior == 0) {
         list_add(&page->lru, &cache->partial);
     }
 }
 
-static void slub_free(kmem_cache_t *cache, page_t *page, void *addr)
-{
+static void slub_free(kmem_cache_t *cache, page_t *page, void *addr) {
     unsigned long flags;
     irq_save(flags);
 
@@ -220,26 +185,19 @@ static void slub_free(kmem_cache_t *cache, page_t *page, void *addr)
 
     page->inuse--;
 
-    if (page == cache->page)
-    {
+    if (page == cache->page) {
         object[0] = page->freelist;
         page->freelist = object;
-    }
-    else
-    {
+    } else {
         __slub_free(cache, page, addr);
     }
 
     irq_restore(flags);
 }
 
-void *kmem_cache_alloc(kmem_cache_t *cache, gfp_t gfpflags)
-{
-    return slub_alloc(cache, gfpflags);
-}
+void *kmem_cache_alloc(kmem_cache_t *cache, gfp_t gfpflags) { return slub_alloc(cache, gfpflags); }
 
-void kmem_cache_free(kmem_cache_t *cache, void *addr)
-{
+void kmem_cache_free(kmem_cache_t *cache, void *addr) {
     page_t *page = 0;
 
     page = get_head_page(va2page((unsigned long)addr));
@@ -247,19 +205,16 @@ void kmem_cache_free(kmem_cache_t *cache, void *addr)
     slub_free(cache, page, addr);
 }
 
-void *kmalloc(size_t size, gfp_t gfpflags)
-{
+void *kmalloc(size_t size, gfp_t gfpflags) {
     unsigned int i;
     kmem_cache_t *cache = 0;
 
     unsigned long flags;
     irq_save(flags);
 
-    for (i = 0; i < SLUB_INIT_CACHE_SIZE; ++i)
-    {
+    for (i = 0; i < SLUB_INIT_CACHE_SIZE; ++i) {
         kmem_cache_t *p = kmalloc_caches + i;
-        if (p->objsize >= size)
-        {
+        if (p->objsize >= size) {
             cache = p;
             break;
         }
@@ -272,8 +227,7 @@ void *kmalloc(size_t size, gfp_t gfpflags)
     return addr;
 }
 
-void kfree(void *addr)
-{
+void kfree(void *addr) {
     unsigned long flags;
     irq_save(flags);
 
@@ -285,12 +239,9 @@ void kfree(void *addr)
     irq_restore(flags);
 }
 
-kmem_cache_t *kmem_cache_create(const char *name, size_t size, size_t align)
-{
-
+kmem_cache_t *kmem_cache_create(const char *name, size_t size, size_t align) {
     kmem_cache_t *cache = kmalloc(sizeof(kmem_cache_t), 0);
-    if (cache == 0)
-        return 0;
+    if (cache == 0) return 0;
 
     unsigned long flags;
     irq_save(flags);
@@ -304,18 +255,16 @@ kmem_cache_t *kmem_cache_create(const char *name, size_t size, size_t align)
     return cache;
 }
 
-void init_slub_system()
-{
+void init_slub_system() {
     unsigned int i;
     kmem_cache_t *cache;
 
-    for (i = SLUB_MIN_SHIFT; i < SLUB_MAX_SHIFT; ++i)
-    {
+    for (i = SLUB_MIN_SHIFT; i < SLUB_MAX_SHIFT; ++i) {
         cache = kmalloc_caches + i - SLUB_MIN_SHIFT;
         kmem_cache_init(cache, "kmalloc_old", 1UL << i, KMALLOC_MIN_ALIGN);
 
         list_add(&(cache->list), &slub_caches);
-        //printk("kmem objsize %d\tsize %d \n", cache->objsize, cache->size);
+        // printk("kmem objsize %d\tsize %d \n", cache->objsize, cache->size);
     }
 
 #if 0

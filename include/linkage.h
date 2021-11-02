@@ -1,16 +1,16 @@
 /*
  *--------------------------------------------------------------------------
  *   File Name: linkage.h
- * 
+ *
  * Description: none
- * 
- * 
+ *
+ *
  *      Author: Zhao Yanbai [zhaoyanbai@126.com]
- * 
+ *
  *     Version:    1.0
  * Create Date: Fri Jul  10 11:19:26 2009
  * Last Update: Fri Jul  10 11:19:26 2009
- * 
+ *
  *--------------------------------------------------------------------------
  */
 #ifndef __LINKAGE_H

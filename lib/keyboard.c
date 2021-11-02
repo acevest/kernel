@@ -1,23 +1,23 @@
 /*
  *--------------------------------------------------------------------------
  *   File Name: keyboard.h
- * 
+ *
  * Description: none
- * 
- * 
+ *
+ *
  *      Author: Zhao Yanbai [zhaoyanbai@126.com]
- * 
+ *
  *     Version:    1.0
  * Create Date: Thu Jul 16 18:39:57 2009
  * Last Update: Thu Jul 16 18:39:57 2009
- * 
+ *
  *--------------------------------------------------------------------------
  */
 #if 0
-#include <system.h>
-#include <syscall.h>
-#include <stdio.h>
 #include <io.h>
+#include <stdio.h>
+#include <syscall.h>
+#include <system.h>
 #define EXT_KEY 0x80000000 /* None Print Key */
 #define L_SHIFT_DOWN 0x00000100
 #define R_SHIFT_DOWN 0x00000200

@@ -1,12 +1,12 @@
 /*
  *--------------------------------------------------------------------------
  *   File Name: fcntl.h
- * 
+ *
  *      Author: Zhao Yanbai [zhaoyanbai@126.com]
  *              Tue Feb 23 16:24:15 2010
- * 
+ *
  * Description: none
- * 
+ *
  *--------------------------------------------------------------------------
  */
 
@@ -28,4 +28,4 @@
 #define O_FSYNC O_SYNC
 #define O_ASYNC 020000
 
-#endif //_FCNTL_H
+#endif  //_FCNTL_H

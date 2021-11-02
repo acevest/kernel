@@ -1,27 +1,22 @@
 /*
  *--------------------------------------------------------------------------
  *   File Name: lib.c
- * 
+ *
  *      Author: Zhao Yanbai [zhaoyanbai@126.com]
  *              Wed Feb 17 18:58:13 2010
- * 
+ *
  * Description: none
- * 
+ *
  *--------------------------------------------------------------------------
  */
 #include <syscall.h>
 #include <system.h>
 
-int isdigit(char c)
-{
-    return ('0' <= c && c <= '9');
-}
+int isdigit(char c) { return ('0' <= c && c <= '9'); }
 
-int atoi(const char *s)
-{
+int atoi(const char *s) {
     int i = 0;
-    while (isdigit(*s))
-    {
+    while (isdigit(*s)) {
         i *= 10;
         i += (*s++ - '0');
     }
@@ -29,27 +24,12 @@ int atoi(const char *s)
     return i;
 }
 
-void reboot()
-{
-    syscall1(SYSC_REBOOT, 0);
-}
+void reboot() { syscall1(SYSC_REBOOT, 0); }
 
-void poweroff()
-{
-    syscall1(SYSC_REBOOT, 1);
-}
+void poweroff() { syscall1(SYSC_REBOOT, 1); }
 
-int systest()
-{
-    return syscall0(SYSC_TEST);
-}
+int systest() { return syscall0(SYSC_TEST); }
 
-int sysdebug(unsigned int v)
-{
-    return syscall1(SYSC_DEBUG, v);
-}
+int sysdebug(unsigned int v) { return syscall1(SYSC_DEBUG, v); }
 
-int pause(unsigned long tick)
-{
-    return syscall1(SYSC_PAUSE, tick);
-}
+int pause(unsigned long tick) { return syscall1(SYSC_PAUSE, tick); }

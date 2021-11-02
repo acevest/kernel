@@ -18,72 +18,42 @@
     "sysenter;"             \
     "1:"
 
-static int __volatile__ __syscall0(int nr)
-{
+static int __volatile__ __syscall0(int nr) {
     int __sysc_ret__ = 0;
-    asm(SYSENTER_ASM
-        : "=a"(__sysc_ret__)
-        : "a"(nr));
+    asm(SYSENTER_ASM : "=a"(__sysc_ret__) : "a"(nr));
     return __sysc_ret__;
 }
 
-static int __volatile__ __syscall1(int nr, unsigned long a)
-{
+static int __volatile__ __syscall1(int nr, unsigned long a) {
     int __sysc_ret__ = 0;
-    asm(SYSENTER_ASM
-        : "=a"(__sysc_ret__)
-        : "a"(nr), "b"(a));
+    asm(SYSENTER_ASM : "=a"(__sysc_ret__) : "a"(nr), "b"(a));
     return __sysc_ret__;
 }
 
-static int __volatile__ __syscall2(int nr, unsigned long a, unsigned long b)
-{
+static int __volatile__ __syscall2(int nr, unsigned long a, unsigned long b) {
     int __sysc_ret__ = 0;
-    asm(SYSENTER_ASM
-        : "=a"(__sysc_ret__)
-        : "a"(nr), "b"(a), "c"(b));
+    asm(SYSENTER_ASM : "=a"(__sysc_ret__) : "a"(nr), "b"(a), "c"(b));
     return __sysc_ret__;
 }
 
-static int __volatile__ __syscall3(int nr, unsigned long a, unsigned long b, unsigned long c)
-{
+static int __volatile__ __syscall3(int nr, unsigned long a, unsigned long b, unsigned long c) {
     int __sysc_ret__ = 0;
-    asm(SYSENTER_ASM
-        : "=a"(__sysc_ret__)
-        : "a"(nr), "b"(a), "c"(b), "d"(c));
+    asm(SYSENTER_ASM : "=a"(__sysc_ret__) : "a"(nr), "b"(a), "c"(b), "d"(c));
     return __sysc_ret__;
 }
 
-static int __volatile__ __syscall4(int nr, unsigned long a, unsigned long b, unsigned long c, unsigned long d)
-{
+static int __volatile__ __syscall4(int nr, unsigned long a, unsigned long b, unsigned long c, unsigned long d) {
     int __sysc_ret__ = 0;
-    asm(SYSENTER_ASM
-        : "=a"(__sysc_ret__)
-        : "a"(nr), "b"(a), "c"(b), "d"(c), "S"(d));
+    asm(SYSENTER_ASM : "=a"(__sysc_ret__) : "a"(nr), "b"(a), "c"(b), "d"(c), "S"(d));
     return __sysc_ret__;
 }
 
-int _syscall0(int nr)
-{
-    return __syscall0(nr);
-}
+int _syscall0(int nr) { return __syscall0(nr); }
 
-int _syscall1(int nr, unsigned long a)
-{
-    return __syscall1(nr, a);
-}
+int _syscall1(int nr, unsigned long a) { return __syscall1(nr, a); }
 
-int _syscall2(int nr, unsigned long a, unsigned long b)
-{
-    return __syscall2(nr, a, b);
-}
+int _syscall2(int nr, unsigned long a, unsigned long b) { return __syscall2(nr, a, b); }
 
-int _syscall3(int nr, unsigned long a, unsigned long b, unsigned long c)
-{
-    return __syscall3(nr, a, b, c);
-}
+int _syscall3(int nr, unsigned long a, unsigned long b, unsigned long c) { return __syscall3(nr, a, b, c); }
 
-int _syscall4(int nr, unsigned long a, unsigned long b, unsigned long c, unsigned long d)
-{
-    return __syscall4(nr, a, b, c, d);
-}
+int _syscall4(int nr, unsigned long a, unsigned long b, unsigned long c, unsigned long d) { return __syscall4(nr, a, b, c, d); }

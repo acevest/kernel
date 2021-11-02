@@ -1,16 +1,16 @@
 /*
  *--------------------------------------------------------------------------
  *   File Name: types.h
- * 
+ *
  * Description: none
- * 
- * 
+ *
+ *
  *      Author: Zhao Yanbai [zhaoyanbai@126.com]
- * 
+ *
  *     Version:    1.0
  * Create Date: Wed Aug 13 23:06:22 2008
  * Last Update: Wed Aug 13 23:06:22 2008
- * 
+ *
  *--------------------------------------------------------------------------
  */
 
@@ -47,15 +47,11 @@ typedef unsigned long mode_t;
 
 #define NULL ((void *)0)
 
-typedef enum
-{
-  false,
-  true
-} bool;
+typedef enum { false, true } bool;
 
 //=========================================================================
-//Define kinds of function's type ...
+// Define kinds of function's type ...
 //=========================================================================
 typedef void (*pf_intr)();
 
-#endif //_TYPES_H
+#endif  //_TYPES_H

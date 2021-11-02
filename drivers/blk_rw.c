@@ -12,8 +12,7 @@
 #include <system.h>
 
 // only support read
-void blk_rw(dev_t dev, u64_t offset, u32_t size, char *buf)
-{
+void blk_rw(dev_t dev, u64_t offset, u32_t size, char *buf) {
     assert(DEV_MAJOR(dev) == DEV_MAJOR_HDA);
     assert(offset % SECT_SIZE == 0);
     assert(size % SECT_SIZE == 0);

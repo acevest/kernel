@@ -1,20 +1,20 @@
 /*
  *--------------------------------------------------------------------------
  *   File Name: fs.h
- * 
+ *
  *      Author: Zhao Yanbai [zhaoyanbai@126.com]
  *              Fri Feb 12 22:29:59 2010
- * 
+ *
  * Description: none
- * 
+ *
  *--------------------------------------------------------------------------
  */
 
 #ifndef _FS_H
 #define _FS_H
 
-#include <types.h>
 #include <page.h>
+#include <types.h>
 
 /* 分区表开始的位置 */
 #define PARTS_POS 0x1BE
@@ -45,22 +45,15 @@ unsigned int namei(const char *path);
 
 #define MAX_SUPT_FILE_SIZE (EXT2_IND_BLOCK * EXT2_BLOCK_SIZE)
 
-typedef struct chrdev
-{
+typedef struct chrdev {
     int (*read)(char *buf, size_t count);
 } chrdev_t;
 
-enum
-{
-    CHRDEV_CNSL,
-    CHRDEV_SIZE
-};
+enum { CHRDEV_CNSL, CHRDEV_SIZE };
 
 extern chrdev_t *chrdev[];
 
-typedef struct
-{
-
+typedef struct {
 } file_t;
 
 #if 0
@@ -114,4 +107,4 @@ static inline pInode find_empty_inode()
 }
 #endif
 
-#endif //_FS_H
+#endif  //_FS_H

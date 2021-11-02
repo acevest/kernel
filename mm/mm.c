@@ -1,26 +1,26 @@
 /*
  *--------------------------------------------------------------------------
  *   File Name: mm.c
- * 
+ *
  * Description: none
- * 
- * 
+ *
+ *
  *      Author: Zhao Yanbai [zhaoyanbai@126.com]
- * 
+ *
  *     Version:    1.0
  * Create Date: Wed Mar  4 21:08:47 2009
  * Last Update: Wed Mar  4 21:08:47 2009
- * 
+ *
  *--------------------------------------------------------------------------
  */
+#include <bits.h>
+#include <boot/boot.h>
+#include <init.h>
+#include <mm.h>
+#include <page.h>
 #include <printk.h>
 #include <system.h>
-#include <page.h>
 #include <types.h>
-#include <bits.h>
-#include <mm.h>
-#include <init.h>
-#include <boot/boot.h>
 
 extern char etext, edata, end;
 extern void init_buddy_system();
@@ -29,8 +29,7 @@ extern void init_slub_system();
 pde_t __initdata init_pgd[PDECNT_PER_PAGE] __attribute__((__aligned__(PAGE_SIZE)));
 pte_t __initdata init_pgt[PTECNT_PER_PAGE * BOOT_INIT_PAGETBL_CNT] __attribute__((__aligned__(PAGE_SIZE)));
 
-void set_page_shared(void *x)
-{
+void set_page_shared(void *x) {
     unsigned long addr = (unsigned long)x;
     addr = PAGE_ALIGN(addr);
     unsigned int npd = get_npd(addr);
@@ -42,8 +41,7 @@ void set_page_shared(void *x)
 
 extern void sysexit();
 
-void init_paging()
-{
+void init_paging() {
     unsigned int i;
     unsigned long pfn = 0;
     pte_t *pte = 0;
@@ -52,15 +50,12 @@ void init_paging()
     // 在multiboot.S是已经初始化了BOOT_INIT_PAGETBL_CNT个页
     // 这里接着初始化剩余的页
     // 最大限制内存1G
-    for (pfn = pa2pfn(BOOT_INIT_PAGETBL_CNT << 22); pfn < bootmem_data.max_pfn; ++pfn)
-    {
+    for (pfn = pa2pfn(BOOT_INIT_PAGETBL_CNT << 22); pfn < bootmem_data.max_pfn; ++pfn) {
         unsigned long ti = pfn % PAGE_PTE_CNT;
         unsigned long page_addr = pfn2pa(pfn);
-        if (ti == 0)
-        {
+        if (ti == 0) {
             pgtb_addr = (unsigned long)va2pa(bootmem_alloc_pages(1));
-            if (0 == pgtb_addr)
-                panic("No Pages for Paging...");
+            if (0 == pgtb_addr) panic("No Pages for Paging...");
 
             memset((void *)pgtb_addr, 0, PAGE_SIZE);
 
@@ -73,8 +68,7 @@ void init_paging()
 
     // paging for kernel space
     unsigned long delta = get_npd(PAGE_OFFSET);
-    for (i = delta; i < PDECNT_PER_PAGE; ++i)
-    {
+    for (i = delta; i < PDECNT_PER_PAGE; ++i) {
         init_pgd[i] = init_pgd[i - delta];
         init_pgd[i - delta] = 0;
     }
@@ -85,8 +79,7 @@ void init_paging()
     LOAD_CR3(init_pgd);
 }
 
-void init_mm()
-{
+void init_mm() {
     printk("init bootmem alloc...\n");
     init_bootmem();
     printk("init global paging...\n");

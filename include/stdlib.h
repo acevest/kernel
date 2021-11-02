@@ -1,12 +1,12 @@
 /*
  *--------------------------------------------------------------------------
  *   File Name: stdlib.h
- * 
+ *
  *      Author: Zhao Yanbai [zhaoyanbai@126.com]
  *              Wed Feb 17 19:01:02 2010
- * 
+ *
  * Description: none
- * 
+ *
  *--------------------------------------------------------------------------
  */
 
@@ -15,4 +15,4 @@
 
 extern int atoi(const char *s);
 
-#endif //_STDLIB_H
+#endif  //_STDLIB_H

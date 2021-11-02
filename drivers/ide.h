@@ -118,8 +118,7 @@ extern unsigned int HD_CHL1_CTL_BASE;
 #define PARTITION_TABLE_OFFSET 0x1BE
 #define MAX_SUPPORT_PARTITION_CNT 16
 
-typedef struct
-{
+typedef struct {
     u64_t lba_start;
     u64_t lba_end;
 } part_t;
