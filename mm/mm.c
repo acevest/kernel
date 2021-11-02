@@ -54,7 +54,7 @@ void init_paging() {
         unsigned long ti = pfn % PAGE_PTE_CNT;
         unsigned long page_addr = pfn2pa(pfn);
         if (ti == 0) {
-            pgtb_addr = (unsigned long)va2pa(bootmem_alloc_pages(1));
+            pgtb_addr = (unsigned long)va2pa(alloc_from_bootmem(PAGE_SIZE, "paging"));
             if (0 == pgtb_addr) panic("No Pages for Paging...");
 
             memset((void *)pgtb_addr, 0, PAGE_SIZE);
@@ -83,6 +83,7 @@ void init_mm() {
     printk("init bootmem alloc...\n");
     init_bootmem();
     printk("init global paging...\n");
+
     init_paging();
 
     printk("init buddy system...\n");

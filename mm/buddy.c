@@ -30,7 +30,8 @@ page_t *_va2page(unsigned long addr) {
     assert(page >= buddy_system.page_map);
     // assert(page < buddy_system.page_map_end);
     if (page >= buddy_system.page_map_end) {
-        printk("buddy_system.page_map %08x buddy_system.page_map_end %08x\n", buddy_system.page_map, buddy_system.page_map_end);
+        printk("buddy_system.page_map %08x buddy_system.page_map_end %08x\n", buddy_system.page_map,
+               buddy_system.page_map_end);
         printk("error %s page %08x addr %08x\n", __func__, page, addr);
         panic("error");
     }
@@ -199,7 +200,7 @@ void init_buddy_system() {
 
     // init page map
     unsigned long page_map_size = pfn_cnt * sizeof(page_t);
-    buddy_system.page_map = alloc_bootmem(page_map_size, PAGE_SIZE);
+    buddy_system.page_map = alloc_from_bootmem(page_map_size, "buddy");
     if (0 == buddy_system.page_map) {
         printk("can not go on playing...\n");
         while (1)
@@ -207,7 +208,8 @@ void init_buddy_system() {
     }
 
     buddy_system.page_map_end = buddy_system.page_map + pfn_cnt + 1;
-    printk("page_map begin %08x end %08x pfncnt %u page_t size %u\n", buddy_system.page_map, buddy_system.page_map_end, pfn_cnt, sizeof(page_t));
+    printk("page_map begin %08x end %08x pfncnt %u page_t size %u\n", buddy_system.page_map, buddy_system.page_map_end,
+           pfn_cnt, sizeof(page_t));
     for (i = 0; i < pfn_cnt; ++i) {
         page = buddy_system.page_map + i;
         memset((void *)page, 0, sizeof(page_t));
