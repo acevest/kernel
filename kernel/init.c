@@ -46,35 +46,33 @@ void init_task_entry() {
     }
 }
 
-int kernel_fork() {
-    int pid = 0;
-
-    pt_regs_t *regs = ((pt_regs_t *)(TASK_SIZE + ((unsigned long)current))) - 1;
-    unsigned long *pedx = &(regs->edx);
-
-    asm volatile(
-        "movl $1f, %[pedx];"
-        "call do_fork;"
-        "1:"
-        : "=a"(pid)
-        : [pedx] "m"(pedx));
-
-    return pid;
-}
-
-void kernel_task(void *entry) {
+extern void ret_from_fork_krnl();
+void kernel_task(char *name, void *entry) {
     pt_regs_t regs;
+    
     memset((void *)&regs, 0, sizeof(regs));
+    
+    // 内核任务入口
     regs.edx = (unsigned long)entry;
-    // int pid = do_fork(&regs, FORK_KRNL);
-    // int pid = kernel_fork();
+    
+    // 创建内核任务的时候就直接指定其在fork后走的路径
+    // 就不用走sysexit那个路径了
+    regs.eip = (unsigned long)ret_from_fork_krnl;
+    regs.cs = SELECTOR_KRNL_CS;
+    regs.ds = SELECTOR_KRNL_DS;
+    regs.es = SELECTOR_KRNL_DS;
+    regs.ss = SELECTOR_KRNL_DS;
+    regs.eflags = (1 << 9); // enable IF
+
     int pid = do_fork(&regs, FORK_KRNL);
+
     printk("kernel task pid is %d\n", pid);
+
     enable_irq();
 }
 
 void root_task_entry() {
-    kernel_task(init_task_entry);
+    kernel_task("init", init_task_entry);
     // kernel_task(user_task_entry);
     // kernel_task(init_task_entry);
 

@@ -90,10 +90,13 @@ int do_fork(pt_regs_t *regs, unsigned long flags) {
 
     pt_regs_t *child_regs = ((pt_regs_t *)(TASK_SIZE + (unsigned long)tsk)) - 1;
 
-    *child_regs = *regs;
+    printk("child regs: %x %x %d\n", child_regs, regs, sizeof(regs));
+    //*child_regs = *regs;
+    memcpy(child_regs, regs, sizeof(*regs));
+    asm("xchg %bx, %bx");
 
     child_regs->eax = 0;
-    child_regs->eflags |= 0x200;  // enable IF
+    //child_regs->eflags |= 0x200;  // enable IF
 
     tsk->esp0 = TASK_SIZE + (unsigned long)tsk;
     tsk->esp = (unsigned long)child_regs;

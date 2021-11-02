@@ -1243,7 +1243,7 @@ speaker: enabled=1, mode=sound, volume=15
 # Example:
 #   magic_break: enabled=1
 #=======================================================================
-#magic_break: enabled=1
+magic_break: enabled=1
 
 #=======================================================================
 # DEBUG_SYMBOLS:

@@ -83,10 +83,14 @@ ret_from_fork_user:
     sti        /* sysenter have cleared IF, and sysexit will not set IF. */
     sysexit
 
+
+// 内核线程fork出路
 ret_from_fork_krnl:
-    movl    PT_REGS_EDX(%esp), %edx
-    sti
+    RESTORE_REGS
+    addl    $24, %esp
     call    *%edx
+
+    # 还没有实现do_exit
     #call    do_exit
 
     
