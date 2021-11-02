@@ -42,7 +42,8 @@ void e820_print_map() {
     for (i = 0; i < boot_params.e820map.map_cnt; ++i) {
         struct e820_entry *p = boot_params.e820map.map + i;
 
-        printk(" [%02d] 0x%08x - 0x%08x size %- 10d %8dKB %5dMB ", i, p->addr, p->addr + p->size - 1, p->size, p->size >> 10, p->size >> 20);
+        printk(" [%02d] 0x%08x - 0x%08x size %- 10d %8dKB %5dMB ", i, p->addr, p->addr + p->size - 1, p->size,
+               p->size >> 10, p->size >> 20);
 
         e820_print_type(p->type);
 
@@ -61,28 +62,34 @@ void e820_init_bootmem_data() {
 
     memset(&bootmem_data, 0, sizeof(bootmem_data));
     bootmem_data.min_pfn = ~0UL;
-
-    unsigned long bgn_pfn;
-    unsigned long end_pfn;
+    bootmem_data.max_pfn = 0;
 
     for (i = 0; i < boot_params.e820map.map_cnt; ++i) {
         struct e820_entry *p = boot_params.e820map.map + i;
 
-        if (p->type != E820_RAM) continue;
+        if (p->type != E820_RAM) {
+            continue;
+        }
 
-        bgn_pfn = PFN_UP(p->addr);
-        end_pfn = PFN_DW(p->addr + p->size);
+        unsigned long bgn_pfn = PFN_UP(p->addr);
+        unsigned long end_pfn = PFN_DW(p->addr + p->size);
 
-        if (bootmem_data.max_pfn < end_pfn) bootmem_data.max_pfn = end_pfn;
+        if (bootmem_data.min_pfn > bgn_pfn) {
+            bootmem_data.min_pfn = bgn_pfn;
+        }
+
+        if (bootmem_data.max_pfn < end_pfn) {
+            bootmem_data.max_pfn = end_pfn;
+        }
     }
-
-    bootmem_data.min_pfn = 0;
 
     // limit max_pfn
     unsigned long max_support_pfn = PFN_DW(MAX_SUPT_PHYMM_SIZE);
     if (bootmem_data.max_pfn > max_support_pfn) {
         bootmem_data.max_pfn = max_support_pfn;
+        printk("memory > 1G, only support to 1G.\n");
     }
+    printk("pfn_min: %d pfn_max: %d\n", bootmem_data.min_pfn, bootmem_data.max_pfn);
 }
 
 void register_bootmem_pages() {
