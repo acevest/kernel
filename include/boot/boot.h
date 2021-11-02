@@ -49,8 +49,8 @@ typedef struct bootmem_data {
     unsigned long min_pfn;
     unsigned long max_pfn;
 
-    unsigned long last_offset;   // offset to pfn2pa(this->min_pfn);
-    unsigned long last_hit_pfn;  // last hit index in bitmap
+    // 准备分配的超始pfn
+    unsigned long prepare_alloc_pfn;
 
     void *bitmap;
     unsigned long mapsize;
