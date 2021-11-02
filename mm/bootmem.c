@@ -158,15 +158,6 @@ void init_bootmem() {
     e820_print_map();
     e820_init_bootmem_data();
     init_bootmem_allocator();
-
-#if 0
-    printk("alloc 10 bytes align 8    addr %08x\n", alloc_bootmem(10, 8));
-    printk("alloc 40961 bytes align 4096 addr %08x\n", alloc_bootmem(40961, 4096));
-    printk("alloc 5  bytes align 4    addr %08x\n", alloc_bootmem(5, 4));
-    printk("alloc 10 bytes align 1024 addr %08x\n", alloc_bootmem(10, 1024));
-    printk("alloc 123bytes align 2    addr %08x\n", alloc_bootmem(123, 2));
-    printk("alloc 123bytes align 2    addr %08x\n", alloc_bootmem(123, 2));
-#endif
 }
 
 // 由于只有在构建buddy system的时候才会用到
@@ -174,7 +165,6 @@ void init_bootmem() {
 void *alloc_from_bootmem(unsigned long size, char *title) {
     void *region = NULL;
     unsigned long pfn_cnt = PFN_UP(size);
-    printk("%s alloc bootmem size: %x pfn: %d\n", title, size, pfn_cnt);
 
     bootmem_data_t *pbd = &bootmem_data;
 
@@ -215,6 +205,8 @@ find_next_block:
     region = pfn2va(bgn_pfn);
 
     pbd->prepare_alloc_pfn = end_pfn;
+
+    printk("%s alloc bootmem size: %x pfn cnt: %d [%d, %d)\n", title, size, pfn_cnt, bgn_pfn, end_pfn);
 
     return region;
 }

@@ -169,21 +169,6 @@ void dump_buddy_system() {
 
         printk("\n");
     }
-
-#if 0
-    printk("alloc 1 pages va 0x%08x\n", alloc_pages(0, 0));
-    printk("alloc 1 pages va 0x%08x\n", alloc_pages(0, 0));
-    printk("alloc 1 pages va 0x%08x\n", alloc_pages(0, 0));
-    printk("alloc 1 pages va 0x%08x\n", alloc_pages(0, 0));
-    printk("alloc 1 pages va 0x%08x\n", alloc_pages(0, 0));
-    printk("alloc 1 pages va 0x%08x\n", alloc_pages(0, 0));
-    printk("alloc 1 pages va 0x%08x\n", alloc_pages(0, 0));
-    printk("alloc 1 pages va 0x%08x\n", alloc_pages(0, 0));
-    printk("alloc 1 pages va 0x%08x\n", alloc_pages(0, 0));
-    printk("alloc 2 pages va 0x%08x\n", alloc_pages(0, 1));
-    printk("alloc 4 pages va 0x%08x\n", alloc_pages(0, 2));
-    printk("alloc 8 pages va 0x%08x\n", alloc_pages(0, 3));
-#endif
 }
 
 void init_buddy_system() {
@@ -232,5 +217,5 @@ void init_buddy_system() {
     // free bootmem bitmap pages to buddy system
     // ...
 
-    // dump_buddy_system();
+    dump_buddy_system();
 }
