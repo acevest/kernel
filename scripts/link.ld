@@ -49,6 +49,25 @@ SECTIONS
 
     ebss = .;
 
+    .ring3.text : AT(phys_addr) ALIGN(0x1000)
+    {
+        phys_addr = . - kernel_virtual_addr_start;
+	*(.ring3.text);
+    }
+
+    .ring3.data : AT(phys_addr) ALIGN(0x1000)
+    {
+        phys_addr = . - kernel_virtual_addr_start;
+	*(.ring3.data);
+    }
+
+    .ring3.bss : AT(phys_addr) ALIGN(0x1000)
+    {
+        phys_addr = . - kernel_virtual_addr_start;
+	*(.ring3.bss);
+    }
+
+
     .init.data : AT(phys_addr) ALIGN(0x1000)
     {
         initdata = .;

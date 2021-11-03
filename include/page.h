@@ -17,9 +17,9 @@
 #ifndef _PAGE_H
 #define _PAGE_H
 
-#define PAGE_P 0x1
-#define PAGE_WR 0x2
-#define PAGE_US 0x4
+#define PAGE_P 0x1   // 在内存中
+#define PAGE_WR 0x2  // 表示可读写
+#define PAGE_US 0x4  // 用户级
 
 #define PAGE_SHIFT (12)
 #define PAGE_SIZE (1UL << PAGE_SHIFT)

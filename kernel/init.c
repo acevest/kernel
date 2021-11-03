@@ -13,31 +13,66 @@
 
 void root_task_entry();
 
-TSS tss;
 System system;
-Desc idt[NIDT];
-Desc gdt[NGDT];
+TSS tss;
+Desc idt[NIDT] __attribute__((__aligned__(8)));
+Desc gdt[NGDT] __attribute__((__aligned__(8)));
+char gdtr[6] __attribute__((__aligned__(4)));
+char idtr[6] __attribute__((__aligned__(4)));
 
-char __initdata kernel_init_stack[KRNL_INIT_STACK_SIZE] __attribute__((__aligned__(PAGE_SIZE)));
+// char __initdata kernel_init_stack[KRNL_INIT_STACK_SIZE] __attribute__((__aligned__(PAGE_SIZE)));
 
-int debug_wait_queue_get();
+// int debug_wait_queue_get();
 
-// #define __ring3section__ __attribute__((__section__(".ring3")))
+#define __ring3text__ __attribute__((__section__(".ring3.text"), __aligned__(PAGE_SIZE)))
+#define __ring3data__ __attribute__((__section__(".ring3.data"), __aligned__(PAGE_SIZE)))
+#define __ring3bss__ __attribute__((__section__(".ring3.bss"), __aligned__(PAGE_SIZE)))
 
-// char __attribute__((__section__(".ring3.data"))) ring3_stack[PAGE_SIZE] = {0};
-// void __ring3section__ ring3_entry() {
-//     while (1) {
-//         systest();
-//     }
-// }
+char __ring3data__ ring3_stack[PAGE_SIZE] = {0};
+char __ring3bss__ ring3_stack[PAGE_SIZE];
+void __ring3text__ ring3_entry() {
+    while (1) {
+        systest();
+    }
+}
 
 void user_task_entry() {
     // printk("user_task_entry: %08x\n", ring3_entry);
 
+    unsigned long ring3_text_page = va2pa(alloc_one_page(0));
+    unsigned long ring3_data_page = va2pa(alloc_one_page(0));
+    unsigned long ring3_bss_page = va2pa(alloc_one_page(0));
+    unsigned long *pt_text_page = (unsigned long *)va2pa(alloc_one_page(0));
+    unsigned long *pt_data_page = (unsigned long *)va2pa(alloc_one_page(0));
+    unsigned long *pt_bss_page = (unsigned long *)va2pa(alloc_one_page(0));
+    unsigned long *p = (unsigned long *)current->cr3;
+
+    // text: 0x0800_0000
+    // data: 0x2000_0000
+    //  bss: 0x3000_0000
+    unsigned long text_at = 0x08000000;
+    unsigned long data_at = 0x20000000;
+    unsigned long bbs_at = 0x30000000;
+
+    unsigned long flag = 0;
+
+    flag |= PAGE_P;
+    flag |= PAGE_US;
+
+    p[text_at >> 22] = (unsigned long)pt_text_page | PAGE_P | PAGE_US;
+    pt_text_page[0] = ring3_text_page;
+    p[data_at >> 22] = (unsigned long)pt_data_page | PAGE_P | PAGE_WR | PAGE_US;
+    pt_data_page[0] = ring3_data_page;
+    p[bbs_at >> 22] = (unsigned long)pt_bss_page | PAGE_P | PAGE_WR | PAGE_US;
+    pt_bss_page[0] = ring3_bss_page;
+
+    LOAD_CR3(current->cr3);
+
     // 现在要准备返回用户态
     // eip --> edx
     // esp --> ecx
-    // asm("sysexit;" ::"d"(ring3_entry), "c"(ring3_stack + PAGE_SIZE));
+    asm("xchg %bx, %bx");
+    // asm("sysexit;" ::"d"(0x08000000), "c"(0x30000000 + PAGE_SIZE));
     while (1) {
         asm("hlt;");
     }

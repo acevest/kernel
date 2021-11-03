@@ -64,7 +64,7 @@ void init_root_tsk() {
     //    root_task.fps[i] = 0;
 
     root_task.esp0 = ((unsigned long)&root_task) + sizeof(root_task);
-    root_task.cr3 = (unsigned long)init_pgd;
+    root_task.cr3 = (unsigned long)(init_pgd);
 
     tss.esp0 = root_task.esp0;
 
