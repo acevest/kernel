@@ -30,9 +30,7 @@ int do_fork(pt_regs_t *regs, unsigned long flags) {
     }
 
     memcpy(tsk, current, sizeof(task_union));
-    tsk->priority = 61;
 
-    //{
     tsk->cr3 = (unsigned long)alloc_one_page(0);
     assert(tsk->cr3 != 0);
 
@@ -80,9 +78,6 @@ int do_fork(pt_regs_t *regs, unsigned long flags) {
             page->count++;
         }
     }
-    //}
-
-    load_cr3(current);
 
     tsk->pid = get_next_pid();
     tsk->ppid = current->pid;
@@ -98,7 +93,6 @@ int do_fork(pt_regs_t *regs, unsigned long flags) {
     tsk->esp0 = TASK_SIZE + (unsigned long)tsk;
     tsk->esp = (unsigned long)child_regs;
     tsk->eip = (unsigned long)ret_from_fork_user;
-
     if (flags & FORK_KRNL) {
         tsk->eip = (unsigned long)ret_from_fork_krnl;
     }
@@ -109,15 +103,12 @@ int do_fork(pt_regs_t *regs, unsigned long flags) {
     tsk->weight = TASK_INIT_WEIGHT;
 
     INIT_LIST_HEAD(&tsk->list);
-
     unsigned long iflags;
     irq_save(iflags);
     list_add(&tsk->list, &all_tasks);
     irq_restore(iflags);
 
     tsk->state = TASK_RUNNING;
-
-    printk("%s:%d\n", __func__, __LINE__);
 
     return (int)tsk->pid;
 }
