@@ -109,34 +109,3 @@ sysexit:
     popl    %edx;
     popl    %ecx;
     ret
-
-.global ring3
-.global ring3_stack_top
-ring3:
-    nop;
-    nop;
-
-    #movl $(ring3_stack+100), %esp
-
-    movl $11, %eax;
-
-    pushl $1f;
-    pushl %ecx;
-    pushl %edx;
-    pushl %ebp;
-    movl %esp,%ebp;
-    sysenter;
-    1:
-
-    nop;
-    nop;
-
-    jmp ring3
-
-ring3_stack:
-    .long   0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-    .long   0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-    .long   0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-    .long   0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-ring3_stack_top:
-    .long   0x12345678

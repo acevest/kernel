@@ -22,15 +22,25 @@ char __initdata kernel_init_stack[KRNL_INIT_STACK_SIZE] __attribute__((__aligned
 
 int debug_wait_queue_get();
 
-extern void *ring3;
-extern void *ring3_stack_top;
+// #define __ring3section__ __attribute__((__section__(".ring3")))
+
+// char __attribute__((__section__(".ring3.data"))) ring3_stack[PAGE_SIZE] = {0};
+// void __ring3section__ ring3_entry() {
+//     while (1) {
+//         systest();
+//     }
+// }
+
 void user_task_entry() {
-    printk("user_task_entry: %08x %08x\n", ring3_stack_top, &ring3_stack_top);
-#if 0
-    asm("sti;sysexit;"::"d"(&ring3), "c"(&ring3_stack_top));
-#else
-    sysc_exec("/bin/shell", 0);
-#endif
+    // printk("user_task_entry: %08x\n", ring3_entry);
+
+    // 现在要准备返回用户态
+    // eip --> edx
+    // esp --> ecx
+    // asm("sysexit;" ::"d"(ring3_entry), "c"(ring3_stack + PAGE_SIZE));
+    while (1) {
+        asm("hlt;");
+    }
 }
 
 void init_task_entry() {
@@ -56,7 +66,6 @@ void init_task_entry() {
     }
 }
 
-extern void ret_from_fork_krnl();
 void kernel_task(char *name, void *entry) {
     pt_regs_t regs;
 
@@ -67,6 +76,7 @@ void kernel_task(char *name, void *entry) {
 
     // 创建内核任务的时候就直接指定其在fork后走的路径
     // 就不用走sysexit那个路径了
+    extern void ret_from_fork_krnl();
     regs.eip = (unsigned long)ret_from_fork_krnl;
     regs.cs = SELECTOR_KRNL_CS;
     regs.ds = SELECTOR_KRNL_DS;
@@ -85,7 +95,7 @@ void root_task_entry() {
 
     kernel_task("init", init_task_entry);
     kernel_task("test", init_task_entry);
-    // kernel_task(user_task_entry);
+    kernel_task("user", user_task_entry);
 
     int cnt = 0;
     while (1) {
