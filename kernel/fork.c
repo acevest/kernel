@@ -31,14 +31,14 @@ int do_fork(pt_regs_t *regs, unsigned long flags) {
 
     memcpy(tsk, current, sizeof(task_union));
 
-    tsk->cr3 = (unsigned long)alloc_one_page(0);
+    tsk->cr3 = va2pa((unsigned long)alloc_one_page(0));
     assert(tsk->cr3 != 0);
 
     unsigned int i, j;
-    pde_t *pde_src = (pde_t *)current->cr3;
-    pde_t *pde_dst = (pde_t *)tsk->cr3;
+    pde_t *pde_src = (pde_t *)pa2va(current->cr3);
+    pde_t *pde_dst = (pde_t *)pa2va(tsk->cr3);
 
-    memcpy((void *)tsk->cr3, (void *)current->cr3, PAGE_SIZE);
+    memcpy((void *)pa2va(tsk->cr3), (void *)pa2va(current->cr3), PAGE_SIZE);
 
     for (i = 0; i < PAGE_PDE_CNT; ++i) {
         unsigned long spde = (unsigned long)pde_src[i];

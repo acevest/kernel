@@ -76,7 +76,7 @@ void init_paging() {
     // paging for user space
     set_page_shared(sysexit);
 
-    LOAD_CR3(init_pgd);
+    LoadCR3(va2pa(init_pgd));
 }
 
 void init_mm() {

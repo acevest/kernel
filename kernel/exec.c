@@ -31,7 +31,7 @@ void put_paging(unsigned long vaddr, unsigned long paddr, unsigned long flags) {
     unsigned int npde = get_npd(vaddr);
     unsigned int npte = get_npt(vaddr);
 
-    pde_t *page_dir = (pde_t *)current->cr3;
+    pde_t *page_dir = (pde_t *)pa2va(current->cr3);
     pte_t *page_table = (pte_t *)PAGE_ALIGN(page_dir[npde]);
 
     if (page_table == 0) {

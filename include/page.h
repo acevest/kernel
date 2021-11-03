@@ -66,7 +66,7 @@ typedef unsigned long pte_t;
 
 #define MAX_ORDER (11)
 
-#define LOAD_CR3(pde) asm("movl %%edx, %%cr3" ::"d"(va2pa(pde)))
+#define LoadCR3(cr3) asm volatile ("movl %%edx, %%cr3"::"d"(cr3))
 
 typedef unsigned int gfp_t;
 

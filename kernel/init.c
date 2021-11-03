@@ -37,36 +37,40 @@ void __ring3text__ ring3_entry() {
 }
 
 void user_task_entry() {
-    // printk("user_task_entry: %08x\n", ring3_entry);
+    // // printk("user_task_entry: %08x\n", ring3_entry);
 
-    unsigned long ring3_text_page = va2pa(alloc_one_page(0));
-    unsigned long ring3_data_page = va2pa(alloc_one_page(0));
-    unsigned long ring3_bss_page = va2pa(alloc_one_page(0));
-    unsigned long *pt_text_page = (unsigned long *)va2pa(alloc_one_page(0));
-    unsigned long *pt_data_page = (unsigned long *)va2pa(alloc_one_page(0));
-    unsigned long *pt_bss_page = (unsigned long *)va2pa(alloc_one_page(0));
-    unsigned long *p = (unsigned long *)current->cr3;
+    // unsigned long ring3_text_page = va2pa(alloc_one_page(0));
+    // unsigned long ring3_data_page = va2pa(alloc_one_page(0));
+    // unsigned long ring3_bss_page = va2pa(alloc_one_page(0));
+    // unsigned long *pt_text_page = (unsigned long *)va2pa(alloc_one_page(0));
+    // unsigned long *pt_data_page = (unsigned long *)va2pa(alloc_one_page(0));
+    // unsigned long *pt_bss_page = (unsigned long *)va2pa(alloc_one_page(0));
+    // unsigned long *p = (unsigned long *)((current->cr3 - 0xC0000000));
 
-    // text: 0x0800_0000
-    // data: 0x2000_0000
-    //  bss: 0x3000_0000
-    unsigned long text_at = 0x08000000;
-    unsigned long data_at = 0x20000000;
-    unsigned long bbs_at = 0x30000000;
+    //  asm volatile("xchg %%bx, %%bx;mov %%eax, %%ebx;xchg %%bx, %%bx;"::"a"(p));
 
-    unsigned long flag = 0;
+    // // text: 0x0800_0000
+    // // data: 0x2000_0000
+    // //  bss: 0x3000_0000
+    // unsigned long text_at = 0x08000000;
+    // unsigned long data_at = 0x20000000;
+    // unsigned long bbs_at = 0x30000000;
 
-    flag |= PAGE_P;
-    flag |= PAGE_US;
+    // unsigned long flag = 0;
 
-    p[text_at >> 22] = (unsigned long)pt_text_page | PAGE_P | PAGE_US;
-    pt_text_page[0] = ring3_text_page;
-    p[data_at >> 22] = (unsigned long)pt_data_page | PAGE_P | PAGE_WR | PAGE_US;
-    pt_data_page[0] = ring3_data_page;
-    p[bbs_at >> 22] = (unsigned long)pt_bss_page | PAGE_P | PAGE_WR | PAGE_US;
-    pt_bss_page[0] = ring3_bss_page;
+    // flag |= PAGE_P;
+    // flag |= PAGE_US;
 
-    LOAD_CR3(current->cr3);
+    // p[text_at >> 22] = (unsigned long)pt_text_page | PAGE_P | PAGE_US;
+    // pt_text_page[0] = ring3_text_page;
+    // p[data_at >> 22] = (unsigned long)pt_data_page | PAGE_P | PAGE_WR | PAGE_US;
+    // pt_data_page[0] = ring3_data_page;
+    // p[bbs_at >> 22] = (unsigned long)pt_bss_page | PAGE_P | PAGE_WR | PAGE_US;
+    // pt_bss_page[0] = ring3_bss_page;
+
+    // // 
+    // asm("xchg %bx, %bx");
+    // LOAD_CR3((unsigned long)p);
 
     // 现在要准备返回用户态
     // eip --> edx

@@ -39,7 +39,7 @@ pid_t get_next_pid() {
     return pid;
 }
 
-void load_cr3(task_union *tsk) { LOAD_CR3(tsk->cr3); }
+void load_cr3(task_union *tsk) { LoadCR3(tsk->cr3); }
 
 extern pde_t __initdata init_pgd[PDECNT_PER_PAGE] __attribute__((__aligned__(PAGE_SIZE)));
 
@@ -64,7 +64,7 @@ void init_root_tsk() {
     //    root_task.fps[i] = 0;
 
     root_task.esp0 = ((unsigned long)&root_task) + sizeof(root_task);
-    root_task.cr3 = (unsigned long)(init_pgd);
+    root_task.cr3 = va2pa((unsigned long)(init_pgd));
 
     tss.esp0 = root_task.esp0;
 
@@ -87,7 +87,7 @@ task_union *alloc_task_union() { return (task_union *)kmem_cache_alloc(task_unio
 inline task_union *get_next_tsk() { return 0; }
 
 void switch_to() {
-    LOAD_CR3(current->cr3);
+    LoadCR3(current->cr3);
     tss.esp0 = current->esp0;
     wrmsr(MSR_SYSENTER_ESP, current->esp0, 0);
 }

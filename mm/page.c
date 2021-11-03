@@ -18,7 +18,7 @@
 #include <types.h>
 
 void do_no_page(void *addr) {
-    pde_t *page_dir = (pde_t *)current->cr3;
+    pde_t *page_dir = (pde_t *)pa2va(current->cr3);
     pte_t *page_tbl = 0;
 
     unsigned long page = alloc_one_page(0);
@@ -51,7 +51,7 @@ void do_wp_page(void *addr) {
     int npde = get_npd(addr);
     int npte = get_npt(addr);
 
-    pde_t *page_dir = (pde_t *)current->cr3;
+    pde_t *page_dir = (pde_t *)pa2va(current->cr3);
     pte_t *page_tbl = pa2va(PAGE_ALIGN(page_dir[npde]));
 
     unsigned long wp_pa_addr = PAGE_ALIGN(page_tbl[npte]);
