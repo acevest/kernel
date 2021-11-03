@@ -23,10 +23,17 @@
 
 task_union root_task __attribute__((__aligned__(PAGE_SIZE)));
 
+// 暂时不考虑pid回绕问题
 pid_t get_next_pid() {
     static pid_t g_pid = ROOT_TSK_PID;
 
-    pid_t pid = ++g_pid;
+    unsigned long iflags;
+    irq_save(iflags);
+
+    pid_t pid = g_pid;
+    g_pid++;
+
+    irq_restore(iflags);
 
     return pid;
 }
@@ -100,7 +107,8 @@ void context_switch(task_union *prev, task_union *next) {
         "1:"
         "popl   %%ebp;"
         "popfl;"
-        : [prev_esp] "=m"(prev->esp), [prev_eip] "=m"(prev->eip), "=a"(prev), "=b"(ebx), "=c"(ecx), "=d"(edx), "=S"(esi), "=D"(edi)
+        : [prev_esp] "=m"(prev->esp), [prev_eip] "=m"(prev->eip), "=a"(prev), "=b"(ebx), "=c"(ecx), "=d"(edx),
+          "=S"(esi), "=D"(edi)
         : [next_esp] "m"(next->esp), [next_eip] "m"(next->eip), [prev] "a"(prev), [next] "d"(next)
         : "memory");
 }
@@ -187,7 +195,7 @@ unsigned long schedule() {
     irq_restore(iflags);
 
     sel->weight++;
-    printd("%08x %s weight %d\n", sel, sel->name, sel->weight);
+    printd("%08x %s:%d weight %d\n", sel, sel->name, sel->pid, sel->weight);
 
     task_union *prev = current;
     task_union *next = sel;
