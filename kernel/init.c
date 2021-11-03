@@ -49,12 +49,12 @@ void init_task_entry() {
 extern void ret_from_fork_krnl();
 void kernel_task(char *name, void *entry) {
     pt_regs_t regs;
-    
+
     memset((void *)&regs, 0, sizeof(regs));
-    
+
     // 内核任务入口
     regs.edx = (unsigned long)entry;
-    
+
     // 创建内核任务的时候就直接指定其在fork后走的路径
     // 就不用走sysexit那个路径了
     regs.eip = (unsigned long)ret_from_fork_krnl;
@@ -62,13 +62,10 @@ void kernel_task(char *name, void *entry) {
     regs.ds = SELECTOR_KRNL_DS;
     regs.es = SELECTOR_KRNL_DS;
     regs.ss = SELECTOR_KRNL_DS;
-    regs.eflags = (1 << 9); // enable IF
 
     int pid = do_fork(&regs, FORK_KRNL);
 
     printk("kernel task pid is %d\n", pid);
-
-    enable_irq();
 }
 
 void root_task_entry() {

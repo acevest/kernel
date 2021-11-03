@@ -29,6 +29,7 @@ enum {
     TASK_UNUSED,
     TASK_RUNNING,
     TASK_WAIT,
+    TASK_INITING,
     TASK_EXITING,
     TASK_END,
 };

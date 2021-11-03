@@ -90,13 +90,11 @@ int do_fork(pt_regs_t *regs, unsigned long flags) {
 
     pt_regs_t *child_regs = ((pt_regs_t *)(TASK_SIZE + (unsigned long)tsk)) - 1;
 
-    printk("child regs: %x %x %d\n", child_regs, regs, sizeof(regs));
-    //*child_regs = *regs;
+    printk("child regs: %x %x\n", child_regs, regs);
     memcpy(child_regs, regs, sizeof(*regs));
-    asm("xchg %bx, %bx");
 
     child_regs->eax = 0;
-    //child_regs->eflags |= 0x200;  // enable IF
+    child_regs->eflags |= 0x200;  // enable IF
 
     tsk->esp0 = TASK_SIZE + (unsigned long)tsk;
     tsk->esp = (unsigned long)child_regs;
@@ -108,17 +106,17 @@ int do_fork(pt_regs_t *regs, unsigned long flags) {
 
     printk("tsk %08x child_regs esp %08x esp0 %08x\n", tsk, tsk->esp, tsk->esp0);
 
-    tsk->state = TASK_RUNNING;
+    tsk->state = TASK_INITING;
     tsk->weight = TASK_INIT_WEIGHT;
 
     INIT_LIST_HEAD(&tsk->list);
-
-    disable_irq();
 
     unsigned long iflags;
     irq_save(iflags);
     list_add(&tsk->list, &all_tasks);
     irq_restore(iflags);
+
+    tsk->state = TASK_RUNNING;
 
     printk("%s:%d\n", __func__, __LINE__);
 

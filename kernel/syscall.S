@@ -87,7 +87,9 @@ ret_from_fork_user:
 // 内核线程fork出路
 ret_from_fork_krnl:
     RESTORE_REGS
-    addl    $24, %esp
+    addl    $12, %esp
+    popfl
+    addl    $8, %esp
     call    *%edx
 
     # 还没有实现do_exit
