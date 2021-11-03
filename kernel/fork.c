@@ -30,7 +30,6 @@ int do_fork(pt_regs_t *regs, unsigned long flags) {
     }
 
     memcpy(tsk, current, sizeof(task_union));
-    strcpy(tsk->name, "init");
     tsk->priority = 61;
 
     //{
