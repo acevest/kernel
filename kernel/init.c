@@ -43,6 +43,7 @@ void init_task_entry() {
         // printl(MPL_TASK_1, "task:%d [%08x] weight %d cnt %d", id, current, current->weight, cnt++);
         int v = 0;  // debug_wait_queue_get();
         // printk("task:%d wait queue get %d\n", id, v);
+        asm("hlt;");
     }
 }
 
