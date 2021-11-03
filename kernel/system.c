@@ -101,11 +101,12 @@ void setup_irqs() {
     extern void init_i8259();
     init_i8259();
 
-    int i;
-    for (i = 0; i < NR_IRQS; i++) {
+    for (int i = 0; i < NR_IRQS; i++) {
         irq_desc[i] = no_irq_desc;
 
-        if (i < 16) irq_desc[i].chip = &i8259_chip;
+        if (i < 16) {
+            irq_desc[i].chip = &i8259_chip;
+        }
     }
 
     void kbd_handler(unsigned int irq, pt_regs_t *regs, void *dev_id);
@@ -115,13 +116,20 @@ void setup_irqs() {
     request_irq(0x01, kbd_handler, "Intel 8042", "PS/2 Keyboard");
     request_irq(0x0A, default_ide_irq_handler, "hard", "IDE");
     request_irq(0x0E, default_ide_irq_handler, "hard", "IDE");
-    for (i = 0; i < 16; i++) {
-        if (i != 0 && i != 1 && i != 10 && i != 14) request_irq(i, default_irq_handler, "default", "default");
+    for (int i = 0; i < 16; i++) {
+        if (i != 0 && i != 1 && i != 10 && i != 14) {
+            request_irq(i, default_irq_handler, "default", "default");
+        }
     }
 
-    for (i = 0; i < 16; i++) open_irq(i);
+    for (int i = 0; i < 16; i++) {
+        close_irq(i);
+    }
 
-    enable_irq();
+    open_irq(0x00);
+    open_irq(0x01);
+    open_irq(0x0A);
+    open_irq(0x0E);
 }
 void set_tss() {
     pTSS p = &tss;

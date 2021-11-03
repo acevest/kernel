@@ -20,6 +20,7 @@
 #include "init.h"
 #include "mm.h"
 #include "msr.h"
+#include "system.h"
 
 task_union root_task __attribute__((__aligned__(PAGE_SIZE)));
 
@@ -47,10 +48,6 @@ list_head_t all_tasks;
 void init_root_tsk() {
     int i;
 
-    // never use memset to init root_task
-    // because the stack is at top of the root_task
-    // memset((char*)&root_task, 0, sizeof(root_task));
-
     root_task.preempt_cnt = 0;
     root_task.pid = get_next_pid();
     root_task.ppid = 0;
@@ -70,6 +67,7 @@ void init_root_tsk() {
     root_task.cr3 = (unsigned long)init_pgd;
 
     tss.esp0 = root_task.esp0;
+
     wrmsr(MSR_SYSENTER_ESP, root_task.esp0, 0);
 
     printk("init_root_task tss.esp0 %08x\n", tss.esp0);
@@ -130,10 +128,7 @@ task_union *find_task(pid_t pid) {
 
 static const char *task_state(unsigned int state) {
     static const char s[][16] = {
-        "  ERROR",
-        "RUNNING",
-        "   WAIT",
-        "EXITING",
+        "  ERROR", "RUNNING", "   WAIT", "INITING", "EXITING",
     };
 
     if (state >= TASK_END) state = TASK_UNUSED;
@@ -201,6 +196,7 @@ unsigned long schedule() {
     task_union *next = sel;
 
     if (prev != next) {
+        // printk("switch to: %s:%d\n", next->name, next->pid);
         context_switch(prev, next);
     }
 }

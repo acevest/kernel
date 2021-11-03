@@ -64,8 +64,11 @@ void *memcpy(void *dest, const void *src, size_t size) {
 }
 
 void memset(void *dest, char ch, size_t size) {
-    char *d = (char *)dest;
-    while (size--) *d++ = ch;
+    char *p = (char *)dest;
+    for (size_t i = 0; i < size; i++) {
+        *p = ch;
+        p++;
+    }
 }
 
 int memcmp(const void *a, const void *b, size_t count) {
