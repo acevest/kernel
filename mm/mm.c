@@ -39,8 +39,6 @@ void set_page_shared(void *x) {
     pte[get_npt(addr)] |= PAGE_US;
 }
 
-extern void sysexit();
-
 void init_paging() {
     unsigned int i;
     unsigned long pfn = 0;
@@ -74,6 +72,9 @@ void init_paging() {
     }
 
     // paging for user space
+    extern void sysenter();
+    extern void sysexit();
+    set_page_shared(sysenter);
     set_page_shared(sysexit);
 
     LoadCR3(va2pa(init_pgd));

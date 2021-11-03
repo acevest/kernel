@@ -24,62 +24,71 @@ char idtr[6] __attribute__((__aligned__(4)));
 
 // int debug_wait_queue_get();
 
-#define __ring3text__ __attribute__((__section__(".ring3.text"), __aligned__(PAGE_SIZE)))
+#define __ring3text__ __attribute__((__section__(".ring3.text")))
 #define __ring3data__ __attribute__((__section__(".ring3.data"), __aligned__(PAGE_SIZE)))
 #define __ring3bss__ __attribute__((__section__(".ring3.bss"), __aligned__(PAGE_SIZE)))
 
 char __ring3data__ ring3_stack[PAGE_SIZE] = {0};
 char __ring3bss__ ring3_stack[PAGE_SIZE];
-void __ring3text__ ring3_entry() {
+int ring3_sysctest();
+void __ring3text__ __attribute__((__aligned__(PAGE_SIZE))) ring3_entry() {
     while (1) {
-        systest();
+        ring3_sysctest();
     }
 }
 
+
+static int __ring3text__ __volatile__ __ring3_syscall0(int nr) {
+    int __sysc_ret__ = 0;
+    extern void sysenter;
+    asm volatile("leal sysenter, %%ebx;call *%%ebx;" : "=a"(__sysc_ret__) : "a"(nr));
+    return __sysc_ret__;
+}
+int __ring3text__ _ring3_syscall0(int nr) { return __ring3_syscall0(nr); }
+int __ring3text__ ring3_sysctest() { return _ring3_syscall0(SYSC_TEST); }
+
 void user_task_entry() {
-    // // printk("user_task_entry: %08x\n", ring3_entry);
+    // printk("user_task_entry: %08x\n", ring3_entry);
 
     // unsigned long ring3_text_page = va2pa(alloc_one_page(0));
     // unsigned long ring3_data_page = va2pa(alloc_one_page(0));
     // unsigned long ring3_bss_page = va2pa(alloc_one_page(0));
-    // unsigned long *pt_text_page = (unsigned long *)va2pa(alloc_one_page(0));
-    // unsigned long *pt_data_page = (unsigned long *)va2pa(alloc_one_page(0));
-    // unsigned long *pt_bss_page = (unsigned long *)va2pa(alloc_one_page(0));
-    // unsigned long *p = (unsigned long *)((current->cr3 - 0xC0000000));
 
-    //  asm volatile("xchg %%bx, %%bx;mov %%eax, %%ebx;xchg %%bx, %%bx;"::"a"(p));
+    unsigned long ring3_text_page = va2pa(ring3_entry);
+    unsigned long ring3_data_page = va2pa(ring3_stack);
+    unsigned long ring3_bss_page = va2pa(alloc_one_page(0));
 
-    // // text: 0x0800_0000
-    // // data: 0x2000_0000
-    // //  bss: 0x3000_0000
-    // unsigned long text_at = 0x08000000;
-    // unsigned long data_at = 0x20000000;
-    // unsigned long bbs_at = 0x30000000;
+    unsigned long *pt_text_page = (unsigned long *)(alloc_one_page(0));
+    unsigned long *pt_data_page = (unsigned long *)(alloc_one_page(0));
+    unsigned long *pt_bss_page = (unsigned long *)(alloc_one_page(0));
+    unsigned long *p = (unsigned long *)(pa2va(current->cr3));
 
-    // unsigned long flag = 0;
+    //asm volatile("xchg %%bx, %%bx;mov %%eax, %%ebx;xchg %%bx, %%bx;"::"a"(p));
+    printk("page dir : %x %x %x %x\n", p, pt_text_page, ring3_text_page);
+    printk("pt bss page %x %x", pt_bss_page, ring3_bss_page);
 
-    // flag |= PAGE_P;
-    // flag |= PAGE_US;
+    // text: 0x0800_0000
+    // data: 0x2000_0000
+    //  bss: 0x3000_0000
+    unsigned long text_at = 0x08000000;
+    unsigned long data_at = 0x20000000;
+    unsigned long bbs_at = 0x30000000;
 
-    // p[text_at >> 22] = (unsigned long)pt_text_page | PAGE_P | PAGE_US;
-    // pt_text_page[0] = ring3_text_page;
-    // p[data_at >> 22] = (unsigned long)pt_data_page | PAGE_P | PAGE_WR | PAGE_US;
-    // pt_data_page[0] = ring3_data_page;
-    // p[bbs_at >> 22] = (unsigned long)pt_bss_page | PAGE_P | PAGE_WR | PAGE_US;
-    // pt_bss_page[0] = ring3_bss_page;
+    p[text_at >> 22] = (unsigned long)va2pa(pt_text_page) | PAGE_P | PAGE_WR | PAGE_US;
+    pt_text_page[0] = ring3_text_page | 7;
+    p[data_at >> 22] = (unsigned long)va2pa(pt_data_page) | PAGE_P | PAGE_WR | PAGE_US;
+    pt_data_page[0] = ring3_data_page | 7 ;
+    p[bbs_at >> 22] = (unsigned long)va2pa(pt_bss_page) | PAGE_P | PAGE_WR | PAGE_US;
+    pt_bss_page[0] = ring3_bss_page | 7 ;
 
-    // // 
-    // asm("xchg %bx, %bx");
-    // LOAD_CR3((unsigned long)p);
+    // 
+    LoadCR3(current->cr3);
 
     // 现在要准备返回用户态
     // eip --> edx
     // esp --> ecx
-    asm("xchg %bx, %bx");
-    // asm("sysexit;" ::"d"(0x08000000), "c"(0x30000000 + PAGE_SIZE));
-    while (1) {
-        asm("hlt;");
-    }
+   asm volatile("xchg %bx, %bx");
+   asm volatile("sysexit;" ::"d"(0x08000000), "c"(0x30000000 + PAGE_SIZE - 100));
 }
 
 void init_task_entry() {
@@ -96,7 +105,7 @@ void init_task_entry() {
     }
 
     while (1) {
-        sysc_test();
+        //sysc_test();
         printl(MPL_TASK_1 + id - 1, "task:%d [%08x] weight %d cnt %d", id, current, current->weight, cnt++);
         // printl(MPL_TASK_1, "task:%d [%08x] weight %d cnt %d", id, current, current->weight, cnt++);
         int v = 0;  // debug_wait_queue_get();
@@ -138,12 +147,12 @@ void root_task_entry() {
 
     int cnt = 0;
     while (1) {
-        sysc_test();
+        //sysc_test();
         printl(MPL_ROOT, "root:0 [%08x] weight %d cnt %d", current, root_task.weight, cnt++);
         // printk("root:0 [%08x] weight %d cnt %d", current, current->weight, cnt++);
         asm("sti;hlt;");
         // asm("nop;nop;nop;");
-        sysc_test();
+        //sysc_test();
         // syscall0(SYSC_TEST);
     }
 }

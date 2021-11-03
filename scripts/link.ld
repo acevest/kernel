@@ -30,6 +30,7 @@ SECTIONS
         *(.multiboot_header)
         *(.text)
 
+        *(.sysenter) /* last */
         *(.sysexit) /* last */
     }
     etext = .;

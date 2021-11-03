@@ -27,7 +27,6 @@
 .global syscall_entry
 .global ret_from_fork_user
 .global ret_from_fork_krnl
-.global sysexit
 //.global syscall_exit
 
 syscall_entry:
@@ -78,7 +77,7 @@ ret_from_fork_user:
 
     // 在系统调用前，用户态的esp保存在ebp中
     // sysexit指令从ecx中恢复用户态esp
-    movl    %ebp, %ecx
+    xchgl   %ebp, %ecx
 
     sti        /* sysenter have cleared IF, and sysexit will not set IF. */
     sysexit
@@ -102,8 +101,21 @@ ret_from_fork_krnl:
 # this page is shared by the kernel and userspace
 # the reason why i use this method is because of that the user program
 # no need to pay attention on the return address
+.global sysenter
+.section .sysenter
+.align 0x1000
+sysenter:
+    pushl   %ecx;
+    pushl   %edx;
+    pushl   %ebp;
+    movl    %esp, %ebp;
+    sysenter;
+
+
+
+.global sysexit
 .section .sysexit
-.align 0x1000 
+.align 0x1000
 sysexit:
     popl    %ebp;
     popl    %edx;
