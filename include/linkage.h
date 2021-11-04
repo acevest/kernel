@@ -24,3 +24,5 @@
     symbol:
 
 #endif
+
+#define __initdata __attribute__((__section__(".init.data")))

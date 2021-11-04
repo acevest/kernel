@@ -15,7 +15,7 @@
  */
 #include <bits.h>
 #include <boot/boot.h>
-#include <init.h>
+#include <linkage.h>
 #include <mm.h>
 #include <page.h>
 #include <printk.h>

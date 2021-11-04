@@ -1,5 +1,4 @@
 #include <fcntl.h>
-#include <init.h>
 #include <io.h>
 #include <irq.h>
 #include <page.h>
@@ -37,7 +36,6 @@ void __ring3text__ __attribute__((__aligned__(PAGE_SIZE))) ring3_entry() {
     }
 }
 
-
 static int __ring3text__ __volatile__ __ring3_syscall0(int nr) {
     int __sysc_ret__ = 0;
     extern void sysenter;
@@ -63,7 +61,7 @@ void user_task_entry() {
     unsigned long *pt_bss_page = (unsigned long *)(alloc_one_page(0));
     unsigned long *p = (unsigned long *)(pa2va(current->cr3));
 
-    //asm volatile("xchg %%bx, %%bx;mov %%eax, %%ebx;xchg %%bx, %%bx;"::"a"(p));
+    // asm volatile("xchg %%bx, %%bx;mov %%eax, %%ebx;xchg %%bx, %%bx;"::"a"(p));
     printk("page dir : %x %x %x %x\n", p, pt_text_page, ring3_text_page);
     printk("pt bss page %x %x", pt_bss_page, ring3_bss_page);
 
@@ -77,18 +75,18 @@ void user_task_entry() {
     p[text_at >> 22] = (unsigned long)va2pa(pt_text_page) | PAGE_P | PAGE_WR | PAGE_US;
     pt_text_page[0] = ring3_text_page | 7;
     p[data_at >> 22] = (unsigned long)va2pa(pt_data_page) | PAGE_P | PAGE_WR | PAGE_US;
-    pt_data_page[0] = ring3_data_page | 7 ;
+    pt_data_page[0] = ring3_data_page | 7;
     p[bbs_at >> 22] = (unsigned long)va2pa(pt_bss_page) | PAGE_P | PAGE_WR | PAGE_US;
-    pt_bss_page[0] = ring3_bss_page | 7 ;
+    pt_bss_page[0] = ring3_bss_page | 7;
 
-    // 
+    //
     LoadCR3(current->cr3);
 
     // 现在要准备返回用户态
     // eip --> edx
     // esp --> ecx
-   asm volatile("xchg %bx, %bx");
-   asm volatile("sysexit;" ::"d"(0x08000000), "c"(0x30000000 + PAGE_SIZE - 100));
+    asm volatile("xchg %bx, %bx");
+    asm volatile("sysexit;" ::"d"(0x08000000), "c"(0x30000000 + PAGE_SIZE - 100));
 }
 
 void init_task_entry() {
@@ -105,7 +103,7 @@ void init_task_entry() {
     }
 
     while (1) {
-        //sysc_test();
+        // sysc_test();
         printl(MPL_TASK_1 + id - 1, "task:%d [%08x] weight %d cnt %d", id, current, current->weight, cnt++);
         // printl(MPL_TASK_1, "task:%d [%08x] weight %d cnt %d", id, current, current->weight, cnt++);
         int v = 0;  // debug_wait_queue_get();
@@ -147,12 +145,12 @@ void root_task_entry() {
 
     int cnt = 0;
     while (1) {
-        //sysc_test();
+        // sysc_test();
         printl(MPL_ROOT, "root:0 [%08x] weight %d cnt %d", current, root_task.weight, cnt++);
         // printk("root:0 [%08x] weight %d cnt %d", current, current->weight, cnt++);
         asm("sti;hlt;");
         // asm("nop;nop;nop;");
-        //sysc_test();
+        // sysc_test();
         // syscall0(SYSC_TEST);
     }
 }

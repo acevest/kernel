@@ -17,7 +17,7 @@
 #include "sched.h"
 
 #include "assert.h"
-#include "init.h"
+#include "linkage.h"
 #include "mm.h"
 #include "msr.h"
 #include "system.h"
