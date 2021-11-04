@@ -96,20 +96,39 @@ void e820_init_bootmem_data() {
 }
 
 void register_bootmem_pages() {
-    unsigned int i = 0;
-    unsigned int j = 0;
-
-    for (i = 0; i < boot_params.e820map.map_cnt; ++i) {
+    for (unsigned int i = 0; i < boot_params.e820map.map_cnt; ++i) {
         struct e820_entry *p = boot_params.e820map.map + i;
 
-        if (p->type != E820_RAM) continue;
+        if (p->type != E820_RAM) {
+            continue;
+        }
 
         unsigned long bgn_pfn = PFN_UP(p->addr);
         unsigned long end_pfn = PFN_DW(p->addr + p->size);
 
-        for (j = bgn_pfn; j < end_pfn; ++j) {
+#if 1
+        // 用一个相对快的方式
+        // 先设置头部不是从单个字节开始的比特
+        unsigned int j = 0;  // 这个变更不能放到for循环里定义
+        for (j = bgn_pfn; j < end_pfn && (j % 8 != 0); j++) {
             test_and_clear_bit(j, bootmem_data.bitmap);
         }
+
+        // 算出中间的整字节数
+        unsigned int bytes = (end_pfn - j) / 8;
+
+        // 直接清零
+        memset((char *)(bootmem_data.bitmap) + (j / 8), 0x00, bytes);
+
+        // 最后设置尾部不是整字节的比特
+        for (j += bytes * 8; j < end_pfn; j++) {
+            test_and_clear_bit(j, bootmem_data.bitmap);
+        }
+#else
+        for (unsigned int j = bgn_pfn; j < end_pfn; j++) {
+            test_and_clear_bit(j, bootmem_data.bitmap);
+        }
+#endif
     }
 }
 
@@ -127,7 +146,7 @@ void reserve_kernel_pages() {
     // reserve_bootmem(0, PFN_UP(va2pa(&kernel_end)));
 }
 
-void reserve_bootmem_pages() {
+void reserve_bootmem_bitmap() {
     unsigned long bgn_pfn = PFN_DW(va2pa(bootmem_data.bitmap));
 
     unsigned long end_pfn = bgn_pfn + PFN_UP(bootmem_data.mapsize);
@@ -143,11 +162,14 @@ void init_bootmem_allocator() {
 
     memset(bootmem_data.bitmap, 0xFF, mapsize);
 
+    // 根据bootmem信息初始化空闲内存块
     register_bootmem_pages();
 
+    // 保留内核内存段
     reserve_kernel_pages();
 
-    reserve_bootmem_pages();
+    // 保留管理所有空闲内存的bitmap所占用的内存
+    reserve_bootmem_bitmap();
 
     // 强制保留最开始的一页
     // 免得alloc的时候分不清是失败，还是分配的第0页
