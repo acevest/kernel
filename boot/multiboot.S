@@ -113,10 +113,10 @@ main:
 
     ljmp    $0x08,$Label
 Label:
-    movl    $root_task + TASK_SIZE, %esp
-    
     call    check_kernel
+    addl    $8, %esp
 
+    movl    $root_task + TASK_SIZE, %esp
     call    init_system_info
 
     call    setup_kernel
