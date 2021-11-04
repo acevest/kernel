@@ -18,6 +18,8 @@
 #include <printk.h>
 #include <system.h>
 
+extern void vga_init();
+extern void init_mm();
 extern void setup_gdt();
 extern void setup_idt();
 extern void setup_gate();
@@ -26,6 +28,7 @@ extern void setup_sysc();
 extern void setup_pci();
 extern void set_tss();
 extern void setup_tasks();
+extern void setup_irqs();
 extern void ide_init();
 extern void setup_fs();
 extern void setup_ext2();

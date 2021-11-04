@@ -14,7 +14,7 @@
  *--------------------------------------------------------------------------
  */
 #include <bits.h>
-#include <boot/boot.h>
+#include <boot.h>
 #include <linkage.h>
 #include <mm.h>
 #include <page.h>

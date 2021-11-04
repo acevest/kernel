@@ -14,7 +14,7 @@
  *--------------------------------------------------------------------------
  */
 #define ASM
-#include "boot/boot.h"
+#include "boot.h"
 #include "system.h"
 #include "task.h"
 .global kernel_entry

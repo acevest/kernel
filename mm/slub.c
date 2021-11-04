@@ -310,5 +310,5 @@ void init_slub_system() {
         printk("kmalloc addr %08x\n", (unsigned long) addr);
         addrs[i] = addr;
     }
-#endifq
+#endif
 }

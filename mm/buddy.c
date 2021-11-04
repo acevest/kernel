@@ -8,6 +8,7 @@
  */
 #include <irq.h>
 #include <mm.h>
+#include <string.h>
 #include <sysctl.h>
 
 struct buddy_system {

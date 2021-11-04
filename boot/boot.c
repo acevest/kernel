@@ -12,7 +12,7 @@
 
 #include <assert.h>
 #include <bits.h>
-#include <boot/boot.h>
+#include <boot.h>
 #include <page.h>
 #include <system.h>
 

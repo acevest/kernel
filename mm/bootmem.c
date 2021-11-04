@@ -6,7 +6,7 @@
  * Description: none
  * ------------------------------------------------------------------------
  */
-#include <boot/boot.h>
+#include <boot.h>
 #include <mm.h>
 #include <printk.h>
 #include <system.h>
