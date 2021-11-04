@@ -15,8 +15,11 @@
  *--------------------------------------------------------------------------
  */
 
+#include <system.h>
+
 extern void vga_puts(unsigned int nr, const char *buf, unsigned char color);
 extern void vga_dbg_puts(unsigned int line, unsigned int offset, const char *buf);
+extern int vsprintf(char *buf, const char *fmt, char *args);
 
 unsigned int printk_screen_nr = 0;
 

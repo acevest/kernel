@@ -137,7 +137,6 @@ static const char *task_state(unsigned int state) {
 }
 
 unsigned long schedule() {
-    static turn = 0;
     task_union *sel = &root_task;
     task_union *p = 0;
     list_head_t *pos = 0, *t = 0;

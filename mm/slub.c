@@ -9,6 +9,7 @@
 
 #include <irq.h>
 #include <mm.h>
+#include <string.h>
 #include <system.h>
 
 list_head_t slub_caches = LIST_HEAD_INIT(slub_caches);

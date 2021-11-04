@@ -9,6 +9,7 @@
  *
  *--------------------------------------------------------------------------
  */
+#include <sched.h>
 #include <wait.h>
 
 void init_wait_queue(wait_queue_head_t *wqh) { INIT_LIST_HEAD(&wqh->task_list); }

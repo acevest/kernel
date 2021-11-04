@@ -13,8 +13,6 @@
 #include <page.h>
 #include <sched.h>
 
-int sysc_fork(pt_regs_t regs) { return do_fork(&regs, 0); }
-
 extern void ret_from_fork_user();
 extern void ret_from_fork_krnl();
 extern pid_t get_next_pid();
@@ -112,3 +110,5 @@ int do_fork(pt_regs_t *regs, unsigned long flags) {
 
     return (int)tsk->pid;
 }
+
+int sysc_fork(pt_regs_t regs) { return do_fork(&regs, 0); }

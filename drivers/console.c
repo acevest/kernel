@@ -8,8 +8,11 @@
  */
 
 #include <console.h>
+#include <sched.h>
 #include <string.h>
 #include <wait.h>
+
+void vga_putc(unsigned int nr, unsigned char c, const unsigned char color);
 
 cnsl_t cnsl;
 

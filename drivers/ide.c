@@ -13,6 +13,7 @@
 #include <irq.h>
 #include <pci.h>
 #include <printk.h>
+#include <sched.h>
 #include <semaphore.h>
 #include <string.h>
 #include <types.h>
@@ -127,7 +128,8 @@ void ide_do_read(u64_t lba, u32_t scnt, char *buf) {
         task->state = TASK_WAIT;
         irq_save(flags);
         finish = r->finish;
-        // printd("%s pid %d finish %u read_scnt %u scnt %u\n", __func__, sysc_getpid(), r->finish, r->read_scnt, r->scnt);
+        // printd("%s pid %d finish %u read_scnt %u scnt %u\n", __func__, sysc_getpid(), r->finish, r->read_scnt,
+        // r->scnt);
         irq_restore(flags);
 
         if (finish) break;
@@ -174,8 +176,10 @@ void ide_pci_init(pci_device_t *pci) {
     HD_CHL1_CMD_BASE = pci->bars[2] ? pci->bars[2] : HD_CHL1_CMD_BASE;
     HD_CHL1_CTL_BASE = pci->bars[3] ? pci->bars[3] : HD_CHL1_CTL_BASE;
 
-    printk("channel0: cmd %04x ctl %04x channel1: cmd %04x ctl %04x\n", HD_CHL0_CMD_BASE, HD_CHL0_CTL_BASE, HD_CHL1_CMD_BASE, HD_CHL1_CTL_BASE);
-    // printl(18, "channel0: cmd %04x ctl %04x channel1: cmd %04x ctl %04x", HD_CHL0_CMD_BASE, HD_CHL0_CTL_BASE, HD_CHL1_CMD_BASE, HD_CHL1_CTL_BASE);
+    printk("channel0: cmd %04x ctl %04x channel1: cmd %04x ctl %04x\n", HD_CHL0_CMD_BASE, HD_CHL0_CTL_BASE,
+           HD_CHL1_CMD_BASE, HD_CHL1_CTL_BASE);
+    // printl(18, "channel0: cmd %04x ctl %04x channel1: cmd %04x ctl %04x", HD_CHL0_CMD_BASE, HD_CHL0_CTL_BASE,
+    // HD_CHL1_CMD_BASE, HD_CHL1_CTL_BASE);
 }
 
 void ide_status() {
@@ -200,8 +204,10 @@ void ide_debug() {
 void init_pci_controller(unsigned int classcode) {
     pci_device_t *pci = pci_find_device_by_classcode(classcode);
     if (pci != 0 && pci->intr_line < 16) {
-        printk("found pci vendor %04x device %04x class %04x intr %d\n", pci->vendor, pci->device, pci->classcode, pci->intr_line);
-        // printl(17, "found pci vendor %04x device %04x class %04x intr %d", pci->vendor, pci->device, pci->classcode, pci->intr_line);
+        printk("found pci vendor %04x device %04x class %04x intr %d\n", pci->vendor, pci->device, pci->classcode,
+               pci->intr_line);
+        // printl(17, "found pci vendor %04x device %04x class %04x intr %d", pci->vendor, pci->device, pci->classcode,
+        // pci->intr_line);
         ide_pci_init(pci);
         drv.pci = pci;
     }
@@ -371,11 +377,12 @@ void ide_read_extended_partition(u64_t lba, unsigned int inx) {
         if (p->type != 0x05) {
             drv.part[inx].lba_start = part_lba;
             drv.part[inx].lba_end = part_lba + part_scnt;
-            printk("  logic partition[%02d] [%02x] LBA base %10d end %10d\n", inx, p->type, (unsigned int)(drv.part[inx].lba_start),
-                   (unsigned int)(drv.part[inx].lba_end - 1));
+            printk("  logic partition[%02d] [%02x] LBA base %10d end %10d\n", inx, p->type,
+                   (unsigned int)(drv.part[inx].lba_start), (unsigned int)(drv.part[inx].lba_end - 1));
         } else {
             part_lba = drv.ext_lba_base + p->lba;
-            printk("        extended      [%02x] LBA base %10d end %10d\n", p->type, (unsigned int)(part_lba), (unsigned int)(part_lba + part_scnt - 1));
+            printk("        extended      [%02x] LBA base %10d end %10d\n", p->type, (unsigned int)(part_lba),
+                   (unsigned int)(part_lba + part_scnt - 1));
             ide_read_extended_partition(part_lba, inx + 1);
         }
     }
@@ -416,7 +423,8 @@ void ide_read_partition() {
             }
         }
 
-        printk("primary partition[%02d] [%02x] LBA base %10d end %10d\n", i, p->type, (unsigned int)(part_lba), (unsigned int)(part_lba + part_scnt - 1));
+        printk("primary partition[%02d] [%02x] LBA base %10d end %10d\n", i, p->type, (unsigned int)(part_lba),
+               (unsigned int)(part_lba + part_scnt - 1));
     }
 
     kfree(buf);

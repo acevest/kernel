@@ -14,6 +14,8 @@
  *--------------------------------------------------------------------------
  */
 #include <bits.h>
+#include <printk.h>
+#include <string.h>
 
 #define TEST_FEATURE(val, bit, fea)                  \
     do {                                             \

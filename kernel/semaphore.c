@@ -7,6 +7,7 @@
  * ------------------------------------------------------------------------
  */
 #include <irq.h>
+#include <sched.h>
 #include <semaphore.h>
 
 typedef struct semaphore_waiter {

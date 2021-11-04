@@ -186,6 +186,7 @@ void init_buddy_system() {
 
     // init page map
     unsigned long page_map_size = pfn_cnt * sizeof(page_t);
+    void *alloc_from_bootmem(unsigned long size, char *title);
     buddy_system.page_map = alloc_from_bootmem(page_map_size, "buddy");
     if (0 == buddy_system.page_map) {
         printk("can not go on playing...\n");

@@ -11,6 +11,7 @@
 #include <types.h>
 
 void root_task_entry();
+int do_fork(pt_regs_t *regs, unsigned long flags);
 
 System system;
 TSS tss;

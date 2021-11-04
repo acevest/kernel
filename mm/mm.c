@@ -19,12 +19,14 @@
 #include <mm.h>
 #include <page.h>
 #include <printk.h>
+#include <string.h>
 #include <system.h>
 #include <types.h>
 
 extern char etext, edata, end;
 extern void init_buddy_system();
 extern void init_slub_system();
+extern void init_bootmem();
 
 pde_t __initdata init_pgd[PDECNT_PER_PAGE] __attribute__((__aligned__(PAGE_SIZE)));
 pte_t __initdata init_pgt[PTECNT_PER_PAGE * BOOT_INIT_PAGETBL_CNT] __attribute__((__aligned__(PAGE_SIZE)));
@@ -52,6 +54,7 @@ void init_paging() {
         unsigned long ti = pfn % PAGE_PTE_CNT;
         unsigned long page_addr = pfn2pa(pfn);
         if (ti == 0) {
+            void *alloc_from_bootmem(unsigned long size, char *title);
             pgtb_addr = (unsigned long)va2pa(alloc_from_bootmem(PAGE_SIZE, "paging"));
             if (0 == pgtb_addr) panic("No Pages for Paging...");
 

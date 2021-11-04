@@ -10,6 +10,7 @@
 
 #include "fs.h"
 #include "mm.h"
+#include "string.h"
 #include "system.h"
 
 struct {
@@ -18,6 +19,7 @@ struct {
 } ext2_fs;
 
 extern void blk_rw(dev_t dev, u64_t offset, u32_t scnt, char *buf);
+extern void kmem_cache_free(kmem_cache_t *cache, void *addr);
 
 #define BLKRW(blkid, blkcnt, buf)                                                               \
     do {                                                                                        \
@@ -125,7 +127,8 @@ unsigned int ext2_search_indir(const char *name, const ext2_inode_t *inode, unsi
     while (dirent->name_len != 0) {
         memcpy(tmp, dirent->name, dirent->name_len);
         tmp[dirent->name_len] = 0;
-        printd("  dirent %s inode %u rec_len %u name_len %u type %02d\n", tmp, dirent->inode, dirent->rec_len, dirent->name_len, dirent->file_type);
+        printd("  dirent %s inode %u rec_len %u name_len %u type %02d\n", tmp, dirent->inode, dirent->rec_len,
+               dirent->name_len, dirent->file_type);
 
         if (strcmp(name, tmp) == 0) {
             ino = dirent->inode;
@@ -213,9 +216,10 @@ void ext2_setup_fs() {
     }
 
     printk("Ext2 File System Information:\n");
-    printk(" inodes %u blocks %u free blocks %u free inodes %u\n", EXT2_SB->s_inodes_count, EXT2_SB->s_blocks_count, EXT2_SB->s_free_blocks_count,
-           EXT2_SB->s_free_inodes_count);
-    printk(" block size %u log block size %u first data block %u\n", EXT2_BLOCK_SIZE, EXT2_SB->s_log_block_size, EXT2_SB->s_first_data_block);
+    printk(" inodes %u blocks %u free blocks %u free inodes %u\n", EXT2_SB->s_inodes_count, EXT2_SB->s_blocks_count,
+           EXT2_SB->s_free_blocks_count, EXT2_SB->s_free_inodes_count);
+    printk(" block size %u log block size %u first data block %u\n", EXT2_BLOCK_SIZE, EXT2_SB->s_log_block_size,
+           EXT2_SB->s_first_data_block);
     printk(" blocks per group %u inodes per group %u\n", EXT2_SB->s_blocks_per_group, EXT2_SB->s_inodes_per_group);
 
     ext2_block_cache = kmem_cache_create("ext2_block_cache", EXT2_BLOCK_SIZE, EXT2_BLOCK_SIZE);
@@ -233,8 +237,8 @@ void ext2_setup_fs() {
     gps += (EXT2_SB->s_blocks_count % EXT2_SB->s_blocks_per_group) ? 1 : 0;
     unsigned int i;
     for (i = 0; i < gps; ++i) {
-        printd("  [%2u] inode table %u free blocks %u free inode %u used dir %u\n", i, ext2_gd(i)->bg_inode_table, ext2_gd(i)->bg_free_blocks_count,
-               ext2_gd(i)->bg_free_inodes_count, ext2_gd(i)->bg_used_dirs_count);
+        printd("  [%2u] inode table %u free blocks %u free inode %u used dir %u\n", i, ext2_gd(i)->bg_inode_table,
+               ext2_gd(i)->bg_free_blocks_count, ext2_gd(i)->bg_free_inodes_count, ext2_gd(i)->bg_used_dirs_count);
     }
 
     ext2_read_inode(2, &ext2_root_inode);

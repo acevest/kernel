@@ -10,7 +10,9 @@
  *--------------------------------------------------------------------------
  */
 
-void assert_fail(char *exp, char *file, unsigned int line, char *func) {
+#include <printk.h>
+
+void assert_fail(char *exp, char *file, unsigned int line, const char *func) {
     printk("%s:%d: %s: Assertion \'%s\' failed.\n", file, line, func, exp);
 
     while (1)

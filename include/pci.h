@@ -85,7 +85,7 @@ typedef struct pci_device {
 
     unsigned int primary_bus_nr; /* only for pci bridge */
     unsigned int secondary_bus_nr;
-} __attribute__((packed)) pci_device_t;
+} pci_device_t;
 
 #if 0
 typedef union pci_device

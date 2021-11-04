@@ -27,3 +27,5 @@ unsigned long schedule();
 void wake_up(wait_queue_head_t *wqh);
 
 extern task_union root_task;
+
+extern void load_cr3(task_union *tsk);

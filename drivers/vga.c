@@ -12,6 +12,7 @@
 
 #include <io.h>
 #include <irq.h>
+#include <string.h>
 
 typedef struct {
     u8_t c;
@@ -208,7 +209,8 @@ void vga_dbg_puts(unsigned int line, unsigned int offset, const char *buf) {
 
     int i;
     char *p = (char *)buf;
-    vga_char_t *const pv = (vga_char_t *const)(VIDEO_ADDR + (VIDEO_DBG_LINE + line) * BYTES_PER_LINE + offset * sizeof(vga_char_t));
+    vga_char_t *const pv =
+        (vga_char_t *const)(VIDEO_ADDR + (VIDEO_DBG_LINE + line) * BYTES_PER_LINE + offset * sizeof(vga_char_t));
 
     for (i = 0; *p; ++i, ++p) {
         pv[i] = vga_char(*p, vga_dbg_color);

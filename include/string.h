@@ -18,6 +18,7 @@
 #define _STRING_H
 
 #include "types.h"
+
 char *strcpy(char *dest, const char *src);
 size_t strlen(const char *str);
 int strcmp(const char *a, const char *b);
