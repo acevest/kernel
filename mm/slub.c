@@ -46,7 +46,9 @@ static bool calculate_params(kmem_cache_t *cache) {
 
     cache->objects = (PAGE_SIZE << cache->order) / cache->size;
 
-    if (0 == cache->objects) return false;
+    if (0 == cache->objects) {
+        return false;
+    }
 
     return true;
 }
@@ -61,7 +63,9 @@ static bool kmem_cache_init(kmem_cache_t *cache, const char *name, size_t size, 
     cache->partial_cnt = 0;
     INIT_LIST_HEAD(&(cache->partial));
 
-    if (!calculate_params(cache)) goto err;
+    if (!calculate_params(cache)) {
+        goto err;
+    }
 
     return true;
 err:
@@ -124,7 +128,9 @@ static void *__slub_alloc(kmem_cache_t *cache, gfp_t gfpflags) {
         }
     }
 
-    if (cache->page == 0) return 0;
+    if (cache->page == 0) {
+        return 0;
+    }
 
     object = cache->page->freelist;
 
@@ -208,6 +214,7 @@ void kmem_cache_free(kmem_cache_t *cache, void *addr) {
 void *kmalloc(size_t size, gfp_t gfpflags) {
     unsigned int i;
     kmem_cache_t *cache = 0;
+    void *addr = 0;
 
     unsigned long flags;
     irq_save(flags);
@@ -220,8 +227,14 @@ void *kmalloc(size_t size, gfp_t gfpflags) {
         }
     }
 
-    void *addr = kmem_cache_alloc(cache, gfpflags);
+    // 如果没找到支持的cache则分配失败
+    if (0 == cache) {
+        goto err;
+    }
 
+    addr = kmem_cache_alloc(cache, gfpflags);
+
+err:
     irq_restore(flags);
 
     return addr;
@@ -297,5 +310,5 @@ void init_slub_system() {
         printk("kmalloc addr %08x\n", (unsigned long) addr);
         addrs[i] = addr;
     }
-#endif
+#endifq
 }
