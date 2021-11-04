@@ -30,7 +30,7 @@
 
 static inline void btc(unsigned int *v, unsigned int b) { asm("btc %1,%0" : "=m"(*v) : "Ir"(b)); }
 
-static inline int test_and_set_bit(long nr, volatile unsigned long *addr) {
+static inline int test_and_set_bit(unsigned int nr, volatile unsigned long *addr) {
     int oldbit;
 
     asm("bts %2,%1\n\t"
@@ -40,7 +40,7 @@ static inline int test_and_set_bit(long nr, volatile unsigned long *addr) {
     return oldbit;
 }
 
-static inline int test_and_clear_bit(int nr, volatile unsigned long *addr) {
+static inline int test_and_clear_bit(unsigned int nr, volatile unsigned long *addr) {
     int oldbit;
 
     asm volatile(

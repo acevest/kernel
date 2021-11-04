@@ -20,6 +20,7 @@
 .global kernel_entry
 .global main
 .extern check_kernel 
+.extern init_system_info
 .extern setup_kernel
 .extern init_pgd
 .extern init_pgt
@@ -112,10 +113,12 @@ main:
 
     ljmp    $0x08,$Label
 Label:
-
-    call    check_kernel
-    addl    $8,%esp
     movl    $root_task + TASK_SIZE, %esp
+    
+    call    check_kernel
+
+    call    init_system_info
+
     call    setup_kernel
 
     movl    $root_task_entry, %eax

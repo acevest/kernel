@@ -28,7 +28,7 @@ char idtr[6] __attribute__((__aligned__(4)));
 #define __ring3bss__ __attribute__((__section__(".ring3.bss"), __aligned__(PAGE_SIZE)))
 
 char __ring3data__ ring3_stack[PAGE_SIZE] = {0};
-char __ring3bss__ ring3_stack[PAGE_SIZE];
+char __ring3bss__ ring3_bss[PAGE_SIZE + 1234];
 int ring3_sysctest();
 void __ring3text__ __attribute__((__aligned__(PAGE_SIZE))) ring3_entry() {
     while (1) {
@@ -61,7 +61,6 @@ void user_task_entry() {
     unsigned long *pt_bss_page = (unsigned long *)(alloc_one_page(0));
     unsigned long *p = (unsigned long *)(pa2va(current->cr3));
 
-    // asm volatile("xchg %%bx, %%bx;mov %%eax, %%ebx;xchg %%bx, %%bx;"::"a"(p));
     printk("page dir : %x %x %x %x\n", p, pt_text_page, ring3_text_page);
     printk("pt bss page %x %x", pt_bss_page, ring3_bss_page);
 
@@ -85,7 +84,6 @@ void user_task_entry() {
     // 现在要准备返回用户态
     // eip --> edx
     // esp --> ecx
-    asm volatile("xchg %bx, %bx");
     asm volatile("sysexit;" ::"d"(0x08000000), "c"(0x30000000 + PAGE_SIZE - 100));
 }
 

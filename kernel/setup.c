@@ -56,13 +56,11 @@ const char *version = "Kernel version " VERSION " @ " BUILDER
                       "\n";
 
 void setup_kernel() {
-    extern char kernel_begin, kernel_end;
-
     vga_init();
 
-    printk("kernel: %08x - %08x\n", &kernel_begin, &kernel_end);
-
     init_mm();
+
+    // printk("kernel: %08x - %08x\n", system.kernel_begin, system.kernel_end);
 
     setup_gdt();
     setup_idt();

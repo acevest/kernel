@@ -60,3 +60,14 @@ void check_kernel(unsigned long addr, unsigned long magic) {
 
     init_boot_params(mbi);
 }
+
+extern void *kernel_begin;
+extern void *kernel_end;
+extern void *bootmem_bitmap_begin;
+void init_system_info() {
+    system.kernel_begin = &kernel_begin;
+    system.kernel_end = &kernel_end;
+    system.bootmem_bitmap_begin = &bootmem_bitmap_begin;
+
+    printk("kernel [%x, %x] bootmem bitmap: %x\n", system.kernel_begin, system.kernel_end, system.bootmem_bitmap_begin);
+}

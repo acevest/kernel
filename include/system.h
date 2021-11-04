@@ -143,7 +143,9 @@ typedef struct system {
     u32 *pte_start;
     u32 *pte_end;
 
-    u32 kernel_end;
+    void *kernel_begin;
+    void *kernel_end;
+    void *bootmem_bitmap_begin;
 
     // +-------+-------+-------+-------+
     // | drive | part1 | part2 | part3 |
