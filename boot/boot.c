@@ -32,13 +32,13 @@ void init_boot_params(multiboot_info_t *p) {
 
     boot_params.boot_device = p->boot_device;
 
-    memory_map_t *mmap = (memory_map_t *)pa2va(p->mmap_addr);
+    multiboot_memory_map_t *mmap = (multiboot_memory_map_t *)pa2va(p->mmap_addr);
 
     unsigned int i;
-    boot_params.e820map.map_cnt = p->mmap_length / sizeof(memory_map_t);
+    boot_params.e820map.map_cnt = p->mmap_length / sizeof(multiboot_memory_map_t);
     for (i = 0; i < boot_params.e820map.map_cnt; ++i, ++mmap) {
-        boot_params.e820map.map[i].addr = mmap->base_addr_low;
-        boot_params.e820map.map[i].size = mmap->length_low;
+        boot_params.e820map.map[i].addr = mmap->addr;
+        boot_params.e820map.map[i].size = mmap->len;
         boot_params.e820map.map[i].type = mmap->type;
     }
 }

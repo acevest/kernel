@@ -13,6 +13,7 @@
  * 
  *--------------------------------------------------------------------------
  */
+#define ASM_FILE
 #define ASM
 #include "boot.h"
 #include "system.h"
@@ -28,6 +29,9 @@
 .extern root_task
 .extern root_task_entry
 
+#define MULTIBOOT_STACK_SIZE 0x4000
+//#define MULTIBOOT_HEADER_FLAGS MULTIBOOT_PAGE_ALIGN | MULTIBOOT_MEMORY_INFO | MULTIBOOT_VIDEO_MODE
+#define MULTIBOOT_HEADER_FLAGS MULTIBOOT_PAGE_ALIGN | MULTIBOOT_MEMORY_INFO
 
 .text
 .code32
@@ -138,7 +142,6 @@ GDTR:
     GDTRBase:  .long BootGDT-KRNLADDR
 
     .comm stack, MULTIBOOT_STACK_SIZE
-
 
 
 .section .multiboot_header

@@ -158,7 +158,7 @@ void root_task_entry() {
         // sysc_test();
         // printl(MPL_TASK_0, "root:0 [%08x] weight %d cnt %d", current, root_task.weight, cnt++);
         // printk("root:0 [%08x] weight %d cnt %d", current, current->weight, cnt++);
-        asm("sti;hlt;");
+        asm("hlt;");
         // asm("nop;nop;nop;");
         // sysc_test();
         // syscall0(SYSC_TEST);
