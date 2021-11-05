@@ -52,8 +52,30 @@ void check_kernel(unsigned long addr, unsigned long magic) {
 
     multiboot_info_t *mbi = (multiboot_info_t *)addr;
 
+    printk("multiboot info flag: %x\n", mbi->flags);
+
+    if (mbi->flags & MULTIBOOT_INFO_BOOT_LOADER_NAME != 0) {
+        printk("bootloader: %s\n", (char *)pa2va(mbi->boot_loader_name));
+    }
+
+    if (mbi->flags & MULTIBOOT_INFO_VBE_INFO != 0) {
+        printk("VBE control info: %x\n", mbi->vbe_control_info);
+        printk("VBE mode info: %x\n", mbi->vbe_mode_info);
+        printk("VBE mode: %x\n", mbi->vbe_mode);
+        printk("VBE interface seg: %x\n", mbi->vbe_interface_seg);
+        printk("VBE interface off: %x\n", mbi->vbe_interface_off);
+        printk("VBE interface len: %x\n", mbi->vbe_interface_len);
+    }
+
+    if (mbi->flags & MULTIBOOT_INFO_FRAMEBUFFER_INFO != 0) {
+        printk("frame buffer addr %08x [%dx%d]\n", (unsigned long)(mbi->framebuffer_addr & (~0UL)),
+               mbi->framebuffer_width, mbi->framebuffer_height);
+        printk("frame buffer pitch %x bpp %x type %x\n", mbi->framebuffer_pitch, mbi->framebuffer_bpp,
+               mbi->framebuffer_type);
+    }
+
     if ((mbi->flags & 0x47) != 0x47) {
-        printk("Kernel Need More Information\n");
+        printk("KERNEL NEED MORE INFORMATION\n");
         while (1)
             ;
     }
