@@ -67,6 +67,8 @@ typedef union task_union {
 
         wait_queue_head_t wait;
 
+        unsigned int sched_cnt;
+
         unsigned int cnt;  // debug only
     };
 

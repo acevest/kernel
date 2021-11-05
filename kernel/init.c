@@ -61,6 +61,8 @@ void __ring3text__ __attribute__((__aligned__(PAGE_SIZE))) ring3_entry() {
 void user_task_entry(char *name) {
     strcpy(current->name, name);
 
+    current->priority = 90;
+
     unsigned long ring3_text_page = va2pa(ring3_entry);
     unsigned long ring3_bss_page = va2pa(alloc_one_page(0));
 
@@ -99,6 +101,7 @@ void init_task_entry(char *name) {
 
     // 赋予不同的优先级
     current->priority = id * 30;
+
     if (current->priority <= 0) {
         current->priority = 1;
     }
@@ -150,6 +153,7 @@ void root_task_entry() {
     kernel_task("user", user_task_entry);
 
     int cnt = 0;
+
     while (1) {
         // sysc_test();
         // printl(MPL_TASK_0, "root:0 [%08x] weight %d cnt %d", current, root_task.weight, cnt++);

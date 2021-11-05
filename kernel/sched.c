@@ -194,11 +194,11 @@ unsigned long schedule() {
 
     if (prev != next) {
         // printk("switch to: %s:%d\n", next->name, next->pid);
-
+        sel->sched_cnt++;
         list_for_each_safe(pos, t, &all_tasks) {
             p = list_entry(pos, task_union, list);
-            printl(MPL_TASK_0 + p->pid, "%s%4s:%d [%08x] state %s weight %03d cnt %u", sel == p ? ">" : " ", p->name,
-                   p->pid, p, task_state(p->state), p->weight, p->cnt);
+            printl(MPL_TASK_0 + p->pid, "%s%4s:%d [%08x] state %s weight %03d sched %u", sel == p ? ">" : " ", p->name,
+                   p->pid, p, task_state(p->state), p->weight, p->sched_cnt);
         }
         context_switch(prev, next);
     }
