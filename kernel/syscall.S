@@ -89,7 +89,11 @@ ret_from_fork_krnl:
     addl    $12, %esp
     popfl
     addl    $8, %esp
+
+    # 用ebx传递参数
+    pushl   %ebx
     call    *%edx
+    addl    $4, %esp
 
     # 还没有实现do_exit
     #call    do_exit
@@ -101,18 +105,6 @@ ret_from_fork_krnl:
 # this page is shared by the kernel and userspace
 # the reason why i use this method is because of that the user program
 # no need to pay attention on the return address
-.global sysenter
-.section .sysenter
-.align 0x1000
-sysenter:
-    pushl   %ecx;
-    pushl   %edx;
-    pushl   %ebp;
-    movl    %esp, %ebp;
-    sysenter;
-
-
-
 .global sysexit
 .section .sysexit
 .align 0x1000

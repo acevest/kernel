@@ -29,8 +29,7 @@ SECTIONS
         boot/multiboot.S.o(.text)
         *(.multiboot_header)
         *(.text)
-
-        *(.sysenter) /* last */
+	*(.ring3.text);
         *(.sysexit) /* last */
     }
     etext = .;
@@ -49,24 +48,6 @@ SECTIONS
     }
 
     ebss = .;
-
-    .ring3.text : AT(phys_addr) ALIGN(0x1000)
-    {
-        phys_addr = . - kernel_virtual_addr_start;
-	    *(.ring3.text);
-    }
-
-    .ring3.data : AT(phys_addr) ALIGN(0x1000)
-    {
-        phys_addr = . - kernel_virtual_addr_start;
-	    *(.ring3.data);
-    }
-
-    .ring3.bss : AT(phys_addr) ALIGN(0x1000)
-    {
-        phys_addr = . - kernel_virtual_addr_start;
-	    *(.ring3.bss);
-    }
 
     end = .;
     _end = .;

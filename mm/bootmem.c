@@ -44,7 +44,7 @@ void fast_init_bootmem_bitmap(unsigned long bgn_pfn, unsigned long end_pfn, int 
     u8 data = op == 0 ? 0x00 : 0xFF;
 
     // 先设置头部不是从单个字节开始的比特
-    unsigned int i = 0;  // 这个变更不能放到for循环里定义
+    unsigned int i = 0;  // 这个变量不能放到for循环里定义
     for (i = bgn_pfn; i < end_pfn && (i % 8 != 0); i++) {
         bit_func(i, bootmem_data.bitmap);
     }
@@ -52,7 +52,7 @@ void fast_init_bootmem_bitmap(unsigned long bgn_pfn, unsigned long end_pfn, int 
     // 算出中间的整字节数
     unsigned int bytes = (end_pfn - i) / 8;
 
-    // 直接清零
+    // 直接清零或设置
     memset((char *)(bootmem_data.bitmap) + (i / 8), data, bytes);
 
     // 最后设置尾部不是整字节的比特

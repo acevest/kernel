@@ -37,6 +37,7 @@ enum {
     MPL_TEST,
     MPL_DEBUG,
     MPL_ROOT,
+    MPL_TASK_0,
     MPL_TASK_1,
     MPL_TASK_2,
     MPL_TASK_3,

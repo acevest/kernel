@@ -1308,4 +1308,4 @@ magic_break: enabled=1
 #megs: 32
 #megs: 16
 #megs: 8
-megs: 32
+megs: 8

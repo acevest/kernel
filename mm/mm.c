@@ -75,9 +75,7 @@ void init_paging() {
     }
 
     // paging for user space
-    extern void sysenter();
     extern void sysexit();
-    set_page_shared(sysenter);
     set_page_shared(sysexit);
 
     LoadCR3(va2pa(init_pgd));

@@ -143,7 +143,7 @@ unsigned long schedule() {
 
     unsigned long iflags;
     irq_save(iflags);
-    printl(MPL_ROOT, "root:%d [%08x] cnt %u", root_task.pid, &root_task, root_task.cnt);
+    // printl(MPL_ROOT, "root:%d [%08x] cnt %u", root_task.pid, &root_task, root_task.cnt);
 
     float min_ratio = 1.0;
 
@@ -172,8 +172,6 @@ unsigned long schedule() {
     list_for_each_safe(pos, t, &all_tasks) {
         p = list_entry(pos, task_union, list);
 
-        printl(MPL_ROOT + p->pid, "task:%d [%08x] state %s cnt %u", p->pid, p, task_state(p->state), p->cnt);
-
         if (p->state != TASK_RUNNING) {
             continue;
         }
@@ -196,6 +194,12 @@ unsigned long schedule() {
 
     if (prev != next) {
         // printk("switch to: %s:%d\n", next->name, next->pid);
+
+        list_for_each_safe(pos, t, &all_tasks) {
+            p = list_entry(pos, task_union, list);
+            printl(MPL_TASK_0 + p->pid, "%s%4s:%d [%08x] state %s weight %03d cnt %u", sel == p ? ">" : " ", p->name,
+                   p->pid, p, task_state(p->state), p->weight, p->cnt);
+        }
         context_switch(prev, next);
     }
 }
