@@ -23,6 +23,7 @@
 *.BIN
 *.bin
 *.map
+*.sym
 *.diff
 *.swp
 bin/hello

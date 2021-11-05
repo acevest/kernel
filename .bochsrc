@@ -671,7 +671,7 @@ private_colormap: enabled=0
 # The optional parameter 'write_protected' can be used to control the media
 # write protect switch. By default it is turned off.
 #=======================================================================
-floppya: 1_44=/dev/fd0, status=inserted
+#floppya: 1_44=/dev/fd0, status=inserted
 #floppya: image=../1.44, status=inserted
 #floppya: 1_44=/dev/fd0H1440, status=inserted
 #floppya: 1_2=../1_2, status=inserted
@@ -967,7 +967,7 @@ parport1: enabled=1, file="parport.out"
 # the Beep() function. The 'gui' mode forwards the beep to the related
 # gui methods (currently only used by the Carbon gui).
 #=======================================================================
-speaker: enabled=1, mode=sound, volume=15
+speaker: enabled=0, mode=sound, volume=15
 
 #=======================================================================
 # SB16:
@@ -1255,7 +1255,7 @@ magic_break: enabled=1
 #   debug_symbols: file="kernel.sym"
 #   debug_symbols: file="kernel.sym", offset=0x80000000
 #=======================================================================
-#debug_symbols: file="kernel.sym"
+debug_symbols: file="kernel.sym"
 
 #print_timestamps: enabled=1
 
@@ -1308,4 +1308,3 @@ magic_break: enabled=1
 #megs: 32
 #megs: 16
 #megs: 8
-megs: 8

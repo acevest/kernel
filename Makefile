@@ -22,6 +22,7 @@ OBJS := $(patsubst %,%.o,$(SOURCE_FILES))
 
 ${KERNELBIN}: ${OBJS}
 	${LD} -m elf_i386 -M -T$(LINKSCRIPT) $(OBJS) -o $@ > $(SYSTEMMAP)
+	nm -a $@ > kernel.sym
 	rm kernel/setup.c.o
 
 %.S.o: %.S ${HEADER_FILES}
