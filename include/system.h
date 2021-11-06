@@ -80,8 +80,19 @@ extern char gdtr[6], idtr[6];
 
 #define ALIGN(x, a) (((x) + (a)-1) & ~((a)-1))
 
-// 1 GB
-#define MAX_SUPT_PHYMM_SIZE (1UL << 30)
+// 定义最大显存为 16MB
+#define VRAM_VADDR_SIZE (16 << 20)
+
+// 最大支持的线性地址空间为1G
+#define MAX_SUPT_VADDR_SIZE (1UL << 30)
+
+// 把内核线性地址的最高部分留给显存
+// 余下的部分为支持映射其它物理内存的空间
+#define MAX_SUPT_PHYMM_SIZE (MAX_SUPT_VADDR_SIZE - VRAM_VADDR_SIZE)
+
+// 算出显存的线性地址
+// 之后要将这个地址映射到显存的物理地址
+#define VRAM_VADDR_BASE (PAGE_OFFSET + MAX_SUPT_PHYMM_SIZE)
 
 #define INT_STACK_SIZE PAGE_SIZE
 
@@ -154,6 +165,10 @@ typedef struct system {
     // Unused partition bytes must be set to 0xFF.
     // More Infomation see 'info multiboot'
     u32 boot_device;
+
+    u32 vbe_phys_addr;
+    u16 x_resolution;
+    u16 y_resolution;
 
     dev_t root_dev;
 #define CMD_LINE_SIZE 128

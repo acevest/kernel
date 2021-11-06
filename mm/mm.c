@@ -45,7 +45,8 @@ void init_paging() {
     unsigned int i;
     unsigned long pfn = 0;
     pte_t *pte = 0;
-    unsigned long pgtb_addr = 0;
+    unsigned long *pgtb_addr = 0;
+    void *alloc_from_bootmem(unsigned long size, char *title);
 
     // 在multiboot.S是已经初始化了BOOT_INIT_PAGETBL_CNT个页
     // 这里接着初始化剩余的页
@@ -54,16 +55,17 @@ void init_paging() {
         unsigned long ti = pfn % PAGE_PTE_CNT;
         unsigned long page_addr = pfn2pa(pfn);
         if (ti == 0) {
-            void *alloc_from_bootmem(unsigned long size, char *title);
-            pgtb_addr = (unsigned long)va2pa(alloc_from_bootmem(PAGE_SIZE, "paging"));
-            if (0 == pgtb_addr) panic("No Pages for Paging...");
+            pgtb_addr = (unsigned long *)alloc_from_bootmem(PAGE_SIZE, "paging");
+            if (0 == pgtb_addr) {
+                panic("no pages for paging...");
+            }
 
             memset((void *)pgtb_addr, 0, PAGE_SIZE);
 
-            init_pgd[get_npd(page_addr)] = (pde_t)(pgtb_addr | PAGE_P | PAGE_WR);
+            init_pgd[get_npd(page_addr)] = (pde_t)((unsigned long)va2pa(pgtb_addr) | PAGE_P | PAGE_WR);
         }
 
-        pte = ((pte_t *)pa2va(pgtb_addr)) + ti;
+        pte = ((pte_t *)pgtb_addr) + ti;
         *pte = (pte_t)(page_addr | PAGE_P | PAGE_WR);
     }
 
@@ -74,11 +76,34 @@ void init_paging() {
         init_pgd[i - delta] = 0;
     }
 
+    // 接下来为显存建立页映射
+    unsigned long vram_phys_addr = system.vbe_phys_addr;
+    for (int pde_inx = 0; pde_inx < get_npd(VRAM_VADDR_SIZE); pde_inx++) {
+        pgtb_addr = (unsigned long *)(alloc_from_bootmem(PAGE_SIZE, "vrampaging"));
+        if (0 == pgtb_addr) {
+            panic("no pages for paging...");
+        }
+        // 后续要初始化，所以此处不用memset
+        // memset((void *)pgtb_addr, 0, PAGE_SIZE);
+        init_pgd[get_npd(VRAM_VADDR_BASE) + pde_inx] = (pde_t)((unsigned long)va2pa(pgtb_addr) | PAGE_P | PAGE_WR);
+
+        for (int pte_inx = 0; pte_inx < PTECNT_PER_PAGE; pte_inx++) {
+            pgtb_addr[pte_inx] = vram_phys_addr | PAGE_P | PAGE_WR;
+            vram_phys_addr += PAGE_SIZE;
+        }
+    }
+
     // paging for user space
     extern void sysexit();
     set_page_shared(sysexit);
 
     LoadCR3(va2pa(init_pgd));
+
+    // 测试显存
+    for (int i = 0; i < 4096; i++) {
+        unsigned long *vram = (unsigned long *)VRAM_VADDR_BASE;
+        vram[i] = 0x00FF0000;
+    }
 }
 
 void init_mm() {

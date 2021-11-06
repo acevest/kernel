@@ -112,7 +112,8 @@ void e820_init_bootmem_data() {
     unsigned long max_support_pfn = PFN_DW(MAX_SUPT_PHYMM_SIZE);
     if (bootmem_data.max_pfn > max_support_pfn) {
         bootmem_data.max_pfn = max_support_pfn;
-        printk("memory > 1G, only support to 1G.\n");
+        unsigned long ms = max_support_pfn / 1024 * 4;  // 1024个pfn正好4MB
+        printk("memory > %dMB, only support to %dMB.\n", ms, ms);
     }
 
     printk("pfn_min: %d pfn_max: %d\n", bootmem_data.min_pfn, bootmem_data.max_pfn);

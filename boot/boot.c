@@ -20,7 +20,7 @@
 struct boot_params boot_params __attribute__((aligned(32)));
 
 void parse_cmdline(const char *cmdline);
-
+void init_vbe(void *vmiptr);
 void check_kernel(unsigned long addr, unsigned long magic) {
     if (magic != MULTIBOOT2_BOOTLOADER_MAGIC) {
         printk("Your boot loader does not support multiboot.\n");
@@ -34,9 +34,10 @@ void check_kernel(unsigned long addr, unsigned long magic) {
     printk("total size: %d tags: %x\n", total_size, tag);
 
     struct multiboot_tag_basic_meminfo *mminfo = 0;
-    multiboot_memory_map_t *mmap = 0;
-    struct multiboot_tag_mmap *mmap_tag = 0;
     struct multiboot_tag_bootdev *bootdev = 0;
+    struct multiboot_tag_mmap *mmap_tag = 0;
+    struct multiboot_tag_vbe *vbe = 0;
+    struct multiboot_tag_framebuffer *fb = 0;
 
     boot_params.e820map.map_cnt = 0;
 
@@ -65,7 +66,7 @@ void check_kernel(unsigned long addr, unsigned long magic) {
             break;
         case MULTIBOOT_TAG_TYPE_MMAP:
             mmap_tag = (struct multiboot_tag_mmap *)tag;
-            mmap = mmap_tag->entries;
+            multiboot_memory_map_t *mmap = mmap_tag->entries;
             while (((multiboot_uint32_t)mmap) < (((multiboot_uint32_t)mmap_tag) + mmap_tag->size)) {
                 boot_params.e820map.map[boot_params.e820map.map_cnt].addr = mmap->addr;
                 boot_params.e820map.map[boot_params.e820map.map_cnt].size = mmap->len;
@@ -73,6 +74,17 @@ void check_kernel(unsigned long addr, unsigned long magic) {
                 boot_params.e820map.map_cnt++;
                 mmap = (multiboot_memory_map_t *)(((unsigned long)mmap) + mmap_tag->entry_size);
             }
+            break;
+        case MULTIBOOT_TAG_TYPE_VBE:
+            vbe = (struct multiboot_tag_vbe *)tag;
+            void *vci = (void *)vbe->vbe_control_info.external_specification;
+            void *vmi = (void *)vbe->vbe_mode_info.external_specification;
+            // vbe->vbe_control_info;
+            // asm volatile("xchg %%bx, %%bx;nop;nop;" ::"a"(vci), "b"(vmi));
+            init_vbe(vmi);
+            break;
+        case MULTIBOOT_TAG_TYPE_FRAMEBUFFER:
+            asm volatile("xchg %bx, %bx;nop;nop;nop;nop;");
             break;
         default:
             printk("tag %x size %x\n", tag->type, tag->size);
@@ -133,6 +145,6 @@ void init_system_info() {
     printk("boot device: bios dev %x partition %x sub partition %x\n", boot_params.biosdev, boot_params.partition,
            boot_params.sub_partition);
     printk("mem lower %uKB upper %uKB\n", boot_params.mem_lower >> 10, boot_params.mem_upper >> 10);
-    while (1)
-        ;
+    // while (1)
+    //     ;
 }

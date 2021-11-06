@@ -167,15 +167,15 @@ multiboot2_header_bgn:
     # checksum
     .long   -(MULTIBOOT2_HEADER_MAGIC + MULTIBOOT_ARCHITECTURE_I386 + (multiboot2_header_end - multiboot2_header_bgn))
 
-    // .align 8
-    // .framebuffer_tag_bgn:
-    // .short MULTIBOOT_HEADER_TAG_FRAMEBUFFER
-    // .short MULTIBOOT_HEADER_TAG_OPTIONAL
-    // .long .framebuffer_tag_end - .framebuffer_tag_bgn
-    // .long 1280
-    // .long 800
-    // .long 32
-    // .framebuffer_tag_end:
+    .align 8
+    .framebuffer_tag_bgn:
+    .short MULTIBOOT_HEADER_TAG_FRAMEBUFFER
+    .short MULTIBOOT_HEADER_TAG_OPTIONAL
+    .long .framebuffer_tag_end - .framebuffer_tag_bgn
+    .long 1280
+    .long 800
+    .long 32
+    .framebuffer_tag_end:
 
     .align 8
     .multiboot2_tag_end:
