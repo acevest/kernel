@@ -30,17 +30,13 @@
 .extern root_task_entry
 
 #define MULTIBOOT_STACK_SIZE 0x4000
-//#define MULTIBOOT_HEADER_FLAGS MULTIBOOT_PAGE_ALIGN | MULTIBOOT_MEMORY_INFO | MULTIBOOT_VIDEO_MODE
-#define MULTIBOOT_HEADER_FLAGS MULTIBOOT_PAGE_ALIGN | MULTIBOOT_MEMORY_INFO
 
 .text
 .code32
 .align 32
 kernel_entry:
 main:
-    # Reset EFLAGS
-    pushl   $0
-    popf
+    cli
 
     # Load GDT's Information To GDTR
     lgdt    GDTR-KRNLADDR
@@ -53,6 +49,10 @@ main:
     movw    %dx,%gs
 
     movl    $(stack + MULTIBOOT_STACK_SIZE - KRNLADDR), %esp
+
+    # Reset EFLAGS
+    pushl   $0
+    popf
 
     # Save Multiboot Infomation...
     pushl   %eax
@@ -69,7 +69,15 @@ main:
     rep
     stosl
 
-    # Init Page Directory
+
+    # Length = BOOT_INIT_PAGETBL_CNT*4M
+    # [0x00000000, 0x00000000 + Length)
+    # [0xC0000000, 0xC0000000 + Length)
+    # 这两个线性地址空间都映射到同一片物理内存空间: [0x00000000, 0x00000000 + Length)
+
+
+    # 初始化页目录
+    # 设置低端线性地址空间的页表项
     movl    %ebx,%edi
     movl    $init_pgt-KRNLADDR,%eax
     addl    $3,%eax
@@ -79,6 +87,7 @@ main:
     addl    $0x1000,%eax
     loop    1b
 
+    # 设置内核线性地址空间的页表项
     movl    $kernel_virtual_addr_start,%eax
     shrl    $20,%eax
     addl    %ebx,%eax
@@ -92,7 +101,8 @@ main:
     addl    $0x1000,%eax
     loop    2b
     
-    # Init Page Table
+    # 初始化页表
+    # 直接线性映射BOOT_INIT_PAGETBL_CNT*4M物理内存
     movl    $init_pgt-KRNLADDR,%ebx
     movl    %ebx,%edi
     movl    $(BOOT_INIT_PAGETBL_CNT*1024),%ecx
@@ -110,7 +120,6 @@ main:
     movl    %cr0,%eax
     orl     $0x80010000,%eax
     movl    %eax,%cr0
-
 
     jmp     4f
 4:
@@ -144,14 +153,33 @@ GDTR:
     .comm stack, MULTIBOOT_STACK_SIZE
 
 
-.section .multiboot_header
-.align 32
-    # Multiboot Header
-    # Align 32 bits boundary
-    .align 4
-    # Magic
-    .long MULTIBOOT_HEADER_MAGIC
-    # Flags
-    .long MULTIBOOT_HEADER_FLAGS
-    # Checksum
-    .long -(MULTIBOOT_HEADER_MAGIC + MULTIBOOT_HEADER_FLAGS)
+
+.section .multiboot2_header
+# section align 64 bits boundary
+.align 64
+multiboot2_header_bgn:
+    # magic
+    .long MULTIBOOT2_HEADER_MAGIC
+    # ISA: i386
+    .long MULTIBOOT_ARCHITECTURE_I386
+    # header length
+    .long multiboot2_header_end - multiboot2_header_bgn
+    # checksum
+    .long   -(MULTIBOOT2_HEADER_MAGIC + MULTIBOOT_ARCHITECTURE_I386 + (multiboot2_header_end - multiboot2_header_bgn))
+
+    // .align 8
+    // .framebuffer_tag_bgn:
+    // .short MULTIBOOT_HEADER_TAG_FRAMEBUFFER
+    // .short MULTIBOOT_HEADER_TAG_OPTIONAL
+    // .long .framebuffer_tag_end - .framebuffer_tag_bgn
+    // .long 1280
+    // .long 800
+    // .long 32
+    // .framebuffer_tag_end:
+
+    .align 8
+    .multiboot2_tag_end:
+    .short MULTIBOOT_HEADER_TAG_END
+    .short 0
+    .long  8
+multiboot2_header_end:

@@ -12,6 +12,36 @@ char *strcpy(char *dest, const char *src) {
     return p;
 }
 
+char *strncpy(char *dst, const char *src, size_t len) {
+    for (size_t i = 0; i < len; i++) {
+        dst[i] = src[i];
+        if (src[i] == 0) {
+            break;
+        }
+    }
+
+    return dst;
+}
+
+size_t strlcpy(char *dst, const char *src, size_t size) {
+    size_t i = 0;
+
+    if (size == 0) {
+        return 0;
+    }
+
+    for (i = 0; i < size - 1; i++) {
+        dst[i] = src[i];
+        if (src[i] == 0) {
+            break;
+        }
+    }
+
+    dst[i] = 0;
+
+    return i;
+}
+
 size_t strlen(const char *str) {
     int i = 0;
     while (*str++) i++;

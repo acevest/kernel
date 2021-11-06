@@ -14,42 +14,75 @@
 #include <bits.h>
 #include <boot.h>
 #include <page.h>
+#include <string.h>
 #include <system.h>
 
 struct boot_params boot_params __attribute__((aligned(32)));
 
 void parse_cmdline(const char *cmdline);
 
-void init_boot_params(multiboot_info_t *p) {
-    boot_params.cmdline = (char *)p->cmdline;
-
-    parse_cmdline(boot_params.cmdline);
-
-    // KB to Bytes
-    // no need to concern about 64bit
-    boot_params.mem_lower = p->mem_lower << 10;
-    boot_params.mem_upper = p->mem_upper << 10;
-
-    boot_params.boot_device = p->boot_device;
-
-    multiboot_memory_map_t *mmap = (multiboot_memory_map_t *)pa2va(p->mmap_addr);
-
-    unsigned int i;
-    boot_params.e820map.map_cnt = p->mmap_length / sizeof(multiboot_memory_map_t);
-    for (i = 0; i < boot_params.e820map.map_cnt; ++i, ++mmap) {
-        boot_params.e820map.map[i].addr = mmap->addr;
-        boot_params.e820map.map[i].size = mmap->len;
-        boot_params.e820map.map[i].type = mmap->type;
-    }
-}
-
 void check_kernel(unsigned long addr, unsigned long magic) {
-    if (magic != MULTIBOOT_BOOTLOADER_MAGIC) {
+    if (magic != MULTIBOOT2_BOOTLOADER_MAGIC) {
         printk("Your boot loader does not support multiboot.\n");
-        while (1)
-            ;
+        while (1) {
+        }
     }
 
+    unsigned long total_size = *((unsigned long *)addr);
+    struct multiboot_tag *tag = (struct multiboot_tag *)(addr + 8);  // 跳过中间的 reserved 字段
+
+    printk("total size: %d tags: %x\n", total_size, tag);
+
+    struct multiboot_tag_basic_meminfo *mminfo = 0;
+    multiboot_memory_map_t *mmap = 0;
+    struct multiboot_tag_mmap *mmap_tag = 0;
+    struct multiboot_tag_bootdev *bootdev = 0;
+
+    boot_params.e820map.map_cnt = 0;
+
+    while (tag->type != MULTIBOOT_TAG_TYPE_END) {
+        switch (tag->type) {
+        case MULTIBOOT_TAG_TYPE_CMDLINE:
+            strlcpy(boot_params.cmdline, ((struct multiboot_tag_string *)tag)->string, sizeof(boot_params.cmdline));
+            parse_cmdline(boot_params.cmdline);
+            break;
+        case MULTIBOOT_TAG_TYPE_BOOT_LOADER_NAME:
+            strlcpy(boot_params.bootloader, ((struct multiboot_tag_string *)tag)->string,
+                    sizeof(boot_params.bootloader));
+            break;
+        case MULTIBOOT_TAG_TYPE_BASIC_MEMINFO:
+            mminfo = (struct multiboot_tag_basic_meminfo *)tag;
+            // KB to Bytes
+            // no need to concern about 64bit
+            boot_params.mem_lower = mminfo->mem_lower << 10;
+            boot_params.mem_upper = mminfo->mem_upper << 10;
+            break;
+        case MULTIBOOT_TAG_TYPE_BOOTDEV:
+            bootdev = (struct multiboot_tag_bootdev *)tag;
+            boot_params.biosdev = bootdev->biosdev;
+            boot_params.partition = bootdev->slice;
+            boot_params.sub_partition = bootdev->part;
+            break;
+        case MULTIBOOT_TAG_TYPE_MMAP:
+            mmap_tag = (struct multiboot_tag_mmap *)tag;
+            mmap = mmap_tag->entries;
+            while (((multiboot_uint32_t)mmap) < (((multiboot_uint32_t)mmap_tag) + mmap_tag->size)) {
+                boot_params.e820map.map[boot_params.e820map.map_cnt].addr = mmap->addr;
+                boot_params.e820map.map[boot_params.e820map.map_cnt].size = mmap->len;
+                boot_params.e820map.map[boot_params.e820map.map_cnt].type = mmap->type;
+                boot_params.e820map.map_cnt++;
+                mmap = (multiboot_memory_map_t *)(((unsigned long)mmap) + mmap_tag->entry_size);
+            }
+            break;
+        default:
+            printk("tag %x size %x\n", tag->type, tag->size);
+            break;
+        }
+        // next tag
+        unsigned long size = (tag->size + 7) & (~7UL);
+        tag = (struct multiboot_tag *)(((unsigned long)tag) + size);
+    }
+#if 0
     multiboot_info_t *mbi = (multiboot_info_t *)addr;
 
     printk("multiboot info flag: %x\n", mbi->flags);
@@ -73,6 +106,8 @@ void check_kernel(unsigned long addr, unsigned long magic) {
         printk("frame buffer pitch %x bpp %x type %x\n", mbi->framebuffer_pitch, mbi->framebuffer_bpp,
                mbi->framebuffer_type);
     }
+    while (1)
+        ;
 
     if ((mbi->flags & 0x47) != 0x47) {
         printk("KERNEL NEED MORE INFORMATION\n");
@@ -81,6 +116,7 @@ void check_kernel(unsigned long addr, unsigned long magic) {
     }
 
     init_boot_params(mbi);
+#endif
 }
 
 extern void *kernel_begin;
@@ -92,4 +128,11 @@ void init_system_info() {
     system.bootmem_bitmap_begin = &bootmem_bitmap_begin;
 
     printk("kernel [%x, %x] bootmem bitmap: %x\n", system.kernel_begin, system.kernel_end, system.bootmem_bitmap_begin);
+
+    printk("bootloader: %s\n", boot_params.bootloader);
+    printk("boot device: bios dev %x partition %x sub partition %x\n", boot_params.biosdev, boot_params.partition,
+           boot_params.sub_partition);
+    printk("mem lower %uKB upper %uKB\n", boot_params.mem_lower >> 10, boot_params.mem_upper >> 10);
+    while (1)
+        ;
 }

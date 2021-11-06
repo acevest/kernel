@@ -9,9 +9,9 @@
 
 #pragma once
 
-#include "multiboot.h"
+#include "multiboot2.h"
 
-#define BOOT_INIT_PAGETBL_CNT 2
+#define BOOT_INIT_PAGETBL_CNT 2  // 8MB
 
 #ifndef ASM
 
@@ -35,12 +35,17 @@ struct e820map {
 };
 
 struct boot_params {
-    char *cmdline;
-    unsigned long boot_device;
-    unsigned long root_device;
+    char cmdline[256];
+    char bootloader[64];
+
+    unsigned long root_device;  // 从cmdline里解析出来的
 
     unsigned long mem_lower;  // in bytes
     unsigned long mem_upper;
+
+    unsigned long biosdev;
+    unsigned long partition;
+    unsigned long sub_partition;
 
     struct e820map e820map;
 };

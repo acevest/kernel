@@ -17,6 +17,7 @@ cp ./KERNEL.BIN /mnt/boot/Kernel
 cp scripts/grub.cfg /mnt/boot/grub2/
 
 md5sum /mnt/boot/Kernel
+md5sum /mnt/boot/grub2/grub.cfg
 
 mkdir -p /mnt/bin/
 cp ./bin/shell /mnt/bin/
