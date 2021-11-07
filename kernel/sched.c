@@ -79,12 +79,16 @@ void setup_tasks() {
     init_root_tsk();
 
     task_union_cache = kmem_cache_create("task_union", sizeof(task_union), PAGE_SIZE);
-    if (0 == task_union_cache) panic("setup tasks failed. out of memory");
+    if (0 == task_union_cache) {
+        panic("setup tasks failed. out of memory");
+    }
 }
 
-task_union *alloc_task_union() { return (task_union *)kmem_cache_alloc(task_union_cache, 0); }
-
-inline task_union *get_next_tsk() { return 0; }
+task_union *alloc_task_union() {
+    task_union *task;
+    task = (task_union *)kmem_cache_alloc(task_union_cache, 0);
+    return task;
+}
 
 void switch_to() {
     LoadCR3(current->cr3);
