@@ -39,6 +39,28 @@ void tty_clear(tty_t *tty) {
     }
 }
 
+// 因为光标要指向下一个待输出的位置
+// 在这个位置的光标的颜色与该位置已经设置的颜色一样
+// 一般输出一个字符，则光标位置在这个字符之后
+// 而如果输出字符颜色与光标所处位置已经设置的颜色不一致的话
+// 就需要将输出的这个字符的后一个位置的颜色设置成与之一致
+// 这样光标颜色才与输出字符一致
+void __tty_set_next_pos_color(tty_t *tty, char color) {
+    unsigned int xpos = tty->xpos;
+    unsigned int ypos = tty->ypos;
+
+    xpos += 1;  // 指向下一个位置
+
+    ypos += xpos / CHARS_PER_LINE;
+    xpos %= CHARS_PER_LINE;
+
+    if (ypos < MAX_Y) {
+        char *dst = (char *)(tty->base_addr + ypos * BYTES_PER_LINE + 2 * xpos);
+        dst[0] = 0;
+        dst[1] = color;
+    }
+}
+
 void init_tty(tty_t *tty, const char *name, unsigned long base) {
     assert(0 != tty);
 
@@ -46,8 +68,8 @@ void init_tty(tty_t *tty, const char *name, unsigned long base) {
 
     strlcpy(tty->name, name, sizeof(tty->name));
 
-    tty->fg_color = 0x8 | TTY_GREEN;  // 高亮
-    tty->bg_color = 0x0 | TTY_BLACK;  // 不闪
+    tty->fg_color = TTY_FG_HIGHLIGHT | TTY_GREEN;  // 高亮
+    tty->bg_color = TTY_BLACK;                     // 不闪
 
     tty->base_addr = base;
 }
@@ -69,8 +91,13 @@ void init_ttys() {
 }
 
 void tty_do_scroll_up(tty_t *tty) {
-    // 不需要上卷
-    if (tty->ypos < MAX_Y) {
+    // 没越过最后一行不需要上卷
+    if (tty->ypos < MAX_Y - 1) {
+        return;
+    }
+
+    // 达到最后一行，没到最后一个字符也不用上卷
+    if (tty->ypos == (MAX_Y - 1) && tty->xpos < MAX_X) {
         return;
     }
 
@@ -87,6 +114,7 @@ void tty_do_scroll_up(tty_t *tty) {
         *dst++ = (tty->bg_color << 4) | tty->fg_color;
     }
 
+    tty->xpos = 0;
     tty->ypos = MAX_Y - 1;
 }
 
@@ -129,8 +157,6 @@ void tty_color_putc(tty_t *tty, char c, unsigned int fg_color, unsigned bg_color
     tty->ypos += tty->xpos / CHARS_PER_LINE;
     tty->xpos %= CHARS_PER_LINE;
 
-    tty_do_scroll_up(tty);
-
     // 显示
     if (display) {
         unsigned int pos = tty->ypos * BYTES_PER_LINE + tty->xpos * 2;
@@ -138,10 +164,14 @@ void tty_color_putc(tty_t *tty, char c, unsigned int fg_color, unsigned bg_color
         va[0] = c;
         va[1] = (bg_color << 4) | fg_color;
 
+        __tty_set_next_pos_color(tty, va[1]);
+
         if (move_to_next_pos) {
             tty->xpos++;
         }
     }
+
+    tty_do_scroll_up(tty);
 
     tty_set_cursor(tty);
 }
