@@ -43,7 +43,11 @@ void load_cr3(task_union *tsk) { LoadCR3(tsk->cr3); }
 
 extern pde_t __initdata init_pgd[PDECNT_PER_PAGE] __attribute__((__aligned__(PAGE_SIZE)));
 
-list_head_t all_tasks;
+// list_head_t all_tasks;
+// list_head_t delay_tasks;
+LIST_HEAD(all_tasks);
+
+LIST_HEAD(pend_tasks);
 
 void init_root_tsk() {
     int i;
@@ -56,8 +60,8 @@ void init_root_tsk() {
     root_task.priority = 100;
     strcpy(root_task.name, "root");
 
-    INIT_LIST_HEAD(&all_tasks);
     list_add(&root_task.list, &all_tasks);
+    // INIT_LIST_HEAD(&root_task.next);
 
     //  TODO
     // for(i=0; i<NR_OPENS; i++)
@@ -76,6 +80,9 @@ void init_root_tsk() {
 kmem_cache_t *task_union_cache;
 
 void setup_tasks() {
+    INIT_LIST_HEAD(&all_tasks);
+    INIT_LIST_HEAD(&pend_tasks);
+
     init_root_tsk();
 
     task_union_cache = kmem_cache_create("task_union", sizeof(task_union), PAGE_SIZE);
@@ -123,7 +130,9 @@ task_union *find_task(pid_t pid) {
     irq_save(iflags);
     list_for_each_safe(pos, tmp, &all_tasks) {
         p = list_entry(pos, task_union, list);
-        if (p->pid == pid) break;
+        if (p->pid == pid) {
+            break;
+        }
     }
     irq_restore(iflags);
 
@@ -180,8 +189,6 @@ unsigned long schedule() {
             continue;
         }
 
-        // printd("%08x %s weight %d\n", p, p->name, p->weight);
-
         float ratio = (float)(p->weight * 1.0) / (p->priority * 1.0);
         if (ratio < min_ratio) {
             sel = p;
@@ -191,7 +198,17 @@ unsigned long schedule() {
     irq_restore(iflags);
 
     sel->weight++;
-    printd("%08x %s:%d weight %d\n", sel, sel->name, sel->pid, sel->weight);
+    printk("%08x %s weight %d state: %s\n", sel, sel->name, sel->weight, task_state(sel->state));
+
+    list_for_each_safe(pos, t, &all_tasks) {
+        p = list_entry(pos, task_union, list);
+        printl(MPL_TASK_0 + p->pid, " ");  //清掉上一次显示的 '>'
+        printl(MPL_TASK_0 + p->pid, "%s%4s:%d [%08x] state %s weight %03d sched %u", sel == p ? ">" : " ", p->name,
+               p->pid, p, task_state(p->state), p->weight, p->sched_cnt);
+        if (sel->state == TASK_WAIT) {
+            asm volatile("xchg %bx, %bx");
+        }
+    }
 
     task_union *prev = current;
     task_union *next = sel;
@@ -199,11 +216,6 @@ unsigned long schedule() {
     if (prev != next) {
         // printk("switch to: %s:%d\n", next->name, next->pid);
         sel->sched_cnt++;
-        list_for_each_safe(pos, t, &all_tasks) {
-            p = list_entry(pos, task_union, list);
-            printl(MPL_TASK_0 + p->pid, "%s%4s:%d [%08x] state %s weight %03d sched %u", sel == p ? ">" : " ", p->name,
-                   p->pid, p, task_state(p->state), p->weight, p->sched_cnt);
-        }
         context_switch(prev, next);
     }
 }

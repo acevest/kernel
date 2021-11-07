@@ -63,13 +63,15 @@ typedef union task_union {
 
         char name[TASK_NAME_SIZE];
 
-        list_head_t list;
+        list_head_t list;  // 所有进程串成一个链表
+
+        list_head_t pend;  // 某些条件串成一个链表
 
         wait_queue_head_t wait;
 
         unsigned int sched_cnt;
 
-        unsigned int cnt;  // debug only
+        int delay_cnt;  // debug only
     };
 
     unsigned char stack[TASK_SIZE];

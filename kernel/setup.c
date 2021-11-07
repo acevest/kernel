@@ -17,6 +17,7 @@
 #include <io.h>
 #include <printk.h>
 #include <system.h>
+#include <tty.h>
 
 extern void init_mm();
 extern void setup_gdt();
@@ -81,7 +82,8 @@ void setup_kernel() {
     setup_tasks();
 
     setup_irqs();
-    printk("fuck\tfu\tsad\tasdfa\t\taa\n");
+    extern tty_t monitor_tty;
+    // tty_switch(&monitor_tty);
     return;
 
     // switch_printk_screen();

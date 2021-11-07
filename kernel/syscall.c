@@ -44,7 +44,21 @@ int sysc_pause(unsigned long tick) { return 0; }
 
 int sysc_test() {
     static unsigned int cnt = 0;
-    current->cnt++;
+
+    current->delay_cnt = root_task.sched_cnt % 40;
+
+    unsigned long iflags;
+    irq_save(iflags);
+
+    current->state = TASK_WAIT;
+    // 现在sysc还没有实现进程切换
+    // 这个要到下一次中断之后才生效
+    list_add(&(current->pend), &pend_tasks);
+
+    irq_restore(iflags);
+
+    schedule();
+
     // printl(MPL_TEST, "systest cnt %u current %08x cnt %u          ",
     //        cnt++, current, cnt);
     // printk("systest cnt %u current %08x cnt %u\n",cnt++, current, cnt);
