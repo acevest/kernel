@@ -11,6 +11,7 @@
 // #include <page.h>
 #include <system.h>
 #include <types.h>
+
 typedef struct vbe_mode_info {
     u16 mode_attributes;
     u8 wina_attributes;
@@ -62,23 +63,10 @@ typedef struct vbe_mode_info {
 // pte_t vbe_pte[PTECNT_PER_PAGE] __attribute__((__aligned__(PAGE_SIZE)));
 
 // extern pde_t init_pgd[];
-void init_vbe(void *vmiptr) {
+void init_vbe(void *vciptr, void *vmiptr) {
     vbe_mode_info_t *vmi = (vbe_mode_info_t *)vmiptr;
+
     system.vbe_phys_addr = vmi->phys_base_ptr;
     system.x_resolution = vmi->x_resolution;
     system.y_resolution = vmi->y_resolution;
-    // unsigned long phys_base_addr = vmi->phys_base_ptr;
-
-    // asm volatile("xchg %%bx, %%bx;nop;" ::"a"(phys_base_addr));
-
-    // init_pgd[phys_base_addr >> 22] = va2pa(vbe_pte) | 7;
-    // asm volatile("xchg %bx, %bx;nop;nop;nop;nop;");
-    // for (int i = 0; i < PTECNT_PER_PAGE; i++) {
-    //     vbe_pte[i] = phys_base_addr + i * PAGE_SIZE + 7;
-    // }
-    // asm volatile("xchg %bx, %bx;nop;nop;nop;nop;");
-    // unsigned long *p = (unsigned long *)phys_base_addr;
-    // for (int i = 0; i < 1024; i++) {
-    //     p[i] = 0x00FF0000;
-    // }
 }

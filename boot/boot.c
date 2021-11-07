@@ -20,7 +20,7 @@
 struct boot_params boot_params __attribute__((aligned(32)));
 
 void parse_cmdline(const char *cmdline);
-void init_vbe(void *vmiptr);
+void init_vbe(void *, void *);
 void check_kernel(unsigned long addr, unsigned long magic) {
     if (magic != MULTIBOOT2_BOOTLOADER_MAGIC) {
         printk("Your boot loader does not support multiboot.\n");
@@ -81,10 +81,12 @@ void check_kernel(unsigned long addr, unsigned long magic) {
             void *vmi = (void *)vbe->vbe_mode_info.external_specification;
             // vbe->vbe_control_info;
             // asm volatile("xchg %%bx, %%bx;nop;nop;" ::"a"(vci), "b"(vmi));
-            init_vbe(vmi);
+            // asm volatile("xchg %%bx, %%bx;nop;nop;" ::"a"(vbe->vbe_interface_seg), "b"(vbe->vbe_interface_off),
+            //              "c"(vbe->vbe_interface_len));
+            init_vbe(vci, vmi);
             break;
         case MULTIBOOT_TAG_TYPE_FRAMEBUFFER:
-            asm volatile("xchg %bx, %bx;nop;nop;nop;nop;");
+            // asm volatile("xchg %bx, %bx;nop;nop;nop;nop;");
             break;
         default:
             printk("tag %x size %x\n", tag->type, tag->size);
