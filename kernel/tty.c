@@ -78,7 +78,7 @@ void init_ttys() {
     init_tty(&default_tty, "tty.default", VADDR + 0 * TTY_VRAM_SIZE);
     init_tty(&monitor_tty, "tty.monitor", VADDR + 1 * TTY_VRAM_SIZE);
 
-    monitor_tty.fg_color = TTY_WHITE;
+    monitor_tty.fg_color = TTY_FG_HIGHLIGHT | TTY_WHITE;
     monitor_tty.bg_color = TTY_BLUE;
     tty_clear(&monitor_tty);
 
