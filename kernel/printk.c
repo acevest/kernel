@@ -16,6 +16,7 @@
  */
 
 #include <system.h>
+#include <tty.h>
 
 extern void vga_puts(unsigned int nr, const char *buf, unsigned char color);
 extern void vga_dbg_puts(unsigned int line, unsigned int offset, const char *buf);
@@ -30,10 +31,13 @@ void switch_printk_screen() {
 }
 
 char pkbuf[1024];
+extern tty_t default_tty;
 int printk(const char *fmtstr, ...) {
     char *args = (char *)(((char *)&fmtstr) + 4);
-    vsprintf(pkbuf, fmtstr, args);
-    vga_puts(printk_screen_nr, pkbuf, 0x2);
+    int size = vsprintf(pkbuf, fmtstr, args);
+    // vga_puts(printk_screen_nr, pkbuf, 0x2);
+    tty_write(&default_tty, pkbuf, (size_t)size);
+    // tty_write(&default_tty, "aaa\n", (size_t)4);
     return 0;
 }
 
@@ -47,9 +51,12 @@ int printd(const char *fmtstr, ...) {
 }
 
 char plobuf[1024];
+extern tty_t monitor_tty;
 int printlo(unsigned int line, unsigned int offset, const char *fmtstr, ...) {
     char *args = (char *)(((char *)&fmtstr) + 4);
-    vsprintf(plobuf, fmtstr, args);
-    vga_dbg_puts(line, offset, plobuf);
+    int size = vsprintf(plobuf, fmtstr, args);
+    // vga_dbg_puts(line, offset, plobuf);
+    tty_write_at(&monitor_tty, offset, line, plobuf, (size_t)size);
+    // tty_write_at(&monitor_tty, 1, 2, "abc\n", (size_t)4);
     return 0;
 }

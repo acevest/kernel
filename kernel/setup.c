@@ -36,6 +36,7 @@ extern void setup_ext2();
 extern void reboot();
 extern void cnsl_init();
 extern void vga_init();
+extern void init_ttys();
 
 #define HZ 10
 #define CLOCK_TICK_RATE 1193180
@@ -57,6 +58,7 @@ const char *version = "Kernel version " VERSION " @ " BUILDER
 
 void setup_kernel() {
     vga_init();
+    init_ttys();
 
     init_mm();
 

@@ -95,6 +95,8 @@ int vsprintf(char *buf, const char *fmt, char *args) {
         fmt++;
     }
     *p = 0;
+
+    return p - buf;
 }
 
 void swap_char(char *a, char *b) {

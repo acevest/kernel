@@ -20,6 +20,7 @@
 #include <string.h>
 #include <syscall.h>
 #include <system.h>
+#include <tty.h>
 
 void reboot();
 void poweroff();
@@ -107,8 +108,13 @@ void kbd_debug(unsigned char scan_code) {
         while (1)
             ;
     }
-    if (scan_code == 0x58)  // F12
-        vga_dbg_toggle();
+
+    extern tty_t default_tty;
+    extern tty_t monitor_tty;
+    if (scan_code == 0x58) {  // F12
+        current_tty = current_tty != &default_tty ? &default_tty : &monitor_tty;
+        tty_switch(current_tty);
+    }
 
     // ide_status();
 }
