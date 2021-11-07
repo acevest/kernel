@@ -75,19 +75,20 @@ void kbd_debug(unsigned char scan_code) {
     static unsigned long kbd_cnt = 0;
     printl(MPL_KEYBOARD, "keyboard irq: %d scan code %02x", kbd_cnt++, scan_code);
 
-    if (scan_code == 0x01)  // Esc
+    if (scan_code == 0x01) {  // Esc
         reboot();
+    }
 
     printd("[%02x]", scan_code);
 
-    if (scan_code == 0x3B)  // F1
-        vga_switch(0);
-    if (scan_code == 0x3C)  // F2
-        vga_switch(1);
-    if (scan_code == 0x3D)  // F3
-        vga_switch(2);
-    if (scan_code == 0x3E)  // F4
-        vga_switch(3);
+    // if (scan_code == 0x3B)  // F1
+    //     vga_switch(0);
+    // if (scan_code == 0x3C)  // F2
+    //     vga_switch(1);
+    // if (scan_code == 0x3D)  // F3
+    //     vga_switch(2);
+    // if (scan_code == 0x3E)  // F4
+    //     vga_switch(3);
 
     if (scan_code == 0x3F)  // F5
         debug_wait_queue_put(0);

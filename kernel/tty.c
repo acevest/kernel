@@ -14,12 +14,6 @@
 #include <string.h>
 #include <tty.h>
 
-#define BLACK 0b000
-#define WHITE 0b111
-#define RED 0b100
-#define GREEN 0b010
-#define BLUE 0b001
-
 // 从0xB8000处开始有32KB显存可利用
 // 而一屏所需要的显存为 80*25*2 = 4000 约为4K
 // 所以大致可以分出8个tty
@@ -35,11 +29,12 @@
 
 tty_t default_tty;
 tty_t monitor_tty;
+tty_t debug_tty;
 
 void tty_clear(tty_t *tty) {
     char *dst = (char *)tty->base_addr;
     for (int src = 0; src < (MAX_Y * BYTES_PER_LINE); src += 2) {
-        *dst++ = ' ';
+        *dst++ = 0;
         *dst++ = (tty->bg_color << 4) | tty->fg_color;
     }
 }
@@ -51,8 +46,8 @@ void init_tty(tty_t *tty, const char *name, unsigned long base) {
 
     strlcpy(tty->name, name, sizeof(tty->name));
 
-    tty->fg_color = 0x8 | GREEN;  // 高亮
-    tty->bg_color = 0x0 | BLACK;  // 不闪
+    tty->fg_color = 0x8 | TTY_GREEN;  // 高亮
+    tty->bg_color = 0x0 | TTY_BLACK;  // 不闪
 
     tty->base_addr = base;
 }
@@ -61,11 +56,16 @@ void init_ttys() {
     init_tty(&default_tty, "tty.default", VADDR + 0 * TTY_VRAM_SIZE);
     init_tty(&monitor_tty, "tty.monitor", VADDR + 1 * TTY_VRAM_SIZE);
 
-    monitor_tty.fg_color = WHITE;
-    monitor_tty.bg_color = BLUE;
+    monitor_tty.fg_color = TTY_WHITE;
+    monitor_tty.bg_color = TTY_BLUE;
     tty_clear(&monitor_tty);
 
     current_tty = &default_tty;
+
+    init_tty(&debug_tty, "tty.debug", VADDR + 7 * TTY_VRAM_SIZE);
+    debug_tty.fg_color = TTY_BLACK;
+    debug_tty.bg_color = TTY_RED;
+    tty_clear(&debug_tty);
 }
 
 void tty_do_scroll_up(tty_t *tty) {
@@ -83,15 +83,16 @@ void tty_do_scroll_up(tty_t *tty) {
     // 清空最后一行
     dst = (char *)(tty->base_addr + ((MAX_Y - 1) * BYTES_PER_LINE));
     for (int i = 0; i < BYTES_PER_LINE; i += 2) {
-        *dst++ = ' ';
+        *dst++ = 0;
         *dst++ = (tty->bg_color << 4) | tty->fg_color;
     }
 
     tty->ypos = MAX_Y - 1;
 }
 
-void tty_putc(tty_t *tty, char c) {
+void tty_color_putc(tty_t *tty, char c, unsigned int fg_color, unsigned bg_color) {
     bool display = false;
+    bool move_to_next_pos = true;
     switch (c) {
     case '\r':
         tty->xpos = 0;
@@ -102,15 +103,31 @@ void tty_putc(tty_t *tty, char c) {
     case '\t':
         tty->xpos += TAB_SPACE;
         tty->xpos &= ~(TAB_SPACE - 1);
-        tty->ypos += tty->xpos / CHARS_PER_LINE;
-        tty->xpos %= CHARS_PER_LINE;
+        break;
+    case '\b':
+        if (tty->xpos == 0) {
+            if (tty->ypos > 0) {
+                tty->xpos = CHARS_PER_LINE - 1;
+                tty->ypos -= 1;
+            } else {
+                tty->ypos = 0;
+            }
+        } else if (tty->xpos > 0) {
+            tty->xpos -= 1;
+        } else {
+            tty->xpos = 0;
+        }
+        c = 0;
+        display = true;
+        move_to_next_pos = false;
         break;
     default:
-        tty->ypos += tty->xpos / CHARS_PER_LINE;
-        tty->xpos %= CHARS_PER_LINE;
         display = true;
         break;
     }
+
+    tty->ypos += tty->xpos / CHARS_PER_LINE;
+    tty->xpos %= CHARS_PER_LINE;
 
     tty_do_scroll_up(tty);
 
@@ -119,13 +136,17 @@ void tty_putc(tty_t *tty, char c) {
         unsigned int pos = tty->ypos * BYTES_PER_LINE + tty->xpos * 2;
         char *va = (char *)(tty->base_addr + pos);
         va[0] = c;
-        va[1] = (tty->bg_color << 4) | tty->fg_color;
+        va[1] = (bg_color << 4) | fg_color;
 
-        tty->xpos++;
+        if (move_to_next_pos) {
+            tty->xpos++;
+        }
     }
 
     tty_set_cursor(tty);
 }
+
+void tty_putc(tty_t *tty, char c) { tty_color_putc(tty, c, tty->fg_color, tty->bg_color); }
 
 void tty_write(tty_t *tty, const char *buf, size_t size) {
     assert(0 != tty);
@@ -158,8 +179,7 @@ void tty_set_cursor(tty_t *tty) {
     if (tty != current_tty) {
         return;
     }
-    unsigned int offset = tty->ypos * MAX_Y + tty->xpos;
-    offset += VADDR;
+    unsigned int offset = tty->ypos * MAX_X + tty->xpos;
 
     unsigned long flags;
     irq_save(flags);
@@ -177,10 +197,13 @@ void tty_switch(tty_t *tty) {
 
     unsigned int offset = (tty->base_addr - VADDR) / 2;
 
+    unsigned long flags;
+    irq_save(flags);
     outb(VGA_CRTC_START_ADDR_H, VGA_CRTC_ADDR);
     outb((offset >> 8) & 0xFF, VGA_CRTC_DATA);
     outb(VGA_CRTC_START_ADDR_L, VGA_CRTC_ADDR);
     outb((offset)&0xFF, VGA_CRTC_DATA);
+    irq_restore(flags);
 
     current_tty = tty;
 }

@@ -9,6 +9,15 @@
 
 #pragma once
 
+#define TTY_FG_HIGHLIGHT 0b1000
+#define TTY_BG_BLINK 0b1000
+
+#define TTY_BLACK 0b0000
+#define TTY_WHITE 0b0111
+#define TTY_RED 0b0100
+#define TTY_GREEN 0b0010
+#define TTY_BLUE 0b0001
+
 typedef struct tty {
     char name[32];
 
@@ -27,6 +36,7 @@ void init_ttys();
 
 void tty_write(tty_t *tty, const char *buf, size_t size);
 void tty_write_at(tty_t *tty, int xpos, int ypos, const char *buf, size_t size);
+void tty_color_putc(tty_t *tty, char c, unsigned int fg_color, unsigned bg_color);
 
 void tty_set_cursor(tty_t *tty);
 void tty_switch(tty_t *tty);

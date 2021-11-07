@@ -10,6 +10,7 @@
 #include <console.h>
 #include <sched.h>
 #include <string.h>
+#include <tty.h>
 #include <wait.h>
 
 void vga_putc(unsigned int nr, unsigned char c, const unsigned char color);
@@ -65,16 +66,21 @@ void cnsl_init() {
 }
 
 int cnsl_kbd_write(char ch) {
-    if (ch == 0) return 0;
-
+    if (ch == 0) {
+        return 0;
+    }
+    extern tty_t default_tty;
     if (ch == '\b') {
-        if (!empty(&cnsl.wr_q)) vga_putc(0, '\b', 0xF);
+        if (!empty(&cnsl.wr_q)) {
+            tty_color_putc(&default_tty, '\b', TTY_FG_HIGHLIGHT | TTY_WHITE, TTY_BLACK);
+        }
+        // tty_color_putc(default_tty, '\b', TTY_WHITE, TTY_BLACK);
         erase(&cnsl.wr_q);
         erase(&cnsl.sc_q);
     } else {
         put(&cnsl.wr_q, ch);
         put(&cnsl.sc_q, ch);
-        vga_putc(0, ch, 0xF);
+        tty_color_putc(&default_tty, ch, TTY_FG_HIGHLIGHT | TTY_WHITE, TTY_BLACK);
     }
 
     if (ch == '\n') {

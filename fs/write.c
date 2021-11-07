@@ -22,7 +22,8 @@ int sysc_write(int fd, const char *buf, unsigned long size) {
 
     switch (fd) {
     case 0:
-        vga_puts(0, buf, 0xF);
+        assert(0);
+        // vga_puts(0, buf, 0xF);
         break;
     default:
         return -1;

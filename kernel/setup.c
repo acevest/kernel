@@ -18,7 +18,6 @@
 #include <printk.h>
 #include <system.h>
 
-extern void vga_init();
 extern void init_mm();
 extern void setup_gdt();
 extern void setup_idt();
@@ -35,7 +34,6 @@ extern void setup_ext2();
 
 extern void reboot();
 extern void cnsl_init();
-extern void vga_init();
 extern void init_ttys();
 
 #define HZ 10
@@ -57,7 +55,6 @@ const char *version = "Kernel version " VERSION " @ " BUILDER
                       "\n";
 
 void setup_kernel() {
-    vga_init();
     init_ttys();
 
     init_mm();
@@ -84,7 +81,7 @@ void setup_kernel() {
     setup_tasks();
 
     setup_irqs();
-
+    printk("fuck\tfu\tsad\tasdfa\t\taa\n");
     return;
 
     // switch_printk_screen();
@@ -100,7 +97,6 @@ void setup_kernel() {
 
     setup_fs();
 
-    // vga_puts(0, version, 0x2F);
     printk(version);
 
     // switch_printk_screen();
