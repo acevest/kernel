@@ -45,19 +45,29 @@ int sysc_pause(unsigned long tick) { return 0; }
 int sysc_test() {
     static unsigned int cnt = 0;
 
-    current->delay_cnt = root_task.sched_cnt % 40;
+    {  // 这一段仅是测试代码
 
-    unsigned long iflags;
-    irq_save(iflags);
+        // 因为现在sysc还没切进程
+        // 所以current把自己加到delay_tasks后不会被立即换出
+        // 下一次系统调用还可能走到这里
+        // 所以这里就直接判断不是RUNNING就返回
+        // 不再操作delay_tasks链表
+        if (current->state != TASK_RUNNING) {
+            return 0;
+        }
 
-    current->state = TASK_WAIT;
-    // 现在sysc还没有实现进程切换
-    // 这个要到下一次中断之后才生效
-    list_add(&(current->pend), &pend_tasks);
+        current->delay_cnt = root_task.sched_cnt % 40;
 
-    irq_restore(iflags);
+        unsigned long iflags;
+        irq_save(iflags);
 
-    schedule();
+        current->state = TASK_WAIT;
+        // 现在sysc还没有实现进程切换
+        // 这个要到下一次中断之后才生效
+        list_add(&(current->pend), &delay_tasks);
+
+        irq_restore(iflags);
+    }
 
     // printl(MPL_TEST, "systest cnt %u current %08x cnt %u          ",
     //        cnt++, current, cnt);

@@ -47,7 +47,7 @@ extern pde_t __initdata init_pgd[PDECNT_PER_PAGE] __attribute__((__aligned__(PAG
 // list_head_t delay_tasks;
 LIST_HEAD(all_tasks);
 
-LIST_HEAD(pend_tasks);
+LIST_HEAD(delay_tasks);
 
 void init_root_tsk() {
     int i;
@@ -81,7 +81,7 @@ kmem_cache_t *task_union_cache;
 
 void setup_tasks() {
     INIT_LIST_HEAD(&all_tasks);
-    INIT_LIST_HEAD(&pend_tasks);
+    INIT_LIST_HEAD(&delay_tasks);
 
     init_root_tsk();
 
@@ -196,26 +196,20 @@ unsigned long schedule() {
         }
     }
     irq_restore(iflags);
-
+    sel->sched_cnt++;
     sel->weight++;
-    printk("%08x %s weight %d state: %s\n", sel, sel->name, sel->weight, task_state(sel->state));
-
-    list_for_each_safe(pos, t, &all_tasks) {
-        p = list_entry(pos, task_union, list);
-        printl(MPL_TASK_0 + p->pid, " ");  //清掉上一次显示的 '>'
-        printl(MPL_TASK_0 + p->pid, "%s%4s:%d [%08x] state %s weight %03d sched %u", sel == p ? ">" : " ", p->name,
-               p->pid, p, task_state(p->state), p->weight, p->sched_cnt);
-        if (sel->state == TASK_WAIT) {
-            asm volatile("xchg %bx, %bx");
-        }
-    }
-
+    // printk("%08x %s weight %d state: %s\n", sel, sel->name, sel->weight, task_state(sel->state));
     task_union *prev = current;
     task_union *next = sel;
 
     if (prev != next) {
         // printk("switch to: %s:%d\n", next->name, next->pid);
-        sel->sched_cnt++;
+        list_for_each_safe(pos, t, &all_tasks) {
+            p = list_entry(pos, task_union, list);
+            printl(MPL_TASK_0 + p->pid * 2, " ");  //清掉上一次显示的 '>'
+            printl(MPL_TASK_0 + p->pid * 2, "%s%4s:%d [%08x] state %s weight %03d sched %u", next == p ? ">" : " ",
+                   p->name, p->pid, p, task_state(p->state), p->weight, p->sched_cnt);
+        }
         context_switch(prev, next);
     }
 }

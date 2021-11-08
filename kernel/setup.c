@@ -37,7 +37,7 @@ extern void reboot();
 extern void cnsl_init();
 extern void init_ttys();
 
-#define HZ 10
+#define HZ 100
 #define CLOCK_TICK_RATE 1193180
 #define LATCH ((CLOCK_TICK_RATE + HZ / 2) / HZ)
 
@@ -83,7 +83,11 @@ void setup_kernel() {
 
     setup_irqs();
     extern tty_t monitor_tty;
-    // tty_switch(&monitor_tty);
+    tty_switch(&monitor_tty);
+    // asm("sti");
+    // while (1) { /* code */
+    // }
+
     return;
 
     // switch_printk_screen();
