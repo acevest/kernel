@@ -617,6 +617,7 @@ pci: enabled=1, chipset=i440fx
 # Default value are sync=none, rtc_sync=0, time0=local
 #=======================================================================
 #clock: sync=none, time0=local
+clock: sync=realtime, time0=local, rtc_sync=0
 
 #=======================================================================
 # CMOSIMAGE:
@@ -1308,4 +1309,4 @@ debug_symbols: file="kernel.sym"
 #megs: 64
 #megs: 32
 #megs: 16
-#megs: 8
+megs: 8
