@@ -59,13 +59,15 @@ void scan_pci_bus(int bus) {
     u32 cmd;
     u32 v;
     int i;
-    printk("scanning pci bus %d\n", bus);
+    // printk("scanning pci bus %d\n", bus);
 
     for (dev = 0; dev < 32; dev++) {
         for (devfn = 0; devfn < 8; devfn++) {
             cmd = PCI_CMD(bus, dev, devfn, PCI_VENDORID);
             v = pci_read_config_word(cmd);
-            if (v == 0xFFFF) continue;
+            if (v == 0xFFFF) {
+                continue;
+            }
 
             pci_device_t *pci = kmalloc(sizeof(pci_device_t), 0);
             if (0 == pci) {
@@ -167,10 +169,10 @@ void dump_pci_dev() {
             break;
         }
 #else
-        for (int bar_inx = 0; bar_inx < BARS_CNT; bar_inx++) {
-            printk("%08x ", pci->bars[bar_inx]);
-        }
-        printk("\n");
+        // for (int bar_inx = 0; bar_inx < BARS_CNT; bar_inx++) {
+        //     printk("%08x ", pci->bars[bar_inx]);
+        // }
+        // printk("\n");
 #endif
     }
 }

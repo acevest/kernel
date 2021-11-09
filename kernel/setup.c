@@ -84,6 +84,9 @@ void setup_kernel() {
     setup_irqs();
 
     setup_pci();
+
+    void ide_init();
+    ide_init();
     asm("cli;hlt;");
     extern tty_t monitor_tty;
     // tty_switch(&monitor_tty);
@@ -97,8 +100,6 @@ void setup_kernel() {
 
     // switch_printk_screen();
     system_delay();
-    void ide_init();
-    ide_init();
 
     system_delay();
 

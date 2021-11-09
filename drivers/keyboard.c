@@ -29,7 +29,7 @@ void ide_status();
 void debug_sched();
 void vga_dbg_toggle();
 int debug_wait_queue_put(unsigned int v);
-void ide_dma_pci_lba48();
+// void ide_dma_pci_lba48();
 void vga_switch(unsigned int nr);
 
 void kbd_debug(unsigned char scan_code);
@@ -99,10 +99,10 @@ void kbd_debug(unsigned char scan_code) {
     if (scan_code == 0x42)  // F8
         debug_wait_queue_put(7);
 
-    if (scan_code == 0x43)  // F9
-        ide_dma_pci_lba48();
-    if (scan_code == 0x44)  // F10
-        ide_debug();
+    // if (scan_code == 0x43)  // F9
+    //     ide_dma_pci_lba48();
+    // if (scan_code == 0x44)  // F10
+    //     ide_debug();
     if (scan_code == 0x57)  // F11
     {
         asm("cli;");

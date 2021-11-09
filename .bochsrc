@@ -17,6 +17,7 @@
 #=======================================================================
 #plugin_ctrl: unmapped=0, e1000=1 # unload 'unmapped' and load 'e1000'
 
+
 #=======================================================================
 # CONFIG_INTERFACE
 #
@@ -539,7 +540,7 @@ vga: extension=vbe, update_freq=5, realtime=1, ddc=builtin
 #   mouse: type=serial, enabled=1
 #   mouse: enabled=0, toggle=ctrl+f10
 #=======================================================================
-mouse: enabled=0
+#mouse: enabled=1
 
 #=======================================================================
 # PCI:
@@ -760,7 +761,7 @@ ata3: enabled=0, ioaddr1=0x168, ioaddr2=0x360, irq=9
 #   ata3-master: type=disk, mode=flat, path=483M.sample, cylinders=1024, heads=15, spt=63
 #   ata3-slave:  type=cdrom, path=iso.sample, status=inserted
 #=======================================================================
-ata0-master: type=disk, mode=flat, path="HD.IMG"
+ata0-master: type=disk, mode=flat, path="HD.IMG", model="Generic aBCd"
 #ata0-master: type=disk, mode=flat, path="30M.sample"
 #ata0-master: type=disk, mode=flat, path="30M.sample", cylinders=615, heads=6, spt=17
 #ata0-master: type=disk, mode=flat, path="c.img", cylinders=0 # autodetect
@@ -1190,6 +1191,9 @@ parport1: enabled=1, file="parport.out"
 #usb_uhci: port2=cdrom, options2="path:image.iso"
 #usb_uhci: port1=printer, options1="file:printdata.bin"
 #usb_uhci: port2=floppy, options2="path:vvfat:diskette, model:teac"
+#usb_uhci: enabled=1
+#usb_uhci: port2=disk, options2=""path:uHD.IMG, sect_size:512"
+
 
 #=======================================================================
 # USB_OHCI:
