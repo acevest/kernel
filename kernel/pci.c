@@ -38,20 +38,21 @@ int pci_read_config_long(int cmd) {
     return inl(PCI_DATA);
 }
 
-void pci_write_config_byte(int value, int cmd) {
-    outl(PCI_CONFIG_CMD(cmd), PCI_ADDR);
-    outb(value & 0xFF, PCI_DATA);
-}
+// 可能有BUG
+// void pci_write_config_byte(int value, int cmd) {
+//     outl(PCI_CONFIG_CMD(cmd), PCI_ADDR);
+//     outb(value & 0xFF, PCI_DATA);
+// }
 
-void pci_write_config_word(int value, int cmd) {
-    outl(PCI_CONFIG_CMD(cmd), PCI_ADDR);
-    outw(value & 0xFFFF, PCI_DATA);
-}
+// void pci_write_config_word(int value, int cmd) {
+//     outl(PCI_CONFIG_CMD(cmd), PCI_ADDR);
+//     outw(value & 0xFFFF, PCI_DATA);
+// }
 
-void pci_write_config_long(int value, int cmd) {
-    outl(PCI_CONFIG_CMD(cmd), PCI_ADDR);
-    outl(value, PCI_DATA);
-}
+// void pci_write_config_long(int value, int cmd) {
+//     outl(PCI_CONFIG_CMD(cmd), PCI_ADDR);
+//     outl(value, PCI_DATA);
+// }
 
 void scan_pci_bus(int bus) {
     u8 dev, devfn;
@@ -90,6 +91,9 @@ void scan_pci_bus(int bus) {
             cmd = PCI_CMD(bus, dev, devfn, PCI_CLASSCODE);
             pci->classcode = pci_read_config_word(cmd);
 
+            cmd = PCI_CMD(bus, dev, devfn, 4);
+            pci->command = pci_read_config_word(cmd);
+
             cmd = PCI_CMD(bus, dev, devfn, PCI_INTRLINE);
             pci->intr_line = pci_read_config_byte(cmd);
 
@@ -105,7 +109,7 @@ void scan_pci_bus(int bus) {
                 pci->bars[i] = pci_read_config_long(cmd);
             }
 
-            list_add(&pci->list, &pci_devs);
+            list_add_tail(&pci->list, &pci_devs);
         }
     }
 }
@@ -144,10 +148,10 @@ void dump_pci_dev() {
 
     list_for_each(p, &pci_devs) {
         pci_device_t *pci = list_entry(p, pci_device_t, list);
-        printk("vendor %04x device %04x class %04x intr %3d ", pci->vendor, pci->device, pci->classcode,
-               pci->intr_line);
+        printk("vendor %04x device %04x class %04x:%02x bus %d intr %3d ", pci->vendor, pci->device, pci->classcode,
+               pci->progif, pci->bus, pci->intr_line);
         printk("%s\n", pci_get_info(pci->classcode, pci->progif));
-        continue;
+#if 0
         switch (pci->hdr_type) {
         case PCI_HDRTYPE_NORMAL:
             printk("Normal Device\n");
@@ -162,6 +166,12 @@ void dump_pci_dev() {
             printk("Not Support!\n");
             break;
         }
+#else
+        for (int bar_inx = 0; bar_inx < BARS_CNT; bar_inx++) {
+            printk("%08x ", pci->bars[bar_inx]);
+        }
+        printk("\n");
+#endif
     }
 }
 
@@ -174,7 +184,9 @@ int probe_pci_bus() {
     cmd = PCI_CMD(0, 0, 0, 0);
     v = pci_read_config_long(cmd);
 
-    if (v == 0xFFFFFFFF || v == 0x00000000 || v == 0x0000FFFF || v == 0xFFFF0000) goto err;
+    if (v == 0xFFFFFFFF || v == 0x00000000 || v == 0x0000FFFF || v == 0xFFFF0000) {
+        goto err;
+    }
 
     // Maybe it's just an ISA Device
     // So We Must Check if It is PCI...
@@ -183,12 +195,16 @@ int probe_pci_bus() {
             cmd = PCI_CMD(0, dev, devfn, PCI_CLASSCODE);
             v = pci_read_config_word(cmd);
 
-            if (v == PCI_CLASS_BRIDGE_HOST || v == PCI_CLASS_DISPLAY_VGA) return 1;
+            if (v == PCI_CLASS_BRIDGE_HOST || v == PCI_CLASS_DISPLAY_VGA) {
+                return 1;
+            }
 
             cmd = PCI_CMD(0, dev, devfn, PCI_VENDORID);
             v = pci_read_config_word(cmd);
 
-            if (v == PCI_VENDORID_INTEL || v == PCI_VENDORID_COMPAQ) return 1;
+            if (v == PCI_VENDORID_INTEL || v == PCI_VENDORID_COMPAQ) {
+                return 1;
+            }
         }
     }
 
@@ -200,9 +216,13 @@ err:
 }
 
 void setup_pci() {
-    if (!probe_pci_bus()) return;
+    if (!probe_pci_bus()) {
+        return;
+    }
 
-    scan_pci_bus(0);
+    for (int i = 0; i < 256; i++) {
+        scan_pci_bus(i);
+    }
 
     dump_pci_dev();
 }
@@ -248,10 +268,10 @@ pci_info_t pci_info[] = {
     {0x050000, 0, "RAM Controller", "RAM Controller"},
     {0x050100, 0, "Flash Controller", "Flash Controller"},
     {0x058000, 0, "Memory Controller", "Other Memory Controller"},
-    {0x060000, 0, "Host Bridge", "Host Bridge"},
-    {0x060100, 0, "ISA Bridge", "ISA Bridge"},
-    {0x060200, 0, "EISA Bridge", "EISA Bridge"},
-    {0x060300, 0, "MCA Bridge", "MCA Bridge"},
+    {0x060000, 0, "Host/PCI Bridge", "Host/PCI Bridge"},
+    {0x060100, 0, "PCI/ISA Bridge", "PCI/ISA Bridge"},
+    {0x060200, 0, "PCI/EISA Bridge", "PCI/EISA Bridge"},
+    {0x060300, 0, "PCI/MCA Bridge", "PCI/Micro Channel bridge"},
     {0x060400, 0, "PCI-to-PCI Bridge", "PCI-to-PCI Bridge"},
     {0x060401, 0, "PCI-to-PCI Bridge", "PCI-to-PCI Bridge (Subtractive Decode)"},
     {0x060500, 0, "PCMCIA Bridge", "PCMCIA Bridge"},
@@ -261,7 +281,7 @@ pci_info_t pci_info[] = {
     {0x060940, 0, "PCI-to-PCI Bridge", "PCI-to-PCI Bridge (Semi-Transparent, Primary)"},
     {0x060980, 0, "PCI-to-PCI Bridge", "PCI-to-PCI Bridge (Semi-Transparent, Secondary)"},
     {0x060A00, 0, "InfiniBrand-to-PCI Host Bridge", "InfiniBrand-to-PCI Host Bridge"},
-    {0x068000, 0, "Bridge Device", "Other Bridge Device"},
+    {0x068000, 0, "Other Bridge Device", "Other Bridge Device"},
     {0x070000, 0, "Serial Controller", "Generic XT-Compatible Serial Controller"},
     {0x070001, 0, "Serial Controller", "16450-Compatible Serial Controller"},
     {0x070002, 0, "Serial Controller", "16550-Compatible Serial Controller"},
