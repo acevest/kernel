@@ -40,18 +40,23 @@ extern unsigned int HD_CHL1_CTL_BASE;
 #define HD_STATUS_CRD 0x04       /* correct data */
 #define HD_STATUS_IDX 0x02       /* index pulse */
 #define HD_STATUS_ERR 0x01       /* error */
+
 #define HD_CMD_IDLE 0x00
 #define HD_CMD_RECALIBRATE 0x10
-#define HD_CMD_READ 0x20     /* read data */
-#define HD_CMD_READ_EXT 0x24 /* read data (LBA-48 bit)*/
-#define HD_CMD_READ_DMA 0x25 /* read data DMA LBA48 */
-#define HD_CMD_WRITE 0x30
-#define HD_CMD_WRITE_EXT 0x34
+#define HD_CMD_READ_PIO 0x20     /* read data */
+#define HD_CMD_READ_PIO_EXT 0x24 /* read data (LBA-48 bit)*/
+#define HD_CMD_READ_DMA 0xC8
+#define HD_CMD_READ_DMA_EXT 0x25 /* read data DMA LBA48 */
+#define HD_CMD_WRITE_PIO 0x30
+#define HD_CMD_WRITE_PIO_EXT 0x34
+#define HD_CMD_WRITE_DMA 0xCA
+#define HD_CMD_WRITE_DMA_EXT 0X35
 #define HD_CMD_READ_VERIFY 0x40
 #define HD_CMD_FORMAT 0x50
 #define HD_CMD_SEEK 0x70
 #define HD_CMD_DIAG 0x90
 #define HD_CMD_SPECIFY 0x91
+#define HD_CMD_IDENTIFY_PACKET 0xA1
 #define HD_CMD_IDENTIFY 0xEC
 
 #define HD_CTL 0

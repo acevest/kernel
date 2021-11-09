@@ -121,7 +121,7 @@ void ide_do_read(u64_t lba, u32_t scnt, char *buf) {
     DECLARE_WAIT_QUEUE(wait, task);
     add_wait_queue(&r->wait, &wait);
 
-    ide_cmd_out(0, scnt, lba, HD_CMD_READ_EXT);
+    ide_cmd_out(0, scnt, lba, HD_CMD_READ_PIO_EXT);
 
     while (true) {
         // printd("%s pid %d is going to wait\n", __func__, sysc_getpid());
@@ -156,7 +156,7 @@ void ide_pci_init(pci_device_t *pci) {
 
     unsigned int iobase = pci_read_config_long(pci_cmd(pci, PCI_BAR4));
     printk(" ide pci Base IO Address Register %08x\n", iobase);
-    iobase &= 0xFFFC;
+    iobase &= 0xFFFC;  // 最低为0是内存地址为1是端口地址
     drv.iobase = iobase;
     drv.bus_cmd = iobase + PCI_IDE_CMD;
     drv.bus_status = iobase + PCI_IDE_STATUS;
@@ -164,7 +164,7 @@ void ide_pci_init(pci_device_t *pci) {
 
     int i;
     printk(" BARS: ");
-    for (i = 0; i < 6; ++i) {
+    for (i = 0; i < BARS_CNT; ++i) {
         printk("%08x ", pci->bars[i]);
         pci->bars[i] &= (~1UL);
     }
@@ -229,13 +229,13 @@ void ide_default_intr() {
     outb(0x00, drv.bus_cmd);
 
     u16_t sig = 0;
-    if (drv.read_mode == HD_CMD_READ_EXT) {
+    if (drv.read_mode == HD_CMD_READ_PIO_EXT) {
         insl(REG_DATA(0), ide_request.buf + ide_request.read_scnt * (SECT_SIZE), (SECT_SIZE) >> 2);
         ide_request.read_scnt++;
         sig = *((u16_t *)(ide_request.buf + 510));
     }
 
-    if (drv.read_mode == HD_CMD_READ_DMA) {
+    if (drv.read_mode == HD_CMD_READ_DMA_EXT) {
         sig = *((u16_t *)(dma_data + 510));
     }
 
@@ -247,7 +247,7 @@ void ide_default_intr() {
     outb(PCI_IDE_CMD_STOP, drv.bus_cmd);
 
     wake_up(&ide_request.wait);
-    if (drv.read_mode == HD_CMD_READ_EXT) {
+    if (drv.read_mode == HD_CMD_READ_PIO_EXT) {
         if (ide_request.read_scnt == ide_request.scnt) ide_request.finish = true;
     }
 
@@ -269,7 +269,7 @@ unsigned long gprdt = 0;
 
 void ide_dma_pci_lba48() {
     drv.dma_cnt++;
-    drv.read_mode = HD_CMD_READ_DMA;
+    drv.read_mode = HD_CMD_READ_DMA_EXT;
 #if 1
     memset((void *)&prd, 0, sizeof(prd));
     unsigned long addr = alloc_one_page(0);
@@ -330,7 +330,7 @@ void ide_dma_pci_lba48() {
 
     outb(0x40, HD_CHL0_CMD_BASE + HD_DEVSEL);
 
-    outb(HD_CMD_READ_DMA, HD_CHL0_CMD_BASE + HD_CMD);
+    outb(HD_CMD_READ_DMA_EXT, HD_CHL0_CMD_BASE + HD_CMD);
 
     inb(drv.bus_cmd);
     inb(drv.bus_status);
