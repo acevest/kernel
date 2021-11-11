@@ -24,7 +24,9 @@ extern unsigned int ATA_CHL0_CTL_BASE;
 extern unsigned int ATA_CHL1_CTL_BASE;
 
 #define ATA_DATA 0
+
 #define ATA_FEATURES 1
+
 #define ATA_ERR 1
 #define ATA_ERR_BB 0x80
 #define ATA_ERR_ECC 0x40
@@ -32,7 +34,9 @@ extern unsigned int ATA_CHL1_CTL_BASE;
 #define ATA_ERR_AC 0x04
 #define ATA_ERR_TK 0x02
 #define ATA_ERR_DM 0x01
+
 #define ATA_NSECTOR 2
+
 #define ATA_LBAL 3
 #define ATA_LBAM 4
 #define ATA_LBAH 5
@@ -85,11 +89,11 @@ extern unsigned int ATA_CHL1_CTL_BASE;
 #define ATA_CMD_IDENTIFY 0xEC
 
 #define ATA_CTL 0
-#define ATA_CTL_HOB 0x80 /* high order byte (LBA-48bit) */
-//#define     ATA_CTL_NOECC        0x40  /* disable ecc retry */
-//#define     ATA_CTL_EIGHTHEADS   0x08  /* more than 8 heads */
-#define ATA_CTL_SRST 0x04 /* soft reset controller */
-#define ATA_CTL_NIEN 0x02 /* disable interrupts */
+#define ATA_CTL_HOB 0x80        /* high order byte (LBA-48bit) */
+#define ATA_CTL_NOECC 0x40      /* disable ecc retry */
+#define ATA_CTL_EIGHTHEADS 0x08 /* more than 8 heads */
+#define ATA_CTL_SRST 0x04       /* soft reset controller */
+#define ATA_CTL_NIEN 0x02       /* disable interrupts */
 
 #define ATA_GET_CHL(dev) (0) /* only support channel 0 */
 #define ATA_GET_DEV(dev) (0) /* only support one hard disk */

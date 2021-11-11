@@ -192,6 +192,8 @@ void pci_write_config_word(int value, int cmd);
 void pci_write_config_long(int value, int cmd);
 
 // PCI Bridge
+//  All PCI compliant devices must support the Vendor ID, Device ID, Command and Status, Revision ID, Class Code and
+//  Header Type fields.Implementation of the other registers is optional, depending upon the devices functionality.
 /*
  * 31                        16 15                         0
  * +---------------------------+---------------------------+ 00H

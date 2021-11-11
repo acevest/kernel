@@ -35,7 +35,6 @@ void *mbr_buf;
 u16 identify[256];
 void ata_read_identify(int dev) {  // 这里所用的dev是逻辑编号 ATA0、ATA1下的Master、Salve的dev分别为0,1,2,3
 
-#if 1
     outb(0x00 | ((dev & 0x01) << 4), REG_DEVICE(dev));  // 根据文档P113，这里不用指定bit5, bit7，直接指示DRIVE就行
     outb(ATA_CMD_IDENTIFY, REG_CMD(dev));
     while (1) {
@@ -63,7 +62,7 @@ void ata_read_identify(int dev) {  // 这里所用的dev是逻辑编号 ATA0、A
         u64 lba = *(u64 *)(identify + 100);
         printk("hard disk size: %u MB\n", (lba * 512) >> 20);
     }
-#endif
+
     printk("bus iobase %x cmd %x status %x prdt %x \n", ide_pci_controller.bus_iobase, ide_pci_controller.bus_cmd,
            ide_pci_controller.bus_status, ide_pci_controller.bus_prdt);
 
@@ -78,7 +77,6 @@ void ata_dma_read_ext(int dev, uint64_t pos, uint16_t count, void *addr) {
     outb(PCI_IDE_CMD_STOP, ide_pci_controller.bus_cmd);
 
     // 配置描述符表
-    unsigned long *p = (unsigned long *)addr;
     unsigned long paddr = va2pa(addr);
     ide_pci_controller.prdt[0].phys_addr = paddr;
     ide_pci_controller.prdt[0].byte_count = 512;
@@ -117,9 +115,8 @@ void ata_dma_read_ext(int dev, uint64_t pos, uint16_t count, void *addr) {
 
     outb(ATA_CMD_READ_DMA_EXT, REG_CMD(dev));
 
-    // 设置开始停止位为1，开始DMA
-    // 并且指定为读取硬盘操作
-    // DMA对硬盘而言是写出，所以设置bit 3为1
+    // 指定DMA操作为读取硬盘操作，内核用DMA读取，对硬盘而言是写出
+    // 并设置DMA的开始位，开始DMA
     outb(PCI_IDE_CMD_WRITE | PCI_IDE_CMD_START, ide_pci_controller.bus_cmd);
 }
 
