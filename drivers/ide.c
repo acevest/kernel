@@ -141,6 +141,15 @@ void ide_pci_init(pci_device_t *pci) {
     v = pci_read_config_word(pci_cmd(pci, PCI_COMMAND));
     printk(" ide pci command %04x\n", v);
 
+    // 这一句非常重要，如果不加这一句
+    // 在qemu中用DMA的方式读数据就会读不到数据，而只触是发中断，然后寄存器（Bus Master IDE Status
+    // Register）的值会一直是5 也就是INTERRUPT和和ACTIVE位是1，正常应该是4，也就是只有INTERRUPT位为1
+    // 在bochs中则加不加这一句不会有影响，都能正常读到数据
+    pci_write_config_word(v | PCI_COMMAND_MASTER, pci_cmd(pci, PCI_COMMAND));
+
+    v = pci_read_config_word(pci_cmd(pci, PCI_COMMAND));
+    printk(" ide pci command %04x\n", v);
+
     v = pci_read_config_byte(pci_cmd(pci, PCI_PROGIF));
     printk(" ide pci program interface %02x\n", v);
 
