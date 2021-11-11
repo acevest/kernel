@@ -34,6 +34,7 @@ void *mbr_buf;
 //  3. 等到status的DRQ位或ERR位设置
 u16 identify[256];
 void ata_read_identify(int dev) {  // 这里所用的dev是逻辑编号 ATA0、ATA1下的Master、Salve的dev分别为0,1,2,3
+
 #if 1
     outb(0x00 | ((dev & 0x01) << 4), REG_DEVICE(dev));  // 根据文档P113，这里不用指定bit5, bit7，直接指示DRIVE就行
     outb(ATA_CMD_IDENTIFY, REG_CMD(dev));
@@ -73,8 +74,8 @@ void ata_read_identify(int dev) {  // 这里所用的dev是逻辑编号 ATA0、A
 
 // ATA_CMD_READ_DMA_EXT
 void ata_dma_read_ext(int dev, uint64_t pos, uint16_t count, void *addr) {
-    // 停止DMA BusMasterIDEStatusRegister
-    outb(0x00, ide_pci_controller.bus_iobase + 0);
+    // 停止DMA
+    outb(PCI_IDE_CMD_STOP, ide_pci_controller.bus_cmd);
 
     // 配置描述符表
     unsigned long *p = (unsigned long *)addr;
@@ -83,15 +84,14 @@ void ata_dma_read_ext(int dev, uint64_t pos, uint16_t count, void *addr) {
     ide_pci_controller.prdt[0].byte_count = 512;
     ide_pci_controller.prdt[0].reserved = 0;
     ide_pci_controller.prdt[0].eot = 1;
+    outl(va2pa(ide_pci_controller.prdt), ide_pci_controller.bus_prdt);
+
     printk("paddr: %x prdt: %x %x prdte %x %x\n", paddr, ide_pci_controller.prdt, va2pa(ide_pci_controller.prdt),
            ide_pci_controller.prdt[0].phys_addr, *(((unsigned int *)ide_pci_controller.prdt) + 1));
-    outl(va2pa(ide_pci_controller.prdt), ide_pci_controller.bus_iobase + 4);
 
     // 清除中断位和错误位
     // 这里清除的方式是是设置1后清除
-    uint8_t t = inb(ide_pci_controller.bus_iobase + 2);
-    printk("ide pci status %x\n", t);
-    outb(t | 0x06, ide_pci_controller.bus_iobase + 2);
+    outb(PCI_IDE_STATUS_INTR | PCI_IDE_STATUS_ERR, ide_pci_controller.bus_status);
 
     // 选择DRIVE
     outb(ATA_LBA48_DEVSEL(dev), REG_DEVICE(dev));
@@ -120,12 +120,15 @@ void ata_dma_read_ext(int dev, uint64_t pos, uint16_t count, void *addr) {
     // 设置开始停止位为1，开始DMA
     // 并且指定为读取硬盘操作
     // DMA对硬盘而言是写出，所以设置bit 3为1
-    outb(0x09, ide_pci_controller.bus_iobase + 0);
+    outb(PCI_IDE_CMD_WRITE | PCI_IDE_CMD_START, ide_pci_controller.bus_cmd);
 }
 
 uint8_t ata_pci_bus_status() {
     uint8_t st = 0;
-    st = inb(ide_pci_controller.bus_iobase + 2);
+    st = inb(ide_pci_controller.bus_status);
+
+    outb(PCI_IDE_STATUS_INTR, ide_pci_controller.bus_status);
+
     return st;
 }
 
