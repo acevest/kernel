@@ -17,6 +17,7 @@
 #pragma once
 
 #include <list.h>
+#include <types.h>
 
 #define PCI_ADDR 0xCF8  // CONFIG_ADDRESS
 #define PCI_DATA 0xCFC  // CONFIG_DATA

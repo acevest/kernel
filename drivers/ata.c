@@ -6,46 +6,35 @@
  * Description: none
  * ------------------------------------------------------------------------
  */
-
 #include <ata.h>
+#include <ide.h>
 #include <io.h>
+#include <string.h>
 #include <system.h>
 #include <types.h>
 
+extern ide_pci_controller_t ide_pci_controller;
+void ata_dma_read_ext(int dev, uint64_t pos, uint16_t count, void *);
+
+void *mbr_buf;
+
 // 本程序参考文档《AT Attachment with Packet Interface - 6》
 
-// https://wiki.osdev.org/ATA_PIO_Mode
-// To use the IDENTIFY command, select a target drive by sending 0xA0 for the master drive, or 0xB0 for the slave,
-// to the "drive select" IO port. On the Primary bus, this would be port 0x1F6. Then set the Sectorcount, LBAlo,
-// LBAmid, and LBAhi IO ports to 0 (port 0x1F2 to 0x1F5). Then send the IDENTIFY command (0xEC) to the Command IO
-// port (0x1F7).
-// Then read the Status port (0x1F7) again. If the value read is 0, the drive does not exist. For any
-// other value: poll the Status port (0x1F7) until bit 7 (BSY, value = 0x80) clears. Because of some ATAPI drives
-// that do not follow spec, at this point you need to check the LBAmid and LBAhi ports (0x1F4 and 0x1F5) to see if
-// they are non-zero. If so, the drive is not ATA, and you should stop polling. Otherwise, continue polling one of
-// the Status ports until bit 3 (DRQ, value = 8) sets, or until bit 0 (ERR, value = 1) sets. At that point, if ERR
-// is clear, the data is ready to read from the Data port (0x1F0). Read 256 16-bit values, and store them.
-//
-// ATAPI的情况暂时不用考虑，因为不是硬盘相关的
-// https://wiki.osdev.org/ATAPI
-// ATAPI refers to devices that use the Packet Interface of the ATA6 (or higher) standard command set. It is
-// basically a way to issue SCSI commands to a CD-ROM, CD-RW, DVD, or tape drive, attached to the ATA bus.
-//
-// 总结来说，仅考虑ATA硬盘的情况
+// 仅考虑ATA硬盘的情况
 // 一个IDE接口能接Master、Slave两个DRIVE。
 // 一个PC机上通常有两个IDE接口(IDE0, IDE1或ATA0, ATA1)，通常称通道0、1
 // 对于同一个IDE通道的两个DRIVE，共享同一组寄存器，它们之间的区分是通过Device寄存器的第4个bit位来实现的。0为Master，1为Slave
 //
 // 使用IDENTIFY命令步骤:
-//  1. 选择DRIVE，发送0xA0选择master，发送0xB0选择slave。(发送 0xE0 | (drive << 4)到Device寄存器)
-//  2. 发送0到该DRIVE所在通道的寄存器NSECTOR, LBAL, LBAM, LBAH
-//  3. 发送IDENTIFY(0xEC)命令到该通道的命令寄存器
+//  1. 选择DRIVE构造命令，发送到Device寄存器(发送到master: 0x00, 发送到slave: 0x40)
+//  2. 发送IDENTIFY(0xEC)命令到该通道的命令寄存器
 // 检查status寄存器：
 //  1. 若为0，就认为没有IDE
 //  2. 等到status的BSY位清除
 //  3. 等到status的DRQ位或ERR位设置
 u16 identify[256];
 void ata_read_identify(int dev) {  // 这里所用的dev是逻辑编号 ATA0、ATA1下的Master、Salve的dev分别为0,1,2,3
+#if 1
     outb(0x00 | ((dev & 0x01) << 4), REG_DEVICE(dev));  // 根据文档P113，这里不用指定bit5, bit7，直接指示DRIVE就行
     outb(ATA_CMD_IDENTIFY, REG_CMD(dev));
     while (1) {
@@ -73,6 +62,71 @@ void ata_read_identify(int dev) {  // 这里所用的dev是逻辑编号 ATA0、A
         u64 lba = *(u64 *)(identify + 100);
         printk("hard disk size: %u MB\n", (lba * 512) >> 20);
     }
+#endif
+    printk("bus iobase %x cmd %x status %x prdt %x \n", ide_pci_controller.bus_iobase, ide_pci_controller.bus_cmd,
+           ide_pci_controller.bus_status, ide_pci_controller.bus_prdt);
+
+    mbr_buf = kmalloc(512, 0);
+    memset(mbr_buf, 0xAA, 512);
+    ata_dma_read_ext(0, 0, 1, mbr_buf);
+}
+
+// ATA_CMD_READ_DMA_EXT
+void ata_dma_read_ext(int dev, uint64_t pos, uint16_t count, void *addr) {
+    // 停止DMA BusMasterIDEStatusRegister
+    outb(0x00, ide_pci_controller.bus_iobase + 0);
+
+    // 配置描述符表
+    unsigned long *p = (unsigned long *)addr;
+    unsigned long paddr = va2pa(addr);
+    ide_pci_controller.prdt[0].phys_addr = paddr;
+    ide_pci_controller.prdt[0].byte_count = 512;
+    ide_pci_controller.prdt[0].reserved = 0;
+    ide_pci_controller.prdt[0].eot = 1;
+    printk("paddr: %x prdt: %x %x prdte %x %x\n", paddr, ide_pci_controller.prdt, va2pa(ide_pci_controller.prdt),
+           ide_pci_controller.prdt[0].phys_addr, *(((unsigned int *)ide_pci_controller.prdt) + 1));
+    outl(va2pa(ide_pci_controller.prdt), ide_pci_controller.bus_iobase + 4);
+
+    // 清除中断位和错误位
+    // 这里清除的方式是是设置1后清除
+    uint8_t t = inb(ide_pci_controller.bus_iobase + 2);
+    printk("ide pci status %x\n", t);
+    outb(t | 0x06, ide_pci_controller.bus_iobase + 2);
+
+    // 选择DRIVE
+    outb(ATA_LBA48_DEVSEL(dev), REG_DEVICE(dev));
+
+    // 不再设置nIEN，DMA需要中断
+    outb(0x00, REG_CTL(dev));
+
+    // 先写扇区数的高字节
+    outb((count >> 8) & 0xFF, REG_NSECTOR(dev));
+
+    // 接着写LBA48，高三个字节
+    outb((pos >> 24) & 0xFF, REG_LBAL(dev));
+    outb((pos >> 32) & 0xFF, REG_LBAM(dev));
+    outb((pos >> 40) & 0xFF, REG_LBAH(dev));
+
+    // 再写扇区数的低字节
+    outb((count >> 0) & 0xFF, REG_NSECTOR(dev));
+
+    // 接着写LBA48，低三个字节
+    outb((pos >> 0) & 0xFF, REG_LBAL(dev));
+    outb((pos >> 8) & 0xFF, REG_LBAM(dev));
+    outb((pos >> 16) & 0xFF, REG_LBAH(dev));
+
+    outb(ATA_CMD_READ_DMA_EXT, REG_CMD(dev));
+
+    // 设置开始停止位为1，开始DMA
+    // 并且指定为读取硬盘操作
+    // DMA对硬盘而言是写出，所以设置bit 3为1
+    outb(0x09, ide_pci_controller.bus_iobase + 0);
+}
+
+uint8_t ata_pci_bus_status() {
+    uint8_t st = 0;
+    st = inb(ide_pci_controller.bus_iobase + 2);
+    return st;
 }
 
 unsigned int ATA_CHL0_CMD_BASE = 0x1F0;

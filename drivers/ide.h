@@ -9,7 +9,8 @@
 
 #pragma once
 
-// #include <system.h>
+#include <pci.h>
+#include <system.h>
 
 // extern unsigned int HD_CHL0_CMD_BASE;
 // extern unsigned int HD_CHL1_CMD_BASE;
@@ -132,19 +133,19 @@
 // #define ATA_IDENT_COMMANDSETS 164
 // #define ATA_IDENT_MAX_LBA_EXT 200
 
-// #define PCI_IDE_CMD 0
-// #define PCI_IDE_CMD_STOP 0x00
-// #define PCI_IDE_CMD_READ 0x00
-// #define PCI_IDE_CMD_START 0x01
-// #define PCI_IDE_CMD_WRITE 0x08
-// #define PCI_IDE_STATUS 2
-// #define PCI_IDE_STATUS_ACT 0x01
-// #define PCI_IDE_STATUS_ERR 0x02
-// #define PCI_IDE_STATUS_INTR 0x04
-// #define PCI_IDE_STATUS_DRV0 0x20
-// #define PCI_IDE_STATUS_DRV1 0x40
-// #define PCI_IDE_STATUS_SIMPLEX 0x80
-// #define PCI_IDE_PRDT 4
+#define PCI_IDE_CMD 0
+#define PCI_IDE_CMD_STOP 0x00
+#define PCI_IDE_CMD_READ 0x00
+#define PCI_IDE_CMD_START 0x01
+#define PCI_IDE_CMD_WRITE 0x08
+#define PCI_IDE_STATUS 2
+#define PCI_IDE_STATUS_ACT 0x01
+#define PCI_IDE_STATUS_ERR 0x02
+#define PCI_IDE_STATUS_INTR 0x04
+#define PCI_IDE_STATUS_DRV0 0x20
+#define PCI_IDE_STATUS_DRV1 0x40
+#define PCI_IDE_STATUS_SIMPLEX 0x80
+#define PCI_IDE_PRDT 4
 
 // #define PARTITION_CNT 4
 // #define PARTITION_TABLE_OFFSET 0x1BE
@@ -157,3 +158,21 @@
 
 // void ide_do_read(u64_t lba, u32_t scnt, char *buf);
 // part_t *ide_get_part(dev_t dev);
+
+// Physical Region Descriptor
+typedef struct prdte {
+    uint32_t phys_addr;
+    uint32_t byte_count : 16;
+    uint32_t reserved : 15;
+    uint32_t eot : 1;
+} prdte_t;
+typedef struct _ide_pci_controller {
+    pci_device_t *pci;
+
+    unsigned int bus_iobase;
+    unsigned int bus_cmd;
+    unsigned int bus_status;
+    unsigned int bus_prdt;
+
+    prdte_t *prdt;
+} ide_pci_controller_t;

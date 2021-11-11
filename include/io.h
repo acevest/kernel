@@ -40,10 +40,10 @@
         _bt;                                           \
     })
 
-#define outb(value, port) ({ __asm__("outb %%al,%%dx" : : "a"(value), "d"(port)); })
+#define outb(value, port) ({ __asm__("outb %%al,%%dx" : : "a"((uint8_t)(value)), "d"(port)); })
 
-#define outw(value, port) ({ __asm__("outw %%ax,%%dx" : : "a"(value), "d"(port)); })
-#define outl(value, port) ({ __asm__("outl %%eax,%%dx" : : "a"(value), "d"(port)); })
+#define outw(value, port) ({ __asm__("outw %%ax,%%dx" : : "a"((uint16_t)(value)), "d"(port)); })
+#define outl(value, port) ({ __asm__("outl %%eax,%%dx" : : "a"((uint32_t)(value)), "d"(port)); })
 
 #define outb_p(value, port) ({ __asm__("outb %%al,%%dx;nop;nop;nop;nop" : : "a"(value), "d"(port)); })
 

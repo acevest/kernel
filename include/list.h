@@ -64,11 +64,7 @@ static inline void _list_del(list_head_t *prev, list_head_t *next) {
     prev->next = next;
 }
 
-static inline void list_del(list_head_t *entry) {
-    _list_del(entry->prev, entry->next);
-    entry->prev = NULL;
-    entry->next = NULL;
-}
+static inline void list_del(list_head_t *entry) { _list_del(entry->prev, entry->next); }
 
 static inline void list_del_init(list_head_t *entry) {
     _list_del(entry->prev, entry->next);

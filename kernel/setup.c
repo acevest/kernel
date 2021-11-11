@@ -79,7 +79,7 @@ void setup_kernel() {
 
     system_delay();
 
-    setup_tasks();
+    // setup_tasks();
 
     setup_irqs();
 
@@ -87,7 +87,9 @@ void setup_kernel() {
 
     void ide_init();
     ide_init();
-    asm("cli;hlt;");
+    while (1) {
+        asm("sti;hlt;");
+    }
     extern tty_t monitor_tty;
     // tty_switch(&monitor_tty);
     // asm("sti");

@@ -8,34 +8,16 @@
  */
 
 // #include <assert.h>
-// #include <ide.h>
+#include <ide.h>
 // #include <io.h>
 // #include <irq.h>
-// #include <pci.h>
+
 // #include <printk.h>
 // #include <sched.h>
 // #include <semaphore.h>
 // #include <string.h>
 // #include <types.h>
 // #include <wait.h>
-
-// typedef struct _ide_drv {
-//     pci_device_t *pci;
-//     unsigned long pio_cnt;
-//     unsigned long dma_cnt;
-//     unsigned long irq_cnt;
-
-//     unsigned int iobase;
-
-//     unsigned int bus_cmd;
-//     unsigned int bus_status;
-//     unsigned int bus_prdt;
-
-//     unsigned int read_mode;
-
-//     u64_t ext_lba_base;
-//     part_t part[MAX_SUPPORT_PARTITION_CNT];
-// } ide_drive_t;
 
 // typedef struct prd {
 //     unsigned int addr;
@@ -145,42 +127,52 @@ ide_intr_func_t ide_intr_func = ide_default_intr;
 
 // unsigned int sys_clock();
 
-// void ide_pci_init(pci_device_t *pci) {
-//     unsigned int v;
+ide_pci_controller_t ide_pci_controller;
 
-//     v = pci_read_config_word(pci_cmd(pci, PCI_COMMAND));
-//     printk(" ide pci command %04x\n", v);
+extern unsigned int ATA_CHL0_CMD_BASE;
+extern unsigned int ATA_CHL1_CMD_BASE;
 
-//     v = pci_read_config_byte(pci_cmd(pci, PCI_PROGIF));
-//     printk(" ide pci program interface %02x\n", v);
+extern unsigned int ATA_CHL0_CTL_BASE;
+extern unsigned int ATA_CHL1_CTL_BASE;
 
-//     unsigned int iobase = pci_read_config_long(pci_cmd(pci, PCI_BAR4));
-//     printk(" ide pci Base IO Address Register %08x\n", iobase);
-//     iobase &= 0xFFFC;  // 最低为0是内存地址为1是端口地址
-//     drv.iobase = iobase;
-//     drv.bus_cmd = iobase + PCI_IDE_CMD;
-//     drv.bus_status = iobase + PCI_IDE_STATUS;
-//     drv.bus_prdt = iobase + PCI_IDE_PRDT;
+void ide_pci_init(pci_device_t *pci) {
+    unsigned int v;
 
-//     int i;
-//     printk(" BARS: ");
-//     for (i = 0; i < BARS_CNT; ++i) {
-//         printk("%08x ", pci->bars[i]);
-//         pci->bars[i] &= (~1UL);
-//     }
-//     printk("\n");
+    v = pci_read_config_word(pci_cmd(pci, PCI_COMMAND));
+    printk(" ide pci command %04x\n", v);
 
-//     HD_CHL0_CMD_BASE = pci->bars[0] ? pci->bars[0] : HD_CHL0_CMD_BASE;
-//     HD_CHL0_CTL_BASE = pci->bars[1] ? pci->bars[1] : HD_CHL0_CTL_BASE;
+    v = pci_read_config_byte(pci_cmd(pci, PCI_PROGIF));
+    printk(" ide pci program interface %02x\n", v);
 
-//     HD_CHL1_CMD_BASE = pci->bars[2] ? pci->bars[2] : HD_CHL1_CMD_BASE;
-//     HD_CHL1_CTL_BASE = pci->bars[3] ? pci->bars[3] : HD_CHL1_CTL_BASE;
+    unsigned int iobase = pci_read_config_long(pci_cmd(pci, PCI_BAR4));
+    printk(" ide pci Base IO Address Register %08x\n", iobase);
+    iobase &= 0xFFFC;  // 最低为0是内存地址为1是端口地址
+    ide_pci_controller.bus_iobase = iobase;
+    ide_pci_controller.bus_cmd = iobase + PCI_IDE_CMD;
+    ide_pci_controller.bus_status = iobase + PCI_IDE_STATUS;
+    ide_pci_controller.bus_prdt = iobase + PCI_IDE_PRDT;
 
-//     printk("channel0: cmd %04x ctl %04x channel1: cmd %04x ctl %04x\n", HD_CHL0_CMD_BASE, HD_CHL0_CTL_BASE,
-//            HD_CHL1_CMD_BASE, HD_CHL1_CTL_BASE);
-//     // printl(18, "channel0: cmd %04x ctl %04x channel1: cmd %04x ctl %04x", HD_CHL0_CMD_BASE, HD_CHL0_CTL_BASE,
-//     // HD_CHL1_CMD_BASE, HD_CHL1_CTL_BASE);
-// }
+    ide_pci_controller.prdt = (prdte_t *)alloc_one_page(0);
+
+    int i;
+    printk(" BARS: ");
+    for (i = 0; i < BARS_CNT; ++i) {
+        printk("%08x ", pci->bars[i]);
+        pci->bars[i] &= (~1UL);
+    }
+    printk("\n");
+
+    ATA_CHL0_CMD_BASE = pci->bars[0] ? pci->bars[0] : ATA_CHL0_CMD_BASE;
+    ATA_CHL0_CTL_BASE = pci->bars[1] ? pci->bars[1] : ATA_CHL0_CTL_BASE;
+
+    ATA_CHL1_CMD_BASE = pci->bars[2] ? pci->bars[2] : ATA_CHL1_CMD_BASE;
+    ATA_CHL1_CTL_BASE = pci->bars[3] ? pci->bars[3] : ATA_CHL1_CTL_BASE;
+
+    printk("channel0: cmd %04x ctl %04x channel1: cmd %04x ctl %04x\n", ATA_CHL0_CMD_BASE, ATA_CHL0_CTL_BASE,
+           ATA_CHL1_CMD_BASE, ATA_CHL1_CTL_BASE);
+    // printl(18, "channel0: cmd %04x ctl %04x channel1: cmd %04x ctl %04x", HD_CHL0_CMD_BASE, HD_CHL0_CTL_BASE,
+    // HD_CHL1_CMD_BASE, HD_CHL1_CTL_BASE);
+}
 
 // void ide_status() {
 //     u8_t idest = inb(REG_STATUS(0));
@@ -201,18 +193,18 @@ ide_intr_func_t ide_intr_func = ide_default_intr;
 //     kfree(buf);
 // }
 
-// void init_pci_controller(unsigned int classcode) {
-//     pci_device_t *pci = pci_find_device_by_classcode(classcode);
-//     if (pci != 0 && pci->intr_line < 16) {
-//         printk("found pci vendor %04x device %04x class %04x intr %d\n", pci->vendor, pci->device, pci->classcode,
-//                pci->intr_line);
-//         // printl(17, "found pci vendor %04x device %04x class %04x intr %d", pci->vendor, pci->device,
-//         pci->classcode,
-//         // pci->intr_line);
-//         ide_pci_init(pci);
-//         drv.pci = pci;
-//     }
-// }
+void init_pci_controller(unsigned int classcode) {
+    pci_device_t *pci = pci_find_device_by_classcode(classcode);
+    if (pci != 0 && pci->intr_line < 16) {
+        printk("found pci vendor %04x device %04x class %04x intr %d\n", pci->vendor, pci->device, pci->classcode,
+               pci->intr_line);
+        // printl(17, "found pci vendor %04x device %04x class %04x intr %d", pci->vendor, pci->device,
+        // pci->classcode,
+        // pci->intr_line);
+        ide_pci_init(pci);
+        ide_pci_controller.pci = pci;
+    }
+}
 void ide_default_intr() {}
 // void ide_default_intr() {
 //     // printd("%s\n", __func__);
@@ -545,7 +537,7 @@ void ide_init() {
     // memset((void *)&drv, 0, sizeof(drv));
 
     // init_pci_controller(0x0106);
-    // init_pci_controller(0x0101);
+    init_pci_controller(0x0101);
 
     // ide_detect();
     // return;

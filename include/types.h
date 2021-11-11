@@ -39,8 +39,12 @@ typedef signed long long s64_t;
 typedef unsigned char u8_t;
 typedef unsigned short u16_t;
 typedef unsigned long u32_t;
-typedef unsigned long u32_t;
 typedef unsigned long long u64_t;
+
+typedef unsigned char uint8_t;
+typedef unsigned short uint16_t;
+typedef unsigned long uint32_t;
+typedef unsigned long long uint64_t;
 
 typedef unsigned long pid_t;
 typedef unsigned long mode_t;

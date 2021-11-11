@@ -90,9 +90,21 @@ void setup_gate() {
 }
 
 void ide_irq();
+extern void *mbr_buf;
+uint8_t ata_pci_bus_status();
+
 void default_ide_irq_handler(unsigned int irq, pt_regs_t *regs, void *dev_id) {
-    // printk("default irq handler %d \n", irq);
-    ide_irq();
+    printk("default irq handler %d \n", irq);
+
+    printk("ide pci status after interrupt: %x", ata_pci_bus_status());
+
+    uint16_t *p = (uint16_t *)mbr_buf;
+    for (int i = 0; i < 256; i++) {
+        if (i % 12 == 0) {
+            printk("\n%03d ", i);
+        }
+        printk("%04x ", p[i]);
+    }
 }
 
 void default_irq_handler(unsigned int irq, pt_regs_t *regs, void *dev_id) { printk("default irq handler %d \n", irq); }
@@ -122,10 +134,16 @@ void setup_irqs() {
         }
     }
 
+    // 先关闭所有中断
     for (int i = 0; i < 16; i++) {
         close_irq(i);
     }
 
+    // 清除8259A的级连中断引脚的中断屏蔽位
+    // 以让从片的中断在放开后能发送到CPU
+    open_irq(2);
+
+    // 打开支持的中断
     open_irq(0x00);
     open_irq(0x01);
     open_irq(0x0A);
