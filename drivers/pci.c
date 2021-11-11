@@ -23,36 +23,35 @@ LIST_HEAD(pci_devs);
 
 const char *pci_get_info(unsigned int classcode, unsigned int progif);
 
-int pci_read_config_byte(int cmd) {
-    outl(PCI_CONFIG_CMD(cmd), PCI_ADDR);
-    return inb(PCI_DATA + (PCI_GET_CMD_REG(cmd) & 3));
+int pci_read_config_byte(int reg) {
+    outl(PCI_CONFIG_CMD(reg), PCI_ADDR);
+    return inb(PCI_DATA + (PCI_GET_CMD_REG(reg) & 3));
 }
 
-int pci_read_config_word(int cmd) {
-    outl(PCI_CONFIG_CMD(cmd), PCI_ADDR);
-    return inw(PCI_DATA + (PCI_GET_CMD_REG(cmd) & 2));
+int pci_read_config_word(int reg) {
+    outl(PCI_CONFIG_CMD(reg), PCI_ADDR);
+    return inw(PCI_DATA + (PCI_GET_CMD_REG(reg) & 2));
 }
 
-int pci_read_config_long(int cmd) {
-    outl(PCI_CONFIG_CMD(cmd), PCI_ADDR);
+int pci_read_config_long(int reg) {
+    outl(PCI_CONFIG_CMD(reg), PCI_ADDR);
     return inl(PCI_DATA);
 }
 
-// 可能有BUG
-// void pci_write_config_byte(int value, int cmd) {
-//     outl(PCI_CONFIG_CMD(cmd), PCI_ADDR);
-//     outb(value & 0xFF, PCI_DATA);
-// }
+void pci_write_config_byte(int value, int reg) {
+    outl(PCI_CONFIG_CMD(reg), PCI_ADDR);
+    outb(value & 0xFF, PCI_DATA + (reg & 3));
+}
 
-// void pci_write_config_word(int value, int cmd) {
-//     outl(PCI_CONFIG_CMD(cmd), PCI_ADDR);
-//     outw(value & 0xFFFF, PCI_DATA);
-// }
+void pci_write_config_word(int value, int reg) {
+    outl(PCI_CONFIG_CMD(reg), PCI_ADDR);
+    outw(value & 0xFFFF, PCI_DATA + (reg & 2));
+}
 
-// void pci_write_config_long(int value, int cmd) {
-//     outl(PCI_CONFIG_CMD(cmd), PCI_ADDR);
-//     outl(value, PCI_DATA);
-// }
+void pci_write_config_long(int value, int reg) {
+    outl(PCI_CONFIG_CMD(reg), PCI_ADDR);
+    outl(value, PCI_DATA);
+}
 
 void scan_pci_bus(int bus) {
     u8 dev, devfn;
