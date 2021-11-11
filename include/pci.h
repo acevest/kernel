@@ -23,6 +23,36 @@
 #define PCI_DATA 0xCFC  // CONFIG_DATA
 
 // PCI Device
+//  All PCI compliant devices must support the Vendor ID, Device ID, Command and Status, Revision ID, Class Code and
+//  Header Type fields.Implementation of the other registers is optional, depending upon the devices functionality.
+
+// Command: Provides control over a device's ability to generate and respond to PCI cycles. Where the only functionality
+// guaranteed to be supported by all devices is, when a 0 is written to this register, the device is disconnected from
+// the PCI bus for all accesses except Configuration Space access. Class Code: A read-only register that specifies the
+// type of function the device performs.
+// Command的bit2比较重要(Bus Master)，如果将它置为1，则该设备可以充当总线的主设备，否则，设备无法生成对PCI的访问。
+// 这个位需要在对硬盘DMA的时候用到
+
+// Subclass: A read-only register that specifies the specific function the device performs.
+
+// Prog IF(Programming Interface Byte): 一个只读寄存器，指定设备具有的寄存器级别的编程接口(如果有的话)
+
+// Header Type: 表示0x10字节开始的具体布局，同时指示该Device是否支持多个Function
+//  0x00 - General Device
+//  0x01 - PCI-to-PCI Bridge
+//  0x02 - CardBus Bridge
+//  如果bit7置位，则该Device有多个Function，否则为只支持单个Function的Device
+
+// Interrupt Line: 指示该设备连接到系统中的中断控制器的哪个引脚，对于x86架构来说，该寄存器对应于中断控制器IRQ编号0-15（
+// 而不是 I/O APIC IRQ 编号。  值0xFF为没有连接的意思。
+
+// Interrupt Pin: 指明设备使用哪个中断引脚，值0x01对应INTA#, 0x02对应INTB#， 0x03对应INTC#, 0x04对应INTD#,
+// 0x00表示不使用中断引脚。
+
+// Capabilities Pointer: Points (i.e. an offset into this function's configuration space) to a linked list of new
+// capabilities implemented by the device. Used if bit 4 of the status register (Capabilities List bit) is set to 1. The
+// bottom two bits are reserved and should be masked before the Pointer is used to access the Configuration Space.
+
 /*
  * 31                        16 15                         0
  * +---------------------------+---------------------------+ 00H
@@ -32,7 +62,7 @@
  * +-----------------------------------------+-------------+ 08H
  * |  Class Code |  Subclass   |   Prog IF   |  Revision   |
  * +-------------+-------------+-------------+-------------+ 0CH
- * |    BIST     | Header Type |LatencyTimer |CacheLineSize|
+ * |    BIST     | Header Type |LatencyTimer |CacheLineSize|           // BITS: built-in self test
  * +-------------+-------------+-------------+-------------+ 10H
  * |                Base Address Register 0                |
  * +-------------------------------------------------------+ 14H
@@ -192,8 +222,6 @@ void pci_write_config_word(int value, int cmd);
 void pci_write_config_long(int value, int cmd);
 
 // PCI Bridge
-//  All PCI compliant devices must support the Vendor ID, Device ID, Command and Status, Revision ID, Class Code and
-//  Header Type fields.Implementation of the other registers is optional, depending upon the devices functionality.
 /*
  * 31                        16 15                         0
  * +---------------------------+---------------------------+ 00H
