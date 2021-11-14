@@ -155,6 +155,11 @@ void root_task_entry() {
     // 所以得先清空一下键盘
     inb(0x60);
 
+    // 继续内核未完成的初始化
+    // 这些初始化在开中断的情况下完成
+    void setup_under_irq();
+    setup_under_irq();
+
     kernel_task("init", init_task_entry);
     kernel_task("test", init_task_entry);
     kernel_task("user", user_task_entry);

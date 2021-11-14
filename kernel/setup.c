@@ -83,9 +83,6 @@ void setup_kernel() {
 
     setup_pci();
 
-    void ide_init();
-    ide_init();
-
     detect_cpu();
 
     printk(version);
@@ -96,4 +93,10 @@ void setup_kernel() {
     return;
 
     setup_fs();
+}
+
+// 在开中断的情况下继续初始化的内容
+void setup_under_irq() {
+    void ide_init();
+    ide_init();
 }

@@ -55,7 +55,7 @@ typedef union task_union {
 
         pid_t pid;
         pid_t ppid;
-        unsigned int state;
+        volatile unsigned int state;
         long exit_code;
         unsigned long cr3;
 
