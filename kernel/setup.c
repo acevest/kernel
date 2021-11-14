@@ -77,7 +77,7 @@ void setup_kernel() {
     printl(MPL_TITLE, "                                 SYSTEM MONITOR");
     printl(MPL_ROOTDEV, "root device %08x", system.root_dev);
 
-    // setup_tasks();
+    setup_tasks();
 
     setup_irqs();
 
@@ -93,9 +93,7 @@ void setup_kernel() {
     extern tty_t monitor_tty;
     tty_switch(&monitor_tty);
 
-    while (1) {
-        asm("sti;hlt;");
-    }
+    return;
 
     setup_fs();
 }

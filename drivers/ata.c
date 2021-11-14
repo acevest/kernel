@@ -14,7 +14,11 @@
 #include <types.h>
 
 extern ide_pci_controller_t ide_pci_controller;
-void ata_dma_read_ext(int dev, uint64_t pos, uint16_t count, void *);
+
+#define ATA_TIMEOUT 10  // 10次时钟中断
+
+void ata_dma_read_ext(int dev, uint64_t pos, uint16_t count, void *dest);
+int ata_pio_read_ext(int dev, uint64_t pos, uint16_t count, int timeout, void *dest);
 
 void *mbr_buf;
 void ata_test(uint64_t nr) {
@@ -45,6 +49,9 @@ void ata_read_identify(int dev) {  // 这里所用的dev是逻辑编号 ATA0、A
     while (1) {
         u8 status = inb(REG_STATUS(dev));
         printk("hard disk status: %x %x\n", status, REG_STATUS(dev));
+        if (status == 0) {
+            panic("no ata device");
+        }
         if ((status & ATA_STATUS_BSY) == 0 && (status & ATA_STATUS_DRQ) != 0) {
             break;
         }
@@ -73,33 +80,47 @@ void ata_read_identify(int dev) {  // 这里所用的dev是逻辑编号 ATA0、A
     // TODO REMOVE
     mbr_buf = kmalloc(SECT_SIZE, 0);
     // ata_test(0);
+
+    // ata_pio_read_ext(0, 0, 1, ATA_TIMEOUT, mbr_buf);
+    // uint16_t *p = (uint16_t *)mbr_buf;
+    // for (int i = 0; i < 256; i++) {
+    //     if (i % 12 == 0) {
+    //         printk("\n>%03d ", i);
+    //     }
+    //     printk("%04x ", p[i]);
+    // }
 }
 
 // ATA_CMD_READ_DMA_EXT
-void ata_dma_read_ext(int dev, uint64_t pos, uint16_t count, void *addr) {
+void ata_dma_read_ext(int dev, uint64_t pos, uint16_t count, void *dest) {
     // 停止DMA
     outb(PCI_IDE_CMD_STOP, ide_pci_controller.bus_cmd);
 
     // 配置描述符表
-    unsigned long paddr = va2pa(addr);
-    ide_pci_controller.prdt[0].phys_addr = paddr;
+    unsigned long dest_paddr = va2pa(dest);
+    ide_pci_controller.prdt[0].phys_addr = dest_paddr;
     ide_pci_controller.prdt[0].byte_count = SECT_SIZE;
     ide_pci_controller.prdt[0].reserved = 0;
     ide_pci_controller.prdt[0].eot = 1;
     outl(va2pa(ide_pci_controller.prdt), ide_pci_controller.bus_prdt);
 
-    printk("paddr: %x prdt: %x %x prdte %x %x\n", paddr, ide_pci_controller.prdt, va2pa(ide_pci_controller.prdt),
+    printk("paddr: %x prdt: %x %x prdte %x %x\n", dest_paddr, ide_pci_controller.prdt, va2pa(ide_pci_controller.prdt),
            ide_pci_controller.prdt[0].phys_addr, *(((unsigned int *)ide_pci_controller.prdt) + 1));
 
     // 清除中断位和错误位
     // 这里清除的方式是是设置1后清除
     outb(PCI_IDE_STATUS_INTR | PCI_IDE_STATUS_ERR, ide_pci_controller.bus_status);
 
-    // 选择DRIVE
-    outb(ATA_LBA48_DEVSEL(dev), REG_DEVICE(dev));
-
     // 不再设置nIEN，DMA需要中断
     outb(0x00, REG_CTL(dev));
+
+    // 等待硬盘不BUSY
+    while (inb(REG_STATUS(dev)) & ATA_STATUS_BSY) {
+        nop();
+    }
+
+    // 选择DRIVE
+    outb(ATA_LBA48_DEVSEL(dev), REG_DEVICE(dev));
 
     // 先写扇区数的高字节
     outb((count >> 8) & 0xFF, REG_NSECTOR(dev));
@@ -117,6 +138,11 @@ void ata_dma_read_ext(int dev, uint64_t pos, uint16_t count, void *addr) {
     outb((pos >> 8) & 0xFF, REG_LBAM(dev));
     outb((pos >> 16) & 0xFF, REG_LBAH(dev));
 
+    // 等待硬盘READY
+    while (inb(REG_STATUS(dev)) & ATA_STATUS_RDY == 0) {
+        nop();
+    }
+
     outb(ATA_CMD_READ_DMA_EXT, REG_CMD(dev));
 
     // 这一句非常重要，如果不加这一句
@@ -130,6 +156,62 @@ void ata_dma_read_ext(int dev, uint64_t pos, uint16_t count, void *addr) {
     // 指定DMA操作为读取硬盘操作，内核用DMA读取，对硬盘而言是写出
     // 并设置DMA的开始位，开始DMA
     outb(PCI_IDE_CMD_WRITE | PCI_IDE_CMD_START, ide_pci_controller.bus_cmd);
+}
+
+// ATA_CMD_READ_PIO_EXT
+int ata_pio_read_ext(int dev, uint64_t pos, uint16_t count, int timeout, void *dest) {
+    // PIO读，禁用中断
+    outb(ATA_CTL_NIEN, REG_CTL(dev));
+
+    // 等待硬盘不BUSY
+    while (inb(REG_STATUS(dev)) & ATA_STATUS_BSY) {
+        nop();
+    }
+
+    // 选择DRIVE
+    outb(ATA_LBA48_DEVSEL(dev), REG_DEVICE(dev));
+
+    // 先写扇区数的高字节
+    outb((count >> 8) & 0xFF, REG_NSECTOR(dev));
+
+    // 接着写LBA48，高三个字节
+    outb((pos >> 24) & 0xFF, REG_LBAL(dev));
+    outb((pos >> 32) & 0xFF, REG_LBAM(dev));
+    outb((pos >> 40) & 0xFF, REG_LBAH(dev));
+
+    // 再写扇区数的低字节
+    outb((count >> 0) & 0xFF, REG_NSECTOR(dev));
+
+    // 接着写LBA48，低三个字节
+    outb((pos >> 0) & 0xFF, REG_LBAL(dev));
+    outb((pos >> 8) & 0xFF, REG_LBAM(dev));
+    outb((pos >> 16) & 0xFF, REG_LBAH(dev));
+
+    while (inb(REG_STATUS(dev)) & ATA_STATUS_RDY == 0) {
+        nop();
+    }
+
+    outb(ATA_CMD_READ_PIO_EXT, REG_CMD(dev));
+
+    while (timeout > 0) {
+        timeout--;
+
+        u8 status = inb(REG_STATUS(dev));
+        if ((status & ATA_STATUS_BSY) == 0 && (status & ATA_STATUS_DRQ) != 0) {
+            break;
+        }
+
+        asm("sti;hlt;");
+    }
+    asm("cli");
+
+    if (timeout == 0) {
+        return -1;
+    }
+
+    insl(REG_DATA(dev), dest, (SECT_SIZE * count) / sizeof(uint32_t));
+
+    return 0;
 }
 
 uint8_t ata_pci_bus_status() {
