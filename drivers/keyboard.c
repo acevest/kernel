@@ -101,8 +101,11 @@ void kbd_debug(unsigned char scan_code) {
 
     // if (scan_code == 0x43)  // F9
     //     ide_dma_pci_lba48();
-    // if (scan_code == 0x44)  // F10
-    //     ide_debug();
+    if (scan_code == 0x44) {  // F10
+        void ata_test(uint64_t nr);
+        ata_test(0);
+    }
+
     if (scan_code == 0x57)  // F11
     {
         asm("cli;");

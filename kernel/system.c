@@ -92,11 +92,14 @@ void setup_gate() {
 void ide_irq();
 extern void *mbr_buf;
 uint8_t ata_pci_bus_status();
-
+extern ide_pci_controller_t ide_pci_controller;
 void default_ide_irq_handler(unsigned int irq, pt_regs_t *regs, void *dev_id) {
     printk("default irq handler %d \n", irq);
 
     printk("ide pci status after interrupt: %x", ata_pci_bus_status());
+
+    unsigned int v = pci_read_config_word(pci_cmd(ide_pci_controller.pci, PCI_COMMAND));
+    pci_write_config_word(v & (~PCI_COMMAND_MASTER), pci_cmd(ide_pci_controller.pci, PCI_COMMAND));
 
     uint16_t *p = (uint16_t *)mbr_buf;
     for (int i = 0; i < 256; i++) {

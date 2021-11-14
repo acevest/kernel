@@ -141,15 +141,6 @@ void ide_pci_init(pci_device_t *pci) {
     v = pci_read_config_word(pci_cmd(pci, PCI_COMMAND));
     printk(" ide pci command %04x\n", v);
 
-    // 这一句非常重要，如果不加这一句
-    // 在qemu中用DMA的方式读数据就会读不到数据，而只触是发中断，然后寄存器（Bus Master IDE Status
-    // Register）的值会一直是5 也就是INTERRUPT和和ACTIVE位是1，正常应该是4，也就是只有INTERRUPT位为1
-    // 在bochs中则加不加这一句不会有影响，都能正常读到数据
-    pci_write_config_word(v | PCI_COMMAND_MASTER, pci_cmd(pci, PCI_COMMAND));
-
-    v = pci_read_config_word(pci_cmd(pci, PCI_COMMAND));
-    printk(" ide pci command %04x\n", v);
-
     v = pci_read_config_byte(pci_cmd(pci, PCI_PROGIF));
     printk(" ide pci program interface %02x\n", v);
 
@@ -160,7 +151,6 @@ void ide_pci_init(pci_device_t *pci) {
     ide_pci_controller.bus_cmd = iobase + PCI_IDE_CMD;
     ide_pci_controller.bus_status = iobase + PCI_IDE_STATUS;
     ide_pci_controller.bus_prdt = iobase + PCI_IDE_PRDT;
-
     ide_pci_controller.prdt = (prdte_t *)alloc_one_page(0);
 
     int i;
@@ -176,6 +166,8 @@ void ide_pci_init(pci_device_t *pci) {
 
     ATA_CHL1_CMD_BASE = pci->bars[2] ? pci->bars[2] : ATA_CHL1_CMD_BASE;
     ATA_CHL1_CTL_BASE = pci->bars[3] ? pci->bars[3] : ATA_CHL1_CTL_BASE;
+
+    ide_pci_controller.pci = pci;
 
     printk("channel0: cmd %04x ctl %04x channel1: cmd %04x ctl %04x\n", ATA_CHL0_CMD_BASE, ATA_CHL0_CTL_BASE,
            ATA_CHL1_CMD_BASE, ATA_CHL1_CTL_BASE);
@@ -211,7 +203,6 @@ void init_pci_controller(unsigned int classcode) {
         // pci->classcode,
         // pci->intr_line);
         ide_pci_init(pci);
-        ide_pci_controller.pci = pci;
     }
 }
 void ide_default_intr() {}

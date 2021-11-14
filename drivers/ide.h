@@ -112,8 +112,6 @@
 // #define REG_CMD(dev) REG_CMD_BASE(dev, HD_CMD)
 // #define REG_CTL(dev) REG_CTL_BASE(dev, HD_CTL)
 
-// #define SECT_SIZE 512
-
 // #define hd_rd_data(dev, buf, count) hd_rd_port(REG_DATA(dev), buf, count)
 
 // #define hd_bsy(dev) ((inb(REG_STATUS(dev)) & HD_STATUS_BSY))

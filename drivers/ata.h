@@ -125,3 +125,5 @@ extern unsigned int ATA_CHL1_CTL_BASE;
 #define ATA_IDENT_MAX_LBA 120
 #define ATA_IDENT_COMMANDSETS 164
 #define ATA_IDENT_MAX_LBA_EXT 200
+
+#define SECT_SIZE 512

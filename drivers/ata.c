@@ -17,6 +17,10 @@ extern ide_pci_controller_t ide_pci_controller;
 void ata_dma_read_ext(int dev, uint64_t pos, uint16_t count, void *);
 
 void *mbr_buf;
+void ata_test(uint64_t nr) {
+    memset(mbr_buf, 0xAA, SECT_SIZE);
+    ata_dma_read_ext(0, nr, 1, mbr_buf);
+}
 
 // 本程序参考文档《AT Attachment with Packet Interface - 6》
 
@@ -45,8 +49,7 @@ void ata_read_identify(int dev) {  // 这里所用的dev是逻辑编号 ATA0、A
         }
     }
 
-    // u16 *identify = (u16 *)kmalloc(ATA_NSECTOR, 0);
-    insw(REG_DATA(dev), identify, 512 / sizeof(u16));
+    insw(REG_DATA(dev), identify, SECT_SIZE / sizeof(u16));
 
     // 第49个word的第8个bit位表示是否支持DMA
     // 第83个word的第10个bit位表示是否支持LBA48，为1表示支持。
@@ -66,9 +69,9 @@ void ata_read_identify(int dev) {  // 这里所用的dev是逻辑编号 ATA0、A
     printk("bus iobase %x cmd %x status %x prdt %x \n", ide_pci_controller.bus_iobase, ide_pci_controller.bus_cmd,
            ide_pci_controller.bus_status, ide_pci_controller.bus_prdt);
 
-    mbr_buf = kmalloc(512, 0);
-    memset(mbr_buf, 0xAA, 512);
-    ata_dma_read_ext(0, 0, 1, mbr_buf);
+    // TODO REMOVE
+    mbr_buf = kmalloc(SECT_SIZE, 0);
+    // ata_test(0);
 }
 
 // ATA_CMD_READ_DMA_EXT
@@ -79,7 +82,7 @@ void ata_dma_read_ext(int dev, uint64_t pos, uint16_t count, void *addr) {
     // 配置描述符表
     unsigned long paddr = va2pa(addr);
     ide_pci_controller.prdt[0].phys_addr = paddr;
-    ide_pci_controller.prdt[0].byte_count = 512;
+    ide_pci_controller.prdt[0].byte_count = SECT_SIZE;
     ide_pci_controller.prdt[0].reserved = 0;
     ide_pci_controller.prdt[0].eot = 1;
     outl(va2pa(ide_pci_controller.prdt), ide_pci_controller.bus_prdt);
@@ -114,6 +117,14 @@ void ata_dma_read_ext(int dev, uint64_t pos, uint16_t count, void *addr) {
     outb((pos >> 16) & 0xFF, REG_LBAH(dev));
 
     outb(ATA_CMD_READ_DMA_EXT, REG_CMD(dev));
+
+    // 这一句非常重要，如果不加这一句
+    // 在qemu中用DMA的方式读数据就会读不到数据，而只触是发中断，然后寄存器（Bus Master IDE Status
+    // Register）的值会一直是5 也就是INTERRUPT和和ACTIVE位是1，正常应该是4，也就是只有INTERRUPT位为1
+    // 在bochs中则加不加这一句不会有影响，都能正常读到数据
+    unsigned int v = pci_read_config_word(pci_cmd(ide_pci_controller.pci, PCI_COMMAND));
+    printk(" ide pci command %04x\n", v);
+    pci_write_config_word(v | PCI_COMMAND_MASTER, pci_cmd(ide_pci_controller.pci, PCI_COMMAND));
 
     // 指定DMA操作为读取硬盘操作，内核用DMA读取，对硬盘而言是写出
     // 并设置DMA的开始位，开始DMA
