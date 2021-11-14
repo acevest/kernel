@@ -77,8 +77,6 @@ void setup_kernel() {
     printl(MPL_TITLE, "                                 SYSTEM MONITOR");
     printl(MPL_ROOTDEV, "root device %08x", system.root_dev);
 
-    system_delay();
-
     // setup_tasks();
 
     setup_irqs();
@@ -87,29 +85,17 @@ void setup_kernel() {
 
     void ide_init();
     ide_init();
-    while (1) {
-        asm("sti;hlt;");
-    }
-    extern tty_t monitor_tty;
-    // tty_switch(&monitor_tty);
-    // asm("sti");
-    // while (1) { /* code */
-    // }
-
-    return;
-
-    // switch_printk_screen();
-
-    // switch_printk_screen();
-    system_delay();
-
-    system_delay();
 
     detect_cpu();
 
-    setup_fs();
-
     printk(version);
 
-    // switch_printk_screen();
+    extern tty_t monitor_tty;
+    tty_switch(&monitor_tty);
+
+    while (1) {
+        asm("sti;hlt;");
+    }
+
+    setup_fs();
 }

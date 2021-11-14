@@ -16,7 +16,6 @@
 
 #pragma once
 
-void switch_printk_screen();
 int printk(const char *fmtstr, ...);
 int printd(const char *fmtstr, ...);
 int printlo(unsigned int line, unsigned int offset, const char *fmtstr, ...);

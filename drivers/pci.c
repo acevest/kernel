@@ -226,7 +226,6 @@ void setup_pci() {
     }
 
     dump_pci_dev();
-    asm("cli;hlt;");
 }
 
 typedef struct pci_info {

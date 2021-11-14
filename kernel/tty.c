@@ -236,6 +236,8 @@ void tty_switch(tty_t *tty) {
     irq_restore(flags);
 
     current_tty = tty;
+
+    tty_set_cursor(current_tty);
 }
 
 tty_t *current_tty;
