@@ -39,6 +39,7 @@ void ata_test(uint64_t nr) {
 u16 identify[256];
 void ata_read_identify(int dev) {  // 这里所用的dev是逻辑编号 ATA0、ATA1下的Master、Salve的dev分别为0,1,2,3
 
+    outb(ATA_CTL_NIEN, REG_CTL(dev));                   // 在读IDENTIFY的时候禁用硬盘中断
     outb(0x00 | ((dev & 0x01) << 4), REG_DEVICE(dev));  // 根据文档P113，这里不用指定bit5, bit7，直接指示DRIVE就行
     outb(ATA_CMD_IDENTIFY, REG_CMD(dev));
     while (1) {
