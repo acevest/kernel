@@ -128,41 +128,30 @@ void free_pages(unsigned long addr);
 struct kmem_cache {
     const char *name;
 
+    // 预期分配的大小
     unsigned long objsize;
+
+    // 实际分配的大小
     unsigned long size;
+
+    // 对齐
     unsigned long align;
+
+    // 从buddy system批发的页的幂数
     unsigned long order;
+
+    //
     unsigned long objects;
 
+    // 没有完全分配的页的链表及数量
     unsigned int partial_cnt;
     list_head_t partial;
 
+    // 正在分配的页
     page_t *page;
 
     list_head_t list;
 };
-
-// TODO Remove
-typedef struct page_ {
-    // struct page *prev, *next;
-    ListHead list;
-    unsigned int order;
-    unsigned int mapNR;
-    unsigned int count;
-} Page, *pPage;
-
-typedef struct free_area_ {
-    // struct page *prev, *next;
-    ListHead freeList;
-    unsigned char *map;
-    unsigned int mapSize;
-    unsigned int count;
-} FreeArea, *pFreeArea;
-
-pPage old_alloc_pages(unsigned int order);
-void old_free_pages(pPage page);
-// void    free_pages(pPage page, unsigned int order);
-void disp_free_area();
 
 #endif  // ASM
 

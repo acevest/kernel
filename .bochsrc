@@ -1313,4 +1313,4 @@ debug_symbols: file="kernel.sym"
 #megs: 64
 #megs: 32
 #megs: 16
-megs: 8
+megs: 32

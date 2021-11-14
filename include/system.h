@@ -147,7 +147,7 @@ typedef struct system {
     u64 mm_size;   // Byte
 
     u32 page_count;
-    pPage page_map;
+
     u32 page_bitmap;
 
     u32 *page_dir;

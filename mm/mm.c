@@ -24,9 +24,6 @@
 #include <types.h>
 
 extern char etext, edata, end;
-extern void init_buddy_system();
-extern void init_slub_system();
-extern void init_bootmem();
 
 pde_t __initdata init_pgd[PDECNT_PER_PAGE] __attribute__((__aligned__(PAGE_SIZE)));
 pte_t __initdata init_pgt[PTECNT_PER_PAGE * BOOT_INIT_PAGETBL_CNT] __attribute__((__aligned__(PAGE_SIZE)));
@@ -124,15 +121,17 @@ void init_paging() {
 
 void init_mm() {
     printk("init bootmem alloc...\n");
+    extern void init_bootmem();
     init_bootmem();
     printk("init global paging...\n");
-
     init_paging();
 
     printk("init buddy system...\n");
+    extern void init_buddy_system();
     init_buddy_system();
 
-    printk("init slub system...\n");
-    init_slub_system();
+    printk("init kmem caches...\n");
+    extern void init_kmem_caches();
+    init_kmem_caches();
     printk("memory init finished...\n");
 }
