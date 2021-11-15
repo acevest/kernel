@@ -34,7 +34,7 @@ void ata_test(uint64_t nr) {
 // 对于同一个IDE通道的两个DRIVE，共享同一组寄存器，它们之间的区分是通过Device寄存器的第4个bit位来实现的。0为Master，1为Slave
 //
 // 使用IDENTIFY命令步骤:
-//  1. 选择DRIVE构造命令，发送到Device寄存器(发送到master: 0x00, 发送到slave: 0x40)
+//  1. 选择DRIVE构造命令，发送到Device寄存器(选择master发送: 0x00, 选择slave发送: 0x40)
 //  2. 发送IDENTIFY(0xEC)命令到该通道的命令寄存器
 // 检查status寄存器：
 //  1. 若为0，就认为没有IDE
@@ -73,15 +73,15 @@ void ata_read_identify(int dev) {  // 这里所用的dev是逻辑编号 ATA0、A
     // TODO REMOVE
     mbr_buf = kmalloc(SECT_SIZE, 0);
     // ata_test(0);
-
+    sleep_on_ide();
     // ata_pio_read_ext(0, 0, 1, ATA_TIMEOUT, mbr_buf);
-    // uint16_t *p = (uint16_t *)mbr_buf;
-    // for (int i = 0; i < 256; i++) {
-    //     if (i % 12 == 0) {
-    //         printk("\n>%03d ", i);
-    //     }
-    //     printk("%04x ", p[i]);
-    // }
+    uint16_t *p = (uint16_t *)mbr_buf;
+    for (int i = 0; i < 256; i++) {
+        if (i % 12 == 0) {
+            printk("\n[%03d] ", i);
+        }
+        printk("%04x ", p[i]);
+    }
 }
 
 // ATA_CMD_READ_DMA_EXT
