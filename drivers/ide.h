@@ -174,3 +174,5 @@ typedef struct _ide_pci_controller {
 
     prdte_t *prdt;
 } ide_pci_controller_t;
+
+void sleep_on_ide();

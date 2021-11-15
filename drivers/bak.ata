@@ -41,14 +41,21 @@ void ata_test(uint64_t nr) {
 //  2. 等到status的BSY位清除
 //  3. 等到status的DRQ位或ERR位设置
 u16 identify[256];
-void ata_send_read_identify_cmd(int dev) {
-    outb(0x00, REG_CTL(dev));
-    outb(0x00 | ((dev & 0x01) << 4), REG_DEVICE(dev));  // 根据文档P113，这里不用指定bit5, bit7，直接指示DRIVE就行
-    outb(ATA_CMD_IDENTIFY, REG_CMD(dev));
-}
 void ata_read_identify(int dev) {  // 这里所用的dev是逻辑编号 ATA0、ATA1下的Master、Salve的dev分别为0,1,2,3
 
-    sleep_on_ide();
+    outb(ATA_CTL_NIEN, REG_CTL(dev));                   // 在读IDENTIFY的时候禁用硬盘中断
+    outb(0x00 | ((dev & 0x01) << 4), REG_DEVICE(dev));  // 根据文档P113，这里不用指定bit5, bit7，直接指示DRIVE就行
+    outb(ATA_CMD_IDENTIFY, REG_CMD(dev));
+    while (1) {
+        u8 status = inb(REG_STATUS(dev));
+        printk("hard disk status: %x %x\n", status, REG_STATUS(dev));
+        if (status == 0) {
+            panic("no ata device");
+        }
+        if ((status & ATA_STATUS_BSY) == 0 && (status & ATA_STATUS_DRQ) != 0) {
+            break;
+        }
+    }
 
     insw(REG_DATA(dev), identify, SECT_SIZE / sizeof(u16));
 

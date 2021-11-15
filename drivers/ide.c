@@ -10,14 +10,14 @@
 // #include <assert.h>
 #include <ide.h>
 // #include <io.h>
-// #include <irq.h>
+#include <irq.h>
 
 // #include <printk.h>
 // #include <sched.h>
 // #include <semaphore.h>
 // #include <string.h>
 // #include <types.h>
-// #include <wait.h>
+#include <wait.h>
 
 // typedef struct prd {
 //     unsigned int addr;
@@ -533,8 +533,39 @@ void ide_irq() { ide_intr_func(); }
 // }
 
 void ata_read_identify(int dev);
+
+DECLARE_WAIT_QUEUE_HEAD(ide_wait_queue_head);
+
+void sleep_on_ide() { sleep_on(&ide_wait_queue_head); }
+
+extern void *mbr_buf;
+uint8_t ata_pci_bus_status();
+extern ide_pci_controller_t ide_pci_controller;
+void ide_irq_handler(unsigned int irq, pt_regs_t *regs, void *devid) {
+    printk("ide irq handler %d \n", irq);
+
+    printk("ide pci status after interrupt: %x\n", ata_pci_bus_status());
+
+#if 0
+    unsigned int v = pci_read_config_word(pci_cmd(ide_pci_controller.pci, PCI_COMMAND));
+    pci_write_config_word(v & (~PCI_COMMAND_MASTER), pci_cmd(ide_pci_controller.pci, PCI_COMMAND));
+
+    uint16_t *p = (uint16_t *)mbr_buf;
+    for (int i = 0; i < 256; i++) {
+        if (i % 12 == 0) {
+            printk("\n%03d ", i);
+        }
+        printk("%04x ", p[i]);
+    }
+#endif
+
+    wake_up(&ide_wait_queue_head);
+}
+
 void ide_init() {
     // memset((void *)&drv, 0, sizeof(drv));
+
+    request_irq(0x0E, ide_irq_handler, "hard", "IDE");
 
     // init_pci_controller(0x0106);
     init_pci_controller(0x0101);

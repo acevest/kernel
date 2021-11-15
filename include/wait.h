@@ -31,6 +31,9 @@ typedef struct {
 
 #define DECLARE_WAIT_QUEUE(name, tsk) wait_queue_t name = WAIT_QUEUE_INITIALIZER(name, tsk)
 
-void init_wait_queue(wait_queue_head_t *wqh);
+void init_wait_queue_head(wait_queue_head_t *wqh);
 void add_wait_queue(wait_queue_head_t *wqh, wait_queue_t *wq);
 void del_wait_queue(wait_queue_head_t *wqh, wait_queue_t *wq);
+
+void sleep_on(wait_queue_head_t *head);
+void wake_up(wait_queue_head_t *head);

@@ -53,7 +53,7 @@ static void cnsl_queue_init(cnsl_queue_t *cq) {
     memset((void *)cq, 0, sizeof(*cq));
     cq->head = 0;
     cq->tail = 0;
-    init_wait_queue(&cq->wait);
+    init_wait_queue_head(&cq->wait);
 }
 
 wait_queue_head_t rdwq;
@@ -62,7 +62,7 @@ void cnsl_init() {
     cnsl_queue_init(&cnsl.rd_q);
     cnsl_queue_init(&cnsl.wr_q);
     cnsl_queue_init(&cnsl.sc_q);
-    init_wait_queue(&rdwq);
+    init_wait_queue_head(&rdwq);
 }
 
 int cnsl_kbd_write(char ch) {
@@ -85,7 +85,7 @@ int cnsl_kbd_write(char ch) {
 
     if (ch == '\n') {
         clear(&cnsl.wr_q);
-	return 0; // TODO FIX
+        return 0;  // TODO FIX
         while (get(&cnsl.sc_q, &ch)) put(&cnsl.rd_q, ch);
         wake_up(&rdwq);
     }

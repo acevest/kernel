@@ -66,18 +66,26 @@ int request_irq(unsigned int irq, void (*handler)(unsigned int, pt_regs_t *, voi
                 void *dev_id) {
     irq_action_t *p;
 
-    if (irq >= NR_IRQS) return -EINVAL;
-    if (handler == NULL) return -EINVAL;
+    if (irq >= NR_IRQS) {
+        return -EINVAL;
+    }
+    if (handler == NULL) {
+        return -EINVAL;
+    }
 
     // 检查是否已经注册过处理函数了
     p = irq_desc[irq].action;
     while (p != NULL) {
-        if (p->handler == handler) return 0;
+        if (p->handler == handler) {
+            return 0;
+        }
         p = p->next;
     }
 
     p = (irq_action_t *)kmalloc(sizeof(irq_action_t), 0);
-    if (p == NULL) return -ENOMEM;
+    if (p == NULL) {
+        return -ENOMEM;
+    }
 
     p->dev_name = devname;
     p->dev_id = dev_id;

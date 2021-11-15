@@ -12,31 +12,57 @@
 #include <sched.h>
 #include <wait.h>
 
-void init_wait_queue(wait_queue_head_t *wqh) { INIT_LIST_HEAD(&wqh->task_list); }
+void init_wait_queue_head(wait_queue_head_t *wqh) { INIT_LIST_HEAD(&wqh->task_list); }
 
-void add_wait_queue(wait_queue_head_t *wqh, wait_queue_t *wq) {
+void add_wait_queue(wait_queue_head_t *head, wait_queue_t *wq) {
     unsigned long flags;
     irq_save(flags);
-    list_add_tail(&wq->task_list, &wqh->task_list);
+    list_add_tail(&wq->task_list, &head->task_list);
     irq_restore(flags);
 }
 
-void del_wait_queue(wait_queue_head_t *wqh, wait_queue_t *wq) {
+void del_wait_queue(wait_queue_head_t *head, wait_queue_t *wq) {
     unsigned long flags;
     irq_save(flags);
     list_del(&wq->task_list);
     irq_restore(flags);
 }
 
-void wake_up(wait_queue_head_t *wqh) {
+void sleep_on(wait_queue_head_t *head) {
+    DECLARE_WAIT_QUEUE(wait, current);
+
+    current->state = TASK_WAIT;
+
+    unsigned long flags;
+    irq_save(flags);
+
+    list_add_tail(&wait.task_list, &head->task_list);
+
+    irq_restore(flags);
+
+    schedule();
+}
+
+void __wake_up(wait_queue_head_t *head, int nr) {
     unsigned long flags;
     wait_queue_t *p, *tmp;
     irq_save(flags);
-    list_for_each_entry_safe(p, tmp, &wqh->task_list, task_list) { p->task->state = TASK_RUNNING; }
+    list_for_each_entry_safe(p, tmp, &head->task_list, task_list) {
+        list_del(&p->task_list);
+        printk("wakeup: %s\n", p->task->name);
+        p->task->state = TASK_RUNNING;
+
+        --nr;
+        if (nr == 0) {
+            break;
+        }
+    }
     irq_restore(flags);
 
     // no schedule() here.
 }
+
+void wake_up(wait_queue_head_t *head) { __wake_up(head, 1); }
 
 #include <irq.h>
 DECLARE_WAIT_QUEUE_HEAD(debug_wq);
