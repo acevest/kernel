@@ -25,8 +25,8 @@ void clk_handler(unsigned int irq, pt_regs_t *regs, void *dev_id) {
         printl(MPL_CLOCK, "clock irq: %d", jiffies);
     }
 
-    unsigned long iflags;
-    irq_save(iflags);
+    // unsigned long iflags;
+    // irq_save(iflags);
 
     task_union *p = 0;
     task_union *t = 0;
@@ -39,5 +39,5 @@ void clk_handler(unsigned int irq, pt_regs_t *regs, void *dev_id) {
         }
     }
 
-    irq_restore(iflags);
+    // irq_restore(iflags);
 }

@@ -85,6 +85,7 @@ int cnsl_kbd_write(char ch) {
 
     if (ch == '\n') {
         clear(&cnsl.wr_q);
+	return 0; // TODO FIX
         while (get(&cnsl.sc_q, &ch)) put(&cnsl.rd_q, ch);
         wake_up(&rdwq);
     }

@@ -53,6 +53,7 @@ DEF_IRQ(0,F)
 .global _irq_handler
 .extern irq_handler
 .extern schedule
+.extern preempt_count
 _irq_handler:
     SAVE_REGS
 
@@ -69,7 +70,7 @@ _irq_handler:
     movl    %esp, %eax
     call    irq_handler
 
-    cmpl    $0, TI_preempt_cnt(%ebp)
+    cmpl    $0, (preempt_count)
     jnz     restore_regs
 
     call    schedule

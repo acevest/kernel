@@ -255,4 +255,14 @@ void system_delay();
 
 #define KRNL_INIT_STACK_SIZE 4096
 
+#ifndef ASM
+// 内核进程
+void root_task_entry();
+void init_task_entry();
+void disk_task_entry();
+void user_task_entry();
+
+extern uint32_t preempt_count;
+#endif
+
 #endif  //_SYSTEM_H

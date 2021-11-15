@@ -52,7 +52,6 @@ LIST_HEAD(delay_tasks);
 void init_root_task() {
     int i;
 
-    root_task.preempt_cnt = 0;
     root_task.pid = get_next_pid();
     root_task.ppid = 0;
     root_task.state = TASK_RUNNING;

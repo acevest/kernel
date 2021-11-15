@@ -15,8 +15,6 @@
 
 #define TASK_SIZE 4096
 
-#define TI_preempt_cnt 0
-
 #ifndef ASM
 #include <fs.h>
 #include <list.h>
@@ -42,8 +40,6 @@ typedef struct wait_queue_head {
 
 typedef union task_union {
     struct {
-        unsigned long preempt_cnt;
-
         unsigned long esp0; /* kernel stack */
 
         /* for context switch */

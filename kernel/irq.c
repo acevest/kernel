@@ -18,6 +18,7 @@
 #include <atomic.h>
 #include <errno.h>
 #include <irq.h>
+#include <system.h>
 #include <task.h>
 
 irq_desc_t irq_desc[NR_IRQS];
@@ -41,27 +42,28 @@ __attribute__((regparm(1))) void irq_handler(pt_regs_t *regs) {
 
     irq_action_t *action = p->action;
 
-    atomic_inc(&(current->preempt_cnt));
+    atomic_inc(&preempt_count);
 
     unsigned long esp;
     asm("movl %%esp, %%eax" : "=a"(esp));
-    printl(MPL_PREEMPT, "current %08x cr3 %08x preempt %d esp %08x", current, current->cr3, current->preempt_cnt, esp);
+    printl(MPL_PREEMPT, "current %08x cr3 %08x preempt %d esp %08x", current, current->cr3, preempt_count, esp);
 
     p->chip->ack(irq);
-    sti();
 
     while (action && action->handler) {
         action->handler(irq, regs, action->dev_id);
         action = action->next;
     }
 
-    cli();
-    p->chip->enable(irq);
+    // sti();
+    // ....
+    // cli();
 
-    atomic_dec(&(current->preempt_cnt));
+    atomic_dec(&preempt_count);
 }
 
-int request_irq(unsigned int irq, void (*handler)(unsigned int, pt_regs_t *, void *), const char *devname, void *dev_id) {
+int request_irq(unsigned int irq, void (*handler)(unsigned int, pt_regs_t *, void *), const char *devname,
+                void *dev_id) {
     irq_action_t *p;
 
     if (irq >= NR_IRQS) return -EINVAL;

@@ -13,7 +13,6 @@
  * 
  *--------------------------------------------------------------------------
  */
-#define ASM_FILE
 #define ASM
 #include "boot.h"
 #include "system.h"

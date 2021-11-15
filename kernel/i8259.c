@@ -106,11 +106,35 @@ void mask_ack_i8259_irq(unsigned int irq) {
     }
 }
 
+void ack_i8259_irq(unsigned int irq) {
+    unsigned char mask = 0;
+
+    if (irq & 8)  // Slave
+    {
+#if PIC_AEOI
+        // ...
+#else
+        // Specific EOI to slave
+        outb(0x60 + (irq & 0x07), PIC_SLAVE_CMD);
+        // Specific EOI to master
+        outb(0x60 + (PIC_CASCADE_IR & 0x07), PIC_MASTER_CMD);
+#endif
+    } else  // Master
+    {
+#if PIC_AEOI
+        // ...
+#else
+        // Specific EOI to master
+        outb(0x60 + irq, PIC_MASTER_CMD);
+#endif
+    }
+}
+
 irq_chip_t i8259_chip = {
     .name = "XT-PIC",
     .enable = enable_i8259_irq,
     .disable = disable_i8259_irq,
-    .ack = mask_ack_i8259_irq,
+    .ack = ack_i8259_irq,
 };
 
 void do_i8259_IRQ(pt_regs_t *regs, unsigned int irq) {}

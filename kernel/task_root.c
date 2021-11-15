@@ -19,9 +19,6 @@
 #include <system.h>
 #include <types.h>
 
-void disk_task_entry();
-void init_task_entry();
-void user_task_entry();
 int do_fork(pt_regs_t *regs, unsigned long flags);
 
 void kernel_task(char *name, void *entry) {

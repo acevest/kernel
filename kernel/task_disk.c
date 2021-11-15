@@ -11,6 +11,8 @@
 
 void disk_task_entry() {
     while (1) {
-        schedule();
+	// TODO
+	asm("hlt;");
+        //schedule();
     }
 }
