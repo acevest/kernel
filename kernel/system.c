@@ -184,3 +184,10 @@ int sysc_reboot(int mode) {
 
     return 0;
 }
+
+System system;
+TSS tss;
+Desc idt[NIDT] __attribute__((__aligned__(8)));
+Desc gdt[NGDT] __attribute__((__aligned__(8)));
+char gdtr[6] __attribute__((__aligned__(4)));
+char idtr[6] __attribute__((__aligned__(4)));

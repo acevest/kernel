@@ -1,3 +1,11 @@
+/*
+ * ------------------------------------------------------------------------
+ *   File Name: task_user.c
+ *      Author: Zhao Yanbai
+ *              2021-11-15 12:21:31 Monday CST
+ * Description: none
+ * ------------------------------------------------------------------------
+ */
 #include <fcntl.h>
 #include <io.h>
 #include <irq.h>
@@ -9,20 +17,6 @@
 #include <syscall.h>
 #include <system.h>
 #include <types.h>
-
-void root_task_entry();
-int do_fork(pt_regs_t *regs, unsigned long flags);
-
-System system;
-TSS tss;
-Desc idt[NIDT] __attribute__((__aligned__(8)));
-Desc gdt[NGDT] __attribute__((__aligned__(8)));
-char gdtr[6] __attribute__((__aligned__(4)));
-char idtr[6] __attribute__((__aligned__(4)));
-
-// char __initdata kernel_init_stack[KRNL_INIT_STACK_SIZE] __attribute__((__aligned__(PAGE_SIZE)));
-
-// int debug_wait_queue_get();
 
 #define __ring3text__ __attribute__((__section__(".ring3.text")))
 
@@ -89,84 +83,4 @@ void user_task_entry() {
     // eip --> edx
     // esp --> ecx
     asm volatile("sysexit;" ::"d"(0x08000000), "c"(0x30000000 + PAGE_SIZE - 100));
-}
-
-void init_task_entry() {
-    int cnt = 0;
-    pid_t id = sysc_getpid();
-
-    // 赋予不同的优先级
-    current->priority = id * 30;
-
-    if (current->priority <= 0) {
-        current->priority = 1;
-    }
-    if (current->priority > 100) {
-        current->priority = 100;
-    }
-
-    while (1) {
-        // sysc_test();
-        // printl(MPL_TASK_0 + id, "task:%d [%08x] weight %d cnt %d", id, current, current->weight, cnt++);
-        // printl(MPL_TASK_1, "task:%d [%08x] weight %d cnt %d", id, current, current->weight, cnt++);
-        int v = 0;  // debug_wait_queue_get();
-        // printk("task:%d wait queue get %d\n", id, v);
-        asm("hlt;");
-    }
-}
-
-void disk_task_entry() {
-    while (1) {
-        schedule();
-    }
-}
-
-void kernel_task(char *name, void *entry) {
-    pt_regs_t regs;
-
-    memset((void *)&regs, 0, sizeof(regs));
-
-    // 内核任务入口
-    regs.edx = (unsigned long)entry;
-
-    regs.eax = (u32)name;
-
-    // 创建内核任务的时候就直接指定其在fork后走的路径
-    // 就不用走sysexit那个路径了
-    extern void ret_from_fork_krnl();
-    regs.eip = (unsigned long)ret_from_fork_krnl;
-    regs.cs = SELECTOR_KRNL_CS;
-    regs.ds = SELECTOR_KRNL_DS;
-    regs.es = SELECTOR_KRNL_DS;
-    regs.ss = SELECTOR_KRNL_DS;
-    regs.fs = SELECTOR_KRNL_DS;
-    regs.gs = SELECTOR_KRNL_DS;
-
-    int pid = do_fork(&regs, FORK_KRNL);
-
-    printk("kernel[%s] task pid is %d\n", name, pid);
-}
-
-// 从multiboot.S进入这里
-void root_task_entry() {
-    sti();
-
-    // 有一点点垃圾事情需要处理
-    // 之前内核初始化都是在关中断下进行的
-    // 这就段时间有可能按键盘，然而键盘不把数据读出来就不会触发下一次中断
-    // 所以得先清空一下键盘
-    inb(0x60);
-
-    // 继续内核未完成的初始化
-    // 这些初始化在开中断的情况下完成
-    void setup_under_irq();
-    setup_under_irq();
-
-    kernel_task("init", init_task_entry);
-    kernel_task("disk", disk_task_entry);
-    kernel_task("user", user_task_entry);
-
-    while (1) {
-        asm("hlt;");
-    }
 }
