@@ -49,7 +49,7 @@ LIST_HEAD(all_tasks);
 
 LIST_HEAD(delay_tasks);
 
-void init_root_tsk() {
+void init_root_task() {
     int i;
 
     root_task.preempt_cnt = 0;
@@ -83,7 +83,7 @@ void setup_tasks() {
     INIT_LIST_HEAD(&all_tasks);
     INIT_LIST_HEAD(&delay_tasks);
 
-    init_root_tsk();
+    init_root_task();
 
     task_union_cache = kmem_cache_create("task_union", sizeof(task_union), PAGE_SIZE);
     if (0 == task_union_cache) {
@@ -144,7 +144,9 @@ static const char *task_state(unsigned int state) {
         "  ERROR", "RUNNING", "   WAIT", "INITING", "EXITING",
     };
 
-    if (state >= TASK_END) state = TASK_UNUSED;
+    if (state >= TASK_END) {
+        state = TASK_UNUSED;
+    }
 
     return s[state];
 }

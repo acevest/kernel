@@ -90,8 +90,6 @@ ret_from_fork_krnl:
     popfl
     addl    $8, %esp
 
-    # 用ebx传递参数
-    pushl   %ebx
     call    *%edx
     addl    $4, %esp
 

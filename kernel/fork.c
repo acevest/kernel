@@ -85,15 +85,16 @@ int do_fork(pt_regs_t *regs, unsigned long flags) {
     printk("child regs: %x %x\n", child_regs, regs);
     memcpy(child_regs, regs, sizeof(*regs));
 
-    child_regs->eax = 0;
-    child_regs->eflags |= 0x200;  // enable IF
-
     tsk->esp0 = TASK_SIZE + (unsigned long)tsk;
     tsk->esp = (unsigned long)child_regs;
     tsk->eip = (unsigned long)ret_from_fork_user;
     if (flags & FORK_KRNL) {
+        strcpy(tsk->name, (char *)(child_regs->eax));
         tsk->eip = (unsigned long)ret_from_fork_krnl;
     }
+
+    child_regs->eax = 0;
+    child_regs->eflags |= 0x200;  // enable IF
 
     printk("tsk %08x child_regs esp %08x esp0 %08x\n", tsk, tsk->esp, tsk->esp0);
 
