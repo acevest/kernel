@@ -47,9 +47,9 @@ u16 identify[256];
 void ata_send_read_identify_cmd(int dev) {}
 void ata_read_identify(int dev) {  // 这里所用的dev是逻辑编号 ATA0、ATA1下的Master、Salve的dev分别为0,1,2,3
 
-    DECLARE_WAIT_QUEUE_HEAD(wq_head);
-    DECLARE_WAIT_QUEUE(wait, current);
-    add_wait_queue(&wq_head, &wait);
+    // DECLARE_WAIT_QUEUE_HEAD(wq_head);
+    // DECLARE_WAIT_QUEUE(wait, current);
+    // add_wait_queue(&wq_head, &wait);
     ide_pci_controller.task = current;
 
     outb(0x00, REG_CTL(dev));
@@ -65,7 +65,7 @@ void ata_read_identify(int dev) {  // 这里所用的dev是逻辑编号 ATA0、A
 
     schedule();
 
-    del_wait_queue(&wq_head, &wait);
+    // del_wait_queue(&wq_head, &wait);
 
     insw(REG_DATA(dev), identify, SECT_SIZE / sizeof(u16));
 
