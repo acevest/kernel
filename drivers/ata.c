@@ -10,9 +10,12 @@
 #include <ide.h>
 #include <io.h>
 #include <irq.h>
+#include <sched.h>
 #include <string.h>
 #include <system.h>
 #include <types.h>
+#include <wait.h>
+
 extern ide_pci_controller_t ide_pci_controller;
 
 #define ATA_TIMEOUT 10  // 10次时钟中断
@@ -43,24 +46,26 @@ void ata_test(uint64_t nr) {
 u16 identify[256];
 void ata_send_read_identify_cmd(int dev) {}
 void ata_read_identify(int dev) {  // 这里所用的dev是逻辑编号 ATA0、ATA1下的Master、Salve的dev分别为0,1,2,3
+
+    DECLARE_WAIT_QUEUE_HEAD(wq_head);
+    DECLARE_WAIT_QUEUE(wait, current);
+    add_wait_queue(&wq_head, &wait);
+    ide_pci_controller.task = current;
+
     outb(0x00, REG_CTL(dev));
     outb(0x00 | ((dev & 0x01) << 4), REG_DEVICE(dev));  // 根据文档P113，这里不用指定bit5, bit7，直接指示DRIVE就行
 
     unsigned long flags;
     irq_save(flags);
 
-    void add_to_ide_wait_queue();
-    add_to_ide_wait_queue();
-
+    current->state = TASK_WAIT;
     outb(ATA_CMD_IDENTIFY, REG_CMD(dev));
 
     irq_restore(flags);
 
     schedule();
 
-    printk("asfdasdfasd----\n");
-
-    // sleep_on_ide();
+    del_wait_queue(&wq_head, &wait);
 
     insw(REG_DATA(dev), identify, SECT_SIZE / sizeof(u16));
 

@@ -13,7 +13,7 @@
 #include <irq.h>
 
 // #include <printk.h>
-// #include <sched.h>
+#include <task.h>
 // #include <semaphore.h>
 // #include <string.h>
 // #include <types.h>
@@ -538,18 +538,10 @@ DECLARE_WAIT_QUEUE_HEAD(ide_wait_queue_head);
 
 void sleep_on_ide() { sleep_on(&ide_wait_queue_head); }
 
-wait_queue_t iwait;
-// DECLARE_WAIT_QUEUE(wait, current);
-void add_to_ide_wait_queue() {
-    iwait.task = current;
-    iwait.task_list.prev = &iwait.task_list;
-    iwait.task_list.next = &iwait.task_list;
-    list_add_tail(&iwait.task_list, &ide_wait_queue_head.task_list);
-}
-
 extern void *mbr_buf;
 uint8_t ata_pci_bus_status();
 extern ide_pci_controller_t ide_pci_controller;
+
 void ide_irq_handler(unsigned int irq, pt_regs_t *regs, void *devid) {
     printk("ide irq handler %d \n", irq);
 
@@ -568,7 +560,9 @@ void ide_irq_handler(unsigned int irq, pt_regs_t *regs, void *devid) {
     }
 #endif
 
-    wake_up(&ide_wait_queue_head);
+    // wake_up(&ide_wait_queue_head);
+
+    ide_pci_controller.task->state = TASK_RUNNING;
 }
 
 void ide_init() {

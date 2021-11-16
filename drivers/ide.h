@@ -11,6 +11,7 @@
 
 #include <pci.h>
 #include <system.h>
+#include <task.h>
 
 // extern unsigned int HD_CHL0_CMD_BASE;
 // extern unsigned int HD_CHL1_CMD_BASE;
@@ -173,6 +174,10 @@ typedef struct _ide_pci_controller {
     unsigned int bus_prdt;
 
     prdte_t *prdt;
+
+    // 这里应该改成一个请求链表
+    // 先简单实现
+    task_union *task;
 } ide_pci_controller_t;
 
 void sleep_on_ide();
