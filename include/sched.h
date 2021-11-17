@@ -16,8 +16,9 @@
 
 #pragma once
 
+#include <irq.h>
+#include <system.h>
 #include <task.h>
-#include <wait.h>
 
 #define FORK_USER 0
 #define FORK_KRNL 1
@@ -32,3 +33,9 @@ extern void load_cr3(task_union *tsk);
 
 extern list_head_t all_tasks;
 extern list_head_t delay_tasks;
+
+#define set_current_state(st)  \
+    do {                       \
+        current->state = (st); \
+        mb();                  \
+    } while (0)

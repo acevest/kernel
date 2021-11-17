@@ -16,11 +16,12 @@
 
 #include "sched.h"
 
+#include <wait.h>
+
 #include "assert.h"
 #include "linkage.h"
 #include "mm.h"
 #include "msr.h"
-#include "system.h"
 
 task_union root_task __attribute__((__aligned__(PAGE_SIZE)));
 

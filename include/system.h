@@ -76,6 +76,7 @@ extern char gdtr[6], idtr[6];
 #define cli() __asm__ __volatile__("cli")
 #define sti() __asm__ __volatile__("sti")
 #define nop() asm volatile("nop")
+#define mb() asm volatile("" ::: "memory")
 #define disableIRQ() cli()
 #define enableIRQ() sti()
 

@@ -32,8 +32,30 @@ typedef struct {
 #define DECLARE_WAIT_QUEUE(name, tsk) wait_queue_t name = WAIT_QUEUE_INITIALIZER(name, tsk)
 
 void init_wait_queue_head(wait_queue_head_t *wqh);
-void add_wait_queue(wait_queue_head_t *wqh, wait_queue_t *wq);
-void del_wait_queue(wait_queue_head_t *wqh, wait_queue_t *wq);
+void add_wait_queue(wait_queue_head_t *head, wait_queue_t *wq);
+void del_wait_queue(wait_queue_head_t *head, wait_queue_t *wq);
+void __do_wait(wait_queue_head_t *head, wait_queue_t *wq, unsigned int state);
+void __end_wait(wait_queue_head_t *head, wait_queue_t *wq);
 
 void sleep_on(wait_queue_head_t *head);
 void wake_up(wait_queue_head_t *head);
+
+#define __wait_event(head, condition)        \
+    do {                                     \
+        DECLARE_WAIT_QUEUE(__wait, current); \
+        while (1) {                          \
+            __do_wait(head, wa, TASK_WAIT);  \
+            if ((condition)) {               \
+                break;                       \
+            }                                \
+            schedule();                      \
+        }                                    \
+        __end_wait(head, &__wait);           \
+    } while (0)
+
+#define wait_event(head, condition)          \
+    do {                                     \
+        if (!(condition)) {                  \
+            __wait_event(head, (condition)); \
+        }                                    \
+    } while (0)

@@ -28,6 +28,24 @@ void del_wait_queue(wait_queue_head_t *head, wait_queue_t *wq) {
     irq_restore(flags);
 }
 
+void __do_wait(wait_queue_head_t *head, wait_queue_t *wq, unsigned int state) {
+    unsigned long flags;
+    irq_save(flags);
+    if (list_empty(&wq->task_list)) {
+        list_add_tail(&wq->task_list, &head->task_list);
+    }
+    set_current_state(state);
+    irq_restore(flags);
+}
+
+void __end_wait(wait_queue_head_t *head, wait_queue_t *wq) {
+    set_current_state(TASK_RUNNING);
+    unsigned long flags;
+    irq_save(flags);
+    list_del_init(&wq->task_list);
+    irq_restore(flags);
+}
+
 void sleep_on(wait_queue_head_t *head) {
     DECLARE_WAIT_QUEUE(wait, current);
 
