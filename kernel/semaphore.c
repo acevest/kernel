@@ -26,22 +26,23 @@ void __down(semaphore_t *s) {
     DECLARE_SEMAPHORE_WAITER(waiter, task);
     list_add_tail(&waiter.list, &s->wait_list);
 
-    // while(true)
-    {
+    while (true) {
         task->state = TASK_WAIT;
 
         enable_irq();
+
         schedule();
+
         disable_irq();
 
-        if (waiter.up)
-            ;  // break;
+        if (waiter.up) {
+            break;
+        }
     }
 }
 
 void down(semaphore_t *s) {
     unsigned long iflags;
-
     irq_save(iflags);
 
     if (likely(s->cnt > 0)) {
@@ -63,8 +64,8 @@ void __up(semaphore_t *s) {
 
 void up(semaphore_t *s) {
     unsigned long iflags;
-
     irq_save(iflags);
+
     if (likely(list_empty(&s->wait_list))) {
         s->cnt++;
     } else {
