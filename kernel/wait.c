@@ -28,7 +28,7 @@ void del_wait_queue(wait_queue_head_t *head, wait_queue_t *wq) {
     irq_restore(flags);
 }
 
-void __do_wait(wait_queue_head_t *head, wait_queue_t *wq, unsigned int state) {
+void prepare_to_wait(wait_queue_head_t *head, wait_queue_t *wq, unsigned int state) {
     unsigned long flags;
     irq_save(flags);
     if (list_empty(&wq->task_list)) {

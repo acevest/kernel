@@ -8,9 +8,10 @@
  */
 
 #include <sched.h>
+#include <semaphore.h>
 #include <wait.h>
-#if 0
 
+#if 0
 typedef enum {
     DISK_REQ_IDENTIFY,
     DISK_REQ_READ,
@@ -59,10 +60,20 @@ void send_disk_request() {
 }
 #endif
 
+typedef struct {
+    semaphore_t sem;
+    list_head_t list;
+} disk_request_queue_t;
+
+disk_request_queue_t disk_request_queue = {.sem = SEMAPHORE_INITIALIZER(disk_request_queue.sem, 0),
+                                           .list = LIST_HEAD_INIT(disk_request_queue.list)};
+
+int cnt = 0;
 void disk_task_entry() {
     while (1) {
-        // TODO
-        asm("hlt;");
-        // schedule();
+        printk("fuck you: %d\n", cnt);
+        down(&disk_request_queue.sem);
+        printk("fuck me: %d\n", cnt);
+        cnt++;
     }
 }

@@ -34,24 +34,27 @@ typedef struct {
 void init_wait_queue_head(wait_queue_head_t *wqh);
 void add_wait_queue(wait_queue_head_t *head, wait_queue_t *wq);
 void del_wait_queue(wait_queue_head_t *head, wait_queue_t *wq);
-void __do_wait(wait_queue_head_t *head, wait_queue_t *wq, unsigned int state);
+
+// prepare_to_wait 不会调用schedule
+void prepare_to_wait(wait_queue_head_t *head, wait_queue_t *wq, unsigned int state);
+
 void __end_wait(wait_queue_head_t *head, wait_queue_t *wq);
 
 void sleep_on(wait_queue_head_t *head);
 void wake_up(wait_queue_head_t *head);
 
 unsigned long schedule();
-#define __wait_event(head, condition)            \
-    do {                                         \
-        DECLARE_WAIT_QUEUE(__wait, current);     \
-        while (1) {                              \
-            __do_wait(head, &__wait, TASK_WAIT); \
-            if ((condition)) {                   \
-                break;                           \
-            }                                    \
-            schedule();                          \
-        }                                        \
-        __end_wait(head, &__wait);               \
+#define __wait_event(head, condition)                  \
+    do {                                               \
+        DECLARE_WAIT_QUEUE(__wait, current);           \
+        while (1) {                                    \
+            prepare_to_wait(head, &__wait, TASK_WAIT); \
+            if ((condition)) {                         \
+                break;                                 \
+            }                                          \
+            schedule();                                \
+        }                                              \
+        __end_wait(head, &__wait);                     \
     } while (0)
 
 #define wait_event(head, condition)          \
