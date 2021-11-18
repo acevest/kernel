@@ -178,6 +178,8 @@ typedef struct _ide_pci_controller {
     // 这里应该改成一个请求链表
     // 先简单实现
     task_union *task;
+    int done;
 } ide_pci_controller_t;
 
 void sleep_on_ide();
+void wait_on_ide();

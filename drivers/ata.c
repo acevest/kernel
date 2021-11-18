@@ -50,7 +50,7 @@ void ata_read_identify(int dev) {  // 这里所用的dev是逻辑编号 ATA0、A
     // DECLARE_WAIT_QUEUE_HEAD(wq_head);
     // DECLARE_WAIT_QUEUE(wait, current);
     // add_wait_queue(&wq_head, &wait);
-    ide_pci_controller.task = current;
+    // ide_pci_controller.task = current;
 
     outb(0x00, REG_CTL(dev));
     outb(0x00 | ((dev & 0x01) << 4), REG_DEVICE(dev));  // 根据文档P113，这里不用指定bit5, bit7，直接指示DRIVE就行
@@ -58,14 +58,10 @@ void ata_read_identify(int dev) {  // 这里所用的dev是逻辑编号 ATA0、A
     unsigned long flags;
     irq_save(flags);
 
-    current->state = TASK_WAIT;
     outb(ATA_CMD_IDENTIFY, REG_CMD(dev));
+    wait_on_ide();
 
     irq_restore(flags);
-
-    schedule();
-
-    // del_wait_queue(&wq_head, &wait);
 
     insw(REG_DATA(dev), identify, SECT_SIZE / sizeof(u16));
 

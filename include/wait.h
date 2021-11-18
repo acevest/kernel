@@ -40,17 +40,18 @@ void __end_wait(wait_queue_head_t *head, wait_queue_t *wq);
 void sleep_on(wait_queue_head_t *head);
 void wake_up(wait_queue_head_t *head);
 
-#define __wait_event(head, condition)        \
-    do {                                     \
-        DECLARE_WAIT_QUEUE(__wait, current); \
-        while (1) {                          \
-            __do_wait(head, wa, TASK_WAIT);  \
-            if ((condition)) {               \
-                break;                       \
-            }                                \
-            schedule();                      \
-        }                                    \
-        __end_wait(head, &__wait);           \
+unsigned long schedule();
+#define __wait_event(head, condition)            \
+    do {                                         \
+        DECLARE_WAIT_QUEUE(__wait, current);     \
+        while (1) {                              \
+            __do_wait(head, &__wait, TASK_WAIT); \
+            if ((condition)) {                   \
+                break;                           \
+            }                                    \
+            schedule();                          \
+        }                                        \
+        __end_wait(head, &__wait);               \
     } while (0)
 
 #define wait_event(head, condition)          \

@@ -537,6 +537,7 @@ void ata_read_identify(int dev);
 DECLARE_WAIT_QUEUE_HEAD(ide_wait_queue_head);
 
 void sleep_on_ide() { sleep_on(&ide_wait_queue_head); }
+void wait_on_ide() { wait_event(&ide_wait_queue_head, ide_pci_controller.done); }
 
 extern void *mbr_buf;
 uint8_t ata_pci_bus_status();
@@ -560,13 +561,16 @@ void ide_irq_handler(unsigned int irq, pt_regs_t *regs, void *devid) {
     }
 #endif
 
-    // wake_up(&ide_wait_queue_head);
+    ide_pci_controller.done = 1;
 
-    ide_pci_controller.task->state = TASK_RUNNING;
+    wake_up(&ide_wait_queue_head);
+
+    // ide_pci_controller.task->state = TASK_RUNNING;
 }
 
 void ide_init() {
     // memset((void *)&drv, 0, sizeof(drv));
+    memset(&ide_pci_controller, 0, sizeof(ide_pci_controller));
 
     request_irq(0x0E, ide_irq_handler, "hard", "IDE");
 
