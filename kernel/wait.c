@@ -39,7 +39,7 @@ void prepare_to_wait(wait_queue_head_t *head, wait_queue_t *wq, unsigned int sta
 }
 
 void __end_wait(wait_queue_head_t *head, wait_queue_t *wq) {
-    set_current_state(TASK_RUNNING);
+    set_current_state(TASK_READY);
     unsigned long flags;
     irq_save(flags);
     list_del_init(&wq->task_list);
@@ -67,8 +67,8 @@ void __wake_up(wait_queue_head_t *head, int nr) {
     irq_save(flags);
     list_for_each_entry_safe(p, tmp, &head->task_list, task_list) {
         list_del(&p->task_list);
-        printk("wakeup: %s\nread sector 0 with LBA48 and DMA", p->task->name);
-        p->task->state = TASK_RUNNING;
+        printk("wakeup: %s\n", p->task->name);
+        p->task->state = TASK_READY;
 
         --nr;
         if (nr == 0) {
@@ -107,7 +107,7 @@ int debug_wait_queue_get() {
     }
 
     printd("pid %d is really running\n", sysc_getpid());
-    task->state = TASK_RUNNING;
+    task->state = TASK_READY;
     del_wait_queue(&debug_wq, &wait);
 
     return v;
@@ -143,7 +143,7 @@ int sysc_wait(unsigned long pid) {
         schedule();
     }
 
-    task->state = TASK_RUNNING;
+    task->state = TASK_READY;
     del_wait_queue(&p->wait, &wait);
 
     return 0;

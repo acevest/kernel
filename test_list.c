@@ -1,20 +1,5 @@
-/*
- *--------------------------------------------------------------------------
- *   File Name: list.h
- *
- * Description: none
- *
- *
- *      Author: Zhao Yanbai [zhaoyanbai@126.com]
- *
- *     Version:    1.0
- * Create Date: Mon Apr 20 20:52:05 2009
- * Last Update: Mon Apr 20 20:52:05 2009
- *
- *--------------------------------------------------------------------------
- */
-
-#pragma once
+#include <stdio.h>
+#include <stdlib.h>
 
 /* Allmost Copy From Linux */
 typedef struct list_head {
@@ -61,7 +46,11 @@ static inline void _list_del(list_head_t *prev, list_head_t *next) {
     prev->next = next;
 }
 
-static inline void list_del(list_head_t *entry) { _list_del(entry->prev, entry->next); }
+static inline void list_del(list_head_t *entry) {
+    _list_del(entry->prev, entry->next);
+    entry->prev = NULL;
+    entry->next = NULL;
+}
 
 static inline void list_del_init(list_head_t *entry) {
     _list_del(entry->prev, entry->next);
@@ -69,3 +58,63 @@ static inline void list_del_init(list_head_t *entry) {
 }
 
 static inline int list_empty(list_head_t *head) { return head->next == head; }
+
+typedef struct node {
+    int id;
+    list_head_t list;
+    list_head_t pend;
+} node_t;
+
+LIST_HEAD(allH);
+LIST_HEAD(pendH);
+
+int main() {
+    INIT_LIST_HEAD(&allH);
+    INIT_LIST_HEAD(&pendH);
+
+    for (int i = 0; i < 10; i++) {
+        node_t *n = (node_t *)malloc(sizeof(node_t));
+        n->id = i;
+        list_add(&n->list, &allH);
+        if (n->id % 3 == 0) {
+            list_add(&n->pend, &pendH);
+        }
+    }
+
+    list_head_t *pos;
+    list_head_t *tmp;
+    node_t *p, *p1;
+    list_for_each_safe(pos, tmp, &allH) {
+        p = list_entry(pos, node_t, list);
+        printf("allH: %d\n", p->id);
+    }
+
+    printf("-----\n");
+    list_for_each_safe(pos, tmp, &pendH) {
+        p = list_entry(pos, node_t, pend);
+        printf("pendH: %d\n", p->id);
+    }
+
+    // list_for_each_safe(pos, tmp, &allH) {
+
+    //    p = list_entry(pos, node_t, list);
+    list_for_each_entry_safe(p, p1, &pendH, pend) {
+        // printf("%d\n", p->id);
+        if (p->id == 3) {
+            list_del(&p->pend);
+        }
+    }
+
+    printf("-----\n");
+
+    list_for_each_safe(pos, tmp, &allH) {
+        p = list_entry(pos, node_t, list);
+        printf("allH: %d\n", p->id);
+    }
+
+    printf("-----\n");
+    list_for_each_safe(pos, tmp, &pendH) {
+        p = list_entry(pos, node_t, pend);
+        printf("pendH: %d\n", p->id);
+    }
+}

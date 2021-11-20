@@ -44,7 +44,6 @@ void __down(semaphore_t *s) {
 void down(semaphore_t *s) {
     unsigned long iflags;
     irq_save(iflags);
-
     if (likely(s->cnt > 0)) {
         s->cnt--;
     } else {
@@ -59,16 +58,19 @@ void __up(semaphore_t *s) {
     list_del(&waiter->list);
     waiter->up = 1;
 
-    waiter->task->state = TASK_RUNNING;
+    waiter->task->state = TASK_READY;
 }
 
 void up(semaphore_t *s) {
     unsigned long iflags;
     irq_save(iflags);
 
-    if (likely(list_empty(&s->wait_list))) {
+    // if (likely(list_empty(&s->wait_list))) {
+    if (list_empty(&s->wait_list)) {
+        printk("++++++\n");
         s->cnt++;
     } else {
+        printk("upupupuppupupup\n");
         __up(s);
     }
 

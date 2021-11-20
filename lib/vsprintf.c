@@ -4,11 +4,14 @@
 //     Add %012d %012x %12d %12x Support  Mon, 20 Jul 2009 19:30:34
 //     Add %u Support                     Sun, 06 Jul 2014 12:07:54
 // ========================================================================
+#include <types.h>
+
 #include "string.h"
 
 char *itoa(char *s, int n);
 char *itou(char *s, unsigned int n);
 char *itox(char *s, unsigned int n);
+char *i64tou(char *s, int64_t n);
 
 enum { ALIGN_RIGHT, ALIGN_LEFT };
 
@@ -77,6 +80,14 @@ int vsprintf(char *buf, const char *fmt, char *args) {
             itoa(tmp, *((int *)args));
             p += write_buf(p, tmp, char_fill, char_cnt, align);
             break;
+        case 'l':
+            fmt++;
+            if (*fmt == 'u' || *fmt == 'd') {  // d u都当成u来处理
+                i64tou(tmp, *((int64_t *)args));
+                p += write_buf(p, tmp, char_fill, char_cnt, align);
+                args += 4;
+            }
+            break;
         case 's':
             p += write_buf(p, (const char *)*((unsigned int *)args), char_fill, char_cnt, align);
             break;
@@ -129,6 +140,15 @@ char *itoa(char *s, int n) {
         s++;
         p--;
     }
+}
+
+char *i64tou(char *s, int64_t n) {
+    itou(s, n >> 32);
+    int i = 0;
+    if ((n >> 32) > 0) {
+        i = strlen(s);
+    }
+    itou(s + i, n & 0xFFFFFFFF);
 }
 
 char *itou(char *s, unsigned int n) {

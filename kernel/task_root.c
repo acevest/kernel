@@ -57,6 +57,10 @@ void root_task_entry() {
     // 所以得先清空一下键盘
     inb(0x60);
 
+    //
+    void disk_init();
+    disk_init();
+
     kernel_task("init", init_task_entry);
     kernel_task("disk", disk_task_entry);
     kernel_task("user", user_task_entry);

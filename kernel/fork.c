@@ -107,7 +107,7 @@ int do_fork(pt_regs_t *regs, unsigned long flags) {
     list_add(&tsk->list, &all_tasks);
     irq_restore(iflags);
 
-    tsk->state = TASK_RUNNING;
+    tsk->state = TASK_READY;
 
     return (int)tsk->pid;
 }

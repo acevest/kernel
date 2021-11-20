@@ -7,73 +7,119 @@
  * ------------------------------------------------------------------------
  */
 
+#include <disk.h>
 #include <sched.h>
-#include <semaphore.h>
-#include <wait.h>
 
-#if 0
-typedef enum {
-    DISK_REQ_IDENTIFY,
-    DISK_REQ_READ,
-} disk_request_cmd_t;
+disk_request_queue_t disk_request_queue;  // = {.count = 0,
+                                          //   .sem = SEMAPHORE_INITIALIZER(disk_request_queue.sem, 0),
+                                          //   .list = LIST_HEAD_INIT(disk_request_queue.list)};
 
-typedef struct disk_request {
-    uint64_t pos;                // 扇区号
-    uint16_t count;              // 扇区数
-    void *buf;                   // 到的缓冲区
-    disk_request_cmd_t command;  // 命令
-    wait_queue_head_t wait;      // 等待队列
-    // 驱动器完全有可能在进程在进程睡眠到等待队列前返回数据并执行唤醒操作
-    // 这时等待队列上无进程，就相当于不执行任何操作
-    // 然后进程再睡眠到等待队列上，就会造成永远无法唤醒该进程
-    // 因此要添加一个字段，标志驱动器已经对该请求做过唤醒操作
-    // 进程在睡眠前需要检查该字段
-    int done;
-} disk_request_t;
+void disk_init() {
+    disk_request_queue.count = 0;
+    disk_request_queue.sem.cnt = 0;
+    INIT_LIST_HEAD(&disk_request_queue.sem.wait_list);
+    INIT_LIST_HEAD(&disk_request_queue.list);
+}
 
-void send_disk_request() {
-    disk_request_t r;
-    r.pos = 0;
-    r.count = 1;
-    r.buf = kmalloc(512, 0);
-    r.command = DISK_REQ_IDENTIFY;
-    INIT_LIST_HEAD(&r.wait.task_list);
-    r.done = 0;
+#if 1
+void send_disk_request(disk_request_t *r) {
+    if (NULL == r) {
+        panic("null disk request");
+    }
 
-    list_add_tail(&wq->task_list, &head->task_list);
+    // 校验pos，和pos+count是否大于硬盘返回的最大LBA48
+    // ...
+
+    // 校验buffer是否跨64K
+    // 先不处理
+    if (((uint32_t)r->buf & 0xFFFF0000) != (((uint32_t)(r->buf + r->count * 512)) & 0xFFFF0000)) {
+        panic("disk DMA read cross 64K");
+    }
+
+    INIT_LIST_HEAD(&r->wait.task_list);
+    r->done = 0;
+    // r.pos = pos;
+    // r.count = count;
+    // r.buf = kmalloc(512, 0);
+    // r.command = DISK_REQ_IDENTIFY;
+    // INIT_LIST_HEAD(&r.wait.task_list);
+    // r.done = 0;
+
+    // printk("do send disk request: %d %x %x %x\n", list_empty(&disk_request_queue.sem.wait_list),
+    //        &disk_request_queue.sem.wait_list, disk_request_queue.sem.wait_list.next,
+    //        disk_request_queue.sem.wait_list.prev);
 
     // 发送命令
-    //....
-
     unsigned long flags;
     irq_save(flags);
-    if (0 == r.done) {  // 驱动器还没完成
-        set_current_state(TASK_WAIT);
-        irq_restore(flags);
-        // 就算在schedule前驱动器触发中断也没有问题
-        // 因为该进程已经加到等待队列上了
-        // 所以它一定以唤醒该进程
-        schedule();
-    } else {  // 驱动器已经完成
-        irq_restore(flags);
-    }
+    list_add_tail(&r->list, &disk_request_queue.list);
+    irq_restore(flags);
+
+    // 唤醒task_disk
+    printk("up sem\n");
+    up(&disk_request_queue.sem);
+
+    // 等待task_dist结束
+    printk("wait event\n");
+    wait_event(&r->wait, r->done != 0);
+
+    printk("wait finished\n");
 }
 #endif
 
-typedef struct {
-    semaphore_t sem;
-    list_head_t list;
-} disk_request_queue_t;
-
-disk_request_queue_t disk_request_queue = {.sem = SEMAPHORE_INITIALIZER(disk_request_queue.sem, 0),
-                                           .list = LIST_HEAD_INIT(disk_request_queue.list)};
-
-int cnt = 0;
 void disk_task_entry() {
     while (1) {
-        printk("fuck you: %d\n", cnt);
+        void prepare_to_wait_on_ide();
+        prepare_to_wait_on_ide();
+
+        printk("wait for new hard disk request\n");
         down(&disk_request_queue.sem);
-        printk("fuck me: %d\n", cnt);
-        cnt++;
+        printk("hard disk request: %d\n", disk_request_queue.count++);
+
+        unsigned long flags;
+        irq_save(flags);
+
+        disk_request_t *r;
+        if (list_empty(&disk_request_queue.list)) {
+        } else {
+            r = list_first_entry(&disk_request_queue.list, disk_request_t, list);
+            if (NULL == r) {
+                panic("no disk request");
+            }
+
+            printk("disk request: pos %ld count %d cmd %d\n", r->pos, r->count, r->command);
+        }
+
+        irq_restore(flags);
+
+        if (NULL == r) {
+            continue;
+        }
+
+        int dev = 0;
+        switch (r->command) {
+        case DISK_REQ_IDENTIFY:
+            assert(r->count == 1);
+            void ata_read_identify(int dev);
+            ata_read_identify(dev);
+            break;
+
+        default:
+            break;
+        }
+
+        // 等待硬盘中断
+        void wait_on_ide();
+        wait_on_ide();
+
+        // 读数据
+        if (DISK_REQ_IDENTIFY == r->command) {
+            void ata_read_data(int dev, int sect_cnt, void *dst);
+            ata_read_data(dev, 1, r->buf);
+        }
+
+        // 唤醒等待该请求的进程
+        r->done = 1;
+        wake_up(&r->wait);
     }
 }

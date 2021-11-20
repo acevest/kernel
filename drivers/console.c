@@ -111,7 +111,7 @@ int cnsl_read(char *buf, size_t count) {
             if (r) {
                 buf[cnt++] = ch;
 
-                task->state = TASK_RUNNING;
+                task->state = TASK_READY;
                 del_wait_queue(&rdwq, &wait);
 
                 if (ch == '\n') goto end;

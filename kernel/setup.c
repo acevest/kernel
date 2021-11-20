@@ -89,12 +89,15 @@ void setup_kernel() {
 
     extern tty_t monitor_tty;
     tty_switch(&monitor_tty);
+
+    void ide_init();
+    ide_init();
 }
 
 // 在开中断的情况下继续初始化的内容
 void setup_under_irq() {
-    void ide_init();
-    ide_init();
+    void ata_init();
+    ata_init();
     return;
     setup_fs();
 }

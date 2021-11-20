@@ -121,7 +121,7 @@ ide_intr_func_t ide_intr_func = ide_default_intr;
 //     }
 
 //     // printd("%s pid %d is really running\n", __func__, sysc_getpid());
-//     task->state = TASK_RUNNING;
+//     task->state = TASK_READY;
 //     del_wait_queue(&r->wait, &wait);
 // }
 
@@ -537,6 +537,8 @@ void ata_read_identify(int dev);
 DECLARE_WAIT_QUEUE_HEAD(ide_wait_queue_head);
 
 void sleep_on_ide() { sleep_on(&ide_wait_queue_head); }
+
+void prepare_to_wait_on_ide() { ide_pci_controller.done = 0; }
 void wait_on_ide() { wait_event(&ide_wait_queue_head, ide_pci_controller.done); }
 
 extern void *mbr_buf;
@@ -548,24 +550,9 @@ void ide_irq_handler(unsigned int irq, pt_regs_t *regs, void *devid) {
 
     printk("ide pci status after interrupt: %x\n", ata_pci_bus_status());
 
-#if 0
-    unsigned int v = pci_read_config_word(pci_cmd(ide_pci_controller.pci, PCI_COMMAND));
-    pci_write_config_word(v & (~PCI_COMMAND_MASTER), pci_cmd(ide_pci_controller.pci, PCI_COMMAND));
-
-    uint16_t *p = (uint16_t *)mbr_buf;
-    for (int i = 0; i < 256; i++) {
-        if (i % 12 == 0) {
-            printk("\n%03d ", i);
-        }
-        printk("%04x ", p[i]);
-    }
-#endif
-
     ide_pci_controller.done = 1;
 
     wake_up(&ide_wait_queue_head);
-
-    // ide_pci_controller.task->state = TASK_RUNNING;
 }
 
 void ide_init() {
@@ -576,15 +563,4 @@ void ide_init() {
 
     // init_pci_controller(0x0106);
     init_pci_controller(0x0101);
-
-    // ide_detect();
-    // return;
-    // ide_read_identify();
-    ata_read_identify(0);
-    return;
-
-    // // 还没开启中断
-    // ide_read_partition();
-
-    // ide_printl();
 }

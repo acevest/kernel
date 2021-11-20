@@ -52,7 +52,7 @@ int sysc_test() {
         // 下一次系统调用还可能走到这里
         // 所以这里就直接判断不是RUNNING就返回
         // 不再操作delay_tasks链表
-        if (current->state != TASK_RUNNING) {
+        if (current->state != TASK_READY) {
             return 0;
         }
 

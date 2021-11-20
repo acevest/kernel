@@ -7,14 +7,13 @@
  * ------------------------------------------------------------------------
  */
 #include <ata.h>
+#include <disk.h>
 #include <ide.h>
 #include <io.h>
 #include <irq.h>
 #include <sched.h>
 #include <string.h>
 #include <system.h>
-#include <types.h>
-#include <wait.h>
 
 extern ide_pci_controller_t ide_pci_controller;
 
@@ -45,8 +44,50 @@ void ata_test(uint64_t nr) {
 //  3. 等到status的DRQ位或ERR位设置
 u16 identify[256];
 void ata_send_read_identify_cmd(int dev) {}
-void ata_read_identify(int dev) {  // 这里所用的dev是逻辑编号 ATA0、ATA1下的Master、Salve的dev分别为0,1,2,3
 
+void ata_read_data(int dev, int sect_cnt, void *dst) { insl(REG_DATA(dev), dst, (512 * sect_cnt) / sizeof(uint32_t)); }
+
+void ata_read_identify(int dev) {
+    outb(0x00, REG_CTL(dev));
+    outb(0x00 | ((dev & 0x01) << 4), REG_DEVICE(dev));  // 根据文档P113，这里不用指定bit5, bit7，直接指示DRIVE就行
+
+    unsigned long flags;
+    irq_save(flags);
+
+    outb(ATA_CMD_IDENTIFY, REG_CMD(dev));
+    wait_on_ide();
+
+    irq_restore(flags);
+}
+
+void ata_init() {
+    disk_request_t r;
+    r.buf = (void *)identify;
+    r.count = 1;
+    r.pos = 0;
+    r.command = DISK_REQ_IDENTIFY;
+
+    send_disk_request(&r);
+
+    // 第49个word的第8个bit位表示是否支持DMA
+    // 第83个word的第10个bit位表示是否支持LBA48，为1表示支持。
+    // 第100~103个word的八个字节表示user的LBA最大值
+    printk("%04x %04x %d %d\n", identify[49], 1 << 8, identify[49] & (1 << 8), (identify[49] & (1 << 8)) != 0);
+    if ((identify[49] & (1 << 8)) != 0) {
+        printk("support DMA\n");
+    }
+
+    if ((identify[83] & (1 << 10)) != 0) {
+        printk("support LBA48\n");
+
+        u64 lba = *(u64 *)(identify + 100);
+        printk("hard disk size: %u MB\n", (lba * 512) >> 20);
+    }
+}
+
+void ata_read_identify_old(int dev) {  // 这里所用的dev是逻辑编号 ATA0、ATA1下的Master、Salve的dev分别为0,1,2,3
+    // void send_disk_request();
+    // send_disk_request();
     // DECLARE_WAIT_QUEUE_HEAD(wq_head);
     // DECLARE_WAIT_QUEUE(wait, current);
     // add_wait_queue(&wq_head, &wait);

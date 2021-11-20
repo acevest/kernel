@@ -55,7 +55,7 @@ void init_root_task() {
 
     root_task.pid = get_next_pid();
     root_task.ppid = 0;
-    root_task.state = TASK_RUNNING;
+    root_task.state = TASK_READY;
     root_task.weight = TASK_INIT_WEIGHT;
     root_task.priority = 100;
     strcpy(root_task.name, "root");
@@ -141,7 +141,7 @@ task_union *find_task(pid_t pid) {
 
 static const char *task_state(unsigned int state) {
     static const char s[][16] = {
-        "  ERROR", "RUNNING", "   WAIT", "INITING", "EXITING",
+        "  ERROR", "READY", " WAIT", " INIT", " EXIT",
     };
 
     if (state >= TASK_END) {
@@ -165,7 +165,7 @@ unsigned long schedule() {
     bool need_reset_weight = true;
     list_for_each_safe(pos, t, &all_tasks) {
         p = list_entry(pos, task_union, list);
-        if (p->state != TASK_RUNNING) {
+        if (p->state != TASK_READY) {
             continue;
         }
         if (p->weight < p->priority) {
@@ -177,7 +177,7 @@ unsigned long schedule() {
     if (need_reset_weight) {
         list_for_each_safe(pos, t, &all_tasks) {
             p = list_entry(pos, task_union, list);
-            if (p->state != TASK_RUNNING) {
+            if (p->state != TASK_READY) {
                 continue;
             }
             p->weight = 0;
@@ -187,7 +187,7 @@ unsigned long schedule() {
     list_for_each_safe(pos, t, &all_tasks) {
         p = list_entry(pos, task_union, list);
 
-        if (p->state != TASK_RUNNING) {
+        if (p->state != TASK_READY) {
             continue;
         }
 
@@ -218,5 +218,5 @@ unsigned long schedule() {
 
 void debug_sched() {
     task_union *p = list_entry(current->list.next, task_union, list);
-    p->state = (p->state == TASK_RUNNING) ? TASK_WAIT : TASK_RUNNING;
+    p->state = (p->state == TASK_READY) ? TASK_WAIT : TASK_READY;
 }

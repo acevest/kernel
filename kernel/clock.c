@@ -34,7 +34,7 @@ void clk_handler(unsigned int irq, pt_regs_t *regs, void *dev_id) {
         p->delay_cnt -= p->delay_cnt == 0 ? 0 : 1;
 
         if (0 == p->delay_cnt) {
-            p->state = TASK_RUNNING;
+            p->state = TASK_READY;
             list_del(&p->pend);
         }
     }
