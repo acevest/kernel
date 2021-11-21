@@ -103,7 +103,12 @@ void disk_task_entry() {
             void ata_read_identify(int dev);
             ata_read_identify(dev);
             break;
-
+        case DISK_REQ_READ:
+            assert(r->count > 0);
+            assert(r->buf != NULL);
+            void ata_dma_read_ext(int dev, uint64_t pos, uint16_t count, void *dest);
+            ata_dma_read_ext(dev, r->pos, r->count, r->buf);
+            break;
         default:
             break;
         }

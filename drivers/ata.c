@@ -50,14 +50,7 @@ void ata_read_data(int dev, int sect_cnt, void *dst) { insl(REG_DATA(dev), dst, 
 void ata_read_identify(int dev) {
     outb(0x00, REG_CTL(dev));
     outb(0x00 | ((dev & 0x01) << 4), REG_DEVICE(dev));  // 根据文档P113，这里不用指定bit5, bit7，直接指示DRIVE就行
-
-    unsigned long flags;
-    irq_save(flags);
-
     outb(ATA_CMD_IDENTIFY, REG_CMD(dev));
-    wait_on_ide();
-
-    irq_restore(flags);
 }
 
 void ata_init() {
@@ -82,6 +75,22 @@ void ata_init() {
 
         u64 lba = *(u64 *)(identify + 100);
         printk("hard disk size: %u MB\n", (lba * 512) >> 20);
+    }
+
+    // TODO REMOVE
+    mbr_buf = kmalloc(SECT_SIZE, 0);
+    r.command = DISK_REQ_READ;
+    r.pos = 1;
+    r.count = 1;
+    r.buf = mbr_buf;
+    send_disk_request(&r);
+
+    uint16_t *p = (uint16_t *)mbr_buf;
+    for (int i = 0; i < 256; i++) {
+        if (i % 12 == 0) {
+            printk("\n[%03d] ", i * 2);
+        }
+        printk("%04x ", p[i]);
     }
 }
 

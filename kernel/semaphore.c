@@ -67,10 +67,8 @@ void up(semaphore_t *s) {
 
     // if (likely(list_empty(&s->wait_list))) {
     if (list_empty(&s->wait_list)) {
-        printk("++++++\n");
         s->cnt++;
     } else {
-        printk("upupupuppupupup\n");
         __up(s);
     }
 
