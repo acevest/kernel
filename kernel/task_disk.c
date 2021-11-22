@@ -98,8 +98,8 @@ void disk_task_entry() {
         switch (r->command) {
         case DISK_REQ_IDENTIFY:
             assert(r->count == 1);
-            void ata_read_identify(int dev, int enable_intr);
-            ata_read_identify(r->dev, 1);
+            void ata_read_identify(int dev, int disable_intr);
+            ata_read_identify(r->dev, 0);
             break;
         case DISK_REQ_READ:
             assert(r->count > 0);

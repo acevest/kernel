@@ -18,6 +18,9 @@
 extern ide_pci_controller_t ide_pci_controller;
 
 typedef struct _ide_drive {
+    int dma;
+    uint64_t lba48;
+    uint64_t max_lba;
 } ide_drive_t;
 
 #define MAX_IDE_DRIVE_CNT 4
@@ -53,10 +56,12 @@ void ata_send_read_identify_cmd(int dev) {}
 
 void ata_read_data(int dev, int sect_cnt, void *dst) { insl(REG_DATA(dev), dst, (512 * sect_cnt) / sizeof(uint32_t)); }
 
-void ata_read_identify(int dev, int enable_intr) {
-    uint8_t ctl = enable_intr ? 0x00 : ATA_CTL_NIEN;
-    printk("%x %x %x\n", REG_CTL(dev), REG_CTL(dev), 0x00 | ((dev & 0x01) << 4));
-    outb(ctl, REG_CTL(dev));
+void ata_read_identify(int dev, int disable_intr) {
+    uint8_t ctlv = 0x00;
+    if (disable_intr != 0) {
+        ctlv |= ATA_CTL_NIEN;
+    }
+    outb(ctlv, REG_CTL(dev));
     outb(0x00 | ((dev & 0x01) << 4), REG_DEVICE(dev));  // 根据文档P113，这里不用指定bit5, bit7，直接指示DRIVE就行
     outb(ATA_CMD_IDENTIFY, REG_CMD(dev));
 }
@@ -65,23 +70,38 @@ void ide_ata_init() {
     for (int i = 0; i < MAX_IDE_DRIVE_CNT; i++) {
         int dev = i;
 
-        ata_read_identify(dev, 0);
+        ata_read_identify(dev, 1);
 
         uint8_t status = inb(REG_STATUS(dev));
         if (status == 0 || (status & ATA_STATUS_ERR) || (status & ATA_STATUS_RDY == 0)) {
             printk("ata[%d] not exists: %x\n", i, status);
             continue;
-        } else {
-            printk("ata[%d] exists: %x\n", i, status);
-            insl(REG_DATA(dev), identify, SECT_SIZE / sizeof(uint32_t));
+        }
+
+        printk("ata[%d] exists: %x\n", i, status);
+        insl(REG_DATA(dev), identify, SECT_SIZE / sizeof(uint32_t));
+
+        // 第49个word的第8个bit位表示是否支持DMA
+        // 第83个word的第10个bit位表示是否支持LBA48，为1表示支持。
+        // 第100~103个word的八个字节表示user的LBA最大值
+        printk("%04x %04x %d %d\n", identify[49], 1 << 8, identify[49] & (1 << 8), (identify[49] & (1 << 8)) != 0);
+        if ((identify[49] & (1 << 8)) != 0) {
+            printk("support DMA\n");
+            ide_drives[i].dma = 1;
+        }
+
+        if ((identify[83] & (1 << 10)) != 0) {
+            printk("support LBA48\n");
+            ide_drives[i].lba48 = 1;
+            u64 lba = *(u64 *)(identify + 100);
+            ide_drives[i].max_lba = lba;
+            printk("hard disk size: %u MB\n", (lba * 512) >> 20);
         }
     }
-    asm("cli;hlt;");
 }
 
 void ata_init() {
     disk_request_t r;
-
     r.dev = 0;
     r.buf = (void *)identify;
     r.count = 1;
@@ -100,7 +120,6 @@ void ata_init() {
 
     if ((identify[83] & (1 << 10)) != 0) {
         printk("support LBA48\n");
-
         u64 lba = *(u64 *)(identify + 100);
         printk("hard disk size: %u MB\n", (lba * 512) >> 20);
     }
@@ -113,13 +132,13 @@ void ata_init() {
     r.buf = mbr_buf;
     send_disk_request(&r);
 
-    // uint16_t *p = (uint16_t *)mbr_buf;
-    // for (int i = 0; i < 256; i++) {
-    //     if (i % 12 == 0) {
-    //         printk("\n[%03d] ", i * 2);
-    //     }
-    //     printk("%04x ", p[i]);
-    // }
+    uint16_t *p = (uint16_t *)mbr_buf;
+    for (int i = 0; i < 256; i++) {
+        if (i % 12 == 0) {
+            printk("\n[%03d] ", i * 2);
+        }
+        printk("%04x ", p[i]);
+    }
 }
 
 void ata_read_identify_old(int dev) {  // 这里所用的dev是逻辑编号 ATA0、ATA1下的Master、Salve的dev分别为0,1,2,3
