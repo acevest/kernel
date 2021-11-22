@@ -18,6 +18,7 @@
 extern ide_pci_controller_t ide_pci_controller;
 
 typedef struct _ide_drive {
+    int present;
     int dma;
     uint64_t lba48;
     uint64_t max_lba;
@@ -75,7 +76,10 @@ void ide_ata_init() {
         uint8_t status = inb(REG_STATUS(dev));
         if (status == 0 || (status & ATA_STATUS_ERR) || (status & ATA_STATUS_RDY == 0)) {
             printk("ata[%d] not exists: %x\n", i, status);
+            ide_drives[i].present = 0;
             continue;
+        } else {
+            ide_drives[i].present = 1;
         }
 
         printk("ata[%d] exists: %x\n", i, status);
