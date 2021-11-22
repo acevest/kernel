@@ -20,6 +20,7 @@ typedef enum {
 } disk_request_cmd_t;
 
 typedef struct disk_request {
+    int dev;
     uint64_t pos;                // 扇区号
     uint16_t count;              // 扇区数
     void *buf;                   // 到的缓冲区

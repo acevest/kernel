@@ -21,7 +21,6 @@ void disk_init() {
     INIT_LIST_HEAD(&disk_request_queue.list);
 }
 
-#if 1
 void send_disk_request(disk_request_t *r) {
     if (NULL == r) {
         panic("null disk request");
@@ -56,25 +55,25 @@ void send_disk_request(disk_request_t *r) {
     irq_restore(flags);
 
     // 唤醒task_disk
-    printk("up sem\n");
+    // printk("up sem\n");
     up(&disk_request_queue.sem);
 
     // 等待task_dist结束
-    printk("wait event\n");
+    // printk("wait event\n");
     wait_event(&r->wait, r->done != 0);
 
-    printk("wait finished\n");
+    // printk("wait finished\n");
 }
-#endif
 
 void disk_task_entry() {
+    int r_cnt = 0;
     while (1) {
         void prepare_to_wait_on_ide();
         prepare_to_wait_on_ide();
 
-        printk("wait for new hard disk request\n");
+        // printk("wait for new hard disk request\n");
         down(&disk_request_queue.sem);
-        printk("hard disk request: %d\n", disk_request_queue.count++);
+        // printk("hard disk request: %d\n", disk_request_queue.count++);
 
         unsigned long flags;
         irq_save(flags);
@@ -87,7 +86,7 @@ void disk_task_entry() {
                 panic("no disk request");
             }
 
-            printk("disk request: pos %ld count %d cmd %d\n", r->pos, r->count, r->command);
+            printk("disk request[%d]: dev %d pos %ld count %d cmd %d\n", r_cnt++, r->dev, r->pos, r->count, r->command);
         }
 
         irq_restore(flags);
@@ -96,18 +95,17 @@ void disk_task_entry() {
             continue;
         }
 
-        int dev = 0;
         switch (r->command) {
         case DISK_REQ_IDENTIFY:
             assert(r->count == 1);
-            void ata_read_identify(int dev);
-            ata_read_identify(dev);
+            void ata_read_identify(int dev, int enable_intr);
+            ata_read_identify(r->dev, 1);
             break;
         case DISK_REQ_READ:
             assert(r->count > 0);
             assert(r->buf != NULL);
             void ata_dma_read_ext(int dev, uint64_t pos, uint16_t count, void *dest);
-            ata_dma_read_ext(dev, r->pos, r->count, r->buf);
+            ata_dma_read_ext(r->dev, r->pos, r->count, r->buf);
             break;
         default:
             break;
@@ -120,7 +118,7 @@ void disk_task_entry() {
         // 读数据
         if (DISK_REQ_IDENTIFY == r->command) {
             void ata_read_data(int dev, int sect_cnt, void *dst);
-            ata_read_data(dev, 1, r->buf);
+            ata_read_data(r->dev, 1, r->buf);
         }
 
         // 唤醒等待该请求的进程

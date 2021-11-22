@@ -88,7 +88,7 @@ void setup_kernel() {
     printk(version);
 
     extern tty_t monitor_tty;
-    tty_switch(&monitor_tty);
+    // tty_switch(&monitor_tty);
 
     void ide_init();
     ide_init();

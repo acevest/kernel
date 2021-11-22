@@ -67,7 +67,7 @@ void __wake_up(wait_queue_head_t *head, int nr) {
     irq_save(flags);
     list_for_each_entry_safe(p, tmp, &head->task_list, task_list) {
         list_del(&p->task_list);
-        printk("wakeup: %s\n", p->task->name);
+        // printk("wakeup: %s\n", p->task->name);
         p->task->state = TASK_READY;
 
         --nr;

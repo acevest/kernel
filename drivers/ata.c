@@ -17,6 +17,12 @@
 
 extern ide_pci_controller_t ide_pci_controller;
 
+typedef struct _ide_drive {
+} ide_drive_t;
+
+#define MAX_IDE_DRIVE_CNT 4
+ide_drive_t ide_drives[MAX_IDE_DRIVE_CNT];
+
 #define ATA_TIMEOUT 10  // 10次时钟中断
 
 void ata_dma_read_ext(int dev, uint64_t pos, uint16_t count, void *dest);
@@ -47,14 +53,36 @@ void ata_send_read_identify_cmd(int dev) {}
 
 void ata_read_data(int dev, int sect_cnt, void *dst) { insl(REG_DATA(dev), dst, (512 * sect_cnt) / sizeof(uint32_t)); }
 
-void ata_read_identify(int dev) {
-    outb(0x00, REG_CTL(dev));
+void ata_read_identify(int dev, int enable_intr) {
+    uint8_t ctl = enable_intr ? 0x00 : ATA_CTL_NIEN;
+    printk("%x %x %x\n", REG_CTL(dev), REG_CTL(dev), 0x00 | ((dev & 0x01) << 4));
+    outb(ctl, REG_CTL(dev));
     outb(0x00 | ((dev & 0x01) << 4), REG_DEVICE(dev));  // 根据文档P113，这里不用指定bit5, bit7，直接指示DRIVE就行
     outb(ATA_CMD_IDENTIFY, REG_CMD(dev));
 }
 
+void ide_ata_init() {
+    for (int i = 0; i < MAX_IDE_DRIVE_CNT; i++) {
+        int dev = i;
+
+        ata_read_identify(dev, 0);
+
+        uint8_t status = inb(REG_STATUS(dev));
+        if (status == 0 || (status & ATA_STATUS_ERR) || (status & ATA_STATUS_RDY == 0)) {
+            printk("ata[%d] not exists: %x\n", i, status);
+            continue;
+        } else {
+            printk("ata[%d] exists: %x\n", i, status);
+            insl(REG_DATA(dev), identify, SECT_SIZE / sizeof(uint32_t));
+        }
+    }
+    asm("cli;hlt;");
+}
+
 void ata_init() {
     disk_request_t r;
+
+    r.dev = 0;
     r.buf = (void *)identify;
     r.count = 1;
     r.pos = 0;
@@ -80,18 +108,18 @@ void ata_init() {
     // TODO REMOVE
     mbr_buf = kmalloc(SECT_SIZE, 0);
     r.command = DISK_REQ_READ;
-    r.pos = 1;
+    r.pos = 0;
     r.count = 1;
     r.buf = mbr_buf;
     send_disk_request(&r);
 
-    uint16_t *p = (uint16_t *)mbr_buf;
-    for (int i = 0; i < 256; i++) {
-        if (i % 12 == 0) {
-            printk("\n[%03d] ", i * 2);
-        }
-        printk("%04x ", p[i]);
-    }
+    // uint16_t *p = (uint16_t *)mbr_buf;
+    // for (int i = 0; i < 256; i++) {
+    //     if (i % 12 == 0) {
+    //         printk("\n[%03d] ", i * 2);
+    //     }
+    //     printk("%04x ", p[i]);
+    // }
 }
 
 void ata_read_identify_old(int dev) {  // 这里所用的dev是逻辑编号 ATA0、ATA1下的Master、Salve的dev分别为0,1,2,3

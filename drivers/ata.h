@@ -18,7 +18,7 @@ extern unsigned int ATA_CHL1_CMD_BASE;
 // bit7: HOB    High Order Byte (defined by 48-bit Address feature set).
 // bit[3-6]: -
 // bit2: SRST   Software Reset
-// bit1: IEN    Interrupt Enable
+// bit1: IEN    disable Interrupt
 // bit0: 0
 extern unsigned int ATA_CHL0_CTL_BASE;
 extern unsigned int ATA_CHL1_CTL_BASE;
@@ -95,8 +95,8 @@ extern unsigned int ATA_CHL1_CTL_BASE;
 #define ATA_CTL_SRST 0x04       /* soft reset controller */
 #define ATA_CTL_NIEN 0x02       /* disable interrupts */
 
-#define ATA_GET_CHL(dev) (0) /* only support channel 0 */
-#define ATA_GET_DEV(dev) (0) /* only support one hard disk */
+#define ATA_GET_CHL(dev) (((dev) >> 1) & 0x01)
+#define ATA_GET_DEV(dev) (((dev) >> 1) & 0x01)
 
 #define REG_CMD_BASE(dev, offset) (ATA_GET_CHL(dev) ? (ATA_CHL1_CMD_BASE + offset) : (ATA_CHL0_CMD_BASE + offset))
 #define REG_CTL_BASE(dev, offset) (ATA_GET_CHL(dev) ? (ATA_CHL1_CTL_BASE + offset) : (ATA_CHL0_CTL_BASE + offset))

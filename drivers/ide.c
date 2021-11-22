@@ -197,14 +197,16 @@ void ide_pci_init(pci_device_t *pci) {
 void init_pci_controller(unsigned int classcode) {
     pci_device_t *pci = pci_find_device_by_classcode(classcode);
     if (pci != 0 && pci->intr_line < 16) {
-        printk("found pci vendor %04x device %04x class %04x intr %d\n", pci->vendor, pci->device, pci->classcode,
-               pci->intr_line);
+        printk("found pci vendor %04x device %04x class %04x intr %d progif: %x\n", pci->vendor, pci->device,
+               pci->classcode, pci->intr_line, pci->progif);
         // printl(17, "found pci vendor %04x device %04x class %04x intr %d", pci->vendor, pci->device,
         // pci->classcode,
         // pci->intr_line);
         ide_pci_init(pci);
+        // while (1) asm("cli;hlt;");
     }
 }
+
 void ide_default_intr() {}
 // void ide_default_intr() {
 //     // printd("%s\n", __func__);
@@ -532,7 +534,7 @@ void ide_irq() { ide_intr_func(); }
 //     printk("%02x %02x\n", cl, ch);
 // }
 
-void ata_read_identify(int dev);
+// void ata_read_identify(int dev);
 
 DECLARE_WAIT_QUEUE_HEAD(ide_wait_queue_head);
 
@@ -546,9 +548,9 @@ uint8_t ata_pci_bus_status();
 extern ide_pci_controller_t ide_pci_controller;
 
 void ide_irq_handler(unsigned int irq, pt_regs_t *regs, void *devid) {
-    printk("ide irq handler %d \n", irq);
+    // printk("ide irq handler %d \n", irq);
 
-    printk("ide pci status after interrupt: %x\n", ata_pci_bus_status());
+    printk("ide irq %d handler pci status after interrupt: %x\n", irq, ata_pci_bus_status());
 
     ide_pci_controller.done = 1;
 
@@ -558,6 +560,9 @@ void ide_irq_handler(unsigned int irq, pt_regs_t *regs, void *devid) {
 void ide_init() {
     // memset((void *)&drv, 0, sizeof(drv));
     memset(&ide_pci_controller, 0, sizeof(ide_pci_controller));
+
+    void ide_ata_init();
+    ide_ata_init();
 
     request_irq(0x0E, ide_irq_handler, "hard", "IDE");
 
