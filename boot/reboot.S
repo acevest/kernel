@@ -16,29 +16,38 @@
 #define ASM
 #include <system.h>
 .global do_restart
-.global    do_reboot
-.global    do_poweroff
-.extern    printk
+.global do_reboot
+.global do_poweroff
+.extern printk
 .text
 .code32
 .align 32
 do_restart:
 do_reboot:
-    movl    $REBOOT_RESTART,RebootFlag
-    pushl    $msgReboot
+    movl    $REBOOT_RESTART,reboot_flag
+    pushl    $msg_reboot
     call    printk
     addl    $4,%esp
     jmp    _do_reboot
-msgReboot:    .asciz    "Rebooting ..........."
+
 do_poweroff:
-    movl    $REBOOT_POWEROFF,RebootFlag
-    pushl    $msgPowerOff
+    movl    $REBOOT_POWEROFF,reboot_flag
+    pushl    $msg_poweroff
     call    printk
     addl    $4,%esp
     jmp    _do_reboot
-msgPowerOff:    .asciz    "Shutdown System......"
+
 
 _do_reboot:
+
+    # 刚打印完提示字符串，先等待3秒钟
+    sti
+    movl    $300, %ecx
+ .delay:
+    hlt
+    loop .delay
+
+
     # Disable All Interrupts
     cli
 
@@ -60,9 +69,9 @@ _do_reboot:
 
 
     # Modify 'jmp' Instruction In Real Mode Code
-    cmpl    $REBOOT_POWEROFF,RebootFlag
+    cmpl    $REBOOT_POWEROFF,reboot_flag
     je    1f
-    cmpl    $REBOOT_RESTART,RebootFlag
+    cmpl    $REBOOT_RESTART,reboot_flag
     je    2f
 1:
     movl    $JUMPEND,%ecx
@@ -114,7 +123,7 @@ GDTR:
 IDTR:
     IDTRLimit:    .word    0x3FF
     IDTRBase:    .long    0x0
-RebootFlag:    .long    REBOOT_RESTART
+reboot_flag:    .long    REBOOT_RESTART
 .align    16
 .code16
 Code16:
@@ -147,3 +156,7 @@ SHUTDOWN:
 REBOOT:
     ljmp    $0xFFFF,$0x0000
 Code16End:
+
+
+msg_reboot:    .asciz    "\nREBOOTING...........\n"
+msg_poweroff:  .asciz    "\nSHUTDOWN SYSTEM NOW......\n"
