@@ -99,6 +99,14 @@ void e820_init_bootmem_data() {
         unsigned long bgn_pfn = PFN_UP(p->addr);
         unsigned long end_pfn = PFN_DW(p->addr + p->size);
 
+        // 在x86_64的机器上低32bit可能出现回绕的情况
+        // 就算物理内存小于4G也可能出现
+        // 这种情况直接忽略
+        if (bgn_pfn < bootmem_data.max_pfn) {
+            break;
+        }
+
+
         if (bootmem_data.min_pfn > bgn_pfn) {
             bootmem_data.min_pfn = bgn_pfn;
         }
@@ -122,6 +130,7 @@ void e820_init_bootmem_data() {
 }
 
 void register_bootmem_pages() {
+    unsigned long max_pfn = 0;
     for (unsigned int i = 0; i < boot_params.e820map.map_cnt; ++i) {
         struct e820_entry *p = boot_params.e820map.map + i;
 
@@ -131,6 +140,16 @@ void register_bootmem_pages() {
 
         unsigned long bgn_pfn = PFN_UP(p->addr);
         unsigned long end_pfn = PFN_DW(p->addr + p->size);
+
+        // 在x86_64的机器上低32bit可能出现回绕的情况
+        // 就算物理内存小于4G也可能出现
+        // 这种情况直接忽略
+        if (bgn_pfn < max_pfn) {
+            break;
+        }
+        max_pfn = end_pfn;
+
+
 
 #if 1
         // 用一个相对快的方式
