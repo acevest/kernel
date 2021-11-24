@@ -30,12 +30,11 @@ int printk(const char *fmtstr, ...) {
 }
 
 extern tty_t debug_tty;
+char pdbuf[1024];
 int printd(const char *fmtstr, ...) {
-    char *pdbuf = (char *)kmalloc(1024, 0);
     char *args = (char *)(((char *)&fmtstr) + 4);
     int size = vsprintf(pdbuf, fmtstr, args);
     tty_write(&debug_tty, pdbuf, (size_t)size);
-    kfree(pdbuf);
     return 0;
 }
 
