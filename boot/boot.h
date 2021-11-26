@@ -14,6 +14,7 @@
 #define BOOT_INIT_PAGETBL_CNT 2  // 8MB
 
 #ifndef ASM
+#include <types.h>
 
 #define E820_RAM 1
 #define E820_RESERVED 2
@@ -24,9 +25,9 @@
 #define E820_MAP_CNT 128
 
 struct e820_entry {
-    unsigned long addr;
-    unsigned long size;
-    unsigned long type;
+    uint64_t addr;
+    uint64_t size;
+    uint32_t type;
 };
 
 struct e820map {

@@ -10,8 +10,9 @@
 
 char *itoa(char *s, int n);
 char *itou(char *s, unsigned int n);
-char *itox(char *s, unsigned int n);
+char *itox(char *s, unsigned int n, int upper);
 char *i64tou(char *s, int64_t n);
+char *i64tox(char *s, uint64_t n, int upper);
 
 enum { ALIGN_RIGHT, ALIGN_LEFT };
 
@@ -86,6 +87,11 @@ int vsprintf(char *buf, const char *fmt, char *args) {
                 i64tou(tmp, *((int64_t *)args));
                 p += write_buf(p, tmp, char_fill, char_cnt, align);
                 args += 4;
+            } else if (*fmt == 'x' || *fmt == 'X') {
+                // i64tox(tmp, *((uint64_t *)args), *fmt == 'X' ? 1 : 0);
+                i64tox(tmp, *((uint64_t *)args), 1);  // x X都强制为大写
+                p += write_buf(p, tmp, char_fill, char_cnt, align);
+                args += 4;
             }
             break;
         case 's':
@@ -96,7 +102,9 @@ int vsprintf(char *buf, const char *fmt, char *args) {
             p += write_buf(p, tmp, char_fill, char_cnt, align);
             break;
         case 'x':
-            itox(tmp, *((unsigned int *)args));
+        case 'X':
+            // itox(tmp, *((unsigned int *)args), *fmt == 'X' ? 1 : 0);
+            itox(tmp, *((unsigned int *)args), 1);  // x X都强制为大写
             p += write_buf(p, tmp, char_fill, char_cnt, align);
             break;
         default:
@@ -169,7 +177,7 @@ char *itou(char *s, unsigned int n) {
     }
 }
 
-char *itox(char *s, unsigned int n) {
+char *itox(char *s, unsigned int n, int upper) {
     char *p = s;
     char ch;
     int i;
@@ -182,7 +190,35 @@ char *itox(char *s, unsigned int n) {
             ch += '0';
         } else {
             ch -= 10;
-            ch += 'A';
+            ch += upper == 1 ? 'A' : 'a';
+        }
+
+        if (ch != '0') flag = true;
+
+        if (flag || ch != '0') *p++ = ch;
+    }
+
+    if (s == p) *p++ = '0';
+
+    *p = 0;
+
+    return s;
+}
+
+char *i64tox(char *s, uint64_t n, int upper) {
+    char *p = s;
+    char ch;
+    int i;
+    bool flag = false;
+
+    for (i = 60; i >= 0; i -= 4) {
+        ch = (n >> i) & 0x0F;
+
+        if (ch >= 0 && ch <= 9) {
+            ch += '0';
+        } else {
+            ch -= 10;
+            ch += upper == 1 ? 'A' : 'a';
         }
 
         if (ch != '0') flag = true;
