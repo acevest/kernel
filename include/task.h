@@ -22,6 +22,7 @@
 #include <processor.h>
 #include <system.h>
 #include <types.h>
+#include <wait.h>
 
 enum {
     TASK_UNUSED,
@@ -33,10 +34,6 @@ enum {
 };
 
 #define TASK_NAME_SIZE 32
-
-typedef struct wait_queue_head {
-    list_head_t task_list;
-} wait_queue_head_t;
 
 typedef union task_union {
     struct {

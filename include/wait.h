@@ -14,10 +14,15 @@
 
 #include <irq.h>
 #include <list.h>
-#include <task.h>
+
+union task_union;
+
+typedef struct wait_queue_head {
+    list_head_t task_list;
+} wait_queue_head_t;
 
 typedef struct {
-    task_union *task;
+    union task_union *task;
     list_head_t task_list;
 } wait_queue_t;
 
