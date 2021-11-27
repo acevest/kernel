@@ -11,7 +11,7 @@ KERNELBIN	= KERNEL.BIN
 LINKSCRIPT	= scripts/link.ld
 
 SRC_DIRS = boot mm lib fs kernel drivers
-INC_DIRS = include drivers boot mm
+INC_DIRS = include drivers boot mm fs
 
 CFLAGS += ${INC_DIRS:%=-I%}
 
