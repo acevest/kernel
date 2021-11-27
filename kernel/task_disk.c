@@ -7,6 +7,7 @@
  * ------------------------------------------------------------------------
  */
 
+#include <completion.h>
 #include <disk.h>
 #include <sched.h>
 
@@ -35,8 +36,11 @@ void send_disk_request(disk_request_t *r) {
         panic("disk DMA read cross 64K");
     }
 
-    INIT_LIST_HEAD(&r->wait.task_list);
-    r->done = 0;
+    // INIT_LIST_HEAD(&r->wait.task_list);
+    // r->done = 0;
+
+    init_completion(&r->completion);
+
     // r.pos = pos;
     // r.count = count;
     // r.buf = kmalloc(512, 0);
@@ -60,7 +64,8 @@ void send_disk_request(disk_request_t *r) {
 
     // 等待task_dist结束
     // printk("wait event\n");
-    wait_event(&r->wait, r->done != 0);
+    // wait_event(&r->wait, r->done != 0);
+    wait_completion(&r->completion);
 
     // printk("wait finished\n");
 }
@@ -122,7 +127,8 @@ void disk_task_entry() {
         }
 
         // 唤醒等待该请求的进程
-        r->done = 1;
-        wake_up(&r->wait);
+        // r->done = 1;
+        // wake_up(&r->wait);
+        complete(&r->completion);
     }
 }
