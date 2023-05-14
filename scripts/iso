@@ -1,0 +1,3 @@
+dnf install grub2
+dnf install xorriso
+grub2-mkrescue -o grub.iso iso
