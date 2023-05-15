@@ -1,8 +1,21 @@
-qemu-system-i386 -s -S -drive file=HD.IMG,format=raw,index=0,media=disk -drive file=kernel.iso,index=1,media=cdrom &
+qemu-system-i386 \
+    -boot d \
+    -drive file=HD.IMG,format=raw,index=0,media=disk \
+    -drive file=kernel.iso,index=1,media=cdrom \
+    -s -S \
+    &
+
+#qemu-system-x86_64 -boot d -s -S -drive file=HD.IMG,format=raw,index=0,media=disk -drive file=kernel.iso,index=1,media=cdrom &
+#
+
 pid=$!
 echo "pid is ${pid}"
 
 i386-elf-gdb -x gdbscript; kill -9 $pid
+
+echo "kill pid ${pid}"
+
+#x86_64-elf-gdb -x gdbscript; kill -9 $pid
 
 
 # qemu-system-i386 -drive file=HD.IMG,format=raw,index=0,media=disk -cdrom kernel.iso
