@@ -58,6 +58,14 @@ const char *version = "Kernel version " VERSION " @ " BUILDER
 void setup_kernel() {
     init_ttys();
 
+    printk("sysenter esp mode: %s\n",
+#if FIX_SYSENTER_ESP_MODE
+           "fixed to &tss.esp0"
+#else
+           "use task union stack"
+#endif
+    );
+
     init_mm();
 
     // printk("kernel: %08x - %08x\n", system.kernel_begin, system.kernel_end);

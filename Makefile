@@ -23,7 +23,7 @@ else ifeq ($(OS), Linux)
 endif
 
 
-CFLAGS		= -g -c -fno-builtin -m32 -DBUILDER='"$(shell whoami)"'
+CFLAGS		= -g -c -fno-builtin -m32 -DBUILDER='"$(shell whoami)"' -DFIX_SYSENTER_ESP_MODE=1
 SYSTEMMAP	= System.map
 KERNELBIN	= KERNEL.BIN
 LINKSCRIPT	= scripts/link.ld

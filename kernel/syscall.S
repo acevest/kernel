@@ -30,6 +30,9 @@
 //.global syscall_exit
 
 syscall_entry:
+#if FIX_SYSENTER_ESP_MODE
+    movl    (%esp),%esp 
+#endif
     // 这段代码纯是为了pt_regs_t准备的
     // 后续看看直接优化掉
     pushl   $(SELECTOR_USER_SS)

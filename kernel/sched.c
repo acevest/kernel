@@ -71,8 +71,11 @@ void init_root_task() {
     root_task.cr3 = va2pa((unsigned long)(init_pgd));
 
     tss.esp0 = root_task.esp0;
-
+#if FIX_SYSENTER_ESP_MODE
+    // do nothing
+#else
     wrmsr(MSR_SYSENTER_ESP, root_task.esp0, 0);
+#endif
 
     printk("init_root_task tss.esp0 %08x\n", tss.esp0);
 }
@@ -100,7 +103,11 @@ task_union *alloc_task_union() {
 void switch_to() {
     LoadCR3(current->cr3);
     tss.esp0 = current->esp0;
+#if FIX_SYSENTER_ESP_MODE
+    // do nothing
+#else
     wrmsr(MSR_SYSENTER_ESP, current->esp0, 0);
+#endif
 }
 
 void context_switch(task_union *prev, task_union *next) {
@@ -208,7 +215,7 @@ unsigned long schedule() {
         // printk("switch to: %s:%d\n", next->name, next->pid);
         list_for_each_safe(pos, t, &all_tasks) {
             p = list_entry(pos, task_union, list);
-            printl(MPL_TASK_0 + p->pid * 2, " ");  //清掉上一次显示的 '>'
+            printl(MPL_TASK_0 + p->pid * 2, " ");  // 清掉上一次显示的 '>'
             printl(MPL_TASK_0 + p->pid * 2, "%s%4s:%d [%08x] state %s weight %03d sched %u", next == p ? ">" : " ",
                    p->name, p->pid, p, task_state(p->state), p->weight, p->sched_cnt);
         }
