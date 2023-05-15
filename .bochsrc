@@ -762,6 +762,7 @@ ata3: enabled=0, ioaddr1=0x168, ioaddr2=0x360, irq=9
 #   ata3-slave:  type=cdrom, path=iso.sample, status=inserted
 #=======================================================================
 ata0-master: type=disk, mode=flat, path="HD.IMG", model="Generic aBCd"
+ata0-slave: type=cdrom, path=kernel.iso, status=inserted
 #ata0-master: type=disk, mode=flat, path="30M.sample"
 #ata0-master: type=disk, mode=flat, path="30M.sample", cylinders=615, heads=6, spt=17
 #ata0-master: type=disk, mode=flat, path="c.img", cylinders=0 # autodetect
@@ -783,7 +784,7 @@ ata0-master: type=disk, mode=flat, path="HD.IMG", model="Generic aBCd"
 #   boot: cdrom, floppy, disk
 #=======================================================================
 #boot: floppy
-boot: disk
+boot: cdrom
 
 #=======================================================================
 # FLOPPY_BOOTSIG_CHECK: disabled=[0|1]
