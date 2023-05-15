@@ -6,3 +6,5 @@ TabWidth: 4
 
 IndentCaseLabels: false
 
+# 行注释 "//" 前增加两个空格
+SpacesBeforeTrailingComments: 2

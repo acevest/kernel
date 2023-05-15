@@ -18,8 +18,8 @@ echo "(hd0) ${lodev}" > ${TMP}/device.map
 sleep 1
 
 # 创建主分区并设置为活动分区
-parted ${lodev} mklabel msdos
-parted ${lodev} mkpart primary ext2 200k 100% -a minimal
+parted -s ${lodev} mklabel msdos
+parted -s ${lodev} mkpart primary ext2 200k 100% -a minimal
 parted ${lodev} set 1 boot on
 sleep 1
 

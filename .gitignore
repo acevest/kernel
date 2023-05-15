@@ -34,3 +34,4 @@ bochsout.txt
 *.lock
 *.DS_Store
 .vscode
+*.iso

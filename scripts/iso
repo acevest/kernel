@@ -1,0 +1,17 @@
+dnf install grub2
+dnf install grub2-tools-extra
+dnf install xorriso
+grub2-mkrescue -o grub.iso iso
+
+
+# mkefs
+dnf install e2fsprogs
+dnf install parted
+
+dnf install gcc-x86_64-linux-gnu
+
+# 如果在docker的linux中提示losetup: cannot find an unused loop device
+# 则需要用docker run --privileged来启动
+#
+# 如果是在M1的Mac上要使用x86 linux的docker镜像
+# 则应该使用docker pull --platform=linux/amd64
