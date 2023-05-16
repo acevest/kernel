@@ -144,7 +144,7 @@ static inline void set_idt_gate(u32 vec, u32 handler, u8 type, u8 DPL) { idt[vec
         set_idt_gate(vect, (u32)handler, type, DPL); \
     } while (0)
 
-typedef struct {
+typedef struct tss {
     u16 backlink, _backlink;
     u32 esp0;
     u16 ss0, _ss0;
@@ -171,25 +171,8 @@ typedef struct {
     u16 gs, _gs;
     u16 ldt, _ldt;
     u16 T : 1, _T : 15, iomap_base;
-} TSS, *pTSS;
-static inline void set_tss_gate(u32 vec, u32 addr) {
-#if 1
-    pSeg p = (pSeg)(gdt + vec);
-    _init_desc((pDesc)p);
-    p->limitL = 0xFFFF & sizeof(TSS);
-    p->limitH = 0x0F & (sizeof(TSS) >> 16);
-    p->baseL = 0xFFFF & addr;
-    p->baseM = 0xFF & (addr >> 16);
-    p->baseH = 0xFF & (addr >> 24);
+} TSS_t;
 
-    p->P = 1;
-    p->DPL = PRIVILEGE_USER;
-    p->S = 0;
-
-    p->type = TSS_DESC;
-#endif
-}
-
-extern TSS tss;
+extern TSS_t tss;
 
 #endif  //_DESCRIPTOR_H

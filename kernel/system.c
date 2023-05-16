@@ -131,9 +131,26 @@ void setup_irqs() {
     open_irq(0x01);
     open_irq(0x0E);
 }
+
+void set_tss_gate(u32 vec, u32 addr, u32 limit) {
+    pSeg p = (pSeg)(gdt + vec);
+    _init_desc((pDesc)p);
+    p->limitL = 0xFFFF & limit;
+    p->limitH = 0x0F & (limit >> 16);
+    p->baseL = 0xFFFF & addr;
+    p->baseM = 0xFF & (addr >> 16);
+    p->baseH = 0xFF & (addr >> 24);
+
+    p->P = 1;
+    p->DPL = PRIVILEGE_USER;
+    p->S = 0;
+
+    p->type = TSS_DESC;
+}
+
 void set_tss() {
-    pTSS p = &tss;
-    memset((void *)p, sizeof(TSS), 0);
+    TSS_t *p = &tss;
+    memset((void *)p, sizeof(TSS_t), 0);
     p->esp0 = 0;  // delay to init root_task
     p->ss0 = SELECTOR_KRNL_DS;
     p->ss = SELECTOR_KRNL_DS;
@@ -143,8 +160,12 @@ void set_tss() {
     p->ds = SELECTOR_KRNL_DS;
     p->cs = SELECTOR_KRNL_CS;
     p->eflags = 0x1200;
-    p->iomap_base = sizeof(TSS);
-    set_tss_gate(INDEX_TSS, (u32)p);
+    p->iomap_base = sizeof(TSS_t);
+
+    // tss的iomap_base=sizeof(TSS_t) > TSS_GATE.LIMIT - 1
+    // 因此表示没有I/O位图
+    set_tss_gate(INDEX_TSS, (u32)p, sizeof(TSS_t));
+
     asm("ltr %%ax" ::"a"((INDEX_TSS << 3) + 3));
 }
 
@@ -165,7 +186,7 @@ int sysc_reboot(int mode) {
 }
 
 System system;
-TSS tss;
+TSS_t tss;
 Desc idt[NIDT] __attribute__((__aligned__(8)));
 Desc gdt[NGDT] __attribute__((__aligned__(8)));
 char gdtr[6] __attribute__((__aligned__(4)));
