@@ -1,2 +1,3 @@
 target remote localhost:1234
-file KERNEL.BIN
+b setup_kernel
+c

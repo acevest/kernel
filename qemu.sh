@@ -5,13 +5,16 @@ qemu-system-i386 \
     -s -S \
     &
 
+#    -device ich9-ahci,id=ahci \
+#    -machine accel=tcg \
+#    -serial stdio \
 #qemu-system-x86_64 -boot d -s -S -drive file=HD.IMG,format=raw,index=0,media=disk -drive file=kernel.iso,index=1,media=cdrom &
 #
 
 pid=$!
 echo "pid is ${pid}"
 
-i386-elf-gdb -x gdbscript; kill -9 $pid
+i386-elf-gdb KERNEL.BIN -x gdbscript; kill -9 $pid
 
 echo "kill pid ${pid}"
 
