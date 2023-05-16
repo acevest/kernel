@@ -33,6 +33,10 @@ syscall_entry:
 #if FIX_SYSENTER_ESP_MODE
     movl    (%esp),%esp 
 #endif
+
+    // sysenter have cleared IF, and sysexit will not set IF.
+    sti
+
     // 这段代码纯是为了pt_regs_t准备的
     // 后续看看直接优化掉
     pushl   $(SELECTOR_USER_SS)
@@ -82,7 +86,6 @@ ret_from_fork_user:
     // sysexit指令从ecx中恢复用户态esp
     xchgl   %ebp, %ecx
 
-    sti        /* sysenter have cleared IF, and sysexit will not set IF. */
     sysexit
 
 
