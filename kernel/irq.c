@@ -42,24 +42,29 @@ __attribute__((regparm(1))) void irq_handler(pt_regs_t *regs) {
 
     irq_action_t *action = p->action;
 
-    atomic_inc(&preempt_count);
+    // atomic_inc(&preempt_count);
+    preempt_count++;  // 还没到多处理器，暂时不用atomic_inc
+
+    p->chip->ack(irq);
+
+    unsigned long irq_flags;
+    irq_save(irq_flags);
+
+    enable_irq();
 
     unsigned long esp;
     asm("movl %%esp, %%eax" : "=a"(esp));
     printl(MPL_PREEMPT, "current %08x cr3 %08x preempt %d esp %08x", current, current->cr3, preempt_count, esp);
-
-    p->chip->ack(irq);
 
     while (action && action->handler) {
         action->handler(irq, regs, action->dev_id);
         action = action->next;
     }
 
-    // sti();
-    // ....
-    // cli();
-
-    atomic_dec(&preempt_count);
+    irq_restore(irq_flags);
+    // atomic_dec(&preempt_count);
+    preempt_count--;
+    enable_irq();
 }
 
 int request_irq(unsigned int irq, void (*handler)(unsigned int, pt_regs_t *, void *), const char *devname,
