@@ -167,8 +167,24 @@ unsigned long schedule() {
     irq_save(iflags);
     // printl(MPL_ROOT, "root:%d [%08x] cnt %u", root_task.pid, &root_task, root_task.cnt);
 
-    float min_ratio = 1.0;
+#if 1
+    list_for_each_safe(pos, t, &all_tasks) {
+        p = list_entry(pos, task_union, list);
+        if (p->state != TASK_READY) {
+            continue;
+        }
 
+        if (p->weight >= p->priority) {
+            p->weight = 0;
+            continue;
+        }
+
+        if (p->weight < sel->weight) {
+            sel = p;
+        }
+    }
+#else
+    float min_ratio = 1.0;
     bool need_reset_weight = true;
     list_for_each_safe(pos, t, &all_tasks) {
         p = list_entry(pos, task_union, list);
@@ -198,15 +214,19 @@ unsigned long schedule() {
             continue;
         }
 
+        // 貌似在Mac的M1上的qemu执行这一句会有问题
+        // 所以暂时把这整个逻辑注释掉，写了个简单的替代算法
         float ratio = (float)(p->weight * 1.0) / (p->priority * 1.0);
         if (ratio < min_ratio) {
             sel = p;
             min_ratio = ratio;
         }
     }
+#endif
+
     irq_restore(iflags);
     sel->sched_cnt++;
-    sel->weight++;
+    sel->weight += 13;
     // printk("%08x %s weight %d state: %s\n", sel, sel->name, sel->weight, task_state(sel->state));
     task_union *prev = current;
     task_union *next = sel;
@@ -215,9 +235,9 @@ unsigned long schedule() {
         // printk("switch to: %s:%d\n", next->name, next->pid);
         list_for_each_safe(pos, t, &all_tasks) {
             p = list_entry(pos, task_union, list);
-            printl(MPL_TASK_0 + p->pid * 2, " ");  // 清掉上一次显示的 '>'
-            printl(MPL_TASK_0 + p->pid * 2, "%s%4s:%d [%08x] state %s weight %03d sched %u", next == p ? ">" : " ",
-                   p->name, p->pid, p, task_state(p->state), p->weight, p->sched_cnt);
+            printl(MPL_TASK_0 + p->pid, " ");  // 清掉上一次显示的 '>'
+            printl(MPL_TASK_0 + p->pid, "%s%4s:%d [%08x] state %s weight %03d sched %u", next == p ? ">" : " ", p->name,
+                   p->pid, p, task_state(p->state), p->weight, p->sched_cnt);
         }
         context_switch(prev, next);
     }
