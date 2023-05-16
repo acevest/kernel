@@ -133,7 +133,7 @@ Label:
 
     call    setup_kernel
 
-    subl    $12, %esp   // ss esp eip
+    subl    $128, %esp   // ss esp eip
     movl    $root_task_entry, %eax
     jmpl    *%eax
 
