@@ -24,8 +24,8 @@ void do_no_page(void *addr) {
     unsigned long page = alloc_one_page(0);
     assert(page != 0);
 
-    int npde = get_npd(addr);
-    int npte = get_npt(addr);
+    int npde = get_npde(addr);
+    int npte = get_npte(addr);
 
     if (page_dir[npde] == 0) {
         page_tbl = (pte_t *)alloc_one_page(0);
@@ -48,8 +48,8 @@ void do_wp_page(void *addr) {
         panic("%s invalid addr", __func__);
     }
 
-    int npde = get_npd(addr);
-    int npte = get_npt(addr);
+    int npde = get_npde(addr);
+    int npte = get_npte(addr);
 
     pde_t *page_dir = (pde_t *)pa2va(current->cr3);
     pte_t *page_tbl = pa2va(PAGE_ALIGN(page_dir[npde]));

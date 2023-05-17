@@ -31,11 +31,11 @@ pte_t __initdata init_pgt[PTECNT_PER_PAGE * BOOT_INIT_PAGETBL_CNT] __attribute__
 void set_page_shared(void *x) {
     unsigned long addr = (unsigned long)x;
     addr = PAGE_ALIGN(addr);
-    unsigned int npd = get_npd(addr);
+    unsigned int npd = get_npde(addr);
     init_pgd[npd] |= PAGE_US;
 
     pte_t *pte = pa2va(init_pgd[npd] & PAGE_MASK);
-    pte[get_npt(addr)] |= PAGE_US;
+    pte[get_npte(addr)] |= PAGE_US;
 }
 
 void init_paging() {
@@ -59,7 +59,7 @@ void init_paging() {
 
             memset((void *)pgtb_addr, 0, PAGE_SIZE);
 
-            init_pgd[get_npd(page_addr)] = (pde_t)((unsigned long)va2pa(pgtb_addr) | PAGE_P | PAGE_WR);
+            init_pgd[get_npde(page_addr)] = (pde_t)((unsigned long)va2pa(pgtb_addr) | PAGE_P | PAGE_WR);
         }
 
         pte = ((pte_t *)pgtb_addr) + ti;
@@ -67,7 +67,7 @@ void init_paging() {
     }
 
     // paging for kernel space
-    unsigned long delta = get_npd(PAGE_OFFSET);
+    unsigned long delta = get_npde(PAGE_OFFSET);
     for (i = delta; i < PDECNT_PER_PAGE; ++i) {
         init_pgd[i] = init_pgd[i - delta];
         init_pgd[i - delta] = 0;
@@ -75,14 +75,14 @@ void init_paging() {
 
     // 接下来为显存建立页映射
     unsigned long vram_phys_addr = system.vbe_phys_addr;
-    for (int pde_inx = 0; pde_inx < get_npd(VRAM_VADDR_SIZE); pde_inx++) {
+    for (int pde_inx = 0; pde_inx < get_npde(VRAM_VADDR_SIZE); pde_inx++) {
         pgtb_addr = (unsigned long *)(alloc_from_bootmem(PAGE_SIZE, "vrampaging"));
         if (0 == pgtb_addr) {
             panic("no pages for paging...");
         }
         // 后续要初始化，所以此处不用memset
         // memset((void *)pgtb_addr, 0, PAGE_SIZE);
-        init_pgd[get_npd(VRAM_VADDR_BASE) + pde_inx] = (pde_t)((unsigned long)va2pa(pgtb_addr) | PAGE_P | PAGE_WR);
+        init_pgd[get_npde(VRAM_VADDR_BASE) + pde_inx] = (pde_t)((unsigned long)va2pa(pgtb_addr) | PAGE_P | PAGE_WR);
 
         for (int pte_inx = 0; pte_inx < PTECNT_PER_PAGE; pte_inx++) {
             pgtb_addr[pte_inx] = vram_phys_addr | PAGE_P | PAGE_WR;

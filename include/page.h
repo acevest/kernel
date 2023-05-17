@@ -17,6 +17,19 @@
 #ifndef _PAGE_H
 #define _PAGE_H
 
+/*
+
+| CR0的PG | CR4的PAE | CR4的PSE | PDE的PS | 页面规模 | 物理地址规模 |
+| ------- | -------- | -------- | ------- | -------- | ------------ |
+| 0       | ×       | ×       | ×      | ―      | 禁止分页 |
+| 1       | 0        | 0        | ×      | 4KB      | 32位        |
+| 1       | 0        | 1        | 0       | 4KB      | 32位        |
+| 1       | 0        | 1        | 1       | 4MB      | 32位        |
+| 1       | 1        | ×       | 0       | 4KB      | 36位        |
+| 1       | 1        | ×       | 1       | 2MB      | 36位        |
+
+*/
+
 #define PAGE_P 0x1   // 在内存中
 #define PAGE_WR 0x2  // 表示可读写
 #define PAGE_US 0x4  // 用户级
@@ -31,8 +44,8 @@
 #ifndef ASM
 #include <bits.h>
 #include <types.h>
-#define get_npd(addr) (((u32)(addr)) >> 22)
-#define get_npt(addr) ((((u32)(addr)) >> 12) & 0x3FF)
+#define get_npde(addr) (((u32)(addr)) >> 22)
+#define get_npte(addr) ((((u32)(addr)) >> 12) & 0x3FF)
 
 #include <list.h>
 
