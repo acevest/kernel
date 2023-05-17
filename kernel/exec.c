@@ -28,8 +28,8 @@ void put_paging(unsigned long vaddr, unsigned long paddr, unsigned long flags) {
     assert(PAGE_ALIGN(vaddr) == vaddr);
     assert(PAGE_ALIGN(paddr) == paddr);
 
-    unsigned int npde = get_npd(vaddr);
-    unsigned int npte = get_npt(vaddr);
+    unsigned int npde = get_npde(vaddr);
+    unsigned int npte = get_npte(vaddr);
 
     pde_t *page_dir = (pde_t *)pa2va(current->cr3);
     pte_t *page_table = (pte_t *)PAGE_ALIGN(page_dir[npde]);

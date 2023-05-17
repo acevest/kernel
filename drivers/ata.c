@@ -75,14 +75,13 @@ void ide_ata_init() {
 
         uint8_t status = inb(REG_STATUS(dev));
         if (status == 0 || (status & ATA_STATUS_ERR) || (status & ATA_STATUS_RDY == 0)) {
-            printk("ata[%d] not exists: %x\n", i, status);
             ide_drives[i].present = 0;
             continue;
         } else {
             ide_drives[i].present = 1;
         }
 
-        printk("ata[%d] exists: %x\n", i, status);
+        printk("ata[%d] status %x %s exists\n", i, status, ide_drives[i].present == 1 ? "" : "not");
         insl(REG_DATA(dev), identify, SECT_SIZE / sizeof(uint32_t));
 
         // 第49个word的第8个bit位表示是否支持DMA
@@ -90,17 +89,18 @@ void ide_ata_init() {
         // 第100~103个word的八个字节表示user的LBA最大值
         printk("%04x %04x %d %d\n", identify[49], 1 << 8, identify[49] & (1 << 8), (identify[49] & (1 << 8)) != 0);
         if ((identify[49] & (1 << 8)) != 0) {
-            printk("support DMA\n");
             ide_drives[i].dma = 1;
         }
 
+        u64 max_lba = *(u64 *)(identify + 100);
+
         if ((identify[83] & (1 << 10)) != 0) {
-            printk("support LBA48\n");
             ide_drives[i].lba48 = 1;
-            u64 lba = *(u64 *)(identify + 100);
-            ide_drives[i].max_lba = lba;
-            printk("hard disk size: %u MB\n", (lba * 512) >> 20);
+            ide_drives[i].max_lba = max_lba;
         }
+
+        printk("hard disk %s %s size: %u MB\n", ide_drives[i].dma == 1 ? "DMA" : "",
+               ide_drives[i].lba48 == 1 ? "LBA48" : "LBA28", (max_lba * 512) >> 20);
     }
 }
 
@@ -281,7 +281,7 @@ int ata_pio_read_ext(int dev, uint64_t pos, uint16_t count, int timeout, void *d
     // 先写扇区数的高字节
     outb((count >> 8) & 0xFF, REG_NSECTOR(dev));
 
-    // 接着写LBA48，高三个字节
+    // 接着写LBA48，高三个字节q
     outb((pos >> 24) & 0xFF, REG_LBAL(dev));
     outb((pos >> 32) & 0xFF, REG_LBAM(dev));
     outb((pos >> 40) & 0xFF, REG_LBAH(dev));
