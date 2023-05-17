@@ -23,7 +23,6 @@ LIST_HEAD(pci_devs);
 
 const char *pci_get_info(unsigned int classcode, unsigned int progif);
 
-#if PCI_RW_ALIGN_MODE
 int pci_read_config_byte(int cmd) {
     outl(PCI_CONFIG_CMD(cmd), PCI_ADDR);
     return inb(PCI_DATA + (PCI_GET_CMD_REG(cmd) & 3));
@@ -53,37 +52,6 @@ void pci_write_config_long(int value, int cmd) {
     outl(PCI_CONFIG_CMD(cmd), PCI_ADDR);
     outl(value, PCI_DATA);
 }
-#else
-int pci_read_config_byte(int cmd) {
-    outl(cmd, PCI_ADDR);
-    return inb(PCI_DATA);
-}
-
-int pci_read_config_word(int cmd) {
-    outl(cmd, PCI_ADDR);
-    return inw(PCI_DATA);
-}
-
-int pci_read_config_long(int cmd) {
-    outl(cmd, PCI_ADDR);
-    return inl(PCI_DATA);
-}
-
-void pci_write_config_byte(int value, int cmd) {
-    outl(cmd, PCI_ADDR);
-    outb(value & 0xFF, PCI_DATA);
-}
-
-void pci_write_config_word(int value, int cmd) {
-    outl(cmd, PCI_ADDR);
-    outw(value & 0xFFFF, PCI_DATA);
-}
-
-void pci_write_config_long(int value, int cmd) {
-    outl(cmd, PCI_ADDR);
-    outl(value, PCI_DATA);
-}
-#endif
 
 void scan_pci_bus(int bus) {
     u8 dev, devfn;

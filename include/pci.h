@@ -25,11 +25,8 @@
 // PCI Command
 // 这个PCI_CMD是写入PCI_ADDR的，通过bus,dev,fn,reg可以定位到某个PCI总线(可以有多条PCI总线)上的某个设备的某个功能的某个寄存器
 #define PCI_CMD(bus, dev, fn, reg) (0x80000000 | (bus << 16) | (dev << 11) | (fn << 8) | reg)
-
-#if PCI_RW_ALIGN_MODE
 #define PCI_CONFIG_CMD(cmd) (cmd & ~3)
 #define PCI_GET_CMD_REG(cmd) (cmd & 0xFF)
-#endif
 
 // PCI Device
 //  All PCI compliant devices must support the Vendor ID, Device ID, Command and Status, Revision ID, Class Code and
