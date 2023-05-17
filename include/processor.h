@@ -175,4 +175,46 @@ typedef struct tss {
 
 extern TSS_t tss;
 
+// CR0 含有控制处理器操作模式和状态的系统控制标志
+#define CR0_PE (1 << 0)   // R/W Protection Enabled
+#define CR0_MP (1 << 1)   // R/W Monitor Coprocessor
+#define CR0_EM (1 << 2)   // R/W Emulation
+#define CR0_TS (1 << 3)   // R/W Task Switched
+#define CR0_ET (1 << 4)   // R   Extension Type
+#define CR0_NE (1 << 5)   // R/W Numeric Error
+#define CR0_WP (1 << 16)  // R/W Write Protect
+#define CR0_AM (1 << 18)  // R/W Alignment Mask
+#define CR0_NW (1 << 29)  // R/W Not Writethough
+#define CR0_CD (1 << 30)  // R/W Cache Disable
+#define CR0_PG (1 << 31)  // R/W Paging
+
+// CR1 保留不用
+
+// CR2 含有导致页错误的线性地址
+
+// CR3 为页目录表的物理内存基地址，因此该寄存器也叫页目录基地址寄存器PDBR (Page-Directory Baseaddress Register)
+// 如果不启用PAE:
+//     CR3的12~31bit为 Page-Directory-Table Base Address，有两层页表，最高页目录大小为2^12=4096=4KB
+//     每个页目录项为4Byte，所以共1024项。共能寻址4GB物理内存
+// 如果启用PAE：
+//     CR3的 5~31bit为 Page-Directory-Table Base Address，有三层页表，最高页目录大小为2^5=32Byte
+//     每个页目录项为8Byte，所以共4项，能寻址64GB物理内存
+
+#define CR3_PWT (1 << 3)  // PWT Page-Level Writethrough
+#define CR3_PCD (1 << 4)  // PCD Page-Level Cache Disable, 0: 表示最高目录表可缓存；1: 表示不可缓存
+
+// CR4
+#define CR4_VME (1 << 0)           // R/W Virtual-8086 Mode Extensions
+#define CR4_PVI (1 << 1)           // R/W Protected-Mode Virtual Interrupts
+#define CR4_TSD (1 << 2)           // R/W Time Stamp Disable
+#define CR4_DE (1 << 3)            // R/W Debugging Extensions
+#define CR4_PSE (1 << 4)           // R/W Page Size Extensions
+#define CR4_PAE (1 << 5)           // R/W Physical-Address Extension; 0: 不启用; 1: 启用，支持2MB的超级页
+#define CR4_MCE (1 << 6)           // R/W Machine Check Enable
+#define CR4_PGE (1 << 7)           // R/W Page-Global Enable
+#define CR4_PCE (1 << 8)           // R/W Performance-Monitoring Counter Enable
+#define CR4_OSFXSR (1 << 9)        // R/W Operating System FXSAVE/FXRSTOR Support
+#define CR4_OSXMMEEXCPT (1 << 10)  // R/W  Operating System Unmasked Exception Support
+#define CR4_OSXSAVE (1 << 18)      // R/W XSAVE and Processor Extended States Enable Bit
+
 #endif  //_DESCRIPTOR_H
