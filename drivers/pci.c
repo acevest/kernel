@@ -149,9 +149,11 @@ void dump_pci_dev() {
 
     list_for_each(p, &pci_devs) {
         pci_device_t *pci = list_entry(p, pci_device_t, list);
-        printk("vendor %04x device %04x class %04x:%02x bus %d intr %3d ", pci->vendor, pci->device, pci->classcode,
-               pci->progif, pci->bus, pci->intr_line);
-        printk("%s\n", pci_get_info(pci->classcode, pci->progif));
+        // printk("vendor %04x device %04x class %04x:%02x bus %d intr %3d ", pci->vendor, pci->device, pci->classcode,
+        //        pci->progif, pci->bus, pci->intr_line);
+        // printk("%s\n", pci_get_info(pci->classcode, pci->progif));
+        printk("PCI %03d:%02d.%d #%02d %04X:%04X %s\n", pci->bus, pci->dev, pci->devfn, pci->intr_line, pci->vendor,
+               pci->device, pci_get_info(pci->classcode, pci->progif));
 #if 0
         switch (pci->hdr_type) {
         case PCI_HDRTYPE_NORMAL:

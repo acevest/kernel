@@ -193,12 +193,14 @@ void ide_pci_init(pci_device_t *pci) {
 
 //     kfree(buf);
 // }
-
+const char *pci_get_info(unsigned int classcode, unsigned int progif);
 void init_pci_controller(unsigned int classcode) {
     pci_device_t *pci = pci_find_device_by_classcode(classcode);
     if (pci != 0 && pci->intr_line < 16) {
-        printk("found pci vendor %04x device %04x class %04x intr %d progif: %x\n", pci->vendor, pci->device,
-               pci->classcode, pci->intr_line, pci->progif);
+        printk("found pci %03d:%02d.%d #%02d %04X:%04X ProgIF %02x %s\n", pci->bus, pci->dev, pci->devfn,
+               pci->intr_line, pci->vendor, pci->device, pci->progif, pci_get_info(pci->classcode, pci->progif));
+        // printk("found pci vendor %04x device %04x class %04x intr %d progif: %x\n", pci->vendor, pci->device,
+        //        pci->classcode, pci->intr_line, pci->progif);
         // printl(17, "found pci vendor %04x device %04x class %04x intr %d", pci->vendor, pci->device,
         // pci->classcode,
         // pci->intr_line);

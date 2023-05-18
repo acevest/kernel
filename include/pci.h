@@ -24,6 +24,12 @@
 
 // PCI Command
 // 这个PCI_CMD是写入PCI_ADDR的，通过bus,dev,fn,reg可以定位到某个PCI总线(可以有多条PCI总线)上的某个设备的某个功能的某个寄存器
+// 0 ~ 7: 寄存器偏移
+// 8 ~ 10: 功能号
+// 11 ~ 15: 设备号
+// 16 ~ 23: 总线号
+// 24 ~ 30: 保留
+// 31: 有效位
 #define PCI_CMD(bus, dev, fn, reg) (0x80000000 | (bus << 16) | (dev << 11) | (fn << 8) | reg)
 #define PCI_CONFIG_CMD(cmd) (cmd & ~3)
 #define PCI_GET_CMD_REG(cmd) (cmd & 0xFF)

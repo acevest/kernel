@@ -87,7 +87,7 @@ void ide_ata_init() {
         // 第49个word的第8个bit位表示是否支持DMA
         // 第83个word的第10个bit位表示是否支持LBA48，为1表示支持。
         // 第100~103个word的八个字节表示user的LBA最大值
-        printk("%04x %04x %d %d\n", identify[49], 1 << 8, identify[49] & (1 << 8), (identify[49] & (1 << 8)) != 0);
+        // printk("%04x %04x %d %d\n", identify[49], 1 << 8, identify[49] & (1 << 8), (identify[49] & (1 << 8)) != 0);
         if ((identify[49] & (1 << 8)) != 0) {
             ide_drives[i].dma = 1;
         }
@@ -135,13 +135,12 @@ void ata_init() {
     r.count = 1;
     r.buf = mbr_buf;
     send_disk_request(&r);
-
     uint16_t *p = (uint16_t *)mbr_buf;
     for (int i = 0; i < 256; i++) {
         if (i % 12 == 0) {
             printk("\n[%03d] ", i * 2);
         }
-        printk("%04x ", p[i]);
+        printk("%04x.", p[i]);
     }
 }
 
@@ -200,8 +199,26 @@ void ata_read_identify_old(int dev) {  // 这里所用的dev是逻辑编号 ATA0
 
 // ATA_CMD_READ_DMA_EXT
 void ata_dma_read_ext(int dev, uint64_t pos, uint16_t count, void *dest) {
-    // 停止DMA
-    outb(PCI_IDE_CMD_STOP, ide_pci_controller.bus_cmd);
+    // Intel®
+    //  82801CA (ICH3), 82801BA
+    // (ICH2), 82801AA (ICH), and 82801AB
+    // (ICH0) IDE Controller
+    // Programmer’s Reference Manua
+    // Page 25. Table 23. BMIC1 and BMIC2
+
+    // • The Bus Master Read/Write Control bit【第3位】 shall set the transfer direction for DMA transfers. This
+    // bit must NOT be changed when the bus master function is active. While an Ultra DMA transfer
+    // is in progress, this bit will be READ ONLY. The bit will return to read/write once the
+    // synchronous DMA transfer has been completed or halted.
+
+    // • The Start/Stop Bus Master bit【第0位】 shall be the control method to start or stop the DMA transfer
+    // engine. When this bit is set to 1, bus master operation starts. The controller transfers data
+    // between the IDE device and memory only while this bit is set. Master operation can be stopped
+    // by writing a 0 to this bit. This results in all state information being lost (i.e., master mode
+    // operation cannot be stopped and then resumed).
+
+    // 停止DMA，并设置为读(这里的WRITE是对DMA控制器来说)
+    outb(PCI_IDE_CMD_WRITE | PCI_IDE_CMD_STOP, ide_pci_controller.bus_cmd);
 
     // 配置描述符表
     unsigned long dest_paddr = va2pa(dest);
@@ -262,7 +279,24 @@ void ata_dma_read_ext(int dev, uint64_t pos, uint16_t count, void *dest) {
 
     // 指定DMA操作为读取硬盘操作，内核用DMA读取，对硬盘而言是写出
     // 并设置DMA的开始位，开始DMA
-    outb(PCI_IDE_CMD_WRITE | PCI_IDE_CMD_START, ide_pci_controller.bus_cmd);
+    outb(PCI_IDE_CMD_START, ide_pci_controller.bus_cmd);
+}
+
+// TODO
+int ata_dma_stop() {
+    uint8_t x = inb(ide_pci_controller.bus_cmd);
+    x &= ~PCI_IDE_CMD_START;
+    outb(x, ide_pci_controller.bus_cmd);
+
+    uint8_t status = inb(ide_pci_controller.bus_status);
+    outb(status | PCI_IDE_STATUS_INTR | PCI_IDE_STATUS_ERR, ide_pci_controller.bus_status);
+
+    // TODO
+    if (status & PCI_IDE_STATUS_ERR) {
+        return -1;
+    }
+
+    return 0;
 }
 
 // ATA_CMD_READ_PIO_EXT
