@@ -41,6 +41,48 @@
 #define PAGE_PDE_CNT 1024
 #define PAGE_PTE_CNT 1024
 
+// P：  有效位。0 表示当前表项无效。
+// R/W: 0 表示只读。1表示可读写。
+// U/S: 0 表示只能0、1、2特权级可访问。3 表示只有特权级程序可访问
+// A:   0 表示该页未被访问，1表示已被访问。
+// D:   脏位。0表示该页未写过，1表示该页被写过
+// PS:  只存在于页目录表。在CR4中的PSE打开的情况下，0表示这是4KB页，指向一个页表。1表示这是4MB大页，直接指向物理页。
+
+// |<------ 31~12------>|<------ 11~0 --------->| 比特
+//                      |b a 9 8 7 6 5 4 3 2 1 0|
+// |--------------------|-|-|-|-|-|-|-|-|-|-|-|-| 占位
+// |<-------index------>| AVL |G|P|0|A|P|P|U|R|P| 属性
+//                              |S|   |C|W|/|/|
+//                                    |D|T|S|W|
+
+#define PDE_P 0x001
+#define PDE_RW 0x002
+#define PDE_US 0x004
+#define PDE_PWT 0x008
+#define PDE_PCD 0X010
+#define PDE_A 0x020
+// #define PDE_D 0x040
+#define PDE_PS 0x080
+#define PDE_G 0x100
+#define PDE_AVL 0xE00
+
+// |<------ 31~12------>|<------ 11~0 --------->| 比特
+//                      |b a 9 8 7 6 5 4 3 2 1 0|
+// |--------------------|-|-|-|-|-|-|-|-|-|-|-|-| 占位
+// |<-------index------>| AVL |G|P|D|A|P|P|U|R|P| 属性
+//                              |A|   |C|W|/|/|
+//                              |T|   |D|T|S|W|
+#define PTE_P 0x001
+#define PTE_RW 0x002
+#define PTE_US 0x004
+#define PTE_PWT 0x008
+#define PTE_PCD 0X010
+#define PTE_A 0x020
+#define PTE_D 0x040
+#define PTE_PAT 0x080
+#define PTE_G 0x100
+#define PTE_AVL 0xE00
+
 #ifndef ASM
 #include <bits.h>
 #include <types.h>

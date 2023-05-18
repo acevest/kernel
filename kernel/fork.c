@@ -51,6 +51,8 @@ int do_fork(pt_regs_t *regs, unsigned long flags) {
             continue;
         }
 
+        // 这里不用再为每个PDE拷贝一次PageTable，只需要拷贝PageDirectory并将其低于768的写权限去掉
+        // 同时需要修改缺页异常doPageFault的逻辑
         if (PAGE_ALIGN(spde) != 0) {
             dpde = alloc_one_page(0);
             assert(dpde != 0);

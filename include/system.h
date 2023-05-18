@@ -86,6 +86,10 @@ extern char gdtr[6], idtr[6];
 #define VRAM_VADDR_SIZE (16 << 20)
 
 // 最大支持的线性地址空间为1G
+// 这里这样实现是为了简单，与Linux内核实现有显著不同
+// Linux内核还把内存大致分为了 DMA(<16MB), NORMAL(<896MB), HIGHMEM(896~4G)的内存分区(zone)
+// 并且每个分区各一个伙伴算法管理物理页。
+// 正常Linux内核只有1G的寻址空间，正常只能寻址896MB以下的内存，余下的128MB地址空间是留着用来映射高端区域的物理内存的
 #define MAX_SUPT_VADDR_SIZE (1UL << 30)
 
 // 把内核线性地址的最高部分留给显存
