@@ -36,7 +36,8 @@
 
 #define PAGE_SHIFT (12)
 #define PAGE_SIZE (1UL << PAGE_SHIFT)
-#define PAGE_MASK (~((1UL << PAGE_SHIFT) - 1))
+#define PAGE_FLAG_MASK ((1UL << PAGE_SHIFT) - 1)
+#define PAGE_MASK (~PAGE_FLAG_MASK)
 #define PAGE_OFFSET (0xC0000000)
 #define PAGE_PDE_CNT 1024
 #define PAGE_PTE_CNT 1024

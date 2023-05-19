@@ -52,6 +52,58 @@ void do_wp_page(void *addr) {
     int npte = get_npte(addr);
 
     pde_t *page_dir = (pde_t *)pa2va(current->cr3);
+    pde_t *pde = page_dir + npde;
+
+    // 如果是因为PDE被写保护
+    if (*pde & PDE_RW == 0) {
+        // 1. 分配一个页表
+        unsigned long newtbl = alloc_one_page(0);
+        assert(newtbl != 0);
+
+        // 2. 拷贝页表
+        pte_t *oldtbl = pa2va(PAGE_ALIGN(page_dir[npde]));
+        memcpy((void *)newtbl, (void *)oldtbl, PAGE_SIZE);
+
+        // 3. 对所有PTE加上写保护
+        pte_t *pte = (pte_t *)newtbl;
+        for (int i = 0; i < PTECNT_PER_PAGE; i++) {
+            *pte &= ~PTE_RW;
+            pte++;
+        }
+
+        // 4. 记下原PDE的权限
+        unsigned long flags = PAGE_FLAGS(*pde);
+
+        // 5. 设置新的PDE
+        *pde = va2pa(newtbl);
+        *pde |= flags;
+
+        // 6. 解除PDE的写保护
+        *pde |= PDE_RW;
+    }
+
+    pte_t *page_tbl = pa2va(PAGE_ALIGN(page_dir[npde]));
+    pte_t *pte = page_tbl + npte;
+
+    // 如果PTE的位置被写保护
+    if (*pte & PTE_RW == 0) {
+        // 1. 分配一个页表
+        unsigned long newaddr = alloc_one_page(0);
+        assert(newaddr != 0);
+
+        // 2. 拷贝页表
+        pte_t *oldaddr = pa2va(PAGE_ALIGN(page_dir[npde]));
+        memcpy((void *)newaddr, (void *)oldaddr, PAGE_SIZE);
+
+        // 3. 解除PTE的写保护
+        *pte |= PTE_RW;
+    }
+
+#if 0
+    int npde = get_npde(addr);
+    int npte = get_npte(addr);
+
+    pde_t *page_dir = (pde_t *)pa2va(current->cr3);
     pte_t *page_tbl = pa2va(PAGE_ALIGN(page_dir[npde]));
 
     unsigned long wp_pa_addr = PAGE_ALIGN(page_tbl[npte]);
@@ -70,6 +122,7 @@ void do_wp_page(void *addr) {
     }
 
     page_tbl[npte] |= PAGE_WR;
+#endif
 #if 0
     page_tbl[npte] |= PAGE_US;
     page_dir[npde] |= PAGE_WR;
