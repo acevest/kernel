@@ -32,39 +32,45 @@ irq_desc_t no_irq_desc = {.chip = &no_irq_chip, .action = NULL, .status = 0, .de
 
 __attribute__((regparm(1))) void irq_handler(pt_regs_t *regs) {
     unsigned int irq = regs->irq;
-
     if (irq >= NR_IRQS) {
         printk("invalid irq %d\n", irq);
         return;
     }
 
     irq_desc_t *p = irq_desc + irq;
-
     irq_action_t *action = p->action;
 
-    // atomic_inc(&preempt_count);
-    preempt_count++;  // 还没到多处理器，暂时不用atomic_inc
+    // 屏蔽当前中断
+    p->chip->disable(irq);
 
+    // 发送EOI
     p->chip->ack(irq);
 
-    unsigned long irq_flags;
-    irq_save(irq_flags);
+    if (irq_reenter == 0) {
+        // 可以切换到中断栈
+    }
 
+    irq_reenter++;
+
+    // 开中断执行中断处理函数
     enable_irq();
 
     unsigned long esp;
     asm("movl %%esp, %%eax" : "=a"(esp));
-    printl(MPL_PREEMPT, "current %08x cr3 %08x preempt %d esp %08x", current, current->cr3, preempt_count, esp);
+    printl(MPL_PREEMPT, "current %08x cr3 %08x reenter %d esp %08x", current, current->cr3, irq_reenter, esp);
 
     while (action && action->handler) {
         action->handler(irq, regs, action->dev_id);
         action = action->next;
     }
 
-    irq_restore(irq_flags);
-    // atomic_dec(&preempt_count);
-    preempt_count--;
-    enable_irq();
+    // 关全局中断
+    disable_irq();
+
+    irq_reenter--;
+
+    // 解除屏蔽当前中断
+    p->chip->enable(irq);
 }
 
 int request_irq(unsigned int irq, void (*handler)(unsigned int, pt_regs_t *, void *), const char *devname,
