@@ -49,10 +49,10 @@ void __end_wait(wait_queue_head_t *head, wait_queue_t *wq) {
 void sleep_on(wait_queue_head_t *head) {
     DECLARE_WAIT_QUEUE(wait, current);
 
-    current->state = TASK_WAIT;
-
     unsigned long flags;
     irq_save(flags);
+
+    current->state = TASK_WAIT;
 
     list_add_tail(&wait.task_list, &head->task_list);
 
