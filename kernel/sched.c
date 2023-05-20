@@ -168,14 +168,36 @@ unsigned long schedule() {
     // printl(MPL_ROOT, "root:%d [%08x] cnt %u", root_task.pid, &root_task, root_task.cnt);
 
 #if 1
+    bool need_reset_weight = true;
     list_for_each_safe(pos, t, &all_tasks) {
         p = list_entry(pos, task_union, list);
         if (p->state != TASK_READY) {
             continue;
         }
 
-        if (p->weight >= p->priority) {
+        if (p->weight < p->priority) {
+            need_reset_weight = false;
+            break;
+        }
+    }
+
+    if (need_reset_weight) {
+        list_for_each_safe(pos, t, &all_tasks) {
+            p = list_entry(pos, task_union, list);
+            if (p->state != TASK_READY) {
+                continue;
+            }
             p->weight = 0;
+        }
+    }
+
+    list_for_each_safe(pos, t, &all_tasks) {
+        p = list_entry(pos, task_union, list);
+        if (p->state != TASK_READY) {
+            continue;
+        }
+
+        if (p->weight > p->priority) {
             continue;
         }
 
@@ -236,8 +258,8 @@ unsigned long schedule() {
         list_for_each_safe(pos, t, &all_tasks) {
             p = list_entry(pos, task_union, list);
             printl(MPL_TASK_0 + p->pid, " ");  // 清掉上一次显示的 '>'
-            printl(MPL_TASK_0 + p->pid, "%s%4s:%d [%08x] state %s weight %03d sched %u", next == p ? ">" : " ", p->name,
-                   p->pid, p, task_state(p->state), p->weight, p->sched_cnt);
+            printl(MPL_TASK_0 + p->pid, "%s%4s:%d [%08x] state %s weight %03d %03d sched %u", next == p ? ">" : " ",
+                   p->name, p->pid, p, task_state(p->state), p->weight, p->priority, p->sched_cnt);
         }
         context_switch(prev, next);
     }

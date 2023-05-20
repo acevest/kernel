@@ -47,6 +47,42 @@ void kernel_task(char *name, void *entry) {
     printk("kernel[%s] task pid is %d\n", name, pid);
 }
 
+void taskA_entry() {
+    current->priority = 99;
+
+    while (1) {
+        sysc_wait(600);
+
+        for (int i = 0; i < 200; i++) {
+            asm("hlt;");
+        }
+    }
+}
+
+void taskB_entry() {
+    current->priority = 99;
+
+    while (1) {
+        sysc_wait(200);
+
+        for (int i = 0; i < 100; i++) {
+            asm("hlt;");
+        }
+    }
+}
+
+void taskC_entry() {
+    current->priority = 99;
+
+    while (1) {
+        sysc_wait(2);
+
+        for (int i = 0; i < 2; i++) {
+            asm("hlt;");
+        }
+    }
+}
+
 // 从multiboot.S进入这里
 void root_task_entry() {
     sti();
@@ -64,6 +100,10 @@ void root_task_entry() {
     kernel_task("init", init_task_entry);
     kernel_task("disk", disk_task_entry);
     kernel_task("user", user_task_entry);
+
+    kernel_task("tskA", taskA_entry);
+    kernel_task("tskB", taskB_entry);
+    kernel_task("tskC", taskC_entry);
 
     while (1) {
         asm("hlt;");

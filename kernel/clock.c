@@ -13,8 +13,9 @@
 #include <printk.h>
 #include <sched.h>
 #include <system.h>
+#include <wait.h>
 
-static unsigned int jiffies = 0;
+volatile unsigned int jiffies = 0;
 
 unsigned int sys_clock() { return jiffies; }
 
@@ -25,19 +26,19 @@ void clk_handler(unsigned int irq, pt_regs_t *regs, void *dev_id) {
         printl(MPL_CLOCK, "clock irq: %d", jiffies);
     }
 
-    // unsigned long iflags;
-    // irq_save(iflags);
+    unsigned long iflags;
+    irq_save(iflags);
 
     task_union *p = 0;
-    task_union *t = 0;
-    list_for_each_entry_safe(p, t, &delay_tasks, pend) {
-        p->delay_cnt -= p->delay_cnt == 0 ? 0 : 1;
-
-        if (0 == p->delay_cnt) {
+    list_head_t *t = 0;
+    list_head_t *pos = 0;
+    list_for_each_safe(pos, t, &all_tasks) {
+        p = list_entry(pos, task_union, list);
+        if (0 != p->delay_cnt && jiffies > p->delay_cnt && p->state == TASK_WAIT) {
+            p->delay_cnt = 0;
             p->state = TASK_READY;
-            list_del(&p->pend);
         }
     }
 
-    // irq_restore(iflags);
+    irq_restore(iflags);
 }

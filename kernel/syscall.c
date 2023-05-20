@@ -44,6 +44,7 @@ int sysc_none() {
 int sysc_pause(unsigned long tick) { return 0; }
 
 int sysc_test() {
+#if 0
     static unsigned int cnt = 0;
 
     {  // 这一段仅是测试代码
@@ -74,6 +75,7 @@ int sysc_test() {
     //        cnt++, current, cnt);
     // printk("systest cnt %u current %08x cnt %u\n",cnt++, current, cnt);
     return 0;
+#endif
 }
 
 int sysc_debug(unsigned int v) {
