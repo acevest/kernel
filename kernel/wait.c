@@ -12,23 +12,23 @@
 #include <sched.h>
 #include <wait.h>
 
-void init_wait_queue_head(wait_queue_head_t *wqh) { INIT_LIST_HEAD(&wqh->task_list); }
+volatile void init_wait_queue_head(wait_queue_head_t *wqh) { INIT_LIST_HEAD(&wqh->task_list); }
 
-void add_wait_queue(wait_queue_head_t *head, wait_queue_t *wq) {
+volatile void add_wait_queue(wait_queue_head_t *head, wait_queue_t *wq) {
     unsigned long flags;
     irq_save(flags);
     list_add_tail(&wq->task_list, &head->task_list);
     irq_restore(flags);
 }
 
-void del_wait_queue(wait_queue_head_t *head, wait_queue_t *wq) {
+volatile void del_wait_queue(wait_queue_head_t *head, wait_queue_t *wq) {
     unsigned long flags;
     irq_save(flags);
     list_del(&wq->task_list);
     irq_restore(flags);
 }
 
-void prepare_to_wait(wait_queue_head_t *head, wait_queue_t *wq, unsigned int state) {
+volatile void prepare_to_wait(wait_queue_head_t *head, wait_queue_t *wq, unsigned int state) {
     unsigned long flags;
     irq_save(flags);
     if (list_empty(&wq->task_list)) {
@@ -38,7 +38,7 @@ void prepare_to_wait(wait_queue_head_t *head, wait_queue_t *wq, unsigned int sta
     irq_restore(flags);
 }
 
-void __end_wait(wait_queue_head_t *head, wait_queue_t *wq) {
+volatile void __end_wait(wait_queue_head_t *head, wait_queue_t *wq) {
     set_current_state(TASK_READY);
     unsigned long flags;
     irq_save(flags);
@@ -46,7 +46,7 @@ void __end_wait(wait_queue_head_t *head, wait_queue_t *wq) {
     irq_restore(flags);
 }
 
-void sleep_on(wait_queue_head_t *head) {
+volatile void sleep_on(wait_queue_head_t *head) {
     DECLARE_WAIT_QUEUE(wait, current);
 
     unsigned long flags;
@@ -59,9 +59,12 @@ void sleep_on(wait_queue_head_t *head) {
     irq_restore(flags);
 
     schedule();
+
+    // wake_up操作会把wait从heat链表上删除
+    // 所以这里就不用做什么了
 }
 
-void __wake_up(wait_queue_head_t *head, int nr) {
+volatile void __wake_up(wait_queue_head_t *head, int nr) {
     unsigned long flags;
     wait_queue_t *p, *tmp;
     irq_save(flags);
@@ -80,7 +83,7 @@ void __wake_up(wait_queue_head_t *head, int nr) {
     // no schedule() here.
 }
 
-void wake_up(wait_queue_head_t *head) { __wake_up(head, 1); }
+volatile void wake_up(wait_queue_head_t *head) { __wake_up(head, 1); }
 
 #include <irq.h>
 DECLARE_WAIT_QUEUE_HEAD(debug_wq);

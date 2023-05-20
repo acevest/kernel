@@ -192,4 +192,4 @@ Desc gdt[NGDT] __attribute__((__aligned__(8)));
 char gdtr[6] __attribute__((__aligned__(4)));
 char idtr[6] __attribute__((__aligned__(4)));
 
-int irq_reenter = 0x00;
+volatile int irq_reenter = 0x00;

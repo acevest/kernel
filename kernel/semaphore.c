@@ -21,7 +21,7 @@ typedef struct semaphore_waiter {
 
 #define DECLARE_SEMAPHORE_WAITER(name, task) semaphore_waiter_t name = SEMAPHORE_WAITER_INITIALIZER(name, task)
 
-void __down(semaphore_t *s) {
+volatile void __down(semaphore_t *s) {
     task_union *task = current;
     DECLARE_SEMAPHORE_WAITER(waiter, task);
     list_add_tail(&waiter.list, &s->wait_list);
@@ -29,11 +29,7 @@ void __down(semaphore_t *s) {
     while (true) {
         task->state = TASK_WAIT;
 
-        enable_irq();
-
         schedule();
-
-        disable_irq();
 
         if (waiter.up) {
             break;
@@ -41,9 +37,10 @@ void __down(semaphore_t *s) {
     }
 }
 
-void down(semaphore_t *s) {
+volatile void down(semaphore_t *s) {
     unsigned long iflags;
     irq_save(iflags);
+
     if (likely(s->cnt > 0)) {
         s->cnt--;
     } else {
@@ -53,7 +50,7 @@ void down(semaphore_t *s) {
     irq_restore(iflags);
 }
 
-void __up(semaphore_t *s) {
+volatile void __up(semaphore_t *s) {
     semaphore_waiter_t *waiter = list_first_entry(&s->wait_list, semaphore_waiter_t, list);
     list_del(&waiter->list);
     waiter->up = 1;
@@ -61,7 +58,7 @@ void __up(semaphore_t *s) {
     waiter->task->state = TASK_READY;
 }
 
-void up(semaphore_t *s) {
+volatile void up(semaphore_t *s) {
     unsigned long iflags;
     irq_save(iflags);
 
