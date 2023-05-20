@@ -105,6 +105,8 @@ void ide_ata_init() {
 }
 
 void ata_init() {
+    // 初始化hard_disk与中断函数之间的信号量
+
     disk_request_t r;
     r.dev = 0;
     r.buf = (void *)identify;
@@ -144,6 +146,7 @@ void ata_init() {
     }
 }
 
+#if 0
 void ata_read_identify_old(int dev) {  // 这里所用的dev是逻辑编号 ATA0、ATA1下的Master、Salve的dev分别为0,1,2,3
     // void send_disk_request();
     // send_disk_request();
@@ -196,7 +199,7 @@ void ata_read_identify_old(int dev) {  // 这里所用的dev是逻辑编号 ATA0
         printk("%04x ", p[i]);
     }
 }
-
+#endif
 // ATA_CMD_READ_DMA_EXT
 void ata_dma_read_ext(int dev, uint64_t pos, uint16_t count, void *dest) {
     // Intel®

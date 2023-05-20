@@ -21,6 +21,11 @@ typedef struct semaphore_waiter {
 
 #define DECLARE_SEMAPHORE_WAITER(name, task) semaphore_waiter_t name = SEMAPHORE_WAITER_INITIALIZER(name, task)
 
+void semaphore_init(semaphore_t *s, unsigned int v) {
+    s->cnt = v;
+    INIT_LIST_HEAD(&(s->wait_list));
+}
+
 volatile void __down(semaphore_t *s) {
     task_union *task = current;
     DECLARE_SEMAPHORE_WAITER(waiter, task);
@@ -71,3 +76,6 @@ volatile void up(semaphore_t *s) {
 
     irq_restore(iflags);
 }
+
+void mutex_lock(semaphore_t *s) { down(s); }
+void mutex_unlock(semaphore_t *s) { up(s); }

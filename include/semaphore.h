@@ -21,7 +21,11 @@ typedef struct semaphore {
 #define SEMAPHORE_INITIALIZER(name, n) \
     { .cnt = (n), .wait_list = LIST_HEAD_INIT((name).wait_list) }
 
-#define DECLARE_MUTEX(name) semaphore_t name = SEMAPHORE_INITIALIZER(name, 1)
+void semaphore_init(semaphore_t *s, unsigned int v);
 
 void down(semaphore_t *s);
 void up(semaphore_t *s);
+
+#define DECLARE_MUTEX(name) semaphore_t name = SEMAPHORE_INITIALIZER(name, 1)
+void mutex_lock(semaphore_t *);
+void mutex_unlock(semaphore_t *);

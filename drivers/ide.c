@@ -13,8 +13,8 @@
 #include <irq.h>
 
 // #include <printk.h>
+#include <semaphore.h>
 #include <task.h>
-// #include <semaphore.h>
 // #include <string.h>
 // #include <types.h>
 #include <wait.h>
@@ -538,12 +538,16 @@ void ide_irq() { ide_intr_func(); }
 
 // void ata_read_identify(int dev);
 
+#if 1
+extern semaphore_t disk_intr_sem;
+#else
 DECLARE_WAIT_QUEUE_HEAD(ide_wait_queue_head);
 
 void sleep_on_ide() { sleep_on(&ide_wait_queue_head); }
 
 void prepare_to_wait_on_ide() { ide_pci_controller.done = 0; }
 void wait_on_ide() { wait_event(&ide_wait_queue_head, ide_pci_controller.done); }
+#endif
 
 extern void *mbr_buf;
 uint8_t ata_pci_bus_status();
@@ -554,9 +558,12 @@ void ide_irq_handler(unsigned int irq, pt_regs_t *regs, void *devid) {
 
     printk("ide irq %d handler pci status after interrupt: %x\n", irq, ata_pci_bus_status());
 
+#if 1
+    up(&disk_intr_sem);
+#else
     ide_pci_controller.done = 1;
-
     wake_up(&ide_wait_queue_head);
+#endif
 }
 
 void ide_init() {
