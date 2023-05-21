@@ -57,7 +57,7 @@ __attribute__((regparm(1))) void irq_handler(pt_regs_t *regs) {
 
     unsigned long esp;
     asm("movl %%esp, %%eax" : "=a"(esp));
-    printl(MPL_PREEMPT, "current %08x cr3 %08x reenter %d esp %08x", current, current->cr3, irq_reenter, esp);
+    printl(MPL_CURRENT, "current %08x cr3 %08x reenter %d esp %08x", current, current->cr3, irq_reenter, esp);
 
     while (action && action->handler) {
         action->handler(irq, regs, action->dev_id);

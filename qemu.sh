@@ -3,6 +3,7 @@ qemu-system-i386 \
     -boot d \
     -drive file=HD.IMG,format=raw,index=0,media=disk \
     -drive file=kernel.iso,index=1,media=cdrom \
+    -name kernel \
     -s -S \
     &
 

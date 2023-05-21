@@ -220,8 +220,8 @@ void ata_dma_read_ext(int dev, uint64_t pos, uint16_t count, void *dest) {
     // by writing a 0 to this bit. This results in all state information being lost (i.e., master mode
     // operation cannot be stopped and then resumed).
 
-    // 停止DMA，并设置为读(这里的WRITE是对DMA控制器来说)
-    outb(PCI_IDE_CMD_WRITE | PCI_IDE_CMD_STOP, ide_pci_controller.bus_cmd);
+    // 停止DMA
+    outb(PCI_IDE_CMD_STOP, ide_pci_controller.bus_cmd);
 
     // 配置描述符表
     unsigned long dest_paddr = va2pa(dest);
@@ -282,7 +282,7 @@ void ata_dma_read_ext(int dev, uint64_t pos, uint16_t count, void *dest) {
 
     // 指定DMA操作为读取硬盘操作，内核用DMA读取，对硬盘而言是写出
     // 并设置DMA的开始位，开始DMA
-    outb(PCI_IDE_CMD_START, ide_pci_controller.bus_cmd);
+    outb(PCI_IDE_CMD_WRITE | PCI_IDE_CMD_START, ide_pci_controller.bus_cmd);
 }
 
 // TODO

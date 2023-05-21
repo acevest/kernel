@@ -28,6 +28,8 @@ void disk_init() {
     semaphore_init(&disk_intr_sem, 0);
 }
 
+volatile uint32_t disk_request_cnt = 0;
+volatile uint32_t disk_handled_cnt = 0;
 void send_disk_request(disk_request_t *r) {
     if (NULL == r) {
         panic("null disk request");
@@ -47,6 +49,7 @@ void send_disk_request(disk_request_t *r) {
 
 #if 1
     mutex_lock(&disk_request_mutex);
+    disk_request_cnt++;
     list_add_tail(&r->list, &disk_request_queue.list);
     mutex_unlock(&disk_request_mutex);
 #else
@@ -80,6 +83,7 @@ void disk_task_entry() {
         }
 
         list_del(&r->list);
+        disk_handled_cnt++;
         mutex_unlock(&disk_request_mutex);
 #else
         unsigned long flags;

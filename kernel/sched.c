@@ -158,6 +158,10 @@ static const char *task_state(unsigned int state) {
     return s[state];
 }
 
+extern uint32_t disk_request_cnt;
+extern uint32_t disk_handled_cnt;
+extern uint32_t disk_inter_cnt;
+
 unsigned long schedule() {
     task_union *sel = &root_task;
     task_union *p = 0;
@@ -167,10 +171,17 @@ unsigned long schedule() {
     irq_save(iflags);
     // printl(MPL_ROOT, "root:%d [%08x] cnt %u", root_task.pid, &root_task, root_task.cnt);
 
+    printl(MPL_X, "disk req %u consumed %u irq %u", disk_request_cnt, disk_handled_cnt, disk_inter_cnt);
+
 #if 1
     bool need_reset_weight = true;
     list_for_each_safe(pos, t, &all_tasks) {
         p = list_entry(pos, task_union, list);
+
+        if (p == &root_task) {
+            continue;
+        }
+
         if (p->state != TASK_READY) {
             continue;
         }
@@ -193,6 +204,9 @@ unsigned long schedule() {
 
     list_for_each_safe(pos, t, &all_tasks) {
         p = list_entry(pos, task_union, list);
+        if (p == &root_task) {
+            continue;
+        }
         if (p->state != TASK_READY) {
             continue;
         }

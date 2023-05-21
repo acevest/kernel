@@ -553,12 +553,15 @@ extern void *mbr_buf;
 uint8_t ata_pci_bus_status();
 extern ide_pci_controller_t ide_pci_controller;
 
+volatile uint32_t disk_inter_cnt = 0;
+
 void ide_irq_handler(unsigned int irq, pt_regs_t *regs, void *devid) {
     // printk("ide irq handler %d \n", irq);
 
     printk("ide irq %d handler pci status after interrupt: %x\n", irq, ata_pci_bus_status());
 
 #if 1
+    disk_inter_cnt++;
     up(&disk_intr_sem);
 #else
     ide_pci_controller.done = 1;

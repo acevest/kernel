@@ -7,6 +7,7 @@
  * ------------------------------------------------------------------------
  */
 
+#include <disk.h>
 #include <fcntl.h>
 #include <io.h>
 #include <irq.h>
@@ -47,13 +48,66 @@ void kernel_task(char *name, void *entry) {
     printk("kernel[%s] task pid is %d\n", name, pid);
 }
 
+// 测试用的代码
+// 这里存的是下标对应的每个扇区的最后2个字节
+// hexdump -C HD.IMG | less 看的，如果镜像文件有变动需要更新这里
+uint16_t hd_sect_data_fingerprint[] = {
+    0xAA55,  // 0
+    0x0820,  // 1
+    0x4d89,  // 2
+    0xeb1d,  // 3
+    0x1009   // 4
+};
+
+uint64_t debug_sect_nr = 0;
+
+uint64_t get_next_deubug_sect_nr() {
+    debug_sect_nr++;
+#if 0
+    debug_sect_nr %= sizeof(hd_sect_data_fingerprint) / sizeof(uint16_t);
+#else
+    if (debug_sect_nr >= sizeof(hd_sect_data_fingerprint) / sizeof(uint16_t)) {
+        debug_sect_nr = 0;
+    }
+#endif
+    return debug_sect_nr;
+}
+
+void verify_hd_data(uint64_t sect_nr, uint16_t *buf, const char *name) {
+    uint16_t vfp = hd_sect_data_fingerprint[sect_nr];
+
+    uint16_t fp = buf[255];
+
+    if (fp == vfp) {
+        printk("%s verification passed sect %lu fp %04x\n", name, sect_nr, fp);
+    } else {
+        printk("%s verification failed sect %lu fp %04x right %04x\n", name, sect_nr, fp, vfp);
+        panic("verify hd data fail");
+    }
+}
+
+u16 disk_buf1[256];
+u16 disk_buf2[256];
+
 void taskA_entry() {
     current->priority = 99;
 
     while (1) {
-        sysc_wait(600);
+        sysc_wait(7);
 
-        for (int i = 0; i < 200; i++) {
+        uint64_t sect_nr = get_next_deubug_sect_nr();
+        memset(disk_buf1, 0, 512);
+
+        disk_request_t r;
+        r.command = DISK_REQ_READ;
+        r.pos = sect_nr;
+        r.count = 1;
+        r.buf = disk_buf1;
+        send_disk_request(&r);
+
+        verify_hd_data(sect_nr, disk_buf1, current->name);
+
+        for (int i = 0; i < 2; i++) {
             asm("hlt;");
         }
     }
@@ -63,9 +117,19 @@ void taskB_entry() {
     current->priority = 99;
 
     while (1) {
-        sysc_wait(200);
+        sysc_wait(10);
 
-        for (int i = 0; i < 100; i++) {
+        uint64_t sect_nr = get_next_deubug_sect_nr();
+        memset(disk_buf2, 0, 512);
+        disk_request_t r;
+        r.command = DISK_REQ_READ;
+        r.pos = sect_nr;
+        r.count = 1;
+        r.buf = disk_buf2;
+        send_disk_request(&r);
+        verify_hd_data(sect_nr, disk_buf2, current->name);
+
+        for (int i = 0; i < 1; i++) {
             asm("hlt;");
         }
     }
@@ -100,6 +164,10 @@ void root_task_entry() {
     kernel_task("init", init_task_entry);
     kernel_task("disk", disk_task_entry);
     kernel_task("user", user_task_entry);
+
+    // for (int i = 0; i < 100; i++) {
+    //     asm("hlt;");
+    // }
 
     kernel_task("tskA", taskA_entry);
     kernel_task("tskB", taskB_entry);
