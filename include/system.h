@@ -61,8 +61,9 @@ void kfree(void *addr);
     do {                                                                                                        \
         asm("cli;");                                                                                            \
         printk("PANIC:" msg " file:%s function:%s line:%d\n", ##__VA_ARGS__, __FILE__, __FUNCTION__, __LINE__); \
-        while (1)                                                                                               \
-            ;                                                                                                   \
+        while (1) {                                                                                             \
+            asm("hlt");                                                                                         \
+        }                                                                                                       \
     } while (0);
 
 extern char etext, edata, end;
