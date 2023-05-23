@@ -43,8 +43,9 @@ typedef union task_union {
         unsigned long esp;
         unsigned long eip;
 
-        long weight;
-        long priority;
+        uint32_t ticks;
+        uint32_t priority;
+        uint32_t jiffies;
 
         pid_t pid;
         pid_t ppid;
@@ -86,7 +87,7 @@ task_union *find_task(pid_t pid);
 
 #define ROOT_TSK_PID (0)
 
-#define TASK_INIT_WEIGHT 0
+// #define TASK_INIT_WEIGHT 0
 
 #define get_tsk_from_list(p) list_entry((p), Task, list)
 #define del_tsk_from_list(tsk) list_del((&tsk->list))

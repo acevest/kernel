@@ -85,6 +85,8 @@ int do_fork(pt_regs_t *regs, unsigned long flags) {
 
     tsk->pid = get_next_pid();
     tsk->ppid = current->pid;
+    tsk->priority = current->priority;
+    tsk->ticks = tsk->priority;
 
     pt_regs_t *child_regs = ((pt_regs_t *)(TASK_SIZE + (unsigned long)tsk)) - 1;
 
@@ -105,7 +107,6 @@ int do_fork(pt_regs_t *regs, unsigned long flags) {
     printk("tsk %08x child_regs esp %08x esp0 %08x\n", tsk, tsk->esp, tsk->esp0);
 
     tsk->state = TASK_INITING;
-    tsk->weight = TASK_INIT_WEIGHT;
 
     INIT_LIST_HEAD(&tsk->list);
     unsigned long iflags;

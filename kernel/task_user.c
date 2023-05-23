@@ -53,7 +53,7 @@ void __ring3text__ __attribute__((__aligned__(PAGE_SIZE))) ring3_entry() {
 }
 
 void user_task_entry() {
-    current->priority = 90;
+    current->priority = 7;
 
     unsigned long ring3_text_page = va2pa(ring3_entry);
     unsigned long ring3_bss_page = va2pa(alloc_one_page(0));

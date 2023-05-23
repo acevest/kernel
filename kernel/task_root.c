@@ -90,7 +90,7 @@ u16 disk_buf1[256];
 u16 disk_buf2[256];
 
 void taskA_entry() {
-    current->priority = 99;
+    current->priority = 9;
 
     while (1) {
         sysc_wait(7);
@@ -114,7 +114,7 @@ void taskA_entry() {
 }
 
 void taskB_entry() {
-    current->priority = 99;
+    current->priority = 9;
 
     while (1) {
         sysc_wait(10);
@@ -136,7 +136,7 @@ void taskB_entry() {
 }
 
 void taskC_entry() {
-    current->priority = 99;
+    current->priority = 19;
 
     while (1) {
         sysc_wait(2);
@@ -163,7 +163,7 @@ void root_task_entry() {
 
     kernel_task("init", init_task_entry);
     kernel_task("disk", disk_task_entry);
-    kernel_task("user", user_task_entry);
+    // kernel_task("user", user_task_entry);
 
     // for (int i = 0; i < 100; i++) {
     //     asm("hlt;");
@@ -173,6 +173,7 @@ void root_task_entry() {
     kernel_task("tskB", taskB_entry);
     kernel_task("tskC", taskC_entry);
 
+    current->priority = 1;
     while (1) {
         asm("hlt;");
     }

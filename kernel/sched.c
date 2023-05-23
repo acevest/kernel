@@ -56,8 +56,8 @@ void init_root_task() {
     root_task.pid = get_next_pid();
     root_task.ppid = 0;
     root_task.state = TASK_READY;
-    root_task.weight = TASK_INIT_WEIGHT;
-    root_task.priority = 100;
+    root_task.priority = 7;
+    root_task.ticks = root_task.priority;
     strcpy(root_task.name, "root");
 
     list_add(&root_task.list, &all_tasks);
@@ -163,7 +163,8 @@ extern uint32_t disk_handled_cnt;
 extern uint32_t disk_inter_cnt;
 
 unsigned long schedule() {
-    task_union *sel = &root_task;
+    task_union *root = &root_task;
+    task_union *sel = 0;
     task_union *p = 0;
     list_head_t *pos = 0, *t = 0;
 
@@ -174,52 +175,51 @@ unsigned long schedule() {
     printl(MPL_X, "disk req %u consumed %u irq %u", disk_request_cnt, disk_handled_cnt, disk_inter_cnt);
 
 #if 1
-    bool need_reset_weight = true;
     list_for_each_safe(pos, t, &all_tasks) {
         p = list_entry(pos, task_union, list);
-
         if (p == &root_task) {
             continue;
         }
-
         if (p->state != TASK_READY) {
             continue;
         }
 
-        if (p->weight < p->priority) {
-            need_reset_weight = false;
-            break;
+        if (sel == 0) {
+            sel = p;
+        } else if (sel->jiffies >= p->jiffies) {
+            uint32_t delta = sel->jiffies - p->jiffies;
+            if (delta > 3 * p->ticks) {
+                sel = p;
+            }
         }
     }
 
-    if (need_reset_weight) {
+    sel = sel != 0 ? sel : root;
+
+    irq_restore(iflags);
+    sel->sched_cnt++;
+    // printk("%08x %s ticks %d state: %s\n", sel, sel->name, sel->ticks, task_state(sel->state));
+    task_union *prev = current;
+    task_union *next = sel;
+
+    if (prev != next) {
+        // printk("switch to: %s:%d\n", next->name, next->pid);
         list_for_each_safe(pos, t, &all_tasks) {
             p = list_entry(pos, task_union, list);
-            if (p->state != TASK_READY) {
-                continue;
-            }
-            p->weight = 0;
+            printl(MPL_TASK_0 + p->pid, " ");  // 清掉上一次显示的 '>'
+            printl(MPL_TASK_0 + p->pid, "%s%4s:%d [%08x] state %s ticks %03d %02d sched %u", next == p ? ">" : " ",
+                   p->name, p->pid, p, task_state(p->state), p->ticks, p->priority, p->sched_cnt);
         }
-    }
-
-    list_for_each_safe(pos, t, &all_tasks) {
-        p = list_entry(pos, task_union, list);
-        if (p == &root_task) {
-            continue;
-        }
-        if (p->state != TASK_READY) {
-            continue;
-        }
-
-        if (p->weight > p->priority) {
-            continue;
-        }
-
-        if (p->weight < sel->weight) {
-            sel = p;
-        }
+        context_switch(prev, next);
     }
 #else
+    task_union *sel = &root_task;
+    task_union *p = 0;
+    list_head_t *pos = 0, *t = 0;
+
+    unsigned long iflags;
+    irq_save(iflags);
+
     float min_ratio = 1.0;
     bool need_reset_weight = true;
     list_for_each_safe(pos, t, &all_tasks) {
@@ -258,12 +258,11 @@ unsigned long schedule() {
             min_ratio = ratio;
         }
     }
-#endif
 
     irq_restore(iflags);
     sel->sched_cnt++;
-    sel->weight += 13;
-    // printk("%08x %s weight %d state: %s\n", sel, sel->name, sel->weight, task_state(sel->state));
+    sel->ticks += 13;
+    // printk("%08x %s ticks %d state: %s\n", sel, sel->name, sel->ticks, task_state(sel->state));
     task_union *prev = current;
     task_union *next = sel;
 
@@ -272,10 +271,23 @@ unsigned long schedule() {
         list_for_each_safe(pos, t, &all_tasks) {
             p = list_entry(pos, task_union, list);
             printl(MPL_TASK_0 + p->pid, " ");  // 清掉上一次显示的 '>'
-            printl(MPL_TASK_0 + p->pid, "%s%4s:%d [%08x] state %s weight %03d %03d sched %u", next == p ? ">" : " ",
-                   p->name, p->pid, p, task_state(p->state), p->weight, p->priority, p->sched_cnt);
+            printl(MPL_TASK_0 + p->pid, "%s%4s:%d [%08x] state %s ticks %03d %03d sched %u", next == p ? ">" : " ",
+                   p->name, p->pid, p, task_state(p->state), p->ticks, p->priority, p->sched_cnt);
         }
         context_switch(prev, next);
+    }
+#endif
+}
+
+// 必需在关中断的情况下调用
+void try_to_reschedule() {
+    if (irq_reenter != 0) {
+        return;
+    }
+
+    if (0 == current->ticks) {
+        current->ticks = current->priority;
+        schedule();
     }
 }
 

@@ -11,7 +11,7 @@
 #include <types.h>
 
 void init_task_entry() {
-    current->priority = 100;
+    current->priority = 10;
 
     // 继续内核未完成的初始化
     // 这些初始化在开中断的情况下完成
@@ -20,5 +20,6 @@ void init_task_entry() {
 
     while (1) {
         asm("hlt;");
+        sysc_wait(2);
     }
 }

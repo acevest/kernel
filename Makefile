@@ -50,13 +50,16 @@ ${KERNELBIN}: ${OBJS}
 %.c.o: %.c ${HEADER_FILES}
 	${CC} ${CFLAGS} $< -o $@
 
+.PHONY: c
 c:
 	rm -f $(KERNELBIN)
 
+.PHONY: clean
 clean:
 	rm -f $(OBJS)
 	rm -f $(KERNELBIN) $(SYSTEMMAP)
 
+.PHONY: install
 install:
 	cp -p KERNEL.BIN /boot/
 	sync
@@ -65,6 +68,8 @@ install:
 	mkdir -p /kernel/bin/
 	cp bin/hello /kernel/bin/
 	cp bin/shell /kernel/bin/
+
+.PHONY: cp
 cp:
 	cd bin && make clean
 	cd bin && make
