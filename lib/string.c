@@ -78,7 +78,7 @@ int strncmp(const char *a, const char *b, size_t count) {
 char *strcat(char *dest, const char *src) {
     char *tmp = dest;
     while (*dest) dest++;
-    while ((*dest++ = *src++) != '\0')
+    while (*dest++ = *src++)
         ;
     return tmp;
 }

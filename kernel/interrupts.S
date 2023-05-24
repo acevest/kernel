@@ -72,7 +72,13 @@ _irq_handler:
 
     cmpl    $0, (irq_reenter)
     jnz     restore_regs
+
+
     call    schedule
+
+    RESTORE_REGS
+    addl    $4, %esp
+    iret
 
 restore_regs:
     RESTORE_REGS

@@ -61,6 +61,7 @@ void init_root_task() {
     root_task.turn = 0;
     root_task.sched_cnt = 0;
     root_task.sched_keep_cnt = 0;
+    root_task.magic = TASK_MAGIC;
     strcpy(root_task.name, "root");
 
     list_add(&root_task.list, &all_tasks);
@@ -165,11 +166,24 @@ extern uint32_t disk_request_cnt;
 extern uint32_t disk_handled_cnt;
 extern uint32_t disk_inter_cnt;
 
+void debug_print_all_tasks() {
+    task_union *p = 0;
+    list_head_t *pos = 0, *t = 0;
+    printl(MPL_TASK_TITLE, "         NAME     STATE TK/PI TURN       SCHED      KEEP");
+    list_for_each_safe(pos, t, &all_tasks) {
+        p = list_entry(pos, task_union, list);
+        printl(MPL_TASK_0 + p->pid, "%08x%s%4s:%u %s %02u/%02u %-10u %-10u %-10u", p,
+               p->state == TASK_RUNNING ? ">" : " ", p->name, p->pid, task_state(p->state), p->ticks, p->priority,
+               p->turn, p->sched_cnt, p->sched_keep_cnt);
+    }
+}
+
 void schedule() {
     task_union *root = &root_task;
     task_union *sel = 0;
     task_union *p = 0;
     list_head_t *pos = 0, *t = 0;
+    printk("*");
 
     printl(MPL_X, "disk req %u consumed %u irq %u", disk_request_cnt, disk_handled_cnt, disk_inter_cnt);
 
@@ -207,7 +221,21 @@ void schedule() {
             sel = p;
             continue;
         }
-
+#if 1
+        // 考察三个量
+        // priority 越大越优先
+        // jiffies  越小越优先
+        // (priority - ticks) 表示已经使用的量，越小越优先
+        int64_t a = sel->jiffies - sel->priority + (sel->priority - sel->ticks);
+        int64_t b = p->jiffies - p->priority + (p->priority - p->ticks);
+        if (a > b) {
+            sel = p;
+        } else if (a == b) {
+            if (sel->priority < p->priority) {
+                sel = p;
+            }
+        }
+#else
         if (sel->jiffies < p->jiffies) {
             continue;
         }
@@ -223,23 +251,26 @@ void schedule() {
                 sel = p;
             }
         }
+#endif
     }
 
     task_union *prev = current;
     task_union *next = sel != 0 ? sel : root;
 
     next->state = TASK_RUNNING;
+
+#if 1
+    // debug_print_all_tasks();
+#else
+    printl(MPL_TASK_TITLE, "         NAME     STATE TK/PI TURN       SCHED      KEEP");
+    list_for_each_safe(pos, t, &all_tasks) {
+        p = list_entry(pos, task_union, list);
+        printl(MPL_TASK_0 + p->pid, "%08x%s%4s:%d %s %02u/%02d %-10u %-10u %-10u", p, next == p ? ">" : " ", p->name,
+               p->pid, task_state(p->state), p->ticks, p->priority, p->turn, p->sched_cnt, p->sched_keep_cnt);
+    }
+#endif
     if (prev != next) {
         next->sched_cnt++;
-
-        printl(MPL_TASK_TITLE, "         NAME     STATE TK/PI TURN       SCHED      KEEP");
-        list_for_each_safe(pos, t, &all_tasks) {
-            p = list_entry(pos, task_union, list);
-            printl(MPL_TASK_0 + p->pid, "%08x%s%4s:%d %s %02u/%02d %-10u %-10u %-10u", p, next == p ? ">" : " ",
-                   p->name, p->pid, task_state(p->state), p->ticks, p->priority, p->turn, p->sched_cnt,
-                   p->sched_keep_cnt);
-        }
-
         context_switch(prev, next);
     } else {
         // 这里可能是的情况是任务把时间片ticks用完了

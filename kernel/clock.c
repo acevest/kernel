@@ -15,10 +15,13 @@
 #include <system.h>
 #include <wait.h>
 
-volatile uint32_t jiffies = 0;
+volatile uint32_t jiffies = 0;  // TODO uint64
 
 unsigned int sys_clock() { return jiffies; }
 
+void debug_print_all_tasks();
+
+void dump_irq_nr_stack();
 void clk_handler(unsigned int irq, pt_regs_t *regs, void *dev_id) {
     if (jiffies % 100 == 0) {
         printl(MPL_CLOCK, "clock irq: %d", jiffies);
@@ -30,7 +33,16 @@ void clk_handler(unsigned int irq, pt_regs_t *regs, void *dev_id) {
     jiffies++;
 
     current->jiffies = jiffies;
+    // 若clk_handler嵌套在其它中断函数中执行
+    // 那么这个变量减到0时，再退出中clk_handler并不会引起调度
+    //
+
     current->ticks--;
+    if (current->ticks > TASK_MAX_PRIORITY) {
+        printl(MPL_X, "current %08x ticks %u", current, current->ticks);
+        printk("DIE: ");
+        dump_irq_nr_stack();
+    }
     assert(current->ticks <= TASK_MAX_PRIORITY);  // 防止ticks被减到0后再减溢出
 
     task_union *p = 0;
@@ -43,6 +55,11 @@ void clk_handler(unsigned int irq, pt_regs_t *regs, void *dev_id) {
             p->state = TASK_READY;
         }
     }
+
+    debug_print_all_tasks();
+    debug_print_all_tasks();
+    debug_print_all_tasks();
+    debug_print_all_tasks();
 
     irq_restore(iflags);
 }

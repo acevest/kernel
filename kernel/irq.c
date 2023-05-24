@@ -30,6 +30,52 @@ irq_chip_t no_irq_chip = {.name = "none", .enable = enable_no_irq_chip, .disable
 
 irq_desc_t no_irq_desc = {.chip = &no_irq_chip, .action = NULL, .status = 0, .depth = 0};
 
+unsigned int irq_nr_stack[64] = {1, 2, 3, 4};
+uint32_t irq_nr_jiffies_stack[64] = {
+    0,
+};
+int irq_nr_stack_pos = 0;
+
+extern uint32_t jiffies;
+void push_irq_nr_stack(unsigned int irq) {
+    irq_nr_stack[irq_nr_stack_pos] = irq;
+    irq_nr_jiffies_stack[irq_nr_stack_pos] = jiffies;
+    irq_nr_stack_pos++;
+}
+
+unsigned int pop_irq_nr_stack() {
+    irq_nr_stack_pos--;
+    return irq_nr_stack[irq_nr_stack_pos];
+}
+
+int vsprintf(char *buf, const char *fmt, char *args);
+void dump_irq_nr_stack() {
+    if (irq_nr_stack_pos == 0) {
+        printl(MPL_TEST, "irq nr stack empty");
+        return 0;
+    }
+
+    printl(MPL_FUCK, "irq nr stack pos %u", irq_nr_stack_pos);
+
+    char buf[128];
+
+    memset(buf, 0, 128);
+    strcpy(buf, "irq nr stack: ");
+    for (int i = 0; i < irq_nr_stack_pos; i++) {
+        char dbuf[64];
+        vsprintf(dbuf, "%02d:", irq_nr_stack + i);  // 这里vsprintf有坑，坑点在第三个参数不是标准参数
+        strcat(buf, dbuf);
+        vsprintf(dbuf, "%d ", irq_nr_jiffies_stack + i);
+        strcat(buf, dbuf);
+    }
+
+    printl(MPL_TEST, "                                                                               ");
+
+    printl(MPL_TEST, buf);
+    strcat(buf, "\n");
+    printk(buf);
+}
+
 __attribute__((regparm(1))) void irq_handler(pt_regs_t *regs) {
     unsigned int irq = regs->irq;
     if (irq >= NR_IRQS) {
@@ -52,25 +98,45 @@ __attribute__((regparm(1))) void irq_handler(pt_regs_t *regs) {
 
     irq_reenter++;
 
+    assert(current->magic == TASK_MAGIC);
+
+    push_irq_nr_stack(irq);
+
+    // if (irq_nr_stack_pos >= 2) {
+    dump_irq_nr_stack();
+    //     panic("sdfasd");
+    // }
     // 开中断执行中断处理函数
     enable_irq();
-
     unsigned long esp;
     asm("movl %%esp, %%eax" : "=a"(esp));
     printl(MPL_CURRENT, "current %08x cr3 %08x reenter %d esp %08x", current, current->cr3, irq_reenter, esp);
-
+    printk("2: %d r %d t %d\n", irq, irq_reenter, current->ticks);
     while (action && action->handler) {
+        if (irq == 14) {
+            printk("a: %d r %d t %d \n", irq, irq_reenter, current->ticks);
+        }
         action->handler(irq, regs, action->dev_id);
+        if (irq == 14) {
+            printk("b: %d r %d t %d \n", irq, irq_reenter, current->ticks);
+        }
         action = action->next;
     }
 
     // 关全局中断
+    if (irq == 14) {
+        printk("c: %d r %d t %d \n", irq, irq_reenter, current->ticks);
+    }
     disable_irq();
-
+    pop_irq_nr_stack();
     irq_reenter--;
-
+    if (irq == 14) {
+        printk("d: %d r %d t %d \n", irq, irq_reenter, current->ticks);
+    }
     // 解除屏蔽当前中断
     p->chip->enable(irq);
+
+    printk("x: %d r %d t %d \n", irq, irq_reenter, current->ticks);
 }
 
 int request_irq(unsigned int irq, void (*handler)(unsigned int, pt_regs_t *, void *), const char *devname,

@@ -79,7 +79,7 @@ void verify_hd_data(uint64_t sect_nr, uint16_t *buf, const char *name) {
     uint16_t fp = buf[255];
 
     if (fp == vfp) {
-        printk("%s verification passed sect %lu fp %04x\n", name, sect_nr, fp);
+        // printk("%s verification passed sect %lu fp %04x\n", name, sect_nr, fp);
     } else {
         printk("%s verification failed sect %lu fp %04x right %04x\n", name, sect_nr, fp, vfp);
         panic("verify hd data fail");
@@ -139,7 +139,7 @@ void taskC_entry() {
     current->priority = 19;
 
     while (1) {
-        sysc_wait(2);
+        sysc_wait(1);
 
         for (int i = 0; i < 7; i++) {
             asm("hlt;");

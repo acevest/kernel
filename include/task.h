@@ -36,7 +36,9 @@ enum {
 
 #define TASK_NAME_SIZE 32
 
-#define TASK_MAX_PRIORITY 200
+#define TASK_MAX_PRIORITY 99
+
+#define TASK_MAGIC 0xAABBCCDD11223344
 
 typedef union task_union {
     struct {
@@ -71,6 +73,8 @@ typedef union task_union {
         uint32_t sched_keep_cnt;  // 时间片到了，但是没有被换出，又重新执行的次数
 
         uint64_t delay_jiffies;  // debug only
+
+        uint64_t magic;  // 栈溢出标志
     };
 
     unsigned char stack[TASK_SIZE];

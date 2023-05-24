@@ -88,8 +88,9 @@ int do_fork(pt_regs_t *regs, unsigned long flags) {
     tsk->priority = current->priority;
     tsk->ticks = tsk->priority;
     tsk->turn = 0;  //
-    root_task.sched_cnt = 0;
-    root_task.sched_keep_cnt = 0;
+    tsk->sched_cnt = 0;
+    tsk->sched_keep_cnt = 0;
+    assert(tsk->magic == TASK_MAGIC);
 
     pt_regs_t *child_regs = ((pt_regs_t *)(TASK_SIZE + (unsigned long)tsk)) - 1;
 

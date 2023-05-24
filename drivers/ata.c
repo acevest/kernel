@@ -231,8 +231,9 @@ void ata_dma_read_ext(int dev, uint64_t pos, uint16_t count, void *dest) {
     ide_pci_controller.prdt[0].eot = 1;
     outl(va2pa(ide_pci_controller.prdt), ide_pci_controller.bus_prdt);
 
-    printk("paddr: %x prdt: %x %x prdte %x %x\n", dest_paddr, ide_pci_controller.prdt, va2pa(ide_pci_controller.prdt),
-           ide_pci_controller.prdt[0].phys_addr, *(((unsigned int *)ide_pci_controller.prdt) + 1));
+    // printk("paddr: %x prdt: %x %x prdte %x %x\n", dest_paddr, ide_pci_controller.prdt,
+    // va2pa(ide_pci_controller.prdt),
+    //        ide_pci_controller.prdt[0].phys_addr, *(((unsigned int *)ide_pci_controller.prdt) + 1));
 
     // 清除中断位和错误位
     // 这里清除的方式是是设置1后清除
@@ -277,7 +278,7 @@ void ata_dma_read_ext(int dev, uint64_t pos, uint16_t count, void *dest) {
     // Register）的值会一直是5 也就是INTERRUPT和和ACTIVE位是1，正常应该是4，也就是只有INTERRUPT位为1
     // 在bochs中则加不加这一句不会有影响，都能正常读到数据
     unsigned int v = pci_read_config_word(pci_cmd(ide_pci_controller.pci, PCI_COMMAND));
-    printk(" ide pci command %04x\n", v);
+    // printk(" ide pci command %04x\n", v);
     pci_write_config_word(v | PCI_COMMAND_MASTER, pci_cmd(ide_pci_controller.pci, PCI_COMMAND));
 
     // 指定DMA操作为读取硬盘操作，内核用DMA读取，对硬盘而言是写出
