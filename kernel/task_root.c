@@ -141,7 +141,7 @@ void taskC_entry() {
     while (1) {
         sysc_wait(2);
 
-        for (int i = 0; i < 2; i++) {
+        for (int i = 0; i < 7; i++) {
             asm("hlt;");
         }
     }
@@ -163,7 +163,7 @@ void root_task_entry() {
 
     kernel_task("init", init_task_entry);
     kernel_task("disk", disk_task_entry);
-    // kernel_task("user", user_task_entry);
+    kernel_task("user", user_task_entry);
 
     // for (int i = 0; i < 100; i++) {
     //     asm("hlt;");

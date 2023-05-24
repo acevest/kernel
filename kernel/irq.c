@@ -114,3 +114,14 @@ int request_irq(unsigned int irq, void (*handler)(unsigned int, pt_regs_t *, voi
 int open_irq(unsigned int irq) { return irq_desc[irq].chip->enable(irq); }
 
 int close_irq(unsigned int irq) { return irq_desc[irq].chip->disable(irq); }
+
+bool irq_enabled() {
+    uint32_t flags;
+    __asm__ __volatile__("pushfl; popl %0;" : "=a"(flags));
+
+    if ((flags & (1 << 9)) != 0) {
+        return true;
+    }
+
+    return false;
+}

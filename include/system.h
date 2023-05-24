@@ -60,6 +60,8 @@ void kfree(void *addr);
 #define panic(msg, ...)                                                                                         \
     do {                                                                                                        \
         asm("cli;");                                                                                            \
+        printl(MPL_DEBUG, "PANIC:" msg " file:%s function:%s line:%d\n", ##__VA_ARGS__, __FILE__, __FUNCTION__, \
+               __LINE__);                                                                                       \
         printk("PANIC:" msg " file:%s function:%s line:%d\n", ##__VA_ARGS__, __FILE__, __FUNCTION__, __LINE__); \
         while (1) {                                                                                             \
             asm("hlt");                                                                                         \

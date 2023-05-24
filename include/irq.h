@@ -59,6 +59,8 @@ int close_irq(unsigned int irq);
 
 #define irq_save(x) __asm__ __volatile__("pushfl; popl %0; cli" : "=g"(x)::"memory")
 
+bool irq_enabled();
+
 #define irq_restore(x)                                                     \
     do {                                                                   \
         typecheck(unsigned long, x);                                       \

@@ -48,7 +48,7 @@ void __end_wait(wait_queue_head_t *head, wait_queue_t *wq);
 void sleep_on(wait_queue_head_t *head);
 void wake_up(wait_queue_head_t *head);
 
-unsigned long schedule();
+void schedule();
 #define __wait_event(head, condition)                  \
     do {                                               \
         DECLARE_WAIT_QUEUE(__wait, current);           \

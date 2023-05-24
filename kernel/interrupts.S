@@ -53,7 +53,7 @@ DEF_IRQ(0,F)
 .global _irq_handler
 .extern irq_handler
 .extern schedule
-.extern try_to_reschedule
+.extern irq_reenter
 _irq_handler:
     SAVE_REGS
 
@@ -70,8 +70,9 @@ _irq_handler:
     movl    %esp, %eax
     call    irq_handler
 
-
-    call    try_to_reschedule
+    cmpl    $0, (irq_reenter)
+    jnz     restore_regs
+    call    schedule
 
 restore_regs:
     RESTORE_REGS

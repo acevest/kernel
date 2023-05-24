@@ -23,7 +23,7 @@
 #define FORK_USER 0
 #define FORK_KRNL 1
 
-unsigned long schedule();
+void schedule();
 
 void wake_up(wait_queue_head_t *wqh);
 

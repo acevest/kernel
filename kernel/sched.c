@@ -58,6 +58,9 @@ void init_root_task() {
     root_task.state = TASK_READY;
     root_task.priority = 7;
     root_task.ticks = root_task.priority;
+    root_task.turn = 0;
+    root_task.sched_cnt = 0;
+    root_task.sched_keep_cnt = 0;
     strcpy(root_task.name, "root");
 
     list_add(&root_task.list, &all_tasks);
@@ -148,7 +151,7 @@ task_union *find_task(pid_t pid) {
 
 static const char *task_state(unsigned int state) {
     static const char s[][16] = {
-        "  ERROR", "READY", " WAIT", " INIT", " EXIT",
+        "  ERROR", "RUNNING", "  READY", "   WAIT", "   INIT", "   EXIT",
     };
 
     if (state >= TASK_END) {
@@ -162,133 +165,91 @@ extern uint32_t disk_request_cnt;
 extern uint32_t disk_handled_cnt;
 extern uint32_t disk_inter_cnt;
 
-unsigned long schedule() {
+void schedule() {
     task_union *root = &root_task;
     task_union *sel = 0;
     task_union *p = 0;
     list_head_t *pos = 0, *t = 0;
 
-    unsigned long iflags;
-    irq_save(iflags);
-    // printl(MPL_ROOT, "root:%d [%08x] cnt %u", root_task.pid, &root_task, root_task.cnt);
-
     printl(MPL_X, "disk req %u consumed %u irq %u", disk_request_cnt, disk_handled_cnt, disk_inter_cnt);
 
-#if 1
+    assert(current->ticks <= TASK_MAX_PRIORITY);
+    assert(current->priority <= TASK_MAX_PRIORITY);
+
+    unsigned long iflags;
+    irq_save(iflags);
+
+    if (TASK_RUNNING == current->state) {
+        if (0 == current->ticks) {
+            current->turn++;
+            current->ticks = current->priority;
+            current->state = TASK_READY;
+        } else {
+            irq_restore(iflags);
+            return;
+        }
+    }
+
     list_for_each_safe(pos, t, &all_tasks) {
         p = list_entry(pos, task_union, list);
+
+        assert(p->state != TASK_RUNNING);
+
         if (p == &root_task) {
             continue;
         }
-        if (p->state != TASK_READY) {
+
+        if (TASK_READY != p->state) {
             continue;
         }
 
         if (sel == 0) {
             sel = p;
-        } else if (sel->jiffies >= p->jiffies) {
-            uint32_t delta = sel->jiffies - p->jiffies;
-            if (delta > 3 * p->ticks) {
+            continue;
+        }
+
+        if (sel->jiffies < p->jiffies) {
+            continue;
+        }
+
+        uint64_t delta = sel->jiffies - p->jiffies;
+
+        if (sel->priority <= p->priority) {
+            if (delta > (1 * p->ticks)) {
+                sel = p;
+            }
+        } else if (sel->priority > p->priority) {
+            if (delta > (5 * p->ticks)) {
                 sel = p;
             }
         }
     }
 
-    sel = sel != 0 ? sel : root;
-
-    irq_restore(iflags);
-    sel->sched_cnt++;
-    // printk("%08x %s ticks %d state: %s\n", sel, sel->name, sel->ticks, task_state(sel->state));
     task_union *prev = current;
-    task_union *next = sel;
+    task_union *next = sel != 0 ? sel : root;
 
+    next->state = TASK_RUNNING;
     if (prev != next) {
-        // printk("switch to: %s:%d\n", next->name, next->pid);
+        next->sched_cnt++;
+
+        printl(MPL_TASK_TITLE, "         NAME     STATE TK/PI TURN       SCHED      KEEP");
         list_for_each_safe(pos, t, &all_tasks) {
             p = list_entry(pos, task_union, list);
-            printl(MPL_TASK_0 + p->pid, " ");  // 清掉上一次显示的 '>'
-            printl(MPL_TASK_0 + p->pid, "%s%4s:%d [%08x] state %s ticks %03d %02d sched %u", next == p ? ">" : " ",
-                   p->name, p->pid, p, task_state(p->state), p->ticks, p->priority, p->sched_cnt);
+            printl(MPL_TASK_0 + p->pid, "%08x%s%4s:%d %s %02u/%02d %-10u %-10u %-10u", p, next == p ? ">" : " ",
+                   p->name, p->pid, task_state(p->state), p->ticks, p->priority, p->turn, p->sched_cnt,
+                   p->sched_keep_cnt);
         }
+
         context_switch(prev, next);
-    }
-#else
-    task_union *sel = &root_task;
-    task_union *p = 0;
-    list_head_t *pos = 0, *t = 0;
-
-    unsigned long iflags;
-    irq_save(iflags);
-
-    float min_ratio = 1.0;
-    bool need_reset_weight = true;
-    list_for_each_safe(pos, t, &all_tasks) {
-        p = list_entry(pos, task_union, list);
-        if (p->state != TASK_READY) {
-            continue;
-        }
-        if (p->weight < p->priority) {
-            need_reset_weight = false;
-            break;
-        }
+    } else {
+        // 这里可能是的情况是任务把时间片ticks用完了
+        // 被设置成READY
+        // 重新高度，还是选中了该任务
+        next->sched_keep_cnt++;
     }
 
-    if (need_reset_weight) {
-        list_for_each_safe(pos, t, &all_tasks) {
-            p = list_entry(pos, task_union, list);
-            if (p->state != TASK_READY) {
-                continue;
-            }
-            p->weight = 0;
-        }
-    }
-
-    list_for_each_safe(pos, t, &all_tasks) {
-        p = list_entry(pos, task_union, list);
-
-        if (p->state != TASK_READY) {
-            continue;
-        }
-
-        // 貌似在Mac的M1上的qemu执行这一句会有问题
-        // 所以暂时把这整个逻辑注释掉，写了个简单的替代算法
-        float ratio = (float)(p->weight * 1.0) / (p->priority * 1.0);
-        if (ratio < min_ratio) {
-            sel = p;
-            min_ratio = ratio;
-        }
-    }
-
+    assert(current->state == TASK_RUNNING);
     irq_restore(iflags);
-    sel->sched_cnt++;
-    sel->ticks += 13;
-    // printk("%08x %s ticks %d state: %s\n", sel, sel->name, sel->ticks, task_state(sel->state));
-    task_union *prev = current;
-    task_union *next = sel;
-
-    if (prev != next) {
-        // printk("switch to: %s:%d\n", next->name, next->pid);
-        list_for_each_safe(pos, t, &all_tasks) {
-            p = list_entry(pos, task_union, list);
-            printl(MPL_TASK_0 + p->pid, " ");  // 清掉上一次显示的 '>'
-            printl(MPL_TASK_0 + p->pid, "%s%4s:%d [%08x] state %s ticks %03d %03d sched %u", next == p ? ">" : " ",
-                   p->name, p->pid, p, task_state(p->state), p->ticks, p->priority, p->sched_cnt);
-        }
-        context_switch(prev, next);
-    }
-#endif
-}
-
-// 必需在关中断的情况下调用
-void try_to_reschedule() {
-    if (irq_reenter != 0) {
-        return;
-    }
-
-    if (0 == current->ticks) {
-        current->ticks = current->priority;
-        schedule();
-    }
 }
 
 void debug_sched() {

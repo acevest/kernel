@@ -31,14 +31,15 @@ void clk_handler(unsigned int irq, pt_regs_t *regs, void *dev_id) {
 
     current->jiffies = jiffies;
     current->ticks--;
+    assert(current->ticks <= TASK_MAX_PRIORITY);  // 防止ticks被减到0后再减溢出
 
     task_union *p = 0;
     list_head_t *t = 0;
     list_head_t *pos = 0;
     list_for_each_safe(pos, t, &all_tasks) {
         p = list_entry(pos, task_union, list);
-        if (0 != p->delay_cnt && jiffies > p->delay_cnt && p->state == TASK_WAIT) {
-            p->delay_cnt = 0;
+        if (0 != p->delay_jiffies && jiffies > p->delay_jiffies && p->state == TASK_WAIT) {
+            p->delay_jiffies = 0;
             p->state = TASK_READY;
         }
     }

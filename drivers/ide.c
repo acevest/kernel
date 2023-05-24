@@ -558,7 +558,7 @@ volatile uint32_t disk_inter_cnt = 0;
 void ide_irq_handler(unsigned int irq, pt_regs_t *regs, void *devid) {
     // printk("ide irq handler %d \n", irq);
 
-    printk("ide irq %d handler pci status after interrupt: %x\n", irq, ata_pci_bus_status());
+    printk("ide irq %d handler pci status: 0x%02x\n", irq, ata_pci_bus_status());
 
 #if 1
     disk_inter_cnt++;

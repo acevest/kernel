@@ -58,7 +58,7 @@ int sysc_test() {
             return 0;
         }
 
-        current->delay_cnt = root_task.sched_cnt % 40;
+        current->delay_jiffies = root_task.sched_cnt % 40;
 
         unsigned long iflags;
         irq_save(iflags);

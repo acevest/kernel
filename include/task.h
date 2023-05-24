@@ -26,6 +26,7 @@
 
 enum {
     TASK_UNUSED,
+    TASK_RUNNING,
     TASK_READY,
     TASK_WAIT,
     TASK_INITING,
@@ -34,6 +35,8 @@ enum {
 };
 
 #define TASK_NAME_SIZE 32
+
+#define TASK_MAX_PRIORITY 200
 
 typedef union task_union {
     struct {
@@ -44,8 +47,9 @@ typedef union task_union {
         unsigned long eip;
 
         uint32_t ticks;
+        uint32_t turn;  // 时间片用完次数
         uint32_t priority;
-        uint32_t jiffies;
+        uint64_t jiffies;
 
         pid_t pid;
         pid_t ppid;
@@ -63,9 +67,10 @@ typedef union task_union {
 
         wait_queue_head_t wait;
 
-        unsigned int sched_cnt;
+        uint32_t sched_cnt;       // 被调度换上CPU的次数
+        uint32_t sched_keep_cnt;  // 时间片到了，但是没有被换出，又重新执行的次数
 
-        int delay_cnt;  // debug only
+        uint64_t delay_jiffies;  // debug only
     };
 
     unsigned char stack[TASK_SIZE];
