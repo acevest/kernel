@@ -59,6 +59,7 @@ void init_root_task() {
     root_task.priority = 7;
     root_task.ticks = root_task.priority;
     root_task.turn = 0;
+    root_task.need_resched = 0;
     root_task.sched_cnt = 0;
     root_task.sched_keep_cnt = 0;
     root_task.magic = TASK_MAGIC;
@@ -150,7 +151,7 @@ task_union *find_task(pid_t pid) {
     return p;
 }
 
-static const char *task_state(unsigned int state) {
+const char *task_state(unsigned int state) {
     static const char s[][16] = {
         "  ERROR", "RUNNING", "  READY", "   WAIT", "   INIT", "   EXIT",
     };
@@ -183,7 +184,6 @@ void schedule() {
     task_union *sel = 0;
     task_union *p = 0;
     list_head_t *pos = 0, *t = 0;
-    printk("*");
 
     printl(MPL_X, "disk req %u consumed %u irq %u", disk_request_cnt, disk_handled_cnt, disk_inter_cnt);
 
@@ -193,25 +193,24 @@ void schedule() {
     unsigned long iflags;
     irq_save(iflags);
 
-    if (TASK_RUNNING == current->state) {
-        if (0 == current->ticks) {
-            current->turn++;
-            current->ticks = current->priority;
-            current->state = TASK_READY;
-        } else {
-            irq_restore(iflags);
-            return;
-        }
+    if (0 == current->ticks) {
+        current->turn++;
+        current->ticks = current->priority;
+        current->state = TASK_READY;
     }
 
+    // printk("-----\n");
     list_for_each_safe(pos, t, &all_tasks) {
         p = list_entry(pos, task_union, list);
 
-        assert(p->state != TASK_RUNNING);
+        // printk("%s state: %s ticks %u\n", current->name, task_state(current->state), current->ticks);
+        // printk("%s state: %s\n", p->name, task_state(p->state));
 
         if (p == &root_task) {
             continue;
         }
+
+        assert(p->state != TASK_RUNNING);
 
         if (TASK_READY != p->state) {
             continue;

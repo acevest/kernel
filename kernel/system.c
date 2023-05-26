@@ -107,13 +107,14 @@ void setup_irqs() {
 
     void kbd_handler(unsigned int irq, pt_regs_t *regs, void *dev_id);
     void clk_handler(unsigned int irq, pt_regs_t *regs, void *dev_id);
+    void clk_bh_handler();
 
-    request_irq(0x00, clk_handler, "Intel 8254", "Clock Chip");
-    request_irq(0x01, kbd_handler, "Intel 8042", "PS/2 Keyboard");
+    request_irq(0x00, clk_handler, clk_bh_handler, "Intel 8254", "Clock Chip");
+    request_irq(0x01, kbd_handler, NULL, "Intel 8042", "PS/2 Keyboard");
     // request_irq(0x0E, default_ide_irq_handler, "hard", "IDE");
     for (int i = 0; i < 16; i++) {
         if (i != 0 && i != 1 && i != 10 && i != 14) {
-            request_irq(i, default_irq_handler, "default", "default");
+            request_irq(i, default_irq_handler, NULL, "default", "default");
         }
     }
 
@@ -192,4 +193,4 @@ Desc gdt[NGDT] __attribute__((__aligned__(8)));
 char gdtr[6] __attribute__((__aligned__(4)));
 char idtr[6] __attribute__((__aligned__(4)));
 
-volatile int irq_reenter = 0x00;
+volatile int reenter = -1;

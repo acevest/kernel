@@ -19,7 +19,7 @@ void init_task_entry() {
     setup_under_irq();
 
     while (1) {
-        asm("hlt;");
+        asm("sti;hlt;");
         sysc_wait(2);
     }
 }

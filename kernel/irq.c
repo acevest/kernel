@@ -52,10 +52,10 @@ int vsprintf(char *buf, const char *fmt, char *args);
 void dump_irq_nr_stack() {
     if (irq_nr_stack_pos == 0) {
         printl(MPL_TEST, "irq nr stack empty");
-        return 0;
+        return;
     }
 
-    printl(MPL_FUCK, "irq nr stack pos %u", irq_nr_stack_pos);
+    printl(MPL_TEST0, "irq nr stack pos %u", irq_nr_stack_pos);
 
     char buf[128];
 
@@ -79,12 +79,14 @@ void dump_irq_nr_stack() {
 __attribute__((regparm(1))) void irq_handler(pt_regs_t *regs) {
     unsigned int irq = regs->irq;
     if (irq >= NR_IRQS) {
-        printk("invalid irq %d\n", irq);
-        return;
+        panic("invalid irq %d\n", irq);
     }
 
     irq_desc_t *p = irq_desc + irq;
     irq_action_t *action = p->action;
+
+    assert(irq_disabled());
+    reenter++;
 
     // 屏蔽当前中断
     p->chip->disable(irq);
@@ -92,55 +94,87 @@ __attribute__((regparm(1))) void irq_handler(pt_regs_t *regs) {
     // 发送EOI
     p->chip->ack(irq);
 
-    if (irq_reenter == 0) {
-        // 可以切换到中断栈
-    }
-
-    irq_reenter++;
-
     assert(current->magic == TASK_MAGIC);
 
+#if 0
     push_irq_nr_stack(irq);
 
     // if (irq_nr_stack_pos >= 2) {
     dump_irq_nr_stack();
     //     panic("sdfasd");
     // }
+#endif
+
+#if 0
     // 开中断执行中断处理函数
     enable_irq();
+#endif
+
+#if 1
     unsigned long esp;
     asm("movl %%esp, %%eax" : "=a"(esp));
-    printl(MPL_CURRENT, "current %08x cr3 %08x reenter %d esp %08x", current, current->cr3, irq_reenter, esp);
-    printk("2: %d r %d t %d\n", irq, irq_reenter, current->ticks);
+    printl(MPL_CURRENT, "current %08x cr3 %08x reenter %d esp %08x %u", current, current->cr3, reenter, esp,
+           current->ticks);
+#endif
+
     while (action && action->handler) {
-        if (irq == 14) {
-            printk("a: %d r %d t %d \n", irq, irq_reenter, current->ticks);
-        }
         action->handler(irq, regs, action->dev_id);
-        if (irq == 14) {
-            printk("b: %d r %d t %d \n", irq, irq_reenter, current->ticks);
-        }
         action = action->next;
     }
 
+#if 0
     // 关全局中断
-    if (irq == 14) {
-        printk("c: %d r %d t %d \n", irq, irq_reenter, current->ticks);
-    }
     disable_irq();
+#endif
+
+#if 0
     pop_irq_nr_stack();
-    irq_reenter--;
-    if (irq == 14) {
-        printk("d: %d r %d t %d \n", irq, irq_reenter, current->ticks);
-    }
+#endif
+
     // 解除屏蔽当前中断
     p->chip->enable(irq);
 
-    printk("x: %d r %d t %d \n", irq, irq_reenter, current->ticks);
+    // 代表当前中断程序打断了前一个中断程序的“开中断处理的底半部分逻辑”
+    // 即前一个中断处理尚未完全完成
+    assert(irq_disabled());
+    if (reenter != 0) {
+        reenter--;
+        return;
+    }
+    // --以上逻辑CPU处于中断禁止状态--------------------------
+
+    // 此处执行中断函数的下半部分逻辑，开中断执行
+    {
+        enable_irq();
+
+        action = p->action;
+        while (action) {
+            if (action->bh_handler != NULL) {
+                action->bh_handler();
+            }
+            action = action->next;
+        }
+
+        disable_irq();
+    }
+
+    // --以下逻辑CPU处于中断禁止状态--------------------------
+    assert(irq_disabled());
+    assert(reenter == 0);
+    reenter--;
+    assert(reenter == -1);
+
+    // 考察如果不需要调度程序，直接退出
+    if (current->ticks != 0) {
+        return;
+    }
+
+    // 如果需要调度程序
+    schedule();
 }
 
-int request_irq(unsigned int irq, void (*handler)(unsigned int, pt_regs_t *, void *), const char *devname,
-                void *dev_id) {
+int request_irq(unsigned int irq, void (*handler)(unsigned int, pt_regs_t *, void *), void (*bh_handler)(),
+                const char *devname, void *dev_id) {
     irq_action_t *p;
 
     if (irq >= NR_IRQS) {
@@ -167,6 +201,7 @@ int request_irq(unsigned int irq, void (*handler)(unsigned int, pt_regs_t *, voi
     p->dev_name = devname;
     p->dev_id = dev_id;
     p->handler = handler;
+    p->bh_handler = bh_handler;
     p->next = NULL;
     if (irq_desc[irq].action != NULL) {
         p->next = irq_desc[irq].action;
@@ -191,3 +226,5 @@ bool irq_enabled() {
 
     return false;
 }
+
+bool irq_disabled() { return !irq_enabled(); }

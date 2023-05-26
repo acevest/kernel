@@ -53,6 +53,8 @@ typedef union task_union {
         uint32_t priority;
         uint64_t jiffies;
 
+        volatile int need_resched;
+
         pid_t pid;
         pid_t ppid;
         volatile unsigned int state;

@@ -270,7 +270,7 @@ void init_task_entry();
 void disk_task_entry();
 void user_task_entry();
 
-extern volatile int irq_reenter;
+extern volatile int reenter;
 #endif
 
 #endif  //_SYSTEM_H

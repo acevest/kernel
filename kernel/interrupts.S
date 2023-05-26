@@ -52,8 +52,6 @@ DEF_IRQ(0,F)
 
 .global _irq_handler
 .extern irq_handler
-.extern schedule
-.extern irq_reenter
 _irq_handler:
     SAVE_REGS
 
@@ -69,18 +67,7 @@ _irq_handler:
 
     movl    %esp, %eax
     call    irq_handler
-
-    cmpl    $0, (irq_reenter)
-    jnz     restore_regs
-
-
-    call    schedule
-
-    RESTORE_REGS
-    addl    $4, %esp
-    iret
-
-restore_regs:
+    
     RESTORE_REGS
     addl    $4, %esp
     iret

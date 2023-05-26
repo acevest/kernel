@@ -33,7 +33,7 @@ enum {
     MPL_IDE,
     MPL_IDE_INTR,
     MPL_CURRENT,
-    MPL_FUCK,
+    MPL_TEST0,
     MPL_TEST,
     MPL_X,
     MPL_DEBUG,

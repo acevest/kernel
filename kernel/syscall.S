@@ -27,13 +27,14 @@
 .global syscall_entry
 .global ret_from_fork_user
 .global ret_from_fork_krnl
+.extern reenter
 //.global syscall_exit
 
 syscall_entry:
 #if FIX_SYSENTER_ESP_MODE
     movl    (%esp),%esp 
 #endif
-
+    
     // sysenter have cleared IF, and sysexit will not set IF.
     sti
 

@@ -576,7 +576,7 @@ void ide_init() {
     void ide_ata_init();
     ide_ata_init();
 
-    request_irq(0x0E, ide_irq_handler, "hard", "IDE");
+    request_irq(0x0E, ide_irq_handler, NULL, "hard", "IDE");
 
     // init_pci_controller(0x0106);
     init_pci_controller(0x0101);

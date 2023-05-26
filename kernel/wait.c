@@ -130,7 +130,7 @@ int sysc_wait(unsigned long cnt) {
     irq_save(flags);
     current->state = TASK_WAIT;
     current->delay_jiffies = jiffies + cnt;
-
+    list_add(&current->pend, &delay_tasks);
     irq_restore(flags);
 
     schedule();
