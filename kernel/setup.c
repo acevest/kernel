@@ -82,7 +82,7 @@ void setup_kernel() {
 
     cnsl_init();
 
-    printl(MPL_TITLE, "                                 SYSTEM MONITOR");
+    printl(MPL_TITLE, "                                 KERNEL MONITOR");
     printl(MPL_ROOTDEV, "root device %08x", system.root_dev);
 
     setup_tasks();

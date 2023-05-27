@@ -196,6 +196,9 @@ void schedule() {
     if (0 == current->ticks) {
         current->turn++;
         current->ticks = current->priority;
+    }
+
+    if (current->state == TASK_RUNNING) {
         current->state = TASK_READY;
     }
 

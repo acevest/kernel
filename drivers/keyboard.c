@@ -76,7 +76,7 @@ void kbd_debug(unsigned char scan_code) {
     printl(MPL_KEYBOARD, "keyboard irq: %d scan code %02x", kbd_cnt++, scan_code);
 
     if (scan_code == 0x01) {  // Esc
-        reboot();
+        // reboot();
     }
 
     printd("[%02x]", scan_code);
