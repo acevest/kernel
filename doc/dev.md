@@ -3,6 +3,86 @@
 这个文件主要用来记录特定版本的代码存在的主要问题，及修改方向。
 
 
+## 92ca4828ee74f800ba3bdd132f162a739075d9f2 版本问题
+
+这个版本的问题表现是运行一段时间后，会在`clock_bh_handler`的`assert(p->state == TASK_WAIT);`处断言失败。经分析问题出在`sysc_wait`处。
+
+需要指明的前提是，目前版本代码在系统调用中上下文中还没有添加抢占相关的逻辑。
+
+
+```c
+128 int sysc_wait(unsigned long cnt) {
+129     unsigned long flags;
+130     irq_save(flags);
+131     current->state = TASK_WAIT;
+132     current->delay_jiffies = jiffies + cnt;
+133     list_add(&current->pend, &delay_tasks);
+134     irq_restore(flags);
+135 
+136     schedule();
+137 }
+```
+
+```c
+182 void schedule() {
+        ......
+193     unsigned long iflags;
+194     irq_save(iflags);
+195 
+196     if (0 == current->ticks) {
+197         current->turn++;
+198         current->ticks = current->priority;
+199         current->state = TASK_READY;
+200     }
+```
+
+这段代码在第`sysc_wait:134`行开中断，在`schedule:193`处再关中断。那么中断程序完全可能在这两个点之间中断这个逻辑，再叠加上ticks被减到`0`需要重新调度的条件就会出现该问题。
+
+问题路径：
+
+1. `current->ticks == 1`
+2. 程序执行到`sysc_wait:134`和`schedule:193`之间
+3. 时钟中断到达且时钟中断没有嵌套在其它中断的下半部分逻辑中
+4. 时钟中断将`current-ticks`减`1`至`0`
+5. 在时钟中断退出前调用`schedule`,
+6. `schedule`在判断到`current->ticks == 0`时无视其`TASK_WAIT`的状态，将其设置为`TASK_READY`
+7. 再次时钟中断到达，判断到睡眠队列里出现了`TASK_READY`状态的任务。
+
+### 修改方案1
+
+修改逻辑为在`schedule`完成前，不允许中断。
+
+```c
+int sysc_wait(unsigned long cnt) {
+    unsigned long flags;
+    irq_save(flags);
+    current->state = TASK_WAIT;
+    current->delay_jiffies = jiffies + cnt;
+    list_add(&current->pend, &delay_tasks);
+
+    schedule();
+
+    irq_restore(flags);
+}
+```
+
+### 修改方案2
+
+在`schedule`的逻辑加入只对`TASK_RUNNING`改成`TASK_READY`。
+
+```c
+    if (0 == current->ticks) {
+        current->turn++;
+        current->ticks = current->priority;
+    }
+
+    if (current->state == TASK_RUNNING) {
+        current->state = TASK_READY;
+    }
+```
+
+目前准备采用方案2修复。
+
 ## 001073af2176de114d8588124d665aad2b4f2995 版本问题
 
 ### 问题表现
