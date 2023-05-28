@@ -10,7 +10,7 @@
 #include <system.h>
 #include <types.h>
 int sysc_wait(unsigned long cnt);
-kernel / task_init.c void init_task_entry() {
+void init_task_entry() {
     current->priority = 10;
 
     // 继续内核未完成的初始化

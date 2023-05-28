@@ -71,6 +71,10 @@ void kbd_handler(unsigned int irq, pt_regs_t *regs, void *dev_id) {
     cnsl_kbd_write(ch);
 }
 
+extern tty_t default_tty;
+extern tty_t monitor_tty;
+extern tty_t debug_tty;
+
 void kbd_debug(unsigned char scan_code) {
     static unsigned long kbd_cnt = 0;
     printl(MPL_KEYBOARD, "keyboard irq: %d scan code %02x", kbd_cnt++, scan_code);
@@ -81,14 +85,13 @@ void kbd_debug(unsigned char scan_code) {
 
     printd("[%02x]", scan_code);
 
-    // if (scan_code == 0x3B)  // F1
-    //     vga_switch(0);
-    // if (scan_code == 0x3C)  // F2
-    //     vga_switch(1);
-    // if (scan_code == 0x3D)  // F3
-    //     vga_switch(2);
-    // if (scan_code == 0x3E)  // F4
-    //     vga_switch(3);
+    if (scan_code == 0x3B) {  // F1
+        tty_switch(&default_tty);
+    } else if (scan_code == 0x3C) {  // F2
+        tty_switch(&monitor_tty);
+    } else if (scan_code == 0x3D) {  // F3
+        tty_switch(&debug_tty);
+    }
 
     if (scan_code == 0x3F)  // F5
         debug_wait_queue_put(0);
@@ -104,7 +107,6 @@ void kbd_debug(unsigned char scan_code) {
         ata_test(0);
     }
     if (scan_code == 0x44) {  // F10
-
         void ata_send_read_identify_cmd(int dev);
         ata_send_read_identify_cmd(0);
     }
@@ -116,8 +118,6 @@ void kbd_debug(unsigned char scan_code) {
             ;
     }
 
-    extern tty_t default_tty;
-    extern tty_t monitor_tty;
     if (scan_code == 0x58) {  // F12
         current_tty = current_tty != &default_tty ? &default_tty : &monitor_tty;
         tty_switch(current_tty);

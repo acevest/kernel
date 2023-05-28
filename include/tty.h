@@ -13,10 +13,13 @@
 #define TTY_BG_BLINK 0b1000
 
 #define TTY_BLACK 0b0000
-#define TTY_WHITE 0b0111
-#define TTY_RED 0b0100
-#define TTY_GREEN 0b0010
 #define TTY_BLUE 0b0001
+#define TTY_GREEN 0b0010
+#define TTY_CYAN 0b0011
+#define TTY_RED 0b0100
+#define TTY_PURPLE 0b101
+#define TTY_YELLOW 0b110
+#define TTY_WHITE 0b0111
 
 typedef struct tty {
     char name[32];

@@ -85,8 +85,8 @@ void init_ttys() {
     current_tty = &default_tty;
 
     init_tty(&debug_tty, "tty.debug", VADDR + 7 * TTY_VRAM_SIZE);
-    debug_tty.fg_color = TTY_BLACK;
-    debug_tty.bg_color = TTY_RED;
+    debug_tty.fg_color = TTY_FG_HIGHLIGHT | TTY_WHITE;
+    debug_tty.bg_color = TTY_CYAN;
     tty_clear(&debug_tty);
 }
 
