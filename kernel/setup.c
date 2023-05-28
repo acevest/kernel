@@ -14,7 +14,6 @@
  *--------------------------------------------------------------------------
  */
 #include <bits.h>
-#include <io.h>
 #include <printk.h>
 #include <system.h>
 #include <tty.h>
@@ -23,6 +22,7 @@ extern void init_mm();
 extern void setup_gdt();
 extern void setup_idt();
 extern void setup_gate();
+void setup_i8253(uint16_t hz);
 extern void detect_cpu();
 extern void setup_sysc();
 extern void setup_pci();
@@ -36,16 +36,6 @@ extern void setup_ext2();
 extern void reboot();
 extern void cnsl_init();
 extern void init_ttys();
-
-#define HZ 100
-#define CLOCK_TICK_RATE 1193180
-#define LATCH ((CLOCK_TICK_RATE + HZ / 2) / HZ)
-
-void setup_i8253() {
-    outb_p(0x34, 0x43);
-    outb_p(LATCH & 0xFF, 0x40);
-    outb(LATCH >> 8, 0x40);
-}
 
 #define VERSION "0.3.1"
 const char *version = "Kernel version " VERSION " @ " BUILDER
@@ -73,10 +63,9 @@ void setup_kernel() {
     setup_gdt();
     setup_idt();
     setup_gate();
-
-    setup_i8253();
-
     set_tss();
+
+    setup_i8253(20);
 
     setup_sysc();
 
@@ -96,7 +85,7 @@ void setup_kernel() {
     printk(version);
 
     extern tty_t monitor_tty;
-    // tty_switch(&monitor_tty);
+    tty_switch(&monitor_tty);
 
     void ide_init();
     ide_init();
