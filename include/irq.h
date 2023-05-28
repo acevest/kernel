@@ -32,7 +32,6 @@ typedef struct irq_chip {
 typedef struct irqaction {
     // void (*handler)(pt_regs_t * regs, unsigned int irq);
     void (*handler)(unsigned int irq, pt_regs_t *regs, void *dev_id);
-    void (*bh_handler)();
     const char *dev_name;
     void *dev_id;
     struct irqaction *next;
@@ -45,13 +44,19 @@ typedef struct irq_desc {
     unsigned int depth;
 } irq_desc_t;
 
+typedef struct irq_bh_action {
+    void (*handler)();
+    struct irq_bh_action *next;
+} irq_bh_action_t;
+
 extern irq_chip_t i8259_chip;
 extern irq_desc_t irq_desc[];
 extern irq_desc_t no_irq_desc;
 int request_irq(unsigned int irq,
                 // void (*handler)(pt_regs_t *, unsigned int),
-                void (*handler)(unsigned int, pt_regs_t *, void *), void (*bh_handler)(), const char *devname,
-                void *dev_id);
+                void (*handler)(unsigned int, pt_regs_t *, void *), const char *devname, void *dev_id);
+
+void add_irq_bh_handler(void (*handler)());
 
 int open_irq(unsigned int irq);
 int close_irq(unsigned int irq);

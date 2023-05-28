@@ -23,6 +23,7 @@ unsigned int sys_clock() { return jiffies; }
 void debug_print_all_tasks();
 
 void dump_irq_nr_stack();
+void clk_bh_handler();
 void clk_handler(unsigned int irq, pt_regs_t *regs, void *dev_id) {
     // if (jiffies % 100 == 0) {
     printl(MPL_CLOCK, "clock irq: %d", jiffies);
@@ -42,6 +43,8 @@ void clk_handler(unsigned int irq, pt_regs_t *regs, void *dev_id) {
     }
 
     assert(current->ticks <= TASK_MAX_PRIORITY);  // 防止ticks被减到0后再减溢出
+
+    add_irq_bh_handler(clk_bh_handler);
 }
 
 // 开中断执行这个函数

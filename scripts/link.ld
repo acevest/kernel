@@ -29,7 +29,7 @@ SECTIONS
         boot/multiboot.S.o(.text)
         *(.multiboot2_header)
         *(.text)
-	*(.ring3.text);
+        *(.ring3.text);
         *(.sysexit) /* last */
     }
     etext = .;

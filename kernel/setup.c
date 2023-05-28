@@ -65,7 +65,7 @@ void setup_kernel() {
     setup_gate();
     set_tss();
 
-    setup_i8253(20);
+    setup_i8253(100);
 
     setup_sysc();
 

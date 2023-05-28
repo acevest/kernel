@@ -22,13 +22,8 @@
 #include <task.h>
 
 irq_desc_t irq_desc[NR_IRQS];
-
-int enable_no_irq_chip(unsigned int irq) { return 0; }
-int disable_no_irq_chip(unsigned int irq) { return 0; }
-
-irq_chip_t no_irq_chip = {.name = "none", .enable = enable_no_irq_chip, .disable = disable_no_irq_chip};
-
-irq_desc_t no_irq_desc = {.chip = &no_irq_chip, .action = NULL, .status = 0, .depth = 0};
+irq_bh_action_t *irq_bh_actions = NULL;
+irq_bh_action_t *irq_bh_actions_end = NULL;
 
 #if 0
 unsigned int irq_nr_stack[64] = {1, 2, 3, 4};
@@ -79,6 +74,8 @@ void dump_irq_nr_stack() {
 }
 #endif
 
+void irq_bh_handler();
+
 __attribute__((regparm(1))) void irq_handler(pt_regs_t *regs) {
     unsigned int irq = regs->irq;
     if (irq >= NR_IRQS) {
@@ -127,13 +124,7 @@ __attribute__((regparm(1))) void irq_handler(pt_regs_t *regs) {
     {
         enable_irq();
 
-        action = p->action;
-        while (action) {
-            if (action->bh_handler != NULL) {
-                action->bh_handler();
-            }
-            action = action->next;
-        }
+        irq_bh_handler();
 
         disable_irq();
     }
@@ -152,8 +143,45 @@ __attribute__((regparm(1))) void irq_handler(pt_regs_t *regs) {
     schedule();
 }
 
-int request_irq(unsigned int irq, void (*handler)(unsigned int, pt_regs_t *, void *), void (*bh_handler)(),
-                const char *devname, void *dev_id) {
+extern uint32_t jiffies;
+void irq_bh_handler() {
+    uint32_t end = jiffies + 2;
+    while (true) {
+        irq_bh_action_t *action = NULL;
+
+        disable_irq();
+
+        action = irq_bh_actions;
+        irq_bh_actions = NULL;
+        irq_bh_actions_end = NULL;
+
+        enable_irq();
+
+        if (action == NULL) {
+            break;
+        }
+
+        while (action != NULL) {
+            action->handler();
+            irq_bh_action_t *p = action;
+            action = action->next;
+            kfree(p);
+        }
+
+        if (jiffies >= end) {
+            break;
+        }
+
+        // 这里可能存在有部分没处理完
+    }
+
+    // 这之后也可能存在再次被中断加入下半部处理请求
+    // 但这些都不会丢失
+    // 而是会延迟到这次中断返回后下一次的中断的下半部分处理逻辑
+}
+
+int request_irq(unsigned int irq, void (*handler)(unsigned int, pt_regs_t *, void *), const char *devname,
+                void *dev_id) {
     irq_action_t *p;
 
     if (irq >= NR_IRQS) {
@@ -180,7 +208,6 @@ int request_irq(unsigned int irq, void (*handler)(unsigned int, pt_regs_t *, voi
     p->dev_name = devname;
     p->dev_id = dev_id;
     p->handler = handler;
-    p->bh_handler = bh_handler;
     p->next = NULL;
     if (irq_desc[irq].action != NULL) {
         p->next = irq_desc[irq].action;
@@ -189,6 +216,31 @@ int request_irq(unsigned int irq, void (*handler)(unsigned int, pt_regs_t *, voi
     irq_desc[irq].action = p;
     // printk("irq: %d action:%x\n", irq, p);
     return 0;
+}
+
+void add_irq_bh_handler(void (*handler)()) {
+    // 只能在中断处理函数中调用
+    assert(irq_disabled());
+
+    irq_bh_action_t *p;
+    p = (irq_bh_action_t *)kmalloc(sizeof(irq_bh_action_t), 0);
+    assert(p != NULL);
+
+    p->handler = handler;
+
+    if (irq_bh_actions_end == NULL) {
+        assert(irq_bh_actions == NULL);
+        irq_bh_actions = p;
+        irq_bh_actions_end = p;
+
+    } else {
+        assert(irq_bh_actions != NULL);
+        irq_bh_actions_end->next = p;
+        irq_bh_actions_end = p;
+    }
+    p->next = NULL;
+
+    irq_bh_actions = p;
 }
 
 int open_irq(unsigned int irq) { return irq_desc[irq].chip->enable(irq); }
@@ -207,3 +259,9 @@ bool irq_enabled() {
 }
 
 bool irq_disabled() { return !irq_enabled(); }
+
+int enable_no_irq_chip(unsigned int irq) { return 0; }
+int disable_no_irq_chip(unsigned int irq) { return 0; }
+
+irq_chip_t no_irq_chip = {.name = "none", .enable = enable_no_irq_chip, .disable = disable_no_irq_chip};
+irq_desc_t no_irq_desc = {.chip = &no_irq_chip, .action = NULL, .status = 0, .depth = 0};
