@@ -123,8 +123,7 @@ int debug_wait_queue_put(unsigned int v) {
 
 DECLARE_WAIT_QUEUE_HEAD(sysc_wait_queue_head);
 
-#if 1
-extern unsigned int jiffies;
+extern uint32_t jiffies;
 int sysc_wait(unsigned long cnt) {
     unsigned long flags;
     irq_save(flags);
@@ -135,39 +134,3 @@ int sysc_wait(unsigned long cnt) {
 
     schedule();
 }
-#else
-int sysc_wait(unsigned long pid) {
-    task_union *p = find_task(pid);
-
-    if (p == 0) {
-        return 0;
-    }
-
-    if (p->state == TASK_EXITING) {
-        return 0;
-    }
-
-    task_union *task = current;
-    DECLARE_WAIT_QUEUE(wait, task);
-    add_wait_queue(&p->wait, &wait);
-
-    while (true) {
-        // task->state = TASK_WAIT;
-
-        unsigned long flags;
-        irq_save(flags);
-        unsigned int state = p->state;
-        irq_restore(flags);
-
-        if (state == TASK_EXITING)  // no need irq_save
-            break;
-
-        schedule();
-    }
-
-    task->state = TASK_READY;
-    del_wait_queue(&p->wait, &wait);
-
-    return 0;
-}
-#endif

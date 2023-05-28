@@ -47,18 +47,10 @@ void send_disk_request(disk_request_t *r) {
         panic("disk DMA read cross 64K");
     }
 
-#if 1
     mutex_lock(&disk_request_mutex);
     disk_request_cnt++;
     list_add_tail(&r->list, &disk_request_queue.list);
     mutex_unlock(&disk_request_mutex);
-#else
-    // 发送命令
-    unsigned long flags;
-    irq_save(flags);
-    list_add_tail(&r->list, &disk_request_queue.list);
-    irq_restore(flags);
-#endif
 
     // 唤醒task_disk
     up(&disk_request_queue.sem);
@@ -74,7 +66,6 @@ void disk_task_entry() {
         down(&disk_request_queue.sem);
         // printk("hard disk request: %d\n", disk_request_queue.count++);
 
-#if 1
         mutex_lock(&disk_request_mutex);
         disk_request_t *r;
         r = list_first_entry(&disk_request_queue.list, disk_request_t, list);
@@ -85,24 +76,6 @@ void disk_task_entry() {
         list_del(&r->list);
         disk_handled_cnt++;
         mutex_unlock(&disk_request_mutex);
-#else
-        unsigned long flags;
-        irq_save(flags);
-
-        disk_request_t *r;
-        if (list_empty(&disk_request_queue.list)) {
-            panic("disk request should not empty");
-        }
-
-        r = list_first_entry(&disk_request_queue.list, disk_request_t, list);
-        if (NULL == r) {
-            panic("no disk request");
-        }
-
-        printk("disk request[%d]: dev %d pos %ld count %d cmd %d\n", r_cnt++, r->dev, r->pos, r->count, r->command);
-        list_del(&r->list);
-        irq_restore(flags);
-#endif
 
         switch (r->command) {
         case DISK_REQ_IDENTIFY:

@@ -30,6 +30,7 @@ irq_chip_t no_irq_chip = {.name = "none", .enable = enable_no_irq_chip, .disable
 
 irq_desc_t no_irq_desc = {.chip = &no_irq_chip, .action = NULL, .status = 0, .depth = 0};
 
+#if 0
 unsigned int irq_nr_stack[64] = {1, 2, 3, 4};
 uint32_t irq_nr_jiffies_stack[64] = {
     0,
@@ -47,6 +48,7 @@ unsigned int pop_irq_nr_stack() {
     irq_nr_stack_pos--;
     return irq_nr_stack[irq_nr_stack_pos];
 }
+
 
 int vsprintf(char *buf, const char *fmt, char *args);
 void dump_irq_nr_stack() {
@@ -75,6 +77,7 @@ void dump_irq_nr_stack() {
     strcat(buf, "\n");
     printk(buf);
 }
+#endif
 
 __attribute__((regparm(1))) void irq_handler(pt_regs_t *regs) {
     unsigned int irq = regs->irq;
@@ -96,20 +99,6 @@ __attribute__((regparm(1))) void irq_handler(pt_regs_t *regs) {
 
     assert(current->magic == TASK_MAGIC);
 
-#if 0
-    push_irq_nr_stack(irq);
-
-    // if (irq_nr_stack_pos >= 2) {
-    dump_irq_nr_stack();
-    //     panic("sdfasd");
-    // }
-#endif
-
-#if 0
-    // 开中断执行中断处理函数
-    enable_irq();
-#endif
-
 #if 1
     unsigned long esp;
     asm("movl %%esp, %%eax" : "=a"(esp));
@@ -121,15 +110,6 @@ __attribute__((regparm(1))) void irq_handler(pt_regs_t *regs) {
         action->handler(irq, regs, action->dev_id);
         action = action->next;
     }
-
-#if 0
-    // 关全局中断
-    disable_irq();
-#endif
-
-#if 0
-    pop_irq_nr_stack();
-#endif
 
     // 解除屏蔽当前中断
     p->chip->enable(irq);
@@ -162,7 +142,6 @@ __attribute__((regparm(1))) void irq_handler(pt_regs_t *regs) {
     assert(irq_disabled());
     assert(reenter == 0);
     reenter--;
-    assert(reenter == -1);
 
     // 考察如果不需要调度程序，直接退出
     if (current->ticks != 0) {

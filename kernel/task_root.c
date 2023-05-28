@@ -21,6 +21,7 @@
 #include <types.h>
 
 int do_fork(pt_regs_t *regs, unsigned long flags);
+int sysc_wait(unsigned long cnt);
 
 void kernel_task(char *name, void *entry) {
     pt_regs_t regs;

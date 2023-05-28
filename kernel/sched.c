@@ -202,12 +202,8 @@ void schedule() {
         current->state = TASK_READY;
     }
 
-    // printk("-----\n");
     list_for_each_safe(pos, t, &all_tasks) {
         p = list_entry(pos, task_union, list);
-
-        // printk("%s state: %s ticks %u\n", current->name, task_state(current->state), current->ticks);
-        // printk("%s state: %s\n", p->name, task_state(p->state));
 
         if (p == &root_task) {
             continue;
@@ -223,7 +219,7 @@ void schedule() {
             sel = p;
             continue;
         }
-#if 1
+
         // 考察三个量
         // priority 越大越优先
         // jiffies  越小越优先
@@ -237,23 +233,6 @@ void schedule() {
                 sel = p;
             }
         }
-#else
-        if (sel->jiffies < p->jiffies) {
-            continue;
-        }
-
-        uint64_t delta = sel->jiffies - p->jiffies;
-
-        if (sel->priority <= p->priority) {
-            if (delta > (1 * p->ticks)) {
-                sel = p;
-            }
-        } else if (sel->priority > p->priority) {
-            if (delta > (5 * p->ticks)) {
-                sel = p;
-            }
-        }
-#endif
     }
 
     task_union *prev = current;
@@ -261,16 +240,6 @@ void schedule() {
 
     next->state = TASK_RUNNING;
 
-#if 1
-    // debug_print_all_tasks();
-#else
-    printl(MPL_TASK_TITLE, "         NAME     STATE TK/PI TURN       SCHED      KEEP");
-    list_for_each_safe(pos, t, &all_tasks) {
-        p = list_entry(pos, task_union, list);
-        printl(MPL_TASK_0 + p->pid, "%08x%s%4s:%d %s %02u/%02d %-10u %-10u %-10u", p, next == p ? ">" : " ", p->name,
-               p->pid, task_state(p->state), p->ticks, p->priority, p->turn, p->sched_cnt, p->sched_keep_cnt);
-    }
-#endif
     if (prev != next) {
         next->sched_cnt++;
         context_switch(prev, next);
