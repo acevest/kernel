@@ -550,13 +550,19 @@ void wait_on_ide() { wait_event(&ide_wait_queue_head, ide_pci_controller.done); 
 #endif
 
 extern void *mbr_buf;
-uint8_t ata_pci_bus_status();
 extern ide_pci_controller_t ide_pci_controller;
+extern uint32_t disk_request_cnt;
+extern uint32_t disk_handled_cnt;
+
+uint8_t ata_pci_bus_status();
 
 volatile uint32_t disk_inter_cnt = 0;
 
 void ide_irq_bh_handler() {
     disk_inter_cnt++;
+
+    // printl(MPL_IDE, "disk req %u consumed %u irq %u", disk_request_cnt, disk_handled_cnt, disk_inter_cnt);
+    printlxy(MPL_IDE, MPO_IDE, "disk irq %u req %u consumed %u ", disk_inter_cnt, disk_request_cnt, disk_handled_cnt);
 
     // up里不会立即重新调度进程
     up(&disk_intr_sem);

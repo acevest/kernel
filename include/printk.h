@@ -23,18 +23,15 @@ int printlo(unsigned int line, unsigned int offset, const char *fmtstr, ...);
 #define printl(line, fmt, args...) printlo(1, line, fmt, ##args)
 #define printll(line, fmt, args...) printlo(0, line, fmt, ##args)
 #define printlr(line, fmt, args...) printlo(40, line, fmt, ##args)
+#define printlxy(line, offset, fmt, args...) printlo(offset, line, fmt, ##args)
 
 // monitor print line
 enum {
     MPL_TITLE,
-    MPL_CLOCK,
-    MPL_KEYBOARD,
+    MPL_IRQ,
     MPL_IDE,
-    MPL_IDE_INTR,
     MPL_CURRENT,
-    MPL_TEST0,
     MPL_TEST,
-    MPL_X,
     MPL_DEBUG,
     MPL_TASK_TITLE,
     MPL_TASK_0,
@@ -47,4 +44,11 @@ enum {
     MPL_TASK_7,
     MPL_TASK_8,
     MPL_END
+};
+
+// monitor print offset
+enum {
+    MPO_CLOCK = 1,
+    MPO_KEYBOARD = 50,
+    MPO_IDE = 1,
 };

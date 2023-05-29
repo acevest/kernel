@@ -52,7 +52,7 @@ void dump_irq_nr_stack() {
         return;
     }
 
-    printl(MPL_TEST0, "irq nr stack pos %u", irq_nr_stack_pos);
+    printl(MPL_DEBUG, "irq nr stack pos %u", irq_nr_stack_pos);
 
     char buf[128];
 

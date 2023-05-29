@@ -163,10 +163,6 @@ const char *task_state(unsigned int state) {
     return s[state];
 }
 
-extern uint32_t disk_request_cnt;
-extern uint32_t disk_handled_cnt;
-extern uint32_t disk_inter_cnt;
-
 void debug_print_all_tasks() {
     task_union *p = 0;
     list_head_t *pos = 0, *t = 0;
@@ -184,8 +180,6 @@ void schedule() {
     task_union *sel = 0;
     task_union *p = 0;
     list_head_t *pos = 0, *t = 0;
-
-    printl(MPL_X, "disk req %u consumed %u irq %u", disk_request_cnt, disk_handled_cnt, disk_inter_cnt);
 
     assert(current->ticks <= TASK_MAX_PRIORITY);
     assert(current->priority <= TASK_MAX_PRIORITY);
