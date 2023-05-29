@@ -27,12 +27,10 @@ void poweroff();
 void ide_debug();
 void ide_status();
 void debug_sched();
-void vga_dbg_toggle();
-int debug_wait_queue_put(unsigned int v);
-// void ide_dma_pci_lba48();
-void vga_switch(unsigned int nr);
 
-void kbd_debug(unsigned char scan_code);
+int debug_wait_queue_put(unsigned int v);
+
+void kbd_debug(uint8_t scan_code);
 
 char kbd_char_tbl[] = {
     0,   0,   '1', '2', '3', '4', '5',  '6', '7', '8', '9', '0', '-', '=', '\b', 0,   'q', 'w', 'e',  'r', 't', 'y',
@@ -54,28 +52,28 @@ char kbd_char_tbl[] = {
     0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,
 };
 
-void kbd_handler(unsigned int irq, pt_regs_t *regs, void *dev_id) {
-    unsigned char scan_code;
-
-    scan_code = inb(0x60);
-
+// TODO 改造成环形缓冲区
+uint8_t scan_code;
+void kbd_bh_handler() {
     kbd_debug(scan_code);
-
-    if (0x80 & scan_code)  // break code
-    {
+    if (0x80 & scan_code) {  // break code
         return;
     }
-
-    unsigned int inx = scan_code & 0xFF;
+    uint8_t inx = scan_code & 0xFF;
     char ch = kbd_char_tbl[inx];
     cnsl_kbd_write(ch);
+}
+
+void kbd_handler(unsigned int irq, pt_regs_t *regs, void *dev_id) {
+    scan_code = inb(0x60);
+    add_irq_bh_handler(kbd_bh_handler);
 }
 
 extern tty_t default_tty;
 extern tty_t monitor_tty;
 extern tty_t debug_tty;
 
-void kbd_debug(unsigned char scan_code) {
+void kbd_debug(uint8_t scan_code) {
     static unsigned long kbd_cnt = 0;
     printl(MPL_KEYBOARD, "keyboard irq: %d scan code %02x", kbd_cnt++, scan_code);
 

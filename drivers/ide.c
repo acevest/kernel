@@ -555,18 +555,17 @@ extern ide_pci_controller_t ide_pci_controller;
 
 volatile uint32_t disk_inter_cnt = 0;
 
-void ide_irq_handler(unsigned int irq, pt_regs_t *regs, void *devid) {
-    // printk("ide irq handler %d \n", irq);
+void ide_irq_bh_handler() {
+    disk_inter_cnt++;
 
+    // up里不会立即重新调度进程
+    up(&disk_intr_sem);
+}
+
+void ide_irq_handler(unsigned int irq, pt_regs_t *regs, void *devid) {
     // printk("ide irq %d handler pci status: 0x%02x\n", irq, ata_pci_bus_status());
 
-#if 1
-    disk_inter_cnt++;
-    up(&disk_intr_sem);
-#else
-    ide_pci_controller.done = 1;
-    wake_up(&ide_wait_queue_head);
-#endif
+    add_irq_bh_handler(ide_irq_bh_handler);
 }
 
 void ide_init() {
