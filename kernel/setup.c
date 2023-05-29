@@ -35,7 +35,6 @@ extern void setup_ext2();
 
 extern void reboot();
 extern void cnsl_init();
-extern void init_ttys();
 
 #define VERSION "0.3.1"
 const char *version = "Kernel version " VERSION " @ " BUILDER
@@ -46,8 +45,6 @@ const char *version = "Kernel version " VERSION " @ " BUILDER
                       "\n";
 
 void setup_kernel() {
-    init_ttys();
-
     printk("sysenter esp mode: %s\n",
 #if FIX_SYSENTER_ESP_MODE
            "fixed to &tss.esp0"
@@ -72,7 +69,6 @@ void setup_kernel() {
     cnsl_init();
 
     printl(MPL_TITLE, "                                 KERNEL MONITOR");
-    printl(MPL_ROOTDEV, "root device %08x", system.root_dev);
 
     setup_tasks();
 

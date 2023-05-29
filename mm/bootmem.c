@@ -15,19 +15,19 @@
 static void e820_print_type(unsigned long type) {
     switch (type) {
     case E820_RAM:
-        printk("usable");
+        printk("RAM");
         break;
     case E820_RESERVED:
-        printk("reserved");
+        printk("RESERVED");
         break;
     case E820_ACPI:
-        printk("ACPI data");
+        printk("ACPI");
         break;
     case E820_NVS:
-        printk("ACPI NVS");
+        printk("NVS");
         break;
     case E820_UNUSABLE:
-        printk("unusable");
+        printk("UNUSABLE");
         break;
     default:
         printk("type %x", type);
@@ -203,7 +203,6 @@ void init_bootmem() {
     e820_print_map();
     e820_init_bootmem_data();
     init_bootmem_allocator();
-    // asm("cli;hlt;");
 }
 
 // 由于只有在构建buddy system的时候才会用到

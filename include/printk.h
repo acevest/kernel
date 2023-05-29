@@ -27,7 +27,6 @@ int printlo(unsigned int line, unsigned int offset, const char *fmtstr, ...);
 // monitor print line
 enum {
     MPL_TITLE,
-    MPL_ROOTDEV,
     MPL_CLOCK,
     MPL_KEYBOARD,
     MPL_IDE,

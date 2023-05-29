@@ -136,6 +136,7 @@ void check_kernel(unsigned long addr, unsigned long magic) {
 extern void *kernel_begin;
 extern void *kernel_end;
 extern void *bootmem_bitmap_begin;
+extern void init_default_tty_before_paging();
 void init_system_info() {
     system.kernel_begin = &kernel_begin;
     system.kernel_end = &kernel_end;
@@ -147,6 +148,4 @@ void init_system_info() {
     printk("boot device: bios dev %x partition %x sub partition %x\n", boot_params.biosdev, boot_params.partition,
            boot_params.sub_partition);
     printk("mem lower %uKB upper %uKB\n", boot_params.mem_lower >> 10, boot_params.mem_upper >> 10);
-    // while (1)
-    //     ;
 }

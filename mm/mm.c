@@ -119,12 +119,19 @@ void init_paging() {
     // }
 }
 
+extern void init_ttys();
+
 void init_mm() {
     printk("init bootmem alloc...\n");
     extern void init_bootmem();
     init_bootmem();
     printk("init global paging...\n");
     init_paging();
+
+    // 只能将这个调用放在此处
+    // 在这之前是没开启页映射用的是物理地址
+    // 在这之后需要用到线性地址来定位显存
+    init_ttys();
 
     printk("init buddy system...\n");
     extern void init_buddy_system();

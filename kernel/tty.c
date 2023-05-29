@@ -18,7 +18,8 @@
 // 而一屏所需要的显存为 80*25*2 = 4000 约为4K
 // 所以大致可以分出8个tty
 // 每个的起始地址以0x1000对齐
-#define VADDR ((unsigned long)pa2va(0xB8000))
+const uint32_t PHY_VADDR = 0xB8000;
+#define VADDR ((uint32_t)pa2va(PHY_VADDR))
 #define TTY_VRAM_SIZE (0x1000)
 
 #define MAX_X 80
@@ -61,6 +62,14 @@ void __tty_set_next_pos_color(tty_t *tty, char color) {
     }
 }
 
+void init_default_tty_before_paging() {
+    default_tty.fg_color = TTY_FG_HIGHLIGHT | TTY_GREEN;  // 高亮
+    default_tty.bg_color = TTY_BLACK;                     // 不闪
+    default_tty.base_addr = PHY_VADDR;
+    default_tty.xpos = 0;
+    default_tty.ypos = 0;
+}
+
 void init_tty(tty_t *tty, const char *name, unsigned long base) {
     assert(0 != tty);
 
@@ -75,19 +84,30 @@ void init_tty(tty_t *tty, const char *name, unsigned long base) {
 }
 
 void init_ttys() {
+    assert(irq_disabled());
+
+    // 先备份default_tty在分页前用到的xpos, ypos
+    unsigned int xpos = default_tty.xpos;
+    unsigned int ypos = default_tty.ypos;
+
     init_tty(&default_tty, "tty.default", VADDR + 0 * TTY_VRAM_SIZE);
     init_tty(&monitor_tty, "tty.monitor", VADDR + 1 * TTY_VRAM_SIZE);
+    init_tty(&debug_tty, "tty.debug", VADDR + 7 * TTY_VRAM_SIZE);
 
     monitor_tty.fg_color = TTY_FG_HIGHLIGHT | TTY_WHITE;
     monitor_tty.bg_color = TTY_BLUE;
-    tty_clear(&monitor_tty);
 
-    current_tty = &default_tty;
-
-    init_tty(&debug_tty, "tty.debug", VADDR + 7 * TTY_VRAM_SIZE);
     debug_tty.fg_color = TTY_FG_HIGHLIGHT | TTY_WHITE;
     debug_tty.bg_color = TTY_CYAN;
+
+    tty_clear(&monitor_tty);
     tty_clear(&debug_tty);
+
+    // 恢复在分页前的输出位置
+    default_tty.xpos = xpos;
+    default_tty.ypos = ypos;
+
+    current_tty = &default_tty;
 }
 
 void tty_do_scroll_up(tty_t *tty) {

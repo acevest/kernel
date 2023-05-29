@@ -1,16 +1,16 @@
 /*
  *--------------------------------------------------------------------------
  *   File Name: multiboot.S
- * 
+ *
  * Description: none
- * 
- * 
+ *
+ *
  *      Author: Zhao Yanbai [zhaoyanbai@126.com]
- * 
+ *
  *     Version:    1.0
  * Create Date: Mon Nov 10 15:58:46 2008
  * Last Update: Tue Feb 10 22:39:24 2009
- * 
+ *
  *--------------------------------------------------------------------------
  */
 #define ASM
@@ -19,7 +19,8 @@
 #include "task.h"
 .global kernel_entry
 .global main
-.extern check_kernel 
+.extern check_kernel
+.extern init_default_tty_before_paging
 .extern init_system_info
 .extern setup_kernel
 .extern init_pgd
@@ -99,7 +100,7 @@ main:
     stosl
     addl    $0x1000,%eax
     loop    2b
-    
+
     # 初始化页表
     # 直接线性映射BOOT_INIT_PAGETBL_CNT*4M物理内存
     movl    $init_pgt-KRNLADDR,%ebx
@@ -129,6 +130,7 @@ Label:
     addl    $8, %esp
 
     movl    $root_task + TASK_SIZE, %esp
+    call    init_default_tty_before_paging
     call    init_system_info
 
     call    setup_kernel

@@ -1,3 +1,5 @@
 target remote localhost:1234
-b setup_kernel
+b init_system_info
+#b setup_kernel
+#b e820_init_bootmem_data
 c
