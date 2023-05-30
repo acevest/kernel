@@ -75,4 +75,9 @@ bool irq_disabled();
         __asm__ __volatile__("pushl %0; popfl" ::"g"(x) : "memory", "cc"); \
     } while (0)
 
+#define IRQ_CLOCK 0x00
+#define IRQ_KEYBOARD 0x01
+#define IRQ_CASCADE 0x02
+#define IRQ_DISK 0x0E
+
 #endif  //_IRQ_H

@@ -169,7 +169,7 @@ void ide_pci_init(pci_device_t *pci) {
 
     ide_pci_controller.pci = pci;
 
-    printk("channel0: cmd %04x ctl %04x channel1: cmd %04x ctl %04x\n", ATA_CHL0_CMD_BASE, ATA_CHL0_CTL_BASE,
+    printd("channel0: cmd %04x ctl %04x channel1: cmd %04x ctl %04x\n", ATA_CHL0_CMD_BASE, ATA_CHL0_CTL_BASE,
            ATA_CHL1_CMD_BASE, ATA_CHL1_CTL_BASE);
     // printl(18, "channel0: cmd %04x ctl %04x channel1: cmd %04x ctl %04x", HD_CHL0_CMD_BASE, HD_CHL0_CTL_BASE,
     // HD_CHL1_CMD_BASE, HD_CHL1_CTL_BASE);

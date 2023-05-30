@@ -46,7 +46,7 @@ void kernel_task(char *name, void *entry) {
 
     int pid = do_fork(&regs, FORK_KRNL);
 
-    printk("kernel[%s] task pid is %d\n", name, pid);
+    printd("kernel[%s] task pid is %d\n", name, pid);
 }
 
 // 测试用的代码

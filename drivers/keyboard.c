@@ -82,7 +82,7 @@ void kbd_debug(uint8_t scan_code) {
         // reboot();
     }
 
-    printd("[%02x]", scan_code);
+    // printd("[%02x]", scan_code);
 
     if (scan_code == 0x3B) {  // F1
         tty_switch(&default_tty);

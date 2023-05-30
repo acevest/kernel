@@ -33,3 +33,12 @@ int systest() { return syscall0(SYSC_TEST); }
 int sysdebug(unsigned int v) { return syscall1(SYSC_DEBUG, v); }
 
 int pause(unsigned long tick) { return syscall1(SYSC_PAUSE, tick); }
+
+int vsprintf(char *buf, const char *fmt, char *args);
+int sprintf(char *str, const char *fmtstr, ...) {
+    char *args = (char *)(((char *)&fmtstr) + 4);
+
+    vsprintf(str, fmtstr, args);
+
+    return 0;
+}

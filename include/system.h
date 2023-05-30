@@ -70,14 +70,8 @@ void kfree(void *addr);
 
 extern char etext, edata, end;
 
-extern char gdtr[6], idtr[6];
-#define lgdt() __asm__ __volatile__("lgdt gdtr")
-#define sgdt() __asm__ __volatile__("sgdt gdtr")
-#define lidt() __asm__ __volatile__("lidt idtr")
-#define sidt() __asm__ __volatile__("sidt idtr")
-
-#define cli() __asm__ __volatile__("cli")
-#define sti() __asm__ __volatile__("sti")
+#define cli() asm volatile("cli")
+#define sti() asm volatile("sti")
 #define nop() asm volatile("nop")
 #define mb() asm volatile("" ::: "memory")
 #define disableIRQ() cli()
@@ -271,6 +265,9 @@ void disk_task_entry();
 void user_task_entry();
 
 extern volatile int reenter;
+
+#define DEFAULT_BOOT_DELAY_TICKS 30
+void boot_delay(int ticks);
 #endif
 
 #endif  //_SYSTEM_H

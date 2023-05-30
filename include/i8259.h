@@ -36,6 +36,11 @@
 extern void init_i8259();
 extern void mask_i8259();
 
+int enable_i8259_irq(unsigned int irq);
+int disable_i8259_irq(unsigned int irq);
+void mask_ack_i8259_irq(unsigned int irq);
+void ack_i8259_irq(unsigned int irq);
+
 #if 0
 =Programmable Interrupt Controller=
 

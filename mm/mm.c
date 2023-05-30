@@ -125,20 +125,19 @@ void init_mm() {
     printk("init bootmem alloc...\n");
     extern void init_bootmem();
     init_bootmem();
+    boot_delay(DEFAULT_BOOT_DELAY_TICKS);
     printk("init global paging...\n");
     init_paging();
-
-    // 只能将这个调用放在此处
-    // 在这之前是没开启页映射用的是物理地址
-    // 在这之后需要用到线性地址来定位显存
-    init_ttys();
+    boot_delay(DEFAULT_BOOT_DELAY_TICKS);
 
     printk("init buddy system...\n");
     extern void init_buddy_system();
     init_buddy_system();
+    boot_delay(DEFAULT_BOOT_DELAY_TICKS);
 
     printk("init kmem caches...\n");
     extern void init_kmem_caches();
     init_kmem_caches();
     printk("memory init finished...\n");
+    boot_delay(DEFAULT_BOOT_DELAY_TICKS);
 }

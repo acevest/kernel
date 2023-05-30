@@ -21,18 +21,71 @@ struct boot_params boot_params __attribute__((aligned(32)));
 
 void parse_cmdline(const char *cmdline);
 void init_vbe(void *, void *);
+
+// ticks < 0 代表永远等待
+void boot_delay(int ticks) {
+    char chs[] = {'\\', '-', '/', '-'};
+    uint32_t cnt = 0;
+
+    printk(" ");
+    asm("sti;");
+    while (true) {
+        if (ticks == 0) {
+            break;
+        }
+
+        if (ticks > 0) {
+            ticks--;
+        }
+
+        printk("\b%c", chs[(cnt++ / 3) % sizeof(chs)]);
+        asm("hlt");
+    }
+    asm("cli;");
+    printk("\b \b");
+}
+
+void init_ttys();
+void setup_gdt();
+void setup_idt();
+void setup_gates();
+void set_tss();
+void setup_i8253(uint16_t);
+void setup_boot_irqs();
+
 void check_kernel(unsigned long addr, unsigned long magic) {
+    init_ttys();
+
+    printk("setup gdt\n");
+    setup_gdt();
+
+    printk("setup idt\n");
+    setup_idt();
+
+    printk("setup trap and interrupt gates\n");
+    setup_gates();
+
+    // 在初始化阶段一直运行在特权级0上
+    // 在正在进入用户态前,所有中断都不会涉及特权级变化
+    // 自然就不会有栈切换
+    // 因此这里set_tss里的tss.esp0是不用初始化的
+    set_tss();
+
+    setup_boot_irqs();
+
+    setup_i8253(100);
+
+    boot_delay(DEFAULT_BOOT_DELAY_TICKS);
+
     if (magic != MULTIBOOT2_BOOTLOADER_MAGIC) {
         printk("Your boot loader does not support multiboot.\n");
-        while (1) {
-        }
+        boot_delay(-1);
     }
-
     unsigned long total_size = *((unsigned long *)addr);
     struct multiboot_tag *tag = (struct multiboot_tag *)(addr + 8);  // 跳过中间的 reserved 字段
 
     printk("total size: %d tags: %x\n", total_size, tag);
-
+    boot_delay(DEFAULT_BOOT_DELAY_TICKS);
     struct multiboot_tag_basic_meminfo *mminfo = 0;
     struct multiboot_tag_bootdev *bootdev = 0;
     struct multiboot_tag_mmap *mmap_tag = 0;
@@ -96,6 +149,8 @@ void check_kernel(unsigned long addr, unsigned long magic) {
         unsigned long size = (tag->size + 7) & (~7UL);
         tag = (struct multiboot_tag *)(((unsigned long)tag) + size);
     }
+
+    boot_delay(DEFAULT_BOOT_DELAY_TICKS);
 #if 0
     multiboot_info_t *mbi = (multiboot_info_t *)addr;
 
@@ -130,13 +185,15 @@ void check_kernel(unsigned long addr, unsigned long magic) {
     }
 
     init_boot_params(mbi);
+
+    boot_delay(DEFAULT_BOOT_DELAY_TICKS);
 #endif
 }
 
 extern void *kernel_begin;
 extern void *kernel_end;
 extern void *bootmem_bitmap_begin;
-extern void init_default_tty_before_paging();
+
 void init_system_info() {
     system.kernel_begin = &kernel_begin;
     system.kernel_end = &kernel_end;
@@ -148,4 +205,6 @@ void init_system_info() {
     printk("boot device: bios dev %x partition %x sub partition %x\n", boot_params.biosdev, boot_params.partition,
            boot_params.sub_partition);
     printk("mem lower %uKB upper %uKB\n", boot_params.mem_lower >> 10, boot_params.mem_upper >> 10);
+
+    boot_delay(DEFAULT_BOOT_DELAY_TICKS);
 }

@@ -12,25 +12,61 @@
 #include <string.h>
 #include <system.h>
 
-static void e820_print_type(unsigned long type) {
+static void get_e820_size(uint32_t size, char *buf) {
+    const char *fmt = "%3u %s";
+    if (size < (1 << 10)) {
+        sprintf(buf, fmt, size, "B");
+    } else if (size < (1 << 20)) {
+        sprintf(buf, fmt, size >> 10, "KB");
+    } else if (size < (1 << 30)) {
+        sprintf(buf, fmt, size >> 20, "MB");
+    } else {
+        sprintf(buf, fmt, size >> 30, "GB");
+    }
+}
+
+// static void e820_print_type(unsigned long type) {
+//     switch (type) {
+//     case E820_RAM:
+//         printk("RAM");
+//         break;
+//     case E820_RESERVED:
+//         printk("RESERVED");
+//         break;
+//     case E820_ACPI:
+//         printk("ACPI");
+//         break;
+//     case E820_NVS:
+//         printk("NVS");
+//         break;
+//     case E820_UNUSABLE:
+//         printk("UNUSABLE");
+//         break;
+//     default:
+//         printk("type %x", type);
+//         break;
+//     }
+// }
+
+static void get_e820_type(uint32_t type, char *buf) {
     switch (type) {
     case E820_RAM:
-        printk("RAM");
+        sprintf(buf, "%s", "RAM");
         break;
     case E820_RESERVED:
-        printk("RESERVED");
+        sprintf(buf, "%s", "RESERVED");
         break;
     case E820_ACPI:
-        printk("ACPI");
+        sprintf(buf, "%s", "ACPI");
         break;
     case E820_NVS:
-        printk("NVS");
+        sprintf(buf, "%s", "NVS");
         break;
     case E820_UNUSABLE:
-        printk("UNUSABLE");
+        sprintf(buf, "%s", "UNUSABLE");
         break;
     default:
-        printk("type %x", type);
+        sprintf(buf, "type %x", type);
         break;
     }
 }
@@ -63,16 +99,16 @@ void fast_init_bootmem_bitmap(unsigned long bgn_pfn, unsigned long end_pfn, int 
 
 void e820_print_map() {
     unsigned int i = 0;
-
     for (i = 0; i < boot_params.e820map.map_cnt; ++i) {
         struct e820_entry *p = boot_params.e820map.map + i;
 
-        printk(" [%02d] 0x%010lX - 0x%010lX size %- 10u %8dKB %5dMB ", i, p->addr, (p->addr + p->size - 1),
-               (uint32_t)p->size, (uint32_t)(p->size >> 10), (uint32_t)(p->size >> 20));
-
-        e820_print_type(p->type);
-
-        printk("\n");
+        // printk(" [%02d] 0x%010lX - 0x%010lX size %- 10u %8dKB %5dMB ", i, p->addr, (p->addr + p->size - 1),
+        //        (uint32_t)p->size, (uint32_t)(p->size >> 10), (uint32_t)(p->size >> 20));
+        char size_buf[16];
+        char type_buf[16];
+        get_e820_size((uint32_t)p->size, size_buf);
+        get_e820_type(p->type, type_buf);
+        printk(" [%02d] 0x%08lX - 0x%08lX %7s %s\n", i, p->addr, (p->addr + p->size - 1), size_buf, type_buf);
     }
 }
 

@@ -19,7 +19,7 @@
 // 所以大致可以分出8个tty
 // 每个的起始地址以0x1000对齐
 const uint32_t PHY_VADDR = 0xB8000;
-#define VADDR ((uint32_t)pa2va(PHY_VADDR))
+const uint32_t VADDR = (uint32_t)pa2va(PHY_VADDR);
 #define TTY_VRAM_SIZE (0x1000)
 
 #define MAX_X 80
@@ -62,14 +62,6 @@ void __tty_set_next_pos_color(tty_t *tty, char color) {
     }
 }
 
-void init_default_tty_before_paging() {
-    default_tty.fg_color = TTY_FG_HIGHLIGHT | TTY_GREEN;  // 高亮
-    default_tty.bg_color = TTY_BLACK;                     // 不闪
-    default_tty.base_addr = PHY_VADDR;
-    default_tty.xpos = 0;
-    default_tty.ypos = 0;
-}
-
 void init_tty(tty_t *tty, const char *name, unsigned long base) {
     assert(0 != tty);
 
@@ -81,6 +73,12 @@ void init_tty(tty_t *tty, const char *name, unsigned long base) {
     tty->bg_color = TTY_BLACK;                     // 不闪
 
     tty->base_addr = base;
+
+    for (int i = 0; i < TTY_VRAM_SIZE; i += 2) {
+        uint8_t *p = (uint8_t *)base;
+        p[i + 0] = ' ';
+        p[i + 1] = (tty->bg_color << 4) | tty->fg_color;
+    }
 }
 
 void init_ttys() {
@@ -102,10 +100,6 @@ void init_ttys() {
 
     tty_clear(&monitor_tty);
     tty_clear(&debug_tty);
-
-    // 恢复在分页前的输出位置
-    default_tty.xpos = xpos;
-    default_tty.ypos = ypos;
 
     current_tty = &default_tty;
 }

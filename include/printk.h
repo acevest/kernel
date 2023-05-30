@@ -52,3 +52,5 @@ enum {
     MPO_KEYBOARD = 50,
     MPO_IDE = 1,
 };
+
+int sprintf(char *str, const char *fmtstr, ...);

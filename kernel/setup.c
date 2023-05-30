@@ -56,32 +56,35 @@ void setup_kernel() {
     init_mm();
 
     // printk("kernel: %08x - %08x\n", system.kernel_begin, system.kernel_end);
-
-    setup_gdt();
-    setup_idt();
-    setup_gate();
-    set_tss();
-
-    setup_i8253(100);
+    boot_delay(DEFAULT_BOOT_DELAY_TICKS);
 
     setup_sysc();
+    boot_delay(DEFAULT_BOOT_DELAY_TICKS);
 
     cnsl_init();
+    boot_delay(DEFAULT_BOOT_DELAY_TICKS);
 
     printl(MPL_TITLE, "                                 KERNEL MONITOR");
 
     setup_tasks();
-
-    setup_irqs();
+    boot_delay(DEFAULT_BOOT_DELAY_TICKS);
 
     setup_pci();
+    boot_delay(DEFAULT_BOOT_DELAY_TICKS);
 
     detect_cpu();
+    boot_delay(DEFAULT_BOOT_DELAY_TICKS);
 
     printk(version);
+    boot_delay(DEFAULT_BOOT_DELAY_TICKS);
 
     extern tty_t monitor_tty;
-    tty_switch(&monitor_tty);
+    // tty_switch(&monitor_tty);
+
+    boot_delay(DEFAULT_BOOT_DELAY_TICKS);
+
+    setup_i8253(100);
+    setup_irqs();
 
     void ide_init();
     ide_init();

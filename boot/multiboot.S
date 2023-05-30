@@ -20,7 +20,6 @@
 .global kernel_entry
 .global main
 .extern check_kernel
-.extern init_default_tty_before_paging
 .extern init_system_info
 .extern setup_kernel
 .extern init_pgd
@@ -130,7 +129,6 @@ Label:
     addl    $8, %esp
 
     movl    $root_task + TASK_SIZE, %esp
-    call    init_default_tty_before_paging
     call    init_system_info
 
     call    setup_kernel

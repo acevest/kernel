@@ -26,14 +26,51 @@
 #include <syscall.h>
 #include <system.h>
 
+System system;
+TSS_t tss;
+Desc idt[NIDT] __attribute__((__aligned__(8)));
+Desc gdt[NGDT] __attribute__((__aligned__(8)));
+char gdtr[6] __attribute__((__aligned__(4)));
+char idtr[6] __attribute__((__aligned__(4)));
+
+extern char _gdtr[6];
+extern char _idtr[6];
+
+volatile int reenter = -1;
+
+#if 0
+void setup_gdt_before_pageing() {
+    pDesc pdesc;
+    // change to new gdt.
+    asm volatile("sgdt _gdtr");
+    Desc *_gdt = (Desc *)va2pa(gdt);
+    memcpy((void *)_gdt, (void *)(_gdtr + 2), *((uint16_t *)(_gdtr + 0)));
+
+    //
+    *((uint16_t *)(_gdtr + 0)) = NGDT * sizeof(Desc);
+    *((uint32_t *)(_gdtr + 2)) = (uint32_t)_gdt;
+    asm volatile("sgdt _gdtr");
+    memcpy(_gdt + INDEX_UCODE, _gdt + INDEX_KCODE, sizeof(Desc));
+    memcpy(_gdt + INDEX_UDATA, _gdt + INDEX_KDATA, sizeof(Desc));
+    pdesc = _gdt + INDEX_UCODE;
+    pdesc->seg.DPL = 3;
+    pdesc = _gdt + INDEX_UDATA;
+    pdesc->seg.DPL = 3;
+}
+#endif
+
 void setup_gdt() {
     pDesc pdesc;
     // change to new gdt.
-    sgdt();
-    memcpy(gdt, (void *)pa2va(*((unsigned long *)(gdtr + 2))), *((unsigned short *)gdtr));
+    asm volatile("sgdt gdtr");
+
+    // 复制旧的GDT
+    memcpy(gdt, (void *)pa2va(*((uint32_t *)(gdtr + 2))), *((uint16_t *)(gdtr + 0)));
     *((unsigned short *)gdtr) = NGDT * sizeof(Desc);
     *((unsigned long *)(gdtr + 2)) = (unsigned long)gdt;
-    lgdt();
+
+    asm volatile("lgdt gdtr");
+
     memcpy(gdt + INDEX_UCODE, gdt + INDEX_KCODE, sizeof(Desc));
     memcpy(gdt + INDEX_UDATA, gdt + INDEX_KDATA, sizeof(Desc));
     pdesc = gdt + INDEX_UCODE;
@@ -42,14 +79,16 @@ void setup_gdt() {
     pdesc->seg.DPL = 3;
 }
 
+// 中断门和陷阱门的区别是
+// 通过中断门进入中断服务程序CPU会自动将中断关闭，也就是将EFLAGS的IF位清0
+// 通过陷阱门进入服务程序时则维持IF标志位不变
 void setup_idt() {
     *((unsigned short *)idtr) = NIDT * sizeof(Gate);
     *((unsigned long *)(idtr + 2)) = (unsigned long)idt;
-    lidt();
+    asm volatile("lidt idtr");
 }
 
-void setup_gate() {
-    int i;
+void setup_gates() {
     set_sys_int(0x00, TRAP_GATE, PRIVILEGE_KRNL, DivideError);
     set_sys_int(0x01, TRAP_GATE, PRIVILEGE_KRNL, Debug);
     set_sys_int(0x02, INTR_GATE, PRIVILEGE_KRNL, NMI);
@@ -67,10 +106,22 @@ void setup_gate() {
     set_sys_int(0x0E, TRAP_GATE, PRIVILEGE_KRNL, PageFault);
     set_sys_int(0x10, TRAP_GATE, PRIVILEGE_KRNL, CoprocError);
 
-    for (i = 0x11; i < 0x20; i++) set_sys_int(i, INTR_GATE, PRIVILEGE_KRNL, no_irq_handler);
+    for (int i = 0x11; i < 0x20; i++) {
+        set_sys_int(i, INTR_GATE, PRIVILEGE_KRNL, no_irq_handler);
+    }
 
-    for (i = 0x20; i < 256; i++) set_sys_int(i, INTR_GATE, PRIVILEGE_KRNL, no_irq_handler);
+    for (int i = 0x20; i < 256; i++) {
+        set_sys_int(i, INTR_GATE, PRIVILEGE_KRNL, no_irq_handler);
+    }
+}
 
+void ide_irq();
+
+void default_irq_handler(unsigned int irq, pt_regs_t *regs, void *dev_id) { printk("default irq handler %d \n", irq); }
+
+void init_i8259();
+
+void setup_irqs() {
     set_sys_int(0x20, INTR_GATE, PRIVILEGE_KRNL, irq_0x00_handler);
     set_sys_int(0x21, INTR_GATE, PRIVILEGE_KRNL, irq_0x01_handler);
     set_sys_int(0x22, INTR_GATE, PRIVILEGE_KRNL, irq_0x02_handler);
@@ -87,15 +138,6 @@ void setup_gate() {
     set_sys_int(0x2D, INTR_GATE, PRIVILEGE_KRNL, irq_0x0D_handler);
     set_sys_int(0x2E, INTR_GATE, PRIVILEGE_KRNL, irq_0x0E_handler);
     set_sys_int(0x2F, INTR_GATE, PRIVILEGE_KRNL, irq_0x0F_handler);
-}
-
-void ide_irq();
-
-void default_irq_handler(unsigned int irq, pt_regs_t *regs, void *dev_id) { printk("default irq handler %d \n", irq); }
-
-void setup_irqs() {
-    extern void init_i8259();
-    init_i8259();
 
     for (int i = 0; i < NR_IRQS; i++) {
         irq_desc[i] = no_irq_desc;
@@ -125,12 +167,27 @@ void setup_irqs() {
 
     // 清除8259A的级连中断引脚的中断屏蔽位
     // 以让从片的中断在放开后能发送到CPU
-    open_irq(2);
+    open_irq(IRQ_CASCADE);
 
     // 打开支持的中断
-    open_irq(0x00);
-    open_irq(0x01);
-    open_irq(0x0E);
+    open_irq(IRQ_CLOCK);
+    open_irq(IRQ_KEYBOARD);
+    open_irq(IRQ_DISK);
+}
+
+void boot_irq_handler();
+void setup_boot_irqs() {
+    init_i8259();
+
+    // clock
+    set_sys_int(0x20 + IRQ_CLOCK, INTR_GATE, PRIVILEGE_KRNL, _boot_clk_irq_handler);
+
+    // keyboard
+    set_sys_int(0x20 + IRQ_KEYBOARD, INTR_GATE, PRIVILEGE_KRNL, _boot_kbd_irq_handler);
+
+    // 打开支持的中断
+    enable_i8259_irq(IRQ_CLOCK);
+    enable_i8259_irq(IRQ_KEYBOARD);
 }
 
 void set_tss_gate(u32 vec, u32 addr, u32 limit) {
@@ -185,12 +242,3 @@ int sysc_reboot(int mode) {
 
     return 0;
 }
-
-System system;
-TSS_t tss;
-Desc idt[NIDT] __attribute__((__aligned__(8)));
-Desc gdt[NGDT] __attribute__((__aligned__(8)));
-char gdtr[6] __attribute__((__aligned__(4)));
-char idtr[6] __attribute__((__aligned__(4)));
-
-volatile int reenter = -1;

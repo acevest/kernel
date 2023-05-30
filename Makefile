@@ -42,7 +42,7 @@ OBJS := $(patsubst %,%.o,$(SOURCE_FILES))
 ${KERNELBIN}: ${OBJS}
 	${LD} -z noexecstack -m elf_i386 -M -T$(LINKSCRIPT) $(OBJS) -o $@ > $(SYSTEMMAP)
 	nm -a $@ > kernel.sym
-	rm kernel/setup.c.o
+	#rm kernel/setup.c.o
 
 %.S.o: %.S ${HEADER_FILES}
 	${CC} ${CFLAGS} $< -o $@

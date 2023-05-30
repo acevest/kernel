@@ -138,3 +138,21 @@ irq_chip_t i8259_chip = {
 };
 
 void do_i8259_IRQ(pt_regs_t *regs, unsigned int irq) {}
+
+__attribute__((regparm(1))) void boot_irq_handler(pt_regs_t *regs) {
+    unsigned int irq = regs->irq;
+    if (irq != 0 && irq != 1) {
+        panic("invalid irq %d\n", irq);
+    }
+
+    assert(irq_disabled());
+
+    // 屏蔽当前中断
+    disable_i8259_irq(irq);
+
+    // 发送EOI
+    ack_i8259_irq(irq);
+
+    // 解除屏蔽当前中断
+    enable_i8259_irq(irq);
+}

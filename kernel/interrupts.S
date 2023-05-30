@@ -1,16 +1,16 @@
 /*
  *--------------------------------------------------------------------------
  *   File Name: interrupts.S
- * 
+ *
  * Description: none
- * 
- * 
+ *
+ *
  *      Author: Zhao Yanbai [zhaoyanbai@126.com]
- * 
+ *
  *     Version:    1.0
  * Create Date: Thu Jul 16 18:54:08 2009
  * Last Update: Wed Feb 10 23:10:56 2010
- * 
+ *
  *--------------------------------------------------------------------------
  */
 #define ASM
@@ -29,7 +29,7 @@ jmp     _irq_handler;
 .global no_irq_handler
 no_irq_handler:
 pushl   $0xFFFFFFFF
-jmp     _irq_handler
+jmp     _boot_irq_handler
 
 
 DEF_IRQ(0,0)
@@ -67,7 +67,41 @@ _irq_handler:
 
     movl    %esp, %eax
     call    irq_handler
-    
+
     RESTORE_REGS
     addl    $4, %esp
     iret
+
+
+
+.extern boot_irq_handler
+_boot_irq_handler:
+    SAVE_REGS
+
+    // ebp指向栈桢
+    movl    $-TASK_SIZE, %ebp
+    andl    %esp, %ebp
+
+    movw    %ss, %ax
+    movw    %ax, %ds
+    movw    %ax, %es
+    movw    %ax, %fs
+    movw    %ax, %gs
+
+    movl    %esp, %eax
+    call    boot_irq_handler
+
+    RESTORE_REGS
+    addl    $4, %esp
+    iret
+
+
+.global _boot_clk_irq_handler
+.global _boot_kbd_irq_handler
+
+_boot_clk_irq_handler:
+    push $0x00;
+    jmp _boot_irq_handler
+_boot_kbd_irq_handler:
+    push $0x01;
+    jmp _boot_irq_handler

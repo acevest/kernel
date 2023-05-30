@@ -1,16 +1,16 @@
 /*
  *--------------------------------------------------------------------------
  *   File Name: entry.S
- * 
+ *
  * Description: none
- * 
- * 
+ *
+ *
  *      Author: Zhao Yanbai [zhaoyanbai@126.com]
- * 
+ *
  *     Version:    1.0
  * Create Date: Thu Jul 09 19:56:40 2009
  * Last Update: Thu Jul 09 19:56:40 2009
- * 
+ *
  *--------------------------------------------------------------------------
  */
 #define ASM
@@ -70,4 +70,3 @@ ERRORCODE    (StackFault)
 ERRORCODE    (GeneralProtection)
 ERRORCODE    (PageFault)
 NOERRCODE    (CoprocError)
-
