@@ -33,5 +33,5 @@ snapshot.txt
 bochsout.txt
 *.lock
 *.DS_Store
-.vscode
+.vscode/settings.json
 *.iso

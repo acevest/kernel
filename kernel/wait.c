@@ -120,17 +120,3 @@ int debug_wait_queue_put(unsigned int v) {
     debug_global_var = v;
     wake_up(&debug_wq);
 }
-
-DECLARE_WAIT_QUEUE_HEAD(sysc_wait_queue_head);
-
-extern uint32_t jiffies;
-int sysc_wait(unsigned long cnt) {
-    unsigned long flags;
-    irq_save(flags);
-    current->state = TASK_WAIT;
-    current->delay_jiffies = jiffies + cnt;
-    list_add(&current->pend, &delay_tasks);
-    irq_restore(flags);
-
-    schedule();
-}

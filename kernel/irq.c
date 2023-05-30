@@ -99,8 +99,8 @@ __attribute__((regparm(1))) void irq_handler(pt_regs_t *regs) {
 #if 1
     unsigned long esp;
     asm("movl %%esp, %%eax" : "=a"(esp));
-    printl(MPL_CURRENT, "current %08x cr3 %08x reenter %d esp %08x %u", current, current->cr3, reenter, esp,
-           current->ticks);
+    printl(MPL_CURRENT, "current %08x %s cr3 %08x reenter %d esp %08x ticks %u", current, current->name, current->cr3,
+           reenter, esp, current->ticks);
 #endif
 
     while (action && action->handler) {
@@ -239,8 +239,6 @@ void add_irq_bh_handler(void (*handler)()) {
         irq_bh_actions_end = p;
     }
     p->next = NULL;
-
-    irq_bh_actions = p;
 }
 
 int open_irq(unsigned int irq) { return irq_desc[irq].chip->enable(irq); }

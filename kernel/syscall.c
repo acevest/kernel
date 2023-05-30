@@ -41,42 +41,25 @@ int sysc_none() {
     return 0;
 }
 
-int sysc_pause(unsigned long tick) { return 0; }
+extern uint64_t jiffies;
 
-int sysc_test() {
-#if 0
-    static unsigned int cnt = 0;
+// 特别说明：如果想把这个函数的参数ticks改为uint64_t
+// 那么就需要在编写用户级的系统调用库函数的时候注意
+// 不仅需要填写 ebx，还要填写 ecx
+// 不然就可能出现诡异的一直WAIT，不会调度到该任务的问题
+int sysc_wait(uint32_t ticks) {
+    unsigned long flags;
+    irq_save(flags);
+    current->state = TASK_WAIT;
+    current->delay_jiffies = jiffies + ticks;
+    list_add(&current->pend, &delay_tasks);
+    irq_restore(flags);
 
-    {  // 这一段仅是测试代码
-
-        // 因为现在sysc还没切进程
-        // 所以current把自己加到delay_tasks后不会被立即换出
-        // 下一次系统调用还可能走到这里
-        // 所以这里就直接判断不是RUNNING就返回
-        // 不再操作delay_tasks链表
-        if (current->state != TASK_READY) {
-            return 0;
-        }
-
-        current->delay_jiffies = root_task.sched_cnt % 40;
-
-        unsigned long iflags;
-        irq_save(iflags);
-
-        current->state = TASK_WAIT;
-        // 现在sysc还没有实现进程切换
-        // 这个要到下一次中断之后才生效
-        list_add(&(current->pend), &delay_tasks);
-
-        irq_restore(iflags);
-    }
-
-    // printl(MPL_TEST, "systest cnt %u current %08x cnt %u          ",
-    //        cnt++, current, cnt);
-    // printk("systest cnt %u current %08x cnt %u\n",cnt++, current, cnt);
-    return 0;
-#endif
+    schedule();
 }
+
+int sysc_test() {}
+int sysc_pause() {}
 
 int sysc_debug(unsigned int v) {
     static unsigned int cnt = 0;

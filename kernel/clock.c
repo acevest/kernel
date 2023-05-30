@@ -16,7 +16,7 @@
 #include <system.h>
 #include <wait.h>
 
-volatile uint32_t jiffies = 0;  // TODO uint64: undefined reference to `__umoddi3'
+volatile uint64_t jiffies = 0;  // TODO uint64: undefined reference to `__umoddi3'
 
 unsigned int sys_clock() { return jiffies; }
 
