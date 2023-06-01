@@ -119,15 +119,16 @@ void ata_init() {
     // 第49个word的第8个bit位表示是否支持DMA
     // 第83个word的第10个bit位表示是否支持LBA48，为1表示支持。
     // 第100~103个word的八个字节表示user的LBA最大值
-    printk("%04x %04x %d %d\n", identify[49], 1 << 8, identify[49] & (1 << 8), (identify[49] & (1 << 8)) != 0);
+    printd("disk identify %04x %04x %d %d\n", identify[49], 1 << 8, identify[49] & (1 << 8),
+           (identify[49] & (1 << 8)) != 0);
     if ((identify[49] & (1 << 8)) != 0) {
-        printk("support DMA\n");
+        printd("support DMA\n");
     }
 
     if ((identify[83] & (1 << 10)) != 0) {
-        printk("support LBA48\n");
+        printd("support LBA48\n");
         u64 lba = *(u64 *)(identify + 100);
-        printk("hard disk size: %u MB\n", (lba * 512) >> 20);
+        printd("hard disk size: %u MB\n", (lba * 512) >> 20);
     }
 
     // TODO REMOVE
@@ -140,9 +141,9 @@ void ata_init() {
     uint16_t *p = (uint16_t *)mbr_buf;
     for (int i = 0; i < 256; i++) {
         if (i % 12 == 0) {
-            printk("\n[%03d] ", i * 2);
+            printd("\n[%03d] ", i * 2);
         }
-        printk("%04x.", p[i]);
+        printd("%04x.", p[i]);
     }
 }
 
@@ -225,8 +226,14 @@ void ata_dma_read_ext(int dev, uint64_t pos, uint16_t count, void *dest) {
 
     // 配置描述符表
     unsigned long dest_paddr = va2pa(dest);
+
+    // 不能跨64K边界
+    const uint32_t size = count * SECT_SIZE;
+    const uint32_t _64K = 1 << 16;
+    assert(((dest_paddr + size) & _64K) == (dest_paddr & _64K));
+
     ide_pci_controller.prdt[0].phys_addr = dest_paddr;
-    ide_pci_controller.prdt[0].byte_count = SECT_SIZE;
+    ide_pci_controller.prdt[0].byte_count = size;
     ide_pci_controller.prdt[0].reserved = 0;
     ide_pci_controller.prdt[0].eot = 1;
     outl(va2pa(ide_pci_controller.prdt), ide_pci_controller.bus_prdt);

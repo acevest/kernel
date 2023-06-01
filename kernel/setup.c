@@ -15,6 +15,7 @@
  */
 #include <bits.h>
 #include <printk.h>
+#include <string.h>
 #include <system.h>
 #include <tty.h>
 
@@ -37,12 +38,11 @@ extern void reboot();
 extern void cnsl_init();
 
 #define VERSION "0.3.1"
-const char *version = "Kernel version " VERSION " @ " BUILDER
+const char *version = "KERNEL v" VERSION " @" BUILDER
                       " ["__DATE__
                       " " __TIME__
                       "]"
-
-                      "\n";
+                      "\n\n";
 
 void setup_kernel() {
     printk("sysenter esp mode: %s\n",
@@ -64,7 +64,8 @@ void setup_kernel() {
     cnsl_init();
     boot_delay(DEFAULT_BOOT_DELAY_TICKS);
 
-    printl(MPL_TITLE, "                                 KERNEL MONITOR");
+    const char *title = "KERNEL MONITOR";
+    printlxy(MPL_TITLE, (80 - strlen(title)) / 2, title);
 
     setup_tasks();
     boot_delay(DEFAULT_BOOT_DELAY_TICKS);

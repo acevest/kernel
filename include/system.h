@@ -268,6 +268,7 @@ extern volatile int reenter;
 
 #define DEFAULT_BOOT_DELAY_TICKS 30
 void boot_delay(int ticks);
+
 #endif
 
 #endif  //_SYSTEM_H

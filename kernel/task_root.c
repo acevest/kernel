@@ -137,7 +137,7 @@ void taskB_entry() {
 }
 
 void taskC_entry() {
-    current->priority = 19;
+    current->priority = 17;
 
     while (1) {
         sysc_wait(1);

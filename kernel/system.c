@@ -38,27 +38,6 @@ extern char _idtr[6];
 
 volatile int reenter = -1;
 
-#if 0
-void setup_gdt_before_pageing() {
-    pDesc pdesc;
-    // change to new gdt.
-    asm volatile("sgdt _gdtr");
-    Desc *_gdt = (Desc *)va2pa(gdt);
-    memcpy((void *)_gdt, (void *)(_gdtr + 2), *((uint16_t *)(_gdtr + 0)));
-
-    //
-    *((uint16_t *)(_gdtr + 0)) = NGDT * sizeof(Desc);
-    *((uint32_t *)(_gdtr + 2)) = (uint32_t)_gdt;
-    asm volatile("sgdt _gdtr");
-    memcpy(_gdt + INDEX_UCODE, _gdt + INDEX_KCODE, sizeof(Desc));
-    memcpy(_gdt + INDEX_UDATA, _gdt + INDEX_KDATA, sizeof(Desc));
-    pdesc = _gdt + INDEX_UCODE;
-    pdesc->seg.DPL = 3;
-    pdesc = _gdt + INDEX_UDATA;
-    pdesc->seg.DPL = 3;
-}
-#endif
-
 void setup_gdt() {
     pDesc pdesc;
     // change to new gdt.

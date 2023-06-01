@@ -84,10 +84,6 @@ void init_tty(tty_t *tty, const char *name, unsigned long base) {
 void init_ttys() {
     assert(irq_disabled());
 
-    // 先备份default_tty在分页前用到的xpos, ypos
-    unsigned int xpos = default_tty.xpos;
-    unsigned int ypos = default_tty.ypos;
-
     init_tty(&default_tty, "tty.default", VADDR + 0 * TTY_VRAM_SIZE);
     init_tty(&monitor_tty, "tty.monitor", VADDR + 1 * TTY_VRAM_SIZE);
     init_tty(&debug_tty, "tty.debug", VADDR + 7 * TTY_VRAM_SIZE);

@@ -73,6 +73,9 @@ extern tty_t default_tty;
 extern tty_t monitor_tty;
 extern tty_t debug_tty;
 
+static tty_t *ttys[] = {&default_tty, &monitor_tty, &debug_tty};
+static int tty_no = 0;
+
 void kbd_debug(uint8_t scan_code) {
     static unsigned long kbd_cnt = 0;
     // printl(MPL_KEYBOARD, "keyboard irq: %d scan code %02x", kbd_cnt++, scan_code);
@@ -118,7 +121,8 @@ void kbd_debug(uint8_t scan_code) {
     }
 
     if (scan_code == 0x58) {  // F12
-        current_tty = current_tty != &default_tty ? &default_tty : &monitor_tty;
+        // current_tty = current_tty != &default_tty ? &default_tty : &monitor_tty;
+        current_tty = ttys[++tty_no % (sizeof(ttys) / sizeof(ttys[0]))];
         tty_switch(current_tty);
     }
 
