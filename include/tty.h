@@ -44,4 +44,6 @@ void tty_color_putc(tty_t *tty, char c, unsigned int fg_color, unsigned bg_color
 void tty_set_cursor(tty_t *tty);
 void tty_switch(tty_t *tty);
 
+void tty_switch_to_next();
+
 extern tty_t *current_tty;

@@ -69,10 +69,10 @@ int cnsl_kbd_write(char ch) {
     if (ch == 0) {
         return 0;
     }
-    extern tty_t default_tty;
+    extern tty_t *const default_tty;
     if (ch == '\b') {
         if (!empty(&cnsl.wr_q)) {
-            tty_color_putc(&default_tty, '\b', TTY_FG_HIGHLIGHT | TTY_WHITE, TTY_BLACK);
+            tty_color_putc(default_tty, '\b', TTY_FG_HIGHLIGHT | TTY_WHITE, TTY_BLACK);
         }
         // tty_color_putc(default_tty, '\b', TTY_WHITE, TTY_BLACK);
         erase(&cnsl.wr_q);
@@ -80,7 +80,7 @@ int cnsl_kbd_write(char ch) {
     } else {
         put(&cnsl.wr_q, ch);
         put(&cnsl.sc_q, ch);
-        tty_color_putc(&default_tty, ch, TTY_FG_HIGHLIGHT | TTY_WHITE, TTY_BLACK);
+        tty_color_putc(default_tty, ch, TTY_FG_HIGHLIGHT | TTY_WHITE, TTY_BLACK);
     }
 
     if (ch == '\n') {

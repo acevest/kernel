@@ -69,12 +69,10 @@ void kbd_handler(unsigned int irq, pt_regs_t *regs, void *dev_id) {
     add_irq_bh_handler(kbd_bh_handler);
 }
 
-extern tty_t default_tty;
-extern tty_t monitor_tty;
-extern tty_t debug_tty;
-
-static tty_t *ttys[] = {&default_tty, &monitor_tty, &debug_tty};
-static int tty_no = 0;
+extern tty_t *const default_tty;
+extern tty_t *const monitor_tty;
+extern tty_t *const debug_tty;
+extern void tty_switch_to_next();
 
 void kbd_debug(uint8_t scan_code) {
     static unsigned long kbd_cnt = 0;
@@ -88,11 +86,11 @@ void kbd_debug(uint8_t scan_code) {
     // printd("[%02x]", scan_code);
 
     if (scan_code == 0x3B) {  // F1
-        tty_switch(&default_tty);
+        tty_switch(default_tty);
     } else if (scan_code == 0x3C) {  // F2
-        tty_switch(&monitor_tty);
+        tty_switch(monitor_tty);
     } else if (scan_code == 0x3D) {  // F3
-        tty_switch(&debug_tty);
+        tty_switch(debug_tty);
     }
 
     if (scan_code == 0x3F)  // F5
@@ -121,9 +119,7 @@ void kbd_debug(uint8_t scan_code) {
     }
 
     if (scan_code == 0x58) {  // F12
-        // current_tty = current_tty != &default_tty ? &default_tty : &monitor_tty;
-        current_tty = ttys[++tty_no % (sizeof(ttys) / sizeof(ttys[0]))];
-        tty_switch(current_tty);
+        tty_switch_to_next();
     }
 
     // ide_status();

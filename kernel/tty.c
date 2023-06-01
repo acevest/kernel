@@ -22,15 +22,18 @@ const uint32_t PHY_VADDR = 0xB8000;
 const uint32_t VADDR = (uint32_t)pa2va(PHY_VADDR);
 #define TTY_VRAM_SIZE (0x1000)
 
+#define NR_TTYS 8
+tty_t ttys[NR_TTYS];
+
 #define MAX_X 80
 #define MAX_Y 25
 #define CHARS_PER_LINE (MAX_X)
 #define BYTES_PER_LINE (CHARS_PER_LINE * 2)
 #define TAB_SPACE 4
 
-tty_t default_tty;
-tty_t monitor_tty;
-tty_t debug_tty;
+tty_t *const default_tty = ttys + 0;
+tty_t *const monitor_tty = ttys + 1;
+tty_t *const debug_tty = ttys + 2;
 
 void tty_clear(tty_t *tty) {
     char *dst = (char *)tty->base_addr;
@@ -65,8 +68,6 @@ void __tty_set_next_pos_color(tty_t *tty, char color) {
 void init_tty(tty_t *tty, const char *name, unsigned long base) {
     assert(0 != tty);
 
-    memset(tty, 0, sizeof(tty_t));
-
     strlcpy(tty->name, name, sizeof(tty->name));
 
     tty->fg_color = TTY_FG_HIGHLIGHT | TTY_GREEN;  // 高亮
@@ -84,20 +85,35 @@ void init_tty(tty_t *tty, const char *name, unsigned long base) {
 void init_ttys() {
     assert(irq_disabled());
 
-    init_tty(&default_tty, "tty.default", VADDR + 0 * TTY_VRAM_SIZE);
-    init_tty(&monitor_tty, "tty.monitor", VADDR + 1 * TTY_VRAM_SIZE);
-    init_tty(&debug_tty, "tty.debug", VADDR + 7 * TTY_VRAM_SIZE);
+    for (int i = 0; i < NR_TTYS; i++) {
+        tty_t *tty = ttys + i;
+        char name[sizeof(tty->name)];
+        sprintf(name, "tty.%u", i);
+        init_tty(tty, name, VADDR + i * TTY_VRAM_SIZE);
 
-    monitor_tty.fg_color = TTY_FG_HIGHLIGHT | TTY_WHITE;
-    monitor_tty.bg_color = TTY_BLUE;
+        if (i != TTY_WHITE) {
+            tty->fg_color = TTY_FG_HIGHLIGHT | TTY_WHITE;
+            tty->bg_color = i;
+        } else {
+            tty->fg_color = TTY_FG_HIGHLIGHT | TTY_BLACK;
+            tty->bg_color = TTY_WHITE;
+        }
+    }
 
-    debug_tty.fg_color = TTY_FG_HIGHLIGHT | TTY_WHITE;
-    debug_tty.bg_color = TTY_CYAN;
+    default_tty->fg_color = TTY_FG_HIGHLIGHT | TTY_GREEN;
+    default_tty->bg_color = TTY_BLACK;
 
-    tty_clear(&monitor_tty);
-    tty_clear(&debug_tty);
+    monitor_tty->fg_color = TTY_FG_HIGHLIGHT | TTY_WHITE;
+    monitor_tty->bg_color = TTY_BLUE;
 
-    current_tty = &default_tty;
+    debug_tty->fg_color = TTY_FG_HIGHLIGHT | TTY_WHITE;
+    debug_tty->bg_color = TTY_BLACK;  // TTY_CYAN;
+
+    for (int i = 0; i < NR_TTYS; i++) {
+        tty_t *tty = ttys + i;
+        tty_clear(tty);
+    }
+    current_tty = default_tty;
 }
 
 void tty_do_scroll_up(tty_t *tty) {
@@ -248,6 +264,11 @@ void tty_switch(tty_t *tty) {
     current_tty = tty;
 
     tty_set_cursor(current_tty);
+}
+
+void tty_switch_to_next() {
+    tty_t *tty = ttys + ((current_tty - ttys + 1) % NR_TTYS);
+    tty_switch(tty);
 }
 
 tty_t *current_tty;

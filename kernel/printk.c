@@ -21,37 +21,37 @@
 int vsprintf(char *buf, const char *fmt, char *args);
 
 char pkbuf[1024];
-extern tty_t default_tty;
+extern tty_t *const default_tty;
 int printk(const char *fmtstr, ...) {
     unsigned long iflags;
     irq_save(iflags);
     char *args = (char *)(((char *)&fmtstr) + 4);
     int size = vsprintf(pkbuf, fmtstr, args);
-    tty_write(&default_tty, pkbuf, (size_t)size);
+    tty_write(default_tty, pkbuf, (size_t)size);
     irq_restore(iflags);
     return 0;
 }
 
-extern tty_t debug_tty;
+extern tty_t *const debug_tty;
 char pdbuf[1024];
 int printd(const char *fmtstr, ...) {
     unsigned long iflags;
     irq_save(iflags);
     char *args = (char *)(((char *)&fmtstr) + 4);
     int size = vsprintf(pdbuf, fmtstr, args);
-    tty_write(&debug_tty, pdbuf, (size_t)size);
+    tty_write(debug_tty, pdbuf, (size_t)size);
     irq_restore(iflags);
     return 0;
 }
 
 char plobuf[1024];
-extern tty_t monitor_tty;
+extern tty_t *const monitor_tty;
 int printlo(unsigned int xpos, unsigned int ypos, const char *fmtstr, ...) {
     unsigned long iflags;
     irq_save(iflags);
     char *args = (char *)(((char *)&fmtstr) + 4);
     int size = vsprintf(plobuf, fmtstr, args);
-    tty_write_at(&monitor_tty, xpos, ypos, plobuf, (size_t)size);
+    tty_write_at(monitor_tty, xpos, ypos, plobuf, (size_t)size);
     irq_restore(iflags);
     return 0;
 }
