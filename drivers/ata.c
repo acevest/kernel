@@ -57,6 +57,7 @@ void ata_send_read_identify_cmd(int dev) {}
 
 void ata_read_data(int dev, int sect_cnt, void *dst) { insl(REG_DATA(dev), dst, (512 * sect_cnt) / sizeof(uint32_t)); }
 
+// 这里所用的dev是逻辑编号 ATA0、ATA1下的Master、Salve的dev分别为0,1,2,3
 void ata_read_identify(int dev, int disable_intr) {
     uint8_t ctlv = 0x00;
     if (disable_intr != 0) {
@@ -67,9 +68,54 @@ void ata_read_identify(int dev, int disable_intr) {
     outb(ATA_CMD_IDENTIFY, REG_CMD(dev));
 }
 
+void ata_read_identity_string(const uint16_t *identify, int bgn, int end, char *buf) {
+    const char *p = (const char *)(identify + bgn);
+    int i = 0;
+    for (; i <= (end - bgn); i++) {
+        buf[2 * i + 1] = p[0];
+        buf[2 * i + 0] = p[1];
+        p += 2;
+    }
+    buf[i] = 0;
+}
+
+// 《AT Attachment 8 - ATA/ATAPI Command Set》
 void ide_ata_init() {
     for (int i = 0; i < MAX_IDE_DRIVE_CNT; i++) {
         int dev = i;
+        memset(ide_drives + i, 0, sizeof(ide_drive_t));
+
+        // https://wiki.osdev.org/ATA_PIO_Mode
+        // To use the IDENTIFY command, select a target drive by sending 0xA0 for the master drive, or 0xB0 for the
+        // slave, to the "drive select" IO port. On the Primary bus, this would be port 0x1F6. Then set the Sectorcount,
+        // LBAlo, LBAmid, and LBAhi IO ports to 0 (port 0x1F2 to 0x1F5). Then send the IDENTIFY command (0xEC) to the
+        // Command IO port (0x1F7). Then read the Status port (0x1F7) again. If the value read is 0, the drive does not
+        // exist. For any other value: poll the Status port (0x1F7) until bit 7 (BSY, value = 0x80) clears. Because of
+        // some ATAPI drives that do not follow spec, at this point you need to check the LBAmid and LBAhi ports (0x1F4
+        // and 0x1F5) to see if they are non-zero. If so, the drive is not ATA, and you should stop polling. Otherwise,
+        // continue polling one of the Status ports until bit 3 (DRQ, value = 8) sets, or until bit 0 (ERR, value = 1)
+        // sets. At that point, if ERR is clear, the data is ready to read from the Data port (0x1F0). Read 256 16-bit
+        // values, and store them.
+        //
+        // ATAPI的情况暂时不用考虑，因为不是硬盘相关的
+        // https://wiki.osdev.org/ATAPI
+        // ATAPI refers to devices that use the Packet Interface of the ATA6 (or higher) standard command set. It is
+        // basically a way to issue SCSI commands to a CD-ROM, CD-RW, DVD, or tape drive, attached to the ATA bus.
+        //
+        // 总结来说，仅考虑ATA硬盘的情况
+        // 一个IDE接口能接Master、Slave两个DRIVE。
+        // 一个PC机上通常有两个IDE接口(IDE0, IDE1或ATA0, ATA1)，通常称通道0、1
+        //
+        // 对于同一个IDE通道的两个DRIVE，共享同一组寄存器，它们之间的区分是通过Device寄存器的第4个bit位来实现的。0为Master，1为Slave
+        //
+        // 使用IDENTIFY命令步骤:
+        //  1. 选择DRIVE，发送0xA0选择master，发送0xB0选择slave。(发送 0xE0 | (drive << 4)到Device寄存器)
+        //  2. 发送0到该DRIVE所在通道的寄存器NSECTOR, LBAL, LBAM, LBAH
+        //  3. 发送IDENTIFY(0xEC)命令到该通道的命令寄存器
+        // 检查status寄存器：
+        //  1. 若为0，就认为没有IDE
+        //  2. 等到status的BSY位清除
+        //  3. 等到status的DRQ位或ERR位设置
 
         ata_read_identify(dev, 1);
 
@@ -98,9 +144,55 @@ void ide_ata_init() {
             ide_drives[i].lba48 = 1;
             ide_drives[i].max_lba = max_lba;
         }
+#if 0
+        uint16_t i80 = identify[80];
+        if (i80 & (1 << 8)) {
+            printk("ATA8-ACS ");
+        }
+        if (i80 & (1 << 7)) {
+            printk("ATA/ATAPI-7 ");
+        }
+        if (i80 & (1 << 6)) {
+            printk("ATA/ATAPI-6 ");
+        }
+        if (i80 & (1 << 5)) {
+            printk("ATA/ATAPI-5 ");
+        }
+        if (i80 & (1 << 4)) {
+            printk("ATA/ATAPI-4 ");
+        }
 
+        printk(" %02x\n", identify[81]);
+#endif
+        printk("Ultra DMA modes: %04x\n", identify[88]);
+
+#if 0
+        uint16_t x = identify[222];
+        uint16_t tt = x >> 12;
+        switch (tt) {
+        case 0:
+            printk("parallel");
+            break;
+        case 1:
+            printk("serial");
+            break;
+        default:
+            printk("reserved");
+            break;
+        }
+#endif
         printk("hard disk %s %s size: %u MB\n", ide_drives[i].dma == 1 ? "DMA" : "",
                ide_drives[i].lba48 == 1 ? "LBA48" : "LBA28", (max_lba * 512) >> 20);
+
+        char s[64];
+        ata_read_identity_string(identify, 10, 19, s);
+        printk("SN: %s\n", s);
+
+        ata_read_identity_string(identify, 23, 26, s);
+        printk("Firmware Revision: %s\n", s);
+
+        ata_read_identity_string(identify, 27, 46, s);
+        printk("HD Model: %s\n", s);
     }
 }
 
@@ -147,60 +239,6 @@ void ata_init() {
     }
 }
 
-#if 0
-void ata_read_identify_old(int dev) {  // 这里所用的dev是逻辑编号 ATA0、ATA1下的Master、Salve的dev分别为0,1,2,3
-    // void send_disk_request();
-    // send_disk_request();
-    // DECLARE_WAIT_QUEUE_HEAD(wq_head);
-    // DECLARE_WAIT_QUEUE(wait, current);
-    // add_wait_queue(&wq_head, &wait);
-    // ide_pci_controller.task = current;
-
-    outb(0x00, REG_CTL(dev));
-    outb(0x00 | ((dev & 0x01) << 4), REG_DEVICE(dev));  // 根据文档P113，这里不用指定bit5, bit7，直接指示DRIVE就行
-
-    unsigned long flags;
-    irq_save(flags);
-
-    outb(ATA_CMD_IDENTIFY, REG_CMD(dev));
-    wait_on_ide();
-
-    irq_restore(flags);
-
-    insw(REG_DATA(dev), identify, SECT_SIZE / sizeof(u16));
-
-    // 第49个word的第8个bit位表示是否支持DMA
-    // 第83个word的第10个bit位表示是否支持LBA48，为1表示支持。
-    // 第100~103个word的八个字节表示user的LBA最大值
-    printk("%04x %04x %d %d\n", identify[49], 1 << 8, identify[49] & (1 << 8), (identify[49] & (1 << 8)) != 0);
-    if ((identify[49] & (1 << 8)) != 0) {
-        printk("support DMA\n");
-    }
-
-    if ((identify[83] & (1 << 10)) != 0) {
-        printk("support LBA48\n");
-
-        u64 lba = *(u64 *)(identify + 100);
-        printk("hard disk size: %u MB\n", (lba * 512) >> 20);
-    }
-
-    printk("bus iobase %x cmd %x status %x prdt %x \n", ide_pci_controller.bus_iobase, ide_pci_controller.bus_cmd,
-           ide_pci_controller.bus_status, ide_pci_controller.bus_prdt);
-
-    // TODO REMOVE
-    mbr_buf = kmalloc(SECT_SIZE, 0);
-    // ata_test(0);
-    sleep_on_ide();
-    // ata_pio_read_ext(0, 0, 1, ATA_TIMEOUT, mbr_buf);
-    uint16_t *p = (uint16_t *)mbr_buf;
-    for (int i = 0; i < 256; i++) {
-        if (i % 12 == 0) {
-            printk("\n[%03d] ", i);
-        }
-        printk("%04x ", p[i]);
-    }
-}
-#endif
 // ATA_CMD_READ_DMA_EXT
 void ata_dma_read_ext(int dev, uint64_t pos, uint16_t count, void *dest) {
     // Intel®
