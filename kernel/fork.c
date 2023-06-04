@@ -29,6 +29,16 @@ int do_fork(pt_regs_t *regs, unsigned long flags) {
 
     memcpy(tsk, current, sizeof(task_union));
 
+    assert(tsk->magic == TASK_MAGIC);
+
+    tsk->state = TASK_INITING;
+
+    INIT_LIST_HEAD(&tsk->list);
+    unsigned long iflags;
+    irq_save(iflags);
+    list_add(&tsk->list, &all_tasks);
+    irq_restore(iflags);
+
     tsk->cr3 = va2pa((unsigned long)alloc_one_page(0));
     assert(tsk->cr3 != 0);
 
@@ -83,6 +93,21 @@ int do_fork(pt_regs_t *regs, unsigned long flags) {
 #endif
     }
 
+    pt_regs_t *child_regs = ((pt_regs_t *)(TASK_SIZE + (unsigned long)tsk)) - 1;
+
+    // printd("child regs: %x %x\n", child_regs, regs);
+    memcpy(child_regs, regs, sizeof(*regs));
+
+    if (flags & FORK_KRNL) {
+        strcpy(tsk->name, (char *)(child_regs->eax));
+        child_regs->eax = 0;
+    } else {
+        child_regs->eip = *((unsigned long *)&&fork_child);
+    }
+
+    // 这一句已经不需要了，通过fork_child已经能给子进程返回0了
+    // child_regs->eax = 0;
+
     tsk->pid = get_next_pid();
     tsk->ppid = current->pid;
     tsk->priority = current->priority;
@@ -91,37 +116,20 @@ int do_fork(pt_regs_t *regs, unsigned long flags) {
     tsk->need_resched = 0;
     tsk->sched_cnt = 0;
     tsk->sched_keep_cnt = 0;
-    assert(tsk->magic == TASK_MAGIC);
 
-    pt_regs_t *child_regs = ((pt_regs_t *)(TASK_SIZE + (unsigned long)tsk)) - 1;
-
-    printd("child regs: %x %x\n", child_regs, regs);
-    memcpy(child_regs, regs, sizeof(*regs));
-
-    tsk->esp0 = TASK_SIZE + (unsigned long)tsk;
+    // for switch_to
+    tsk->eip = child_regs->eip;
     tsk->esp = (unsigned long)child_regs;
-    tsk->eip = (unsigned long)ret_from_fork_user;
-    if (flags & FORK_KRNL) {
-        strcpy(tsk->name, (char *)(child_regs->eax));
-        tsk->eip = (unsigned long)ret_from_fork_krnl;
-    }
-
-    child_regs->eax = 0;
-    child_regs->eflags |= 0x200;  // enable IF
+    tsk->esp0 = TASK_SIZE + (unsigned long)tsk;
 
     printd("task %08x child_regs esp %08x esp0 %08x\n", tsk, tsk->esp, tsk->esp0);
-
-    tsk->state = TASK_INITING;
-
-    INIT_LIST_HEAD(&tsk->list);
-    unsigned long iflags;
-    irq_save(iflags);
-    list_add(&tsk->list, &all_tasks);
-    irq_restore(iflags);
 
     tsk->state = TASK_READY;
 
     return (int)tsk->pid;
+
+fork_child:
+    return 0;
 }
 
 int sysc_fork(pt_regs_t regs) { return do_fork(&regs, 0); }

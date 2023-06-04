@@ -1,19 +1,19 @@
 /*
  *--------------------------------------------------------------------------
  *   File Name: syscall.S
- * 
+ *
  * Description: none
- * 
- * 
+ *
+ *
  *      Author: Zhao Yanbai [zhaoyanbai@126.com]
- * 
+ *
  *     Version: 1.0
  * Create Date: Tue Feb 10 13:20:33 2009
  *     Version: 2.0
  * Last Update: Wed Feb 10 23:36:34 2010
  *     Version: 3.0
  * Last Update: Fri May  2 00:21:37 2014
- * 
+ *
  *--------------------------------------------------------------------------
  */
 
@@ -25,16 +25,15 @@
 .code32
 .text
 .global syscall_entry
-.global ret_from_fork_user
 .global ret_from_fork_krnl
 .extern reenter
 //.global syscall_exit
 
 syscall_entry:
 #if FIX_SYSENTER_ESP_MODE
-    movl    (%esp),%esp 
+    movl    (%esp),%esp
 #endif
-    
+
     // sysenter have cleared IF, and sysexit will not set IF.
     sti
 
@@ -75,7 +74,6 @@ syscall_entry:
     // 保存返回值
     movl    %eax, PT_REGS_EAX(%esp)
 
-ret_from_fork_user:
 
     RESTORE_REGS
 
@@ -93,18 +91,19 @@ ret_from_fork_user:
 // 内核线程fork出路
 ret_from_fork_krnl:
     RESTORE_REGS
-    addl    $12, %esp
-    popfl
-    addl    $8, %esp
+    addl    $12, %esp   // 0 EIP CS
+    popfl               // EFLAGS
+    addl    $8, %esp    // ESP SS
 
     call    *%edx
-    addl    $4, %esp
 
-    # 还没有实现do_exit
-    #call    do_exit
+    addl    $4, %esp    // CALL PUSH EIP
 
-    
-    
+    // TODO
+    // add exit here
+
+
+
 
 # this routine should be load align by PAGE_SIZE
 # this page is shared by the kernel and userspace

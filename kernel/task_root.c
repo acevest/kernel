@@ -23,6 +23,8 @@
 int do_fork(pt_regs_t *regs, unsigned long flags);
 int sysc_wait(uint32_t ticks);
 
+#define get_eflags(x) __asm__ __volatile__("pushfl; popl %0;" : "=g"(x)::"memory")
+
 void kernel_task(char *name, void *entry) {
     pt_regs_t regs;
 
@@ -43,6 +45,7 @@ void kernel_task(char *name, void *entry) {
     regs.ss = SELECTOR_KRNL_DS;
     regs.fs = SELECTOR_KRNL_DS;
     regs.gs = SELECTOR_KRNL_DS;
+    get_eflags(regs.eflags);
 
     int pid = do_fork(&regs, FORK_KRNL);
 
