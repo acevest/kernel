@@ -24,6 +24,7 @@ void init_vbe(void *, void *);
 
 // ticks < 0 代表永远等待
 void boot_delay(int ticks) {
+#if ENABLE_BOOT_WAIT
     char chs[] = {'\\', '-', '/', '-'};
     uint32_t cnt = 0;
 
@@ -43,6 +44,7 @@ void boot_delay(int ticks) {
     }
     asm("cli;");
     printk("\b \b");
+#endif
 }
 
 void init_ttys();

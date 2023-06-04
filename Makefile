@@ -25,6 +25,7 @@ endif
 
 CFLAGS		= -g -c -fno-builtin -m32 -DBUILDER='"$(shell whoami)"'
 CFLAGS     += -DFIX_SYSENTER_ESP_MODE=1
+#CFLAGS     += -DENABLE_BOOT_WAIT=1
 SYSTEMMAP	= System.map
 KERNELBIN	= KERNEL.BIN
 LINKSCRIPT	= scripts/link.ld
