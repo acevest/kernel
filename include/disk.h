@@ -39,8 +39,10 @@ typedef struct disk_request {
 
 typedef struct {
     uint32_t count;
-    semaphore_t sem;
     list_head_t list;
+
+    // 供disk任务睡眠和被唤醒用
+    semaphore_t sem;
 } disk_request_queue_t;
 
 void send_disk_request(disk_request_t *r);

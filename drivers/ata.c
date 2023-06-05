@@ -15,8 +15,6 @@
 #include <string.h>
 #include <system.h>
 
-extern ide_pci_controller_t ide_pci_controller[];
-
 ide_drive_t ide_drives[MAX_IDE_DRIVE_CNT];
 
 #define ATA_TIMEOUT 10  // 10次时钟中断
@@ -75,15 +73,11 @@ void ata_read_identity_string(const uint16_t *identify, int bgn, int end, char *
 void ide_ata_init() {
     for (int i = 0; i < MAX_IDE_DRIVE_CNT; i++) {
         int drv_no = i;
+        int channel = drv_no >> 1;
         memset(ide_drives + i, 0, sizeof(ide_drive_t));
 
         ide_drive_t *drv = ide_drives + drv_no;
-
-        INIT_MUTEX(&drv->request_mutex);
-
-        drv->request_queue.count = 0;
-        INIT_LIST_HEAD(&drv->request_queue.list);
-        semaphore_init(&drv->request_queue.sem, 0);
+        drv->ide_pci_controller = ide_pci_controller + channel;
 
         // https://wiki.osdev.org/ATA_PIO_Mode
         // To use the IDENTIFY command, select a target drive by sending 0xA0 for the master drive, or 0xB0 for the
@@ -263,10 +257,10 @@ void ata_dma_read_ext(int drv, uint64_t pos, uint16_t count, void *dest) {
 
     int channel = (drv >> 1) & 0x01;
     assert(channel == 0 || channel == 1);
-    ide_pci_controller_t *pci = ide_pci_controller + channel;
+    ide_pci_controller_t *ide_ctrl = ide_pci_controller + channel;
 
     // 停止DMA
-    outb(PCI_IDE_CMD_STOP, pci->bus_cmd);
+    outb(PCI_IDE_CMD_STOP, ide_ctrl->bus_cmd);
 
     // 配置描述符表
     unsigned long dest_paddr = va2pa(dest);
@@ -276,19 +270,19 @@ void ata_dma_read_ext(int drv, uint64_t pos, uint16_t count, void *dest) {
     const uint32_t _64K = 1 << 16;
     assert(((dest_paddr + size) & _64K) == (dest_paddr & _64K));
 
-    pci->prdt[0].phys_addr = dest_paddr;
-    pci->prdt[0].byte_count = size;
-    pci->prdt[0].reserved = 0;
-    pci->prdt[0].eot = 1;
-    outl(va2pa(pci->prdt), pci->bus_prdt);
+    ide_ctrl->prdt[0].phys_addr = dest_paddr;
+    ide_ctrl->prdt[0].byte_count = size;
+    ide_ctrl->prdt[0].reserved = 0;
+    ide_ctrl->prdt[0].eot = 1;
+    outl(va2pa(ide_ctrl->prdt), ide_ctrl->bus_prdt);
 
-    // printk("paddr: %x prdt: %x %x prdte %x %x\n", dest_paddr, pci->prdt,
-    // va2pa(pci->prdt),
-    //        pci->prdt[0].phys_addr, *(((unsigned int *)pci->prdt) + 1));
+    // printk("paddr: %x prdt: %x %x prdte %x %x\n", dest_paddr, ide_ctrl->prdt,
+    // va2pa(ide_ctrl->prdt),
+    //        ide_ctrl->prdt[0].phys_addr, *(((unsigned int *)ide_ctrl->prdt) + 1));
 
     // 清除中断位和错误位
     // 这里清除的方式是是设置1后清除
-    outb(PCI_IDE_STATUS_INTR | PCI_IDE_STATUS_ERR, pci->bus_status);
+    outb(PCI_IDE_STATUS_INTR | PCI_IDE_STATUS_ERR, ide_ctrl->bus_status);
 
     // 不再设置nIEN，DMA需要中断
     outb(0x00, REG_CTL(drv));
@@ -328,26 +322,26 @@ void ata_dma_read_ext(int drv, uint64_t pos, uint16_t count, void *dest) {
     // 在qemu中用DMA的方式读数据就会读不到数据，而只触是发中断，然后寄存器（Bus Master IDE Status
     // Register）的值会一直是5 也就是INTERRUPT和和ACTIVE位是1，正常应该是4，也就是只有INTERRUPT位为1
     // 在bochs中则加不加这一句不会有影响，都能正常读到数据
-    unsigned int v = pci_read_config_word(pci_cmd(pci->pci, PCI_COMMAND));
+    unsigned int v = pci_read_config_word(pci_cmd(ide_ctrl->pci, PCI_COMMAND));
     // printk(" ide pci command %04x\n", v);
-    pci_write_config_word(v | PCI_COMMAND_MASTER, pci_cmd(pci->pci, PCI_COMMAND));
-    // pci_write_config_word(v, pci_cmd(pci->pci, PCI_COMMAND));
+    pci_write_config_word(v | PCI_COMMAND_MASTER, pci_cmd(ide_ctrl->pci, PCI_COMMAND));
+    // pci_write_config_word(v, pci_cmd(ide_ctrl->pci, PCI_COMMAND));
 
     // 指定DMA操作为读取硬盘操作，内核用DMA读取，对硬盘而言是写出
     // 并设置DMA的开始位，开始DMA
-    outb(PCI_IDE_CMD_WRITE | PCI_IDE_CMD_START, pci->bus_cmd);
+    outb(PCI_IDE_CMD_WRITE | PCI_IDE_CMD_START, ide_ctrl->bus_cmd);
 }
 
 // TODO
 int ata_dma_stop(int channel) {
-    ide_pci_controller_t *pci = ide_pci_controller + channel;
+    ide_pci_controller_t *ide_ctrl = ide_pci_controller + channel;
 
-    uint8_t x = inb(pci->bus_cmd);
+    uint8_t x = inb(ide_ctrl->bus_cmd);
     x &= ~PCI_IDE_CMD_START;
-    outb(x, pci->bus_cmd);
+    outb(x, ide_ctrl->bus_cmd);
 
-    uint8_t status = inb(pci->bus_status);
-    outb(status | PCI_IDE_STATUS_INTR | PCI_IDE_STATUS_ERR, pci->bus_status);
+    uint8_t status = inb(ide_ctrl->bus_status);
+    outb(status | PCI_IDE_STATUS_INTR | PCI_IDE_STATUS_ERR, ide_ctrl->bus_status);
 
     // TODO
     if (status & PCI_IDE_STATUS_ERR) {

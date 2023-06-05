@@ -35,6 +35,16 @@ void ide_pci_init(pci_device_t *pci) {
     unsigned int iobase = pci_read_config_long(pci_cmd(pci, PCI_BAR4));
 
     for (int i = 0; i < NR_IDE_CONTROLLER; i++) {
+        INIT_MUTEX(&ide_pci_controller[i].request_mutex);
+        ide_pci_controller[i].request_queue.count = 0;
+        INIT_LIST_HEAD(&ide_pci_controller[i].request_queue.list);
+        semaphore_init(&ide_pci_controller[i].request_queue.sem, 0);
+        semaphore_init(&ide_pci_controller[i].disk_intr_sem, 0);
+
+        ide_pci_controller[i].request_cnt = 0;
+        ide_pci_controller[i].irq_cnt = 0;
+        ide_pci_controller[i].consumed_cnt = 0;
+
         iobase += i * 8;  // secondary channel 需要加8
         printd("ide pci Base IO Address Register %08x\n", iobase);
         iobase &= 0xFFFC;  // 最低为0是内存地址为1是端口地址
@@ -103,39 +113,41 @@ void init_pci_controller(unsigned int classcode) {
     }
 }
 
-extern semaphore_t disk_intr_sem;
-
 extern void *mbr_buf;
-extern uint32_t disk_request_cnt;
-extern uint32_t disk_handled_cnt;
 
 uint8_t ata_pci_bus_status();
 
-volatile uint32_t disk_inter_cnt = 0;
-
 void ata_dma_stop(int channel);
 void ide_irq_bh_handler(void *arg) {
-    disk_inter_cnt++;
-
     int channel = (int)arg;
 
-    // printl(MPL_IDE, "disk req %u consumed %u irq %u", disk_request_cnt, disk_handled_cnt, disk_inter_cnt);
-    printlxy(MPL_IDE, MPO_IDE, "disk irq %u req %u consumed %u ", disk_inter_cnt, disk_request_cnt, disk_handled_cnt);
+    // printk("channel %08x\n", channel);
+    assert(channel <= 1);
+    assert(channel >= 0);
+
+    ide_pci_controller_t *ide_ctrl = ide_pci_controller + channel;
+    // printlxy(MPL_IDE, MPO_IDE, "disk irq %u req %u consumed %u ", disk_inter_cnt, disk_request_cnt,
+    // disk_handled_cnt);
+
+    printlxy(MPL_IDE0 + channel, MPO_IDE, "IDE%d req %u irq %u consumed %u", channel, ide_ctrl->request_cnt,
+             ide_ctrl->irq_cnt, ide_ctrl->consumed_cnt);
 
     // up里不会立即重新调度进程
-    up(&disk_intr_sem);
+    up(&ide_ctrl->disk_intr_sem);
 }
 
 void ide_irq_handler(unsigned int irq, pt_regs_t *regs, void *devid) {
     // printk("ide irq %d handler pci status: 0x%02x\n", irq, ata_pci_bus_status());
 
     int channel = irq == 14 ? 0 : 1;
+
+    ide_pci_controller_t *ide_ctrl = ide_pci_controller + channel;
+    atomic_inc(&ide_ctrl->irq_cnt);
+
     ata_dma_stop(channel);
 
-    add_irq_bh_handler(ide_irq_bh_handler, &channel);
+    add_irq_bh_handler(ide_irq_bh_handler, (void *)channel);
 }
-
-void ide1_irq_handler(unsigned int irq, pt_regs_t *regs, void *devid) { panic("ide 0"); }
 
 void ide_ata_init();
 void ide_init() {

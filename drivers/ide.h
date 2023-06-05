@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include <atomic.h>
 #include <disk.h>
 #include <pci.h>
 #include <semaphore.h>
@@ -177,13 +178,23 @@ typedef struct _ide_pci_controller {
 
     prdte_t *prdt;
 
-    // 这里应该改成一个请求链表
-    // 先简单实现
-    task_union *task;
-    int done;
+    // 提出请求的任务用这个字段互斥地添加请求到request_queue
+    // 同时也和disk任务互斥
+    semaphore_t request_mutex;
+    // 请求队列
+    disk_request_queue_t request_queue;
+
+    // task disk与中断函数之间的信号量
+    // 初始化成0
+    semaphore_t disk_intr_sem;
+
+    atomic_t request_cnt;
+    atomic_t irq_cnt;
+    atomic_t consumed_cnt;
 } ide_pci_controller_t;
 
 #define NR_IDE_CONTROLLER 2
+extern ide_pci_controller_t ide_pci_controller[NR_IDE_CONTROLLER];
 
 typedef struct _ide_drive {
     int present;
@@ -191,9 +202,7 @@ typedef struct _ide_drive {
     uint64_t lba48;
     uint64_t max_lba;
 
-    semaphore_t request_mutex;
-
-    disk_request_queue_t request_queue;
+    ide_pci_controller_t *ide_pci_controller;
 } ide_drive_t;
 
 #define MAX_IDE_DRIVE_CNT 4

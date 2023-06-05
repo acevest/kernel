@@ -28,7 +28,7 @@ void clk_bh_handler(void *arg);
 void clk_handler(unsigned int irq, pt_regs_t *regs, void *dev_id) {
     // if (jiffies % 100 == 0) {
     // printl(MPL_CLOCK, "clock irq: %d", jiffies);
-    printlxy(MPL_IRQ, MPO_CLOCK, "clock irq: %d", jiffies);
+    printlxy(MPL_IRQ, MPO_CLOCK, "CLK irq: %d", jiffies);
     // }
 
     jiffies++;

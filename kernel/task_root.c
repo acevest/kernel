@@ -97,7 +97,7 @@ u16 disk_buf1[256];
 u16 disk_buf2[256];
 
 void taskA_entry() {
-    current->priority = 9;
+    current->priority = 7;
 
     while (1) {
         sysc_wait(7);
@@ -122,10 +122,10 @@ void taskA_entry() {
 }
 
 void taskB_entry() {
-    current->priority = 9;
+    current->priority = 13;
 
     while (1) {
-        sysc_wait(10);
+        sysc_wait(7);
 
         uint64_t sect_nr = get_next_deubug_sect_nr();
         memset(disk_buf2, 0, 512);
@@ -136,7 +136,7 @@ void taskB_entry() {
         r.count = 1;
         r.buf = disk_buf2;
         send_disk_request(&r);
-        // verify_hd_data(sect_nr, disk_buf2, current->name);
+        verify_hd_data(sect_nr, disk_buf2, current->name);
 
         for (int i = 0; i < 1; i++) {
             asm("hlt;");
@@ -171,8 +171,8 @@ void root_task_entry() {
     disk_init();
 
     kernel_task("init", init_task_entry, NULL);
-    kernel_task("disk/0", disk_task_entry, (void *)0);
-    kernel_task("disk/2", disk_task_entry, (void *)2);
+    kernel_task("ide/0", disk_task_entry, (void *)0);
+    kernel_task("ide/1", disk_task_entry, (void *)1);
     kernel_task("user", user_task_entry, NULL);
 
     // for (int i = 0; i < 100; i++) {

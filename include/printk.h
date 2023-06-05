@@ -29,7 +29,8 @@ int printlo(unsigned int line, unsigned int offset, const char *fmtstr, ...);
 enum {
     MPL_TITLE,
     MPL_IRQ,
-    MPL_IDE,
+    MPL_IDE0,
+    MPL_IDE1,
     MPL_CURRENT,
     MPL_TEST,
     MPL_DEBUG,

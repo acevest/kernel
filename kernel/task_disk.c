@@ -12,16 +12,9 @@
 #include <ide.h>
 #include <sched.h>
 
-// task disk与中断函数之间的信号量
-semaphore_t disk_intr_sem;
-
-// task disk 之间发送命令的互斥量
-DECLARE_MUTEX(disk_cmd_mutex);
-
-void disk_init() { semaphore_init(&disk_intr_sem, 0); }
-
-volatile uint32_t disk_request_cnt = 0;
-volatile uint32_t disk_handled_cnt = 0;
+void disk_init() {
+    // ...
+}
 
 void send_disk_request(disk_request_t *r) {
     if (NULL == r) {
@@ -51,55 +44,51 @@ void send_disk_request(disk_request_t *r) {
         panic("disk DMA read cross 64K");
     }
 
-    mutex_lock(&drv->request_mutex);
-    disk_request_cnt++;
-    list_add_tail(&r->list, &drv->request_queue.list);
-    mutex_unlock(&drv->request_mutex);
+    mutex_lock(&drv->ide_pci_controller->request_mutex);
+    atomic_inc(&drv->ide_pci_controller->request_cnt);
+    list_add_tail(&r->list, &drv->ide_pci_controller->request_queue.list);
+    mutex_unlock(&drv->ide_pci_controller->request_mutex);
 
     // 唤醒task_disk
-    up(&drv->request_queue.sem);
+    up(&drv->ide_pci_controller->request_queue.sem);
 
     // 等待被task_disk唤醒
     down(&r->sem);
 }
 
-void disk_task_entry(int arg) {
+void disk_task_entry(void *arg) {
     int r_cnt = 0;
     while (1) {
-        // 如果要改造成每个drive对应一个内核任务的话
-        // 就要注意共享disk_intr_sem的问题
-        // 目前只支持drv_no == 0
-        int drv_no = arg;
-        ide_drive_t *drv = ide_drives + drv_no;
-        if (drv->present == 0) {
-            panic("disk not present");
-        }
+        int channel = (int)arg;
+        ide_pci_controller_t *ide_ctrl = ide_pci_controller + channel;
 
         // 为了在DEBUG时看到RUNNING
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < 1; i++) {
             asm("hlt;");
         }
 
         // printk("wait request for hard disk %d\n", drv_no);
-        down(&drv->request_queue.sem);
+        down(&ide_ctrl->request_queue.sem);
         // printk("hard disk %d\n", drv_no);
 
-        mutex_lock(&drv->request_mutex);
+        mutex_lock(&ide_ctrl->request_mutex);
         disk_request_t *r;
-        r = list_first_entry(&drv->request_queue.list, disk_request_t, list);
+        r = list_first_entry(&ide_ctrl->request_queue.list, disk_request_t, list);
         if (NULL == r) {
             panic("no disk request");
         }
 
         list_del(&r->list);
-        disk_handled_cnt++;
-        mutex_unlock(&drv->request_mutex);
+        atomic_inc(&ide_ctrl->consumed_cnt);
+        mutex_unlock(&ide_ctrl->request_mutex);
 
-        // 目前这个disk_cmd_mutex是用于两个通道四个DRIVE之间互斥
-        // 目前还不确定两个通道之间能否同时执行
-        // 后续要把disk分成两个进程,分别负责channel 0 1
-        // 这里再视情况改写
-        mutex_lock(&disk_cmd_mutex);
+        // TODO dev -> drv
+        int drv_no = r->dev;
+        ide_drive_t *drv = ide_drives + drv_no;
+        if (drv->present == 0) {
+            panic("disk not present");
+        }
+
         switch (r->command) {
         case DISK_REQ_IDENTIFY:
             assert(r->count == 1);
@@ -117,8 +106,8 @@ void disk_task_entry(int arg) {
         }
 
         // 等待硬盘中断
-        down(&disk_intr_sem);
-        mutex_unlock(&disk_cmd_mutex);
+        down(&ide_ctrl->disk_intr_sem);
+
         // 读数据
         if (DISK_REQ_IDENTIFY == r->command) {
             void ata_read_data(int drv_no, int sect_cnt, void *dst);

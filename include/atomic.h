@@ -9,6 +9,10 @@
 
 #pragma once
 
+#include <types.h>
+
+typedef uint32_t atomic_t;
+
 #define atomic_inc(x) __sync_add_and_fetch((x), 1)
 #define atomic_dec(x) __sync_sub_and_fetch((x), 1)
 #define atomic_add(x, y) __sync_add_and_fetch((x), (y))
