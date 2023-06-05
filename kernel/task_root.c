@@ -25,13 +25,16 @@ int sysc_wait(uint32_t ticks);
 
 #define get_eflags(x) __asm__ __volatile__("pushfl; popl %0;" : "=g"(x)::"memory")
 
-void kernel_task(char *name, void *entry) {
+void kernel_task(char *name, void *entry, void *arg) {
     pt_regs_t regs;
 
     memset((void *)&regs, 0, sizeof(regs));
 
     // 内核任务入口
     regs.edx = (unsigned long)entry;
+
+    // 参数
+    regs.ecx = (unsigned long)arg;
 
     regs.eax = (u32)name;
 
@@ -103,6 +106,7 @@ void taskA_entry() {
         memset(disk_buf1, 0, 512);
 
         disk_request_t r;
+        r.dev = 0;
         r.command = DISK_REQ_READ;
         r.pos = sect_nr;
         r.count = 1;
@@ -126,12 +130,13 @@ void taskB_entry() {
         uint64_t sect_nr = get_next_deubug_sect_nr();
         memset(disk_buf2, 0, 512);
         disk_request_t r;
+        r.dev = 2;
         r.command = DISK_REQ_READ;
         r.pos = sect_nr;
         r.count = 1;
         r.buf = disk_buf2;
         send_disk_request(&r);
-        verify_hd_data(sect_nr, disk_buf2, current->name);
+        // verify_hd_data(sect_nr, disk_buf2, current->name);
 
         for (int i = 0; i < 1; i++) {
             asm("hlt;");
@@ -165,17 +170,18 @@ void root_task_entry() {
     void disk_init();
     disk_init();
 
-    kernel_task("init", init_task_entry);
-    kernel_task("disk", disk_task_entry);
-    kernel_task("user", user_task_entry);
+    kernel_task("init", init_task_entry, NULL);
+    kernel_task("disk/0", disk_task_entry, (void *)0);
+    kernel_task("disk/2", disk_task_entry, (void *)2);
+    kernel_task("user", user_task_entry, NULL);
 
     // for (int i = 0; i < 100; i++) {
     //     asm("hlt;");
     // }
 
-    kernel_task("tskA", taskA_entry);
-    kernel_task("tskB", taskB_entry);
-    kernel_task("tskC", taskC_entry);
+    kernel_task("tskA", taskA_entry, NULL);
+    kernel_task("tskB", taskB_entry, NULL);
+    kernel_task("tskC", taskC_entry, NULL);
 
     current->priority = 1;
     while (1) {

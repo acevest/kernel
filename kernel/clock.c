@@ -23,7 +23,8 @@ unsigned int sys_clock() { return jiffies; }
 void debug_print_all_tasks();
 
 void dump_irq_nr_stack();
-void clk_bh_handler();
+void clk_bh_handler(void *arg);
+
 void clk_handler(unsigned int irq, pt_regs_t *regs, void *dev_id) {
     // if (jiffies % 100 == 0) {
     // printl(MPL_CLOCK, "clock irq: %d", jiffies);
@@ -45,13 +46,13 @@ void clk_handler(unsigned int irq, pt_regs_t *regs, void *dev_id) {
 
     assert(current->ticks <= TASK_MAX_PRIORITY);  // 防止ticks被减到0后再减溢出
 
-    add_irq_bh_handler(clk_bh_handler);
+    add_irq_bh_handler(clk_bh_handler, NULL);
 }
 
 // 开中断执行这个函数
 // 后续放到一个内核任务中去做，需要先把禁止内核抢占做了
 const char *task_state(unsigned int state);
-void clk_bh_handler() {
+void clk_bh_handler(void *arg) {
     task_union *p = 0;
     list_head_t *t = 0;
     list_head_t *pos = 0;
@@ -60,7 +61,7 @@ void clk_bh_handler() {
         // printk("%s state: %s\n", p->name, task_state(p->state));
         assert(p->state == TASK_WAIT);
         assert(p->delay_jiffies != 0);
-        if (jiffies > p->delay_jiffies) {
+        if (p->delay_jiffies > 0 && jiffies > p->delay_jiffies) {
             list_del(&p->pend);
             p->delay_jiffies = 0;
             p->state = TASK_READY;

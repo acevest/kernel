@@ -162,7 +162,7 @@ void irq_bh_handler() {
         }
 
         while (action != NULL) {
-            action->handler();
+            action->handler(action->arg);
             irq_bh_action_t *p = action;
             action = action->next;
             kfree(p);
@@ -218,7 +218,7 @@ int request_irq(unsigned int irq, void (*handler)(unsigned int, pt_regs_t *, voi
     return 0;
 }
 
-void add_irq_bh_handler(void (*handler)()) {
+void add_irq_bh_handler(void (*handler)(), void *arg) {
     // 只能在中断处理函数中调用
     assert(irq_disabled());
 
@@ -227,12 +227,12 @@ void add_irq_bh_handler(void (*handler)()) {
     assert(p != NULL);
 
     p->handler = handler;
+    p->arg = arg;
 
     if (irq_bh_actions_end == NULL) {
         assert(irq_bh_actions == NULL);
         irq_bh_actions = p;
         irq_bh_actions_end = p;
-
     } else {
         assert(irq_bh_actions != NULL);
         irq_bh_actions_end->next = p;

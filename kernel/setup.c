@@ -80,7 +80,7 @@ void setup_kernel() {
     boot_delay(DEFAULT_BOOT_DELAY_TICKS);
 
     extern tty_t *const monitor_tty;
-    // tty_switch(monitor_tty);
+    tty_switch(monitor_tty);
 
     boot_delay(DEFAULT_BOOT_DELAY_TICKS);
 
@@ -89,12 +89,4 @@ void setup_kernel() {
 
     void ide_init();
     ide_init();
-}
-
-// 在开中断的情况下继续初始化的内容
-void setup_under_irq() {
-    void ata_init();
-    ata_init();
-    return;
-    setup_fs();
 }

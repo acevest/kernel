@@ -22,7 +22,7 @@ const uint32_t PHY_VADDR = 0xB8000;
 const uint32_t VADDR = (uint32_t)pa2va(PHY_VADDR);
 #define TTY_VRAM_SIZE (0x1000)
 
-#define NR_TTYS 8
+#define MAX_NR_TTYS 8
 tty_t ttys[NR_TTYS];
 
 #define MAX_X 80
@@ -67,6 +67,8 @@ void __tty_set_next_pos_color(tty_t *tty, char color) {
 
 void init_tty(tty_t *tty, const char *name, unsigned long base) {
     assert(0 != tty);
+    assert(NR_TTYS >= 1);
+    assert(NR_TTYS <= MAX_NR_TTYS);
 
     strlcpy(tty->name, name, sizeof(tty->name));
 

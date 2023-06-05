@@ -46,6 +46,7 @@ typedef struct irq_desc {
 
 typedef struct irq_bh_action {
     void (*handler)();
+    void *arg;
     struct irq_bh_action *next;
 } irq_bh_action_t;
 
@@ -56,7 +57,7 @@ int request_irq(unsigned int irq,
                 // void (*handler)(pt_regs_t *, unsigned int),
                 void (*handler)(unsigned int, pt_regs_t *, void *), const char *devname, void *dev_id);
 
-void add_irq_bh_handler(void (*handler)());
+void add_irq_bh_handler(void (*handler)(), void *arg);
 
 int open_irq(unsigned int irq);
 int close_irq(unsigned int irq);

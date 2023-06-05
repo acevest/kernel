@@ -153,7 +153,7 @@ void dump_pci_dev() {
         //        pci->progif, pci->bus, pci->intr_line);
         // printk("%s\n", pci_get_info(pci->classcode, pci->progif));
         printk("PCI %03d:%02d.%d #%02d %04X:%04X %s\n", pci->bus, pci->dev, pci->devfn, pci->intr_line, pci->vendor,
-               pci->device, pci_get_info(pci->classcode, pci->progif));
+               pci->classcode, pci_get_info(pci->classcode, pci->progif));
 #if 0
         switch (pci->hdr_type) {
         case PCI_HDRTYPE_NORMAL:
@@ -228,6 +228,9 @@ void setup_pci() {
     }
 
     dump_pci_dev();
+
+    // while (1)
+    //     ;
 }
 
 typedef struct pci_info {

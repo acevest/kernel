@@ -9,8 +9,8 @@
 
 #pragma once
 
-extern unsigned int ATA_CHL0_CMD_BASE;
-extern unsigned int ATA_CHL1_CMD_BASE;
+extern unsigned int IDE_CHL0_CMD_BASE;
+extern unsigned int IDE_CHL1_CMD_BASE;
 
 // CTL其实不用BASE，只有一个寄存器
 // 这么写纯粹是为了代码好看
@@ -20,8 +20,8 @@ extern unsigned int ATA_CHL1_CMD_BASE;
 // bit2: SRST   Software Reset
 // bit1: IEN    disable Interrupt
 // bit0: 0
-extern unsigned int ATA_CHL0_CTL_BASE;
-extern unsigned int ATA_CHL1_CTL_BASE;
+extern unsigned int IDE_CHL0_CTL_BASE;
+extern unsigned int IDE_CHL1_CTL_BASE;
 
 #define ATA_DATA 0
 
@@ -47,7 +47,7 @@ extern unsigned int ATA_CHL1_CTL_BASE;
 // bit5: Obsolete
 // bit4: DRIVE
 // bit[0, 3] HS 如果L为0就是磁头号Head Number，如果L为1，则为LBA的24-27位
-#define ATA_LBA48_DEVSEL(dev) (0x40 | ((dev & 0x01) << 4))
+#define ATA_LBA48_DEVSEL(drv) (0x40 | ((drv & 0x01) << 4))
 #define ATA_DEVICE 6
 
 #define ATA_CMD 7
@@ -95,24 +95,24 @@ extern unsigned int ATA_CHL1_CTL_BASE;
 #define ATA_CTL_SRST 0x04       /* soft reset controller */
 #define ATA_CTL_NIEN 0x02       /* disable interrupts */
 
-#define ATA_GET_CHL(dev) (((dev) >> 1) & 0x01)
-#define ATA_GET_DEV(dev) (((dev) >> 1) & 0x01)
+#define ATA_GET_CHL(drv) (((drv) >> 1) & 0x01)
+#define ATA_GET_DEV(drv) (((drv) >> 1) & 0x01)
 
-#define REG_CMD_BASE(dev, offset) (ATA_GET_CHL(dev) ? (ATA_CHL1_CMD_BASE + offset) : (ATA_CHL0_CMD_BASE + offset))
-#define REG_CTL_BASE(dev, offset) (ATA_GET_CHL(dev) ? (ATA_CHL1_CTL_BASE + offset) : (ATA_CHL0_CTL_BASE + offset))
+#define REG_CMD_BASE(drv, offset) (ATA_GET_CHL(drv) ? (IDE_CHL1_CMD_BASE + offset) : (IDE_CHL0_CMD_BASE + offset))
+#define REG_CTL_BASE(drv, offset) (ATA_GET_CHL(drv) ? (IDE_CHL1_CTL_BASE + offset) : (IDE_CHL0_CTL_BASE + offset))
 
-#define REG_DATA(dev) REG_CMD_BASE(dev, ATA_DATA)
-#define REG_ERR(dev) REG_CMD_BASE(dev, ATA_ERR)
-#define REG_NSECTOR(dev) REG_CMD_BASE(dev, ATA_NSECTOR)
-#define REG_LBAL(dev) REG_CMD_BASE(dev, ATA_LBAL)
-#define REG_LBAM(dev) REG_CMD_BASE(dev, ATA_LBAM)
-#define REG_LBAH(dev) REG_CMD_BASE(dev, ATA_LBAH)
-#define REG_DEVICE(dev) REG_CMD_BASE(dev, ATA_DEVICE)
-#define REG_STATUS(dev) REG_CMD_BASE(dev, ATA_STATUS)
-#define REG_FEATURES(dev) REG_CMD_BASE(dev, ATA_FEATURES)
+#define REG_DATA(drv) REG_CMD_BASE(drv, ATA_DATA)
+#define REG_ERR(drv) REG_CMD_BASE(drv, ATA_ERR)
+#define REG_NSECTOR(drv) REG_CMD_BASE(drv, ATA_NSECTOR)
+#define REG_LBAL(drv) REG_CMD_BASE(drv, ATA_LBAL)
+#define REG_LBAM(drv) REG_CMD_BASE(drv, ATA_LBAM)
+#define REG_LBAH(drv) REG_CMD_BASE(drv, ATA_LBAH)
+#define REG_DEVICE(drv) REG_CMD_BASE(drv, ATA_DEVICE)
+#define REG_STATUS(drv) REG_CMD_BASE(drv, ATA_STATUS)
+#define REG_FEATURES(drv) REG_CMD_BASE(drv, ATA_FEATURES)
 
-#define REG_CMD(dev) REG_CMD_BASE(dev, ATA_CMD)
-#define REG_CTL(dev) REG_CTL_BASE(dev, ATA_CTL)
+#define REG_CMD(drv) REG_CMD_BASE(drv, ATA_CMD)
+#define REG_CTL(drv) REG_CTL_BASE(drv, ATA_CTL)
 
 #define ATA_IDENT_DEVTYPE 0
 #define ATA_IDENT_CYLINDERS 2

@@ -1,8 +1,9 @@
 qemu-system-i386 \
     -device ich9-ahci,id=ahci \
     -boot d \
-    -drive file=HD.IMG,format=raw,index=0,media=disk \
+    -drive file=HDa.IMG,format=raw,index=0,media=disk \
     -drive file=kernel.iso,index=1,media=cdrom \
+    -drive file=HDb.IMG,format=raw,index=2,media=disk \
     -name kernel \
     -s -S \
     &

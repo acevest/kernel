@@ -95,9 +95,12 @@ ret_from_fork_krnl:
     popfl               // EFLAGS
     addl    $8, %esp    // ESP SS
 
+    pushl   %ecx
     call    *%edx
 
     addl    $4, %esp    // CALL PUSH EIP
+
+    addl    $4, %esp    // ecx: arg
 
     // TODO
     // add exit here

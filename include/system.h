@@ -139,7 +139,7 @@ typedef struct pt_regs {
     u16 ss, _ss;
 } __attribute__((packed)) pt_regs_t;
 
-typedef unsigned long dev_t;
+typedef uint32_t dev_t;
 
 typedef struct system {
     u32 mmap_addr;

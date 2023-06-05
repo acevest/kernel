@@ -166,10 +166,10 @@ const char *task_state(unsigned int state) {
 void debug_print_all_tasks() {
     task_union *p = 0;
     list_head_t *pos = 0, *t = 0;
-    printl(MPL_TASK_TITLE, "         NAME     STATE TK/PI TURN       SCHED      KEEP");
+    printl(MPL_TASK_TITLE, "         NAME       STATE TK/PI TURN       SCHED      KEEP");
     list_for_each_safe(pos, t, &all_tasks) {
         p = list_entry(pos, task_union, list);
-        printl(MPL_TASK_0 + p->pid, "%08x%s%4s:%u %s %02u/%02u %-10u %-10u %-10u", p,
+        printl(MPL_TASK_0 + p->pid, "%08x%s%-6s:%u %s %02u/%02u %-10u %-10u %-10u", p,
                p->state == TASK_RUNNING ? ">" : " ", p->name, p->pid, task_state(p->state), p->ticks, p->priority,
                p->turn, p->sched_cnt, p->sched_keep_cnt);
     }
@@ -245,6 +245,7 @@ void schedule() {
     }
 
     assert(current->state == TASK_RUNNING);
+
     irq_restore(iflags);
 }
 

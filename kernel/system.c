@@ -134,7 +134,7 @@ void setup_irqs() {
     request_irq(0x01, kbd_handler, "Intel 8042", "PS/2 Keyboard");
     // request_irq(0x0E, default_ide_irq_handler, "hard", "IDE");
     for (int i = 0; i < 16; i++) {
-        if (i != 0 && i != 1 && i != 10 && i != 14) {
+        if (i != 0 && i != 1 && i != 10 && i != 14 && i != 15) {
             request_irq(i, default_irq_handler, "default", "default");
         }
     }
@@ -152,6 +152,7 @@ void setup_irqs() {
     open_irq(IRQ_CLOCK);
     open_irq(IRQ_KEYBOARD);
     open_irq(IRQ_DISK);
+    open_irq(15);
 }
 
 void boot_irq_handler();

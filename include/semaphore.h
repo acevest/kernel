@@ -33,5 +33,11 @@ void down(semaphore_t *s);
 void up(semaphore_t *s);
 
 #define DECLARE_MUTEX(name) semaphore_t name = SEMAPHORE_INITIALIZER(name, 1)
+
+#define INIT_MUTEX(ptr)                      \
+    do {                                     \
+        (ptr)->cnt = 1;                      \
+        INIT_LIST_HEAD(&((ptr)->wait_list)); \
+    } while (0)
 void mutex_lock(semaphore_t *);
 void mutex_unlock(semaphore_t *);

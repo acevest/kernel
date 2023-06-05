@@ -13,14 +13,16 @@
 #include <task.h>
 #include <wait.h>
 
-ide_pci_controller_t ide_pci_controller;
+ide_pci_controller_t ide_pci_controller[NR_IDE_CONTROLLER];
 
-extern unsigned int ATA_CHL0_CMD_BASE;
-extern unsigned int ATA_CHL1_CMD_BASE;
+unsigned int IDE_CHL0_CMD_BASE = 0x1F0;
+unsigned int IDE_CHL1_CMD_BASE = 0x170;
 
-extern unsigned int ATA_CHL0_CTL_BASE;
-extern unsigned int ATA_CHL1_CTL_BASE;
+unsigned int IDE_CHL0_CTL_BASE = 0x3F6;
+unsigned int IDE_CHL1_CTL_BASE = 0x376;
 
+// 《PCI IDE Controller Specification》
+// 《Programming Interface for Bus Master IDE Controller》
 void ide_pci_init(pci_device_t *pci) {
     unsigned int v;
 
@@ -28,37 +30,38 @@ void ide_pci_init(pci_device_t *pci) {
     // printk(" ide pci command %04x\n", v);
 
     v = pci_read_config_byte(pci_cmd(pci, PCI_PROGIF));
-    printk(" ide pci program interface %02x\n", v);
+    printd("ide pci program interface %02x\n", v);
 
     unsigned int iobase = pci_read_config_long(pci_cmd(pci, PCI_BAR4));
-    printk(" ide pci Base IO Address Register %08x\n", iobase);
-    iobase &= 0xFFFC;  // 最低为0是内存地址为1是端口地址
-    ide_pci_controller.bus_iobase = iobase;
-    ide_pci_controller.bus_cmd = iobase + PCI_IDE_CMD;
-    ide_pci_controller.bus_status = iobase + PCI_IDE_STATUS;
-    ide_pci_controller.bus_prdt = iobase + PCI_IDE_PRDT;
-    ide_pci_controller.prdt = (prdte_t *)alloc_one_page(0);
 
-    int i;
-    printk(" BARS: ");
-    for (i = 0; i < BARS_CNT; ++i) {
-        printk("%08x ", pci->bars[i]);
-        pci->bars[i] &= (~1UL);
+    for (int i = 0; i < NR_IDE_CONTROLLER; i++) {
+        iobase += i * 8;  // secondary channel 需要加8
+        printd("ide pci Base IO Address Register %08x\n", iobase);
+        iobase &= 0xFFFC;  // 最低为0是内存地址为1是端口地址
+        ide_pci_controller[i].bus_iobase = iobase;
+        ide_pci_controller[i].bus_cmd = iobase + PCI_IDE_CMD;
+        ide_pci_controller[i].bus_status = iobase + PCI_IDE_STATUS;
+        ide_pci_controller[i].bus_prdt = iobase + PCI_IDE_PRDT;
+        ide_pci_controller[i].prdt = (prdte_t *)alloc_one_page(0);
+
+        printd("BARS: ");
+        for (int j = 0; j < BARS_CNT; ++j) {
+            printd("%08x ", pci->bars[j]);
+            pci->bars[j] &= (~1UL);
+        }
+        printd("\n");
+
+        ide_pci_controller[i].pci = pci;
     }
-    printk("\n");
 
-    ATA_CHL0_CMD_BASE = pci->bars[0] ? pci->bars[0] : ATA_CHL0_CMD_BASE;
-    ATA_CHL0_CTL_BASE = pci->bars[1] ? pci->bars[1] : ATA_CHL0_CTL_BASE;
+    IDE_CHL0_CMD_BASE = pci->bars[0] ? pci->bars[0] : IDE_CHL0_CMD_BASE;
+    IDE_CHL0_CTL_BASE = pci->bars[1] ? pci->bars[1] : IDE_CHL0_CTL_BASE;
 
-    ATA_CHL1_CMD_BASE = pci->bars[2] ? pci->bars[2] : ATA_CHL1_CMD_BASE;
-    ATA_CHL1_CTL_BASE = pci->bars[3] ? pci->bars[3] : ATA_CHL1_CTL_BASE;
+    IDE_CHL1_CMD_BASE = pci->bars[2] ? pci->bars[2] : IDE_CHL1_CMD_BASE;
+    IDE_CHL1_CTL_BASE = pci->bars[3] ? pci->bars[3] : IDE_CHL1_CTL_BASE;
 
-    ide_pci_controller.pci = pci;
-
-    printd("channel0: cmd %04x ctl %04x channel1: cmd %04x ctl %04x\n", ATA_CHL0_CMD_BASE, ATA_CHL0_CTL_BASE,
-           ATA_CHL1_CMD_BASE, ATA_CHL1_CTL_BASE);
-    // printl(18, "channel0: cmd %04x ctl %04x channel1: cmd %04x ctl %04x", HD_CHL0_CMD_BASE, HD_CHL0_CTL_BASE,
-    // HD_CHL1_CMD_BASE, HD_CHL1_CTL_BASE);
+    printd("ide channel 0: cmd %04x ctl %04x\n", IDE_CHL0_CMD_BASE, IDE_CHL0_CTL_BASE);
+    printd("ide channel 1: cmd %04x ctl %04x\n", IDE_CHL1_CMD_BASE, IDE_CHL1_CTL_BASE);
 }
 
 // void ide_status() {
@@ -82,6 +85,11 @@ void ide_pci_init(pci_device_t *pci) {
 const char *pci_get_info(unsigned int classcode, unsigned int progif);
 void init_pci_controller(unsigned int classcode) {
     pci_device_t *pci = pci_find_device_by_classcode(classcode);
+    if (pci == NULL) {
+        printk("can not find pci classcode: %08x", classcode);
+        panic("can not find ide controller");
+    }
+    assert(pci->intr_line < 16);
     if (pci != 0 && pci->intr_line < 16) {
         printk("found pci %03d:%02d.%d #%02d %04X:%04X ProgIF %02x %s\n", pci->bus, pci->dev, pci->devfn,
                pci->intr_line, pci->vendor, pci->device, pci->progif, pci_get_info(pci->classcode, pci->progif));
@@ -98,7 +106,6 @@ void init_pci_controller(unsigned int classcode) {
 extern semaphore_t disk_intr_sem;
 
 extern void *mbr_buf;
-extern ide_pci_controller_t ide_pci_controller;
 extern uint32_t disk_request_cnt;
 extern uint32_t disk_handled_cnt;
 
@@ -106,12 +113,15 @@ uint8_t ata_pci_bus_status();
 
 volatile uint32_t disk_inter_cnt = 0;
 
-void ide_irq_bh_handler() {
+void ata_dma_stop(int channel);
+void ide_irq_bh_handler(void *arg) {
     disk_inter_cnt++;
+
+    int channel = (int)arg;
 
     // printl(MPL_IDE, "disk req %u consumed %u irq %u", disk_request_cnt, disk_handled_cnt, disk_inter_cnt);
     printlxy(MPL_IDE, MPO_IDE, "disk irq %u req %u consumed %u ", disk_inter_cnt, disk_request_cnt, disk_handled_cnt);
-    ata_dma_stop();
+
     // up里不会立即重新调度进程
     up(&disk_intr_sem);
 }
@@ -119,18 +129,27 @@ void ide_irq_bh_handler() {
 void ide_irq_handler(unsigned int irq, pt_regs_t *regs, void *devid) {
     // printk("ide irq %d handler pci status: 0x%02x\n", irq, ata_pci_bus_status());
 
-    add_irq_bh_handler(ide_irq_bh_handler);
+    int channel = irq == 14 ? 0 : 1;
+    ata_dma_stop(channel);
+
+    add_irq_bh_handler(ide_irq_bh_handler, &channel);
 }
 
-void ide_init() {
-    // memset((void *)&drv, 0, sizeof(drv));
-    memset(&ide_pci_controller, 0, sizeof(ide_pci_controller));
+void ide1_irq_handler(unsigned int irq, pt_regs_t *regs, void *devid) { panic("ide 0"); }
 
-    void ide_ata_init();
+void ide_ata_init();
+void ide_init() {
+    memset(ide_pci_controller, 0, sizeof(ide_pci_controller[0]) * NR_IDE_CONTROLLER);
+
+    // 读PCI里 IDE相关寄存器的配置
+    // init_pci_controller(0x0106);
+    init_pci_controller(0x0101);
+    // init_pci_controller(0x7010);
+
+    // 读IDE 硬盘的identity
     ide_ata_init();
 
     request_irq(0x0E, ide_irq_handler, "hard", "IDE");
 
-    // init_pci_controller(0x0106);
-    init_pci_controller(0x0101);
+    request_irq(0x0F, ide_irq_handler, "hard", "IDE");
 }

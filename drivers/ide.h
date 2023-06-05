@@ -9,7 +9,9 @@
 
 #pragma once
 
+#include <disk.h>
 #include <pci.h>
+#include <semaphore.h>
 #include <system.h>
 #include <task.h>
 
@@ -180,6 +182,22 @@ typedef struct _ide_pci_controller {
     task_union *task;
     int done;
 } ide_pci_controller_t;
+
+#define NR_IDE_CONTROLLER 2
+
+typedef struct _ide_drive {
+    int present;
+    int dma;
+    uint64_t lba48;
+    uint64_t max_lba;
+
+    semaphore_t request_mutex;
+
+    disk_request_queue_t request_queue;
+} ide_drive_t;
+
+#define MAX_IDE_DRIVE_CNT 4
+extern ide_drive_t ide_drives[MAX_IDE_DRIVE_CNT];
 
 void sleep_on_ide();
 void wait_on_ide();
