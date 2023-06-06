@@ -32,6 +32,8 @@ void down(semaphore_t *s);
 // 只会唤醒进程，但不会立即重新调度进程
 void up(semaphore_t *s);
 
+typedef semaphore_t mutex_t;
+
 #define DECLARE_MUTEX(name) semaphore_t name = SEMAPHORE_INITIALIZER(name, 1)
 
 #define INIT_MUTEX(ptr)                      \
@@ -39,5 +41,5 @@ void up(semaphore_t *s);
         (ptr)->cnt = 1;                      \
         INIT_LIST_HEAD(&((ptr)->wait_list)); \
     } while (0)
-void mutex_lock(semaphore_t *);
-void mutex_unlock(semaphore_t *);
+void mutex_lock(mutex_t *);
+void mutex_unlock(mutex_t *);

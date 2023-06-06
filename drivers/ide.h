@@ -180,7 +180,7 @@ typedef struct _ide_pci_controller {
 
     // 提出请求的任务用这个字段互斥地添加请求到request_queue
     // 同时也和disk任务互斥
-    semaphore_t request_mutex;
+    mutex_t request_mutex;
     // 请求队列
     disk_request_queue_t request_queue;
 
