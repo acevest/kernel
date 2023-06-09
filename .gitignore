@@ -21,7 +21,9 @@
 *.img
 *build*
 *.BIN
+*.ELF
 *.bin
+*.elf
 *.map
 *.sym
 *.diff

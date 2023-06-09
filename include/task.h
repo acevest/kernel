@@ -42,11 +42,11 @@ enum {
 
 typedef union task_union {
     struct {
-        unsigned long esp0; /* kernel stack */
+        uint32_t esp0; /* kernel stack */
 
         /* for context switch */
-        unsigned long esp;
-        unsigned long eip;
+        uint32_t esp;
+        uint32_t eip;
 
         uint32_t ticks;
         uint32_t turn;  // 时间片用完次数
@@ -57,9 +57,12 @@ typedef union task_union {
 
         pid_t pid;
         pid_t ppid;
+
         volatile unsigned int state;
+        const char *reason;
+
         long exit_code;
-        unsigned long cr3;
+        uint32_t cr3;
 
         long tty;
 

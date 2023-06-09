@@ -33,7 +33,7 @@ volatile void __down(semaphore_t *s) {
 
     while (true) {
         task->state = TASK_WAIT;
-
+        task->reason = "down";
         schedule();
 
         if (waiter.up) {
@@ -61,6 +61,7 @@ volatile void __up(semaphore_t *s) {
     waiter->up = 1;
 
     waiter->task->state = TASK_READY;
+    waiter->task->reason = "up";
 }
 
 volatile void up(semaphore_t *s) {

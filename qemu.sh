@@ -17,7 +17,7 @@ qemu-system-i386 \
 pid=$!
 echo "pid is ${pid}"
 
-i386-elf-gdb KERNEL.BIN -x gdbscript; kill -9 $pid
+i386-elf-gdb KERNEL.ELF -x gdbscript; kill -9 $pid
 
 echo "kill pid ${pid}"
 

@@ -65,6 +65,7 @@ void clk_bh_handler(void *arg) {
             list_del(&p->pend);
             p->delay_jiffies = 0;
             p->state = TASK_READY;
+            p->reason = "clk_bh";
         }
     }
 

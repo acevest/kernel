@@ -53,7 +53,7 @@ cp grub.cfg ${MNT}/boot/grub2/
 sleep 1
 
 # 拷贝内核文件
-cp ../KERNEL.BIN ${MNT}/boot/Kernel
+cp ../KERNEL.ELF ${MNT}/boot/Kernel
 sleep 1
 
 umount $MNT

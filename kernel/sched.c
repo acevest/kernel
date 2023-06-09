@@ -56,6 +56,7 @@ void init_root_task() {
     root_task.pid = get_next_pid();
     root_task.ppid = 0;
     root_task.state = TASK_READY;
+    root_task.reason = "root";
     root_task.priority = 7;
     root_task.ticks = root_task.priority;
     root_task.turn = 0;
@@ -166,12 +167,12 @@ const char *task_state(unsigned int state) {
 void debug_print_all_tasks() {
     task_union *p = 0;
     list_head_t *pos = 0, *t = 0;
-    printl(MPL_TASK_TITLE, "         NAME       STATE TK/PI TURN       SCHED      KEEP");
+    printl(MPL_TASK_TITLE, "         NAME       STATE TK/PI REASON     SCHED      KEEP");
     list_for_each_safe(pos, t, &all_tasks) {
         p = list_entry(pos, task_union, list);
-        printl(MPL_TASK_0 + p->pid, "%08x%s%-6s:%u %s %02u/%02u %-10u %-10u %-10u", p,
+        printl(MPL_TASK_0 + p->pid, "%08x%s%-6s:%u %s %02u/%02u %-10s %-10u %-10u", p,
                p->state == TASK_RUNNING ? ">" : " ", p->name, p->pid, task_state(p->state), p->ticks, p->priority,
-               p->turn, p->sched_cnt, p->sched_keep_cnt);
+               p->reason, p->sched_cnt, p->sched_keep_cnt);
     }
 }
 

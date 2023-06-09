@@ -126,7 +126,6 @@ void taskB_entry() {
 
     while (1) {
         sysc_wait(7);
-
         uint64_t sect_nr = get_next_deubug_sect_nr();
         memset(disk_buf2, 0, 512);
         disk_request_t r;
@@ -148,7 +147,7 @@ void taskC_entry() {
     current->priority = 17;
 
     while (1) {
-        sysc_wait(1);
+        sysc_wait(100);
 
         for (int i = 0; i < 7; i++) {
             asm("hlt;");

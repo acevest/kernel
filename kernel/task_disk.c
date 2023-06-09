@@ -63,7 +63,8 @@ void disk_task_entry(void *arg) {
         ide_pci_controller_t *ide_ctrl = ide_pci_controller + channel;
 
         // 为了在DEBUG时看到RUNNING
-        for (int i = 0; i < 1; i++) {
+        int cnt = 2;
+        for (int i = 0; i < cnt; i++) {
             asm("hlt;");
         }
 

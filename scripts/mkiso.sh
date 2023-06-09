@@ -3,5 +3,5 @@
 # 因为如果在其它机器上运行，其grub就不是x86版本
 mkdir -p /tmp/iso/boot/grub/
 cp scripts/iso.grub.cfg /tmp/iso/boot/grub/grub.cfg
-cp KERNEL.BIN /tmp/iso/boot/Kernel
+cp KERNEL.ELF /tmp/iso/boot/Kernel
 grub2-mkrescue -o kernel.iso /tmp/iso/

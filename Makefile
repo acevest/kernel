@@ -28,7 +28,7 @@ CFLAGS     += -DNR_TTYS=3
 CFLAGS     += -DFIX_SYSENTER_ESP_MODE=1
 #CFLAGS     += -DENABLE_BOOT_WAIT=1
 SYSTEMMAP	= System.map
-KERNELBIN	= KERNEL.BIN
+KERNELBIN	= KERNEL.ELF
 LINKSCRIPT	= scripts/link.ld
 
 SRC_DIRS = boot mm lib fs kernel drivers
@@ -63,10 +63,10 @@ clean:
 
 .PHONY: install
 install:
-	cp -p KERNEL.BIN /boot/
+	cp -p KERNEL.ELF /boot/
 	sync
-	md5sum /boot/KERNEL.BIN
-	md5sum KERNEL.BIN
+	md5sum /boot/KERNEL.ELF
+	md5sum KERNEL.ELF
 	mkdir -p /kernel/bin/
 	cp bin/hello /kernel/bin/
 	cp bin/shell /kernel/bin/

@@ -53,6 +53,7 @@ volatile void sleep_on(wait_queue_head_t *head) {
     irq_save(flags);
 
     current->state = TASK_WAIT;
+    current->reason = "sleep_on";
 
     list_add_tail(&wait.task_list, &head->task_list);
 
@@ -72,6 +73,7 @@ volatile void __wake_up(wait_queue_head_t *head, int nr) {
         list_del(&p->task_list);
         // printk("wakeup: %s\n", p->task->name);
         p->task->state = TASK_READY;
+        current->reason = "wake_up";
 
         --nr;
         if (nr == 0) {

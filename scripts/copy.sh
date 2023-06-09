@@ -10,7 +10,7 @@ PART=${lodev}p1
 
 mount $PART /mnt/
 
-cp ./KERNEL.BIN /mnt/boot/Kernel
+cp ./KERNEL.ELF /mnt/boot/Kernel
 cp scripts/grub.cfg /mnt/boot/grub2/
 
 md5sum /mnt/boot/Kernel
