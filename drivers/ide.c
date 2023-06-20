@@ -158,10 +158,26 @@ void ide_init() {
     init_pci_controller(0x0101);
     // init_pci_controller(0x7010);
 
-    // 读IDE 硬盘的identity
-    ide_ata_init();
-
     request_irq(0x0E, ide_irq_handler, "hard", "IDE");
 
     request_irq(0x0F, ide_irq_handler, "hard", "IDE");
+
+    // 读IDE 硬盘的identity
+    ide_ata_init();
+}
+
+ide_drive_t *ide_get_drive(dev_t dev) {
+    int major = DEV_MAJOR(dev);
+    int minor = DEV_MINOR(dev);
+    assert(major == DEV_MAJOR_IDE0 || major == DEV_MAJOR_IDE1);
+    assert(minor < MAX_IDE_PARTIONS * 2);  // 因为一个通道有两个硬盘，每个硬盘最大MAX_IDE_PARTIONS分区
+
+    int channel = major == DEV_MAJOR_IDE0 ? 0 : 1;
+    int index = minor / MAX_IDE_PARTIONS;
+
+    int drv_no = channel * 2 + index;
+
+    ide_drive_t *drv = ide_drives + drv_no;
+
+    return drv;
 }

@@ -150,16 +150,15 @@
 #define PCI_IDE_PRDT 4
 
 // #define PARTITION_CNT 4
-// #define PARTITION_TABLE_OFFSET 0x1BE
-// #define MAX_SUPPORT_PARTITION_CNT 16
+#define PARTITION_TABLE_OFFSET 0x1BE
+#define MAX_IDE_PARTIONS 16
 
-// typedef struct {
-//     u64_t lba_start;
-//     u64_t lba_end;
-// } part_t;
-
-// void ide_do_read(u64_t lba, u32_t scnt, char *buf);
-// part_t *ide_get_part(dev_t dev);
+// 分区定义
+typedef struct ide_part_ {
+    uint8_t flags;
+    uint32_t lba_start;
+    uint32_t lba_end;
+} ide_part_t;
 
 // Physical Region Descriptor
 typedef struct prdte {
@@ -198,15 +197,20 @@ extern ide_pci_controller_t ide_pci_controller[NR_IDE_CONTROLLER];
 
 typedef struct _ide_drive {
     int present;
+    int drv_no;
     int dma;
     uint64_t lba48;
     uint64_t max_lba;
 
     ide_pci_controller_t *ide_pci_controller;
+
+    ide_part_t partions[MAX_IDE_PARTIONS];
 } ide_drive_t;
 
 #define MAX_IDE_DRIVE_CNT 4
 extern ide_drive_t ide_drives[MAX_IDE_DRIVE_CNT];
+
+ide_drive_t *ide_get_drive(dev_t dev);
 
 void sleep_on_ide();
 void wait_on_ide();

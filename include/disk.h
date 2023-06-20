@@ -46,3 +46,5 @@ typedef struct {
 } disk_request_queue_t;
 
 void send_disk_request(disk_request_t *r);
+
+void ide_disk_read(dev_t dev, uint32_t block, uint32_t size, char *buf);

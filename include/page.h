@@ -133,6 +133,7 @@ enum page_flags {
 struct kmem_cache;
 typedef struct kmem_cache kmem_cache_t;
 
+struct blk_buffer;
 typedef struct page {
     unsigned long count;
     unsigned long flags;
@@ -140,13 +141,17 @@ typedef struct page {
     unsigned long index;
     list_head_t lru;
 
-    struct page *head_page;
+    struct page *head_page;  // buddy system
     unsigned int order;
 
     void **freelist;  // for slub
+
     kmem_cache_t *cache;
 
     unsigned long inuse;
+
+    //
+    struct blk_buffer *buffers;
 } page_t;
 
 void *page2va(page_t *page);

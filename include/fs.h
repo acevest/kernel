@@ -37,7 +37,7 @@
 #define DEV_MAJOR(dev) ((unsigned int)((dev) >> DEV_MAJOR_BITS))
 #define DEV_MINOR(dev) ((unsigned int)((dev)&DEV_MINOR_MASK))
 
-//#define MAX_SUPT_FILE_SIZE    (1)
+// #define MAX_SUPT_FILE_SIZE    (1)
 #define NR_FILES (1)
 #define NR_OPENS (1)
 
@@ -87,7 +87,7 @@ static inline int read_file(const pInode inode, void *buf, size_t count)
     return ext2_read_file(inode, buf, count);
 }
 
-/* 在多进程下这样肯定不行 
+/* 在多进程下这样肯定不行
  * 管不了这么多了，先这样写吧
  */
 static inline pInode find_empty_inode()
@@ -106,5 +106,15 @@ static inline pInode find_empty_inode()
     return NULL;
 }
 #endif
+
+typedef uint32_t dev_t;
+
+typedef struct blk_bufer {
+    uint32_t blocknr;  // block number
+    char *data;        //
+    uint16_t size;     // block size
+    dev_t dev;
+    page_t *page;
+} blk_buffer_t;
 
 #endif  //_FS_H

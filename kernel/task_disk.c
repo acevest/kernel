@@ -21,14 +21,7 @@ void send_disk_request(disk_request_t *r) {
         panic("null disk request");
     }
 
-    // TODO: 转换
-    int drv_no = r->dev;
-    // assert(drv_no == 0);
-
-    assert(drv_no >= 0);
-    assert(drv_no <= MAX_IDE_DRIVE_CNT);
-
-    ide_drive_t *drv = ide_drives + drv_no;
+    ide_drive_t *drv = ide_get_drive(r->dev);
 
     assert(drv->present == 1);
 
@@ -84,8 +77,8 @@ void disk_task_entry(void *arg) {
         mutex_unlock(&ide_ctrl->request_mutex);
 
         // TODO dev -> drv
-        int drv_no = r->dev;
-        ide_drive_t *drv = ide_drives + drv_no;
+        ide_drive_t *drv = ide_get_drive(r->dev);
+        int drv_no = drv->drv_no;
         if (drv->present == 0) {
             panic("disk not present");
         }
@@ -107,6 +100,7 @@ void disk_task_entry(void *arg) {
         }
 
         // 等待硬盘中断
+        printk("down ide req\n");
         down(&ide_ctrl->disk_intr_sem);
 
         // 读数据

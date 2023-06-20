@@ -178,9 +178,9 @@ void root_task_entry() {
     //     asm("hlt;");
     // }
 
-    kernel_task("tskA", taskA_entry, NULL);
-    kernel_task("tskB", taskB_entry, NULL);
-    kernel_task("tskC", taskC_entry, NULL);
+    // kernel_task("tskA", taskA_entry, NULL);
+    // kernel_task("tskB", taskB_entry, NULL);
+    // kernel_task("tskC", taskC_entry, NULL);
 
     current->priority = 1;
     while (1) {

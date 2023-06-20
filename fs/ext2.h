@@ -37,7 +37,7 @@
 
 unsigned long ext2_block_size();
 #define EXT2_BLOCK_SIZE ext2_block_size()
-//#define EXT2_BLOCK_SIZE        (EXT2_MIN_BLOCK_SIZE << (EXT2_SB)->s_log_block_size)
+// #define EXT2_BLOCK_SIZE        (EXT2_MIN_BLOCK_SIZE << (EXT2_SB)->s_log_block_size)
 
 #define EXT2_SECT_PER_BLOCK (EXT2_BLOCK_SIZE / 512)
 
@@ -62,6 +62,12 @@ unsigned long ext2_block_size();
  *  EXT2 FILE SYSTEM PART
  * ------------------------------------------------------------------------
  */
+// https://www.nongnu.org/ext2-doc/ext2.html
+// 关于s_first_data_block
+// 32bit value identifying the first data block, in other word the id of the block containing the superblock structure.
+// Note that this value is always 0 for file systems with a block size larger than 1KB, and always 1 for file systems
+// with a block size of 1KB. The superblock is always starting at the 1024th byte of the disk, which normally happens to
+// be the first byte of the 3rd sector.
 typedef struct ext2_superblock {
     u32 s_inodes_count;      /* Inodes count */
     u32 s_blocks_count;      /* Blocks count */

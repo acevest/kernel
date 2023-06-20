@@ -8,6 +8,7 @@
  */
 #include <ata.h>
 #include <disk.h>
+#include <ext2.h>
 #include <ide.h>
 #include <io.h>
 #include <irq.h>
@@ -69,6 +70,51 @@ void ata_read_identity_string(const uint16_t *identify, int bgn, int end, char *
     buf[i] = 0;
 }
 
+void ata_read_partions(ide_part_t *part, const char *buf) {
+    int offset = PARTITION_TABLE_OFFSET;
+    const char *p = buf + offset;
+
+    for (int i = 0; i < 4; i++) {
+        part->flags = (uint8_t)p[0];
+        part->lba_start = *((uint32_t *)(p + 8));
+        part->lba_end = *((uint32_t *)(p + 12));
+        part->lba_end += part->lba_start;
+
+        printk("part[%d] %02X %u %u\n", i, part->flags, part->lba_start, part->lba_end);
+
+        // 这里应该再判断一下part->flags，如果是扩展分区还需要再读取
+        // 先这样实现
+
+        p += 16;  // 每个分区16个字节
+        part++;
+    }
+}
+
+// 读hda0 的 super block
+void ata_read_ext2_sb() {
+    ide_part_t *part = ide_drives[0].partions + 1;
+    const int size = 1024;
+    const int offset = 1024;
+    char *buf = kmalloc(size, 0);
+    disk_request_t r;
+    r.dev = MAKE_DEV(DEV_MAJOR_IDE0, 1);
+    r.command = DISK_REQ_READ;
+    r.pos = part->lba_start + offset / SECT_SIZE;
+    r.count = size / SECT_SIZE;
+    r.buf = buf;
+    send_disk_request(&r);
+    ext2_sb_t *p = (ext2_sb_t *)buf;
+    printk("inodes count %u inodes per group %u free %u\n", p->s_inodes_count, p->s_inodes_per_group,
+           p->s_free_inodes_count);
+    printk("blocks count %u blocks per group %u free %u magic %04x\n", p->s_blocks_count, p->s_blocks_per_group,
+           p->s_free_blocks_count, p->s_magic);
+    printk("first ino %u inode size %u first data block %u\n", p->s_first_ino, p->s_inode_size, p->s_first_data_block);
+    printk("log block size %u write time %u\n", p->s_log_block_size, p->s_wtime);
+    p->s_volume_name[63] = 0;
+    printk("volume %s\n", p->s_volume_name);
+    kfree(buf);
+}
+
 // 《AT Attachment 8 - ATA/ATAPI Command Set》
 void ide_ata_init() {
     for (int i = 0; i < MAX_IDE_DRIVE_CNT; i++) {
@@ -77,6 +123,7 @@ void ide_ata_init() {
         memset(ide_drives + i, 0, sizeof(ide_drive_t));
 
         ide_drive_t *drv = ide_drives + drv_no;
+        drv->drv_no = drv_no;
         drv->ide_pci_controller = ide_pci_controller + channel;
 
         // https://wiki.osdev.org/ATA_PIO_Mode
@@ -115,13 +162,13 @@ void ide_ata_init() {
 
         uint8_t status = inb(REG_STATUS(drv_no));
         if (status == 0 || (status & ATA_STATUS_ERR) || (status & ATA_STATUS_RDY == 0)) {
-            ide_drives[i].present = 0;
+            drv->present = 0;
             continue;
         } else {
-            ide_drives[i].present = 1;
+            drv->present = 1;
         }
 
-        printk("ata[%d] status %x %s exists\n", i, status, ide_drives[i].present == 1 ? "" : "not");
+        printk("ata[%d] status %x %s exists\n", i, status, drv->present == 1 ? "" : "not");
         insl(REG_DATA(drv_no), identify, SECT_SIZE / sizeof(uint32_t));
 
         // 第49个word的第8个bit位表示是否支持DMA
@@ -129,14 +176,14 @@ void ide_ata_init() {
         // 第100~103个word的八个字节表示user的LBA最大值
         // printk("%04x %04x %d %d\n", identify[49], 1 << 8, identify[49] & (1 << 8), (identify[49] & (1 << 8)) != 0);
         if ((identify[49] & (1 << 8)) != 0) {
-            ide_drives[i].dma = 1;
+            drv->dma = 1;
         }
 
         u64 max_lba = *(u64 *)(identify + 100);
 
         if ((identify[83] & (1 << 10)) != 0) {
-            ide_drives[i].lba48 = 1;
-            ide_drives[i].max_lba = max_lba;
+            drv->lba48 = 1;
+            drv->max_lba = max_lba;
         }
 #if 0
         uint16_t i80 = identify[80];
@@ -175,8 +222,8 @@ void ide_ata_init() {
             break;
         }
 #endif
-        printk("hard disk %s %s size: %u MB\n", ide_drives[i].dma == 1 ? "DMA" : "",
-               ide_drives[i].lba48 == 1 ? "LBA48" : "LBA28", (max_lba * 512) >> 20);
+        printk("hard disk %s %s size: %u MB\n", drv->dma == 1 ? "DMA" : "", drv->lba48 == 1 ? "LBA48" : "LBA28",
+               (max_lba * 512) >> 20);
 
         char s[64];
         ata_read_identity_string(identify, 10, 19, s);
@@ -187,53 +234,49 @@ void ide_ata_init() {
 
         ata_read_identity_string(identify, 27, 46, s);
         printk("HD Model: %s\n", s);
+
+        // 0 代表整个硬盘
+        // 1~4代表各个主分区
+        // 5~15 代表各个逻辑分区
+        drv->partions[0].flags = 0x00;
+        drv->partions[0].lba_start = 0;
+        drv->partions[0].lba_end = drv->max_lba;
     }
 }
 
-#if 0
-void ata_init() {
-    // 初始化hard_disk与中断函数之间的信号量
+void ide_read_partions() {
+    for (int i = 0; i < MAX_IDE_DRIVE_CNT; i++) {
+        ide_drive_t *drv = ide_drives + i;
+        int channel = i >> 1;
+
+        if (0 == drv->present) {
+            continue;
+        }
+        disk_request_t r;
+        char *sect = kmalloc(SECT_SIZE, 0);
+        r.dev = MAKE_DEV(DEV_MAJOR_IDE0, 0);  // IDE0 0代表整个master硬盘
+        r.command = DISK_REQ_READ;
+        r.pos = 0;
+        r.count = 1;
+        r.buf = sect;
+        send_disk_request(&r);
+        ata_read_partions(drv->partions + 1, sect);
+        kfree(sect);
+    }
+}
+
+void ide_disk_read(dev_t dev, uint32_t block, uint32_t size, char *buf) {
+    ide_drive_t *drv = ide_get_drive(dev);
+    uint64_t lba_offset = drv->partions[DEV_MINOR((dev))].lba_start;
 
     disk_request_t r;
-    r.drv = 0;
-    r.buf = (void *)identify;
-    r.count = 1;
-    r.pos = 0;
-    r.command = DISK_REQ_IDENTIFY;
-
-    send_disk_request(&r);
-
-    // 第49个word的第8个bit位表示是否支持DMA
-    // 第83个word的第10个bit位表示是否支持LBA48，为1表示支持。
-    // 第100~103个word的八个字节表示user的LBA最大值
-    printd("disk identify %04x %04x %d %d\n", identify[49], 1 << 8, identify[49] & (1 << 8),
-           (identify[49] & (1 << 8)) != 0);
-    if ((identify[49] & (1 << 8)) != 0) {
-        printd("support DMA\n");
-    }
-
-    if ((identify[83] & (1 << 10)) != 0) {
-        printd("support LBA48\n");
-        u64 lba = *(u64 *)(identify + 100);
-        printd("hard disk size: %u MB\n", (lba * 512) >> 20);
-    }
-
-    // TODO REMOVE
-    mbr_buf = kmalloc(SECT_SIZE, 0);
+    r.dev = dev;
     r.command = DISK_REQ_READ;
-    r.pos = 0;
-    r.count = 1;
-    r.buf = mbr_buf;
+    r.pos = lba_offset + block / SECT_SIZE;
+    r.count = size / SECT_SIZE;
+    r.buf = buf;
     send_disk_request(&r);
-    uint16_t *p = (uint16_t *)mbr_buf;
-    for (int i = 0; i < 256; i++) {
-        if (i % 12 == 0) {
-            printd("\n[%03d] ", i * 2);
-        }
-        printd("%04x.", p[i]);
-    }
 }
-#endif
 
 // ATA_CMD_READ_DMA_EXT
 void ata_dma_read_ext(int drv, uint64_t pos, uint16_t count, void *dest) {

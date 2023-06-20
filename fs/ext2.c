@@ -12,6 +12,15 @@
 #include "mm.h"
 #include "string.h"
 #include "system.h"
+#include "vfs.h"
+
+superblock_t *ext2_read_super(superblock_t *sb, void *data) { return sb; }
+
+fs_type_t ext2_fs_type = {
+    "ext2",
+    ext2_read_super,
+    0,
+};
 
 struct {
     ext2_sb_t ext2_sb;
