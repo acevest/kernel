@@ -47,4 +47,4 @@ typedef struct {
 
 void send_disk_request(disk_request_t *r);
 
-void ide_disk_read(dev_t dev, uint32_t block, uint32_t size, char *buf);
+void ide_disk_read(dev_t dev, uint32_t sect_nr, uint32_t count, char *buf);

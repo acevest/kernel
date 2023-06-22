@@ -8,7 +8,6 @@
  */
 #include <ata.h>
 #include <disk.h>
-#include <ext2.h>
 #include <ide.h>
 #include <io.h>
 #include <irq.h>
@@ -88,31 +87,6 @@ void ata_read_partions(ide_part_t *part, const char *buf) {
         p += 16;  // 每个分区16个字节
         part++;
     }
-}
-
-// 读hda0 的 super block
-void ata_read_ext2_sb() {
-    ide_part_t *part = ide_drives[0].partions + 1;
-    const int size = 1024;
-    const int offset = 1024;
-    char *buf = kmalloc(size, 0);
-    disk_request_t r;
-    r.dev = MAKE_DEV(DEV_MAJOR_IDE0, 1);
-    r.command = DISK_REQ_READ;
-    r.pos = part->lba_start + offset / SECT_SIZE;
-    r.count = size / SECT_SIZE;
-    r.buf = buf;
-    send_disk_request(&r);
-    ext2_sb_t *p = (ext2_sb_t *)buf;
-    printk("inodes count %u inodes per group %u free %u\n", p->s_inodes_count, p->s_inodes_per_group,
-           p->s_free_inodes_count);
-    printk("blocks count %u blocks per group %u free %u magic %04x\n", p->s_blocks_count, p->s_blocks_per_group,
-           p->s_free_blocks_count, p->s_magic);
-    printk("first ino %u inode size %u first data block %u\n", p->s_first_ino, p->s_inode_size, p->s_first_data_block);
-    printk("log block size %u write time %u\n", p->s_log_block_size, p->s_wtime);
-    p->s_volume_name[63] = 0;
-    printk("volume %s\n", p->s_volume_name);
-    kfree(buf);
 }
 
 // 《AT Attachment 8 - ATA/ATAPI Command Set》
@@ -265,15 +239,15 @@ void ide_read_partions() {
     }
 }
 
-void ide_disk_read(dev_t dev, uint32_t block, uint32_t size, char *buf) {
+void ide_disk_read(dev_t dev, uint32_t sect_nr, uint32_t count, char *buf) {
     ide_drive_t *drv = ide_get_drive(dev);
     uint64_t lba_offset = drv->partions[DEV_MINOR((dev))].lba_start;
 
     disk_request_t r;
     r.dev = dev;
     r.command = DISK_REQ_READ;
-    r.pos = lba_offset + block / SECT_SIZE;
-    r.count = size / SECT_SIZE;
+    r.pos = lba_offset + sect_nr;
+    r.count = count;
     r.buf = buf;
     send_disk_request(&r);
 }
