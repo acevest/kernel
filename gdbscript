@@ -1,5 +1,32 @@
+# kill qemu on gdb exit
+#define hook-quit
+#    kill
+#end
+
+#b *0x7c00
+
+# watch point
+#wa *0x7c00
+
 target remote localhost:1234
+
+
+set pagination off
+
 b init_system_info
+
+# finish 可以执行到当前函数返回处, 缩写 fin
+b setup_pci
+
 #b setup_kernel
 #b e820_init_bootmem_data
 c
+
+
+# set disassembly-flavor intel  Intel语法
+# set disassembly-flavor att    AT&T语法
+
+
+# set architecture i8086
+
+# info registers

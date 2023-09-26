@@ -1,32 +1,37 @@
 OS := $(shell uname -s)
 CPU_ARCH := $(shell uname -p)
 
-CC			= gcc
-LD			= ld
 ifeq ($(OS), Darwin)
 	# MacOS下安装i686-elf-*的方法: brew install i686-elf-binutils
 	# Apple Silicon
 	ifeq ($(CPU_ARCH), arm)
-		CC		= i686-elf-gcc
-		LD		= i686-elf-ld
+		CROSS_PREFIX = i686-elf-
 	# Intel MacOS
 	else ifeq ($(CPU_ARCH), i386)
-		CC		= i686-elf-gcc
-		LD		= i686-elf-ld
+		CROSS_PREFIX = i686-elf-
 	endif
 else ifeq ($(OS), Linux)
 	# Apple Silicon Docker Linux
 	ifeq ($(CPU_ARCH), aarch64)
-		CC		= x86_64-linux-gnu-gcc
-		LD		= x86_64-linux-gnu-ld
+		CROSS_PREFIX = x86_64-linux-gnu-
 	endif
 endif
 
 
+CC			= $(CROSS_PREFIX)gcc
+LD			= $(CROSS_PREFIX)ld
+
 CFLAGS		= -g -c -fno-builtin -m32 -DBUILDER='"$(shell whoami)"'
+# 指示编译器生成不依赖位置无关代码
+CFLAGS     += -fno-pic
+# 指示编译器在生成目标文件时不省略函数调用栈帧指针: frame pointer
+CFLAGS     += -fno-omit-frame-pointer
+# 禁用控制流保护: Control-Flow Enforcement Technology (CET)
+CFLAGS     += -fcf-protection=none
 CFLAGS     += -DNR_TTYS=3
 CFLAGS     += -DFIX_SYSENTER_ESP_MODE=1
-#CFLAGS     += -DENABLE_BOOT_WAIT=1
+CFLAGS     += -DENABLE_BOOT_WAIT=0
+
 SYSTEMMAP	= System.map
 KERNELBIN	= KERNEL.ELF
 LINKSCRIPT	= scripts/link.ld

@@ -27,7 +27,7 @@ dentry_t *root_entry = 0;
 
 fs_type_t file_systems = {"filesystems", 0, 0};
 
-void register_filesystem(fs_type_t *fs) {
+void vfs_register_filesystem(fs_type_t *fs) {
     int ret = 0;
 
     fs_type_t *add = &file_systems;

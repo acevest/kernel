@@ -24,15 +24,23 @@ unsigned int IDE_CHL1_CTL_BASE = 0x376;
 // 《PCI IDE Controller Specification》
 // 《Programming Interface for Bus Master IDE Controller》
 void ide_pci_init(pci_device_t *pci) {
-    unsigned int v;
+#if 0
+    uint32_t v;
+    uint32_t cmd;
 
-    v = pci_read_config_word(pci_cmd(pci, PCI_COMMAND));
+    cmd = pci_cmd(pci, PCI_COMMAND);
+    v = pci_read_config_word(cmd);
     // printk(" ide pci command %04x\n", v);
 
-    v = pci_read_config_byte(pci_cmd(pci, PCI_PROGIF));
-    printd("ide pci program interface %02x\n", v);
+    cmd = pci_cmd(pci, PCI_PROGIF);
+    v = pci_read_config_byte(cmd);
 
-    unsigned int iobase = pci_read_config_long(pci_cmd(pci, PCI_BAR4));
+    printd("ide pci program interface %02x %02X\n", v);
+#endif
+    printd("PCI %03d:%02d.%d %02X #%02d %04X:%04X\n", pci->bus, pci->dev, pci->devfn, pci->progif, pci->intr_line,
+           pci->vendor, pci->classcode);
+
+    uint32_t iobase = pci_read_config_long(pci_cmd(pci, PCI_BAR4));
 
     for (int i = 0; i < NR_IDE_CONTROLLER; i++) {
         INIT_MUTEX(&ide_pci_controller[i].request_mutex);

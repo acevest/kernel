@@ -17,7 +17,7 @@ blk_buffer_t *block_buffer_hash_table[BLOCK_BUFFER_HASH_TABLE_SIZE] = {
     0,
 };
 
-int hash(dev_t dev, uint32_t block) { return ((co ~dev) ^ block) % BLOCK_BUFFER_HASH_TABLE_SIZE; }
+int hash(dev_t dev, uint32_t block) { return ((~dev) ^ block) % BLOCK_BUFFER_HASH_TABLE_SIZE; }
 
 blk_buffer_t *get_hash_block_buffer(dev_t dev, uint32_t block, uint16_t size) {}
 

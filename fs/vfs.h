@@ -14,6 +14,7 @@
 typedef struct dentry dentry_t;
 
 typedef struct sb_operations sb_operations_t;
+typedef struct file_operations file_operations_t;
 typedef struct inode_operations inode_operations_t;
 typedef struct dentry_operations dentry_operations_t;
 
@@ -35,7 +36,13 @@ typedef struct superblock {
 // 它们之间的关系是多对一的关系
 typedef struct inode {
     superblock_t *i_sb;
+
     void *i_private;
+
+    // fops - file ops 的副本
+    file_operations_t *i_fops;
+
+    // ops - inode ops
     inode_operations_t *i_ops;
 
     // 缓存的pages
@@ -71,12 +78,22 @@ struct sb_operations {
     //
 };
 
+struct file_operations {
+    // open
+    // close
+    // read
+    // write
+    // lseek
+    // ioctl
+};
 struct inode_operations {
     //
 };
 
 struct dentry_operations {
     //
+    // hash
+    // compare
 };
 
 // 每当将一个存储设备安装到现有文件系统中的某个节点时，内核就要为之建立一个vfsmount结构
@@ -93,4 +110,4 @@ typedef struct fs_type {
 
 extern superblock_t *root_sb;
 
-void register_filesystem(fs_type_t *fs);
+void vfs_register_filesystem(fs_type_t *fs);

@@ -1,11 +1,12 @@
 qemu-system-i386 \
-    -device ich9-ahci,id=ahci \
     -boot d \
+    -serial mon:stdio \
     -drive file=HDa.IMG,format=raw,index=0,media=disk \
     -drive file=kernel.iso,index=1,media=cdrom \
     -drive file=HDb.IMG,format=raw,index=2,media=disk \
     -name kernel \
     -s -S \
+    -device ich9-ahci,id=ahci \
     &
 
 #    -device ich9-ahci,id=ahci \
@@ -13,6 +14,8 @@ qemu-system-i386 \
 #    -serial stdio \
 #qemu-system-x86_64 -boot d -s -S -drive file=HD.IMG,format=raw,index=0,media=disk -drive file=kernel.iso,index=1,media=cdrom &
 #
+
+# i386-elf-gdb KERNEL.ELF -x gdbscript
 
 pid=$!
 echo "pid is ${pid}"
