@@ -47,6 +47,7 @@ void boot_delay(int ticks) {
 #endif
 }
 
+void init_serial();
 void init_ttys();
 void setup_gdt();
 void setup_idt();
@@ -56,6 +57,8 @@ void setup_i8253(uint16_t);
 void setup_boot_irqs();
 
 void check_kernel(unsigned long addr, unsigned long magic) {
+    init_serial();
+
     init_ttys();
 
     printk("setup gdt\n");

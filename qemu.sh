@@ -9,6 +9,7 @@ qemu-system-i386 \
     -device ich9-ahci,id=ahci \
     &
 
+#   -serial tcp::8888,server,nowait \
 #    -device ich9-ahci,id=ahci \
 #    -machine accel=tcg \
 #    -serial stdio \

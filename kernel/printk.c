@@ -20,6 +20,8 @@
 #include <tty.h>
 int vsprintf(char *buf, const char *fmt, char *args);
 
+void serial_write(const char *buf, size_t size);
+
 char pkbuf[1024];
 extern tty_t *const default_tty;
 int printk(const char *fmtstr, ...) {
@@ -28,6 +30,7 @@ int printk(const char *fmtstr, ...) {
     char *args = (char *)(((char *)&fmtstr) + 4);
     int size = vsprintf(pkbuf, fmtstr, args);
     tty_write(default_tty, pkbuf, (size_t)size);
+    serial_write(pkbuf, (size_t)size);
     irq_restore(iflags);
     return 0;
 }
@@ -40,6 +43,7 @@ int printd(const char *fmtstr, ...) {
     char *args = (char *)(((char *)&fmtstr) + 4);
     int size = vsprintf(pdbuf, fmtstr, args);
     tty_write(debug_tty, pdbuf, (size_t)size);
+    serial_write(pdbuf, (size_t)size);
     irq_restore(iflags);
     return 0;
 }

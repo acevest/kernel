@@ -109,7 +109,7 @@ void init_pci_controller(unsigned int classcode) {
     }
     assert(pci->intr_line < 16);
     if (pci != 0 && pci->intr_line < 16) {
-        printk("found pci %03d:%02d.%d #%02d %04X:%04X ProgIF %02x %s\n", pci->bus, pci->dev, pci->devfn,
+        printk("found pci %03d:%02d.%d #%02d %04X:%04X progif %02x %s\n", pci->bus, pci->dev, pci->devfn,
                pci->intr_line, pci->vendor, pci->device, pci->progif, pci_get_info(pci->classcode, pci->progif));
         // printk("found pci vendor %04x device %04x class %04x intr %d progif: %x\n", pci->vendor, pci->device,
         //        pci->classcode, pci->intr_line, pci->progif);
