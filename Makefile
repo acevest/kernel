@@ -61,10 +61,14 @@ ${KERNELBIN}: ${OBJS}
 c:
 	rm -f $(KERNELBIN)
 
-.PHONY: clean
-clean:
-	rm -f $(OBJS)
+.PHONY: clean $(SRC_DIRS)
+clean: $(SRC_DIRS)
 	rm -f $(KERNELBIN) $(SYSTEMMAP)
+
+$(SRC_DIRS):
+	@echo "clean *.o files in $@"
+	@find $@ -name "*\.o" -delete
+
 
 .PHONY: install
 install:
