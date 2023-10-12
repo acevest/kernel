@@ -27,7 +27,7 @@ unsigned long sysc_handler_table[SYSC_NUM];
 void setup_sysc() {
     wrmsr(MSR_SYSENTER_CS, SELECTOR_KRNL_CS, 0);
     wrmsr(MSR_SYSENTER_EIP, syscall_entry, 0);
-#if FIX_SYSENTER_ESP_MODE
+#if FIXED_SYSENTER_ESP_MODE
     wrmsr(MSR_SYSENTER_ESP, &(tss.esp0), 0);
 #endif
     init_sysc_handler_table();

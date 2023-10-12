@@ -77,7 +77,7 @@ void init_root_task() {
     root_task.cr3 = va2pa((unsigned long)(init_pgd));
 
     tss.esp0 = root_task.esp0;
-#if FIX_SYSENTER_ESP_MODE
+#if FIXED_SYSENTER_ESP_MODE
     // do nothing
 #else
     wrmsr(MSR_SYSENTER_ESP, root_task.esp0, 0);
@@ -109,7 +109,7 @@ task_union *alloc_task_union() {
 void switch_to() {
     LoadCR3(current->cr3);
     tss.esp0 = current->esp0;
-#if FIX_SYSENTER_ESP_MODE
+#if FIXED_SYSENTER_ESP_MODE
     // do nothing
 #else
     wrmsr(MSR_SYSENTER_ESP, current->esp0, 0);

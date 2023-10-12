@@ -29,7 +29,7 @@ CFLAGS     += -fno-omit-frame-pointer
 # 禁用控制流保护: Control-Flow Enforcement Technology (CET)
 CFLAGS     += -fcf-protection=none
 CFLAGS     += -DNR_TTYS=3
-CFLAGS     += -DFIX_SYSENTER_ESP_MODE=1
+CFLAGS     += -DFIXED_SYSENTER_ESP_MODE=1
 CFLAGS     += -DENABLE_BOOT_WAIT=0
 
 SYSTEMMAP	= System.map

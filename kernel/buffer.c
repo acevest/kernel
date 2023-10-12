@@ -6,3 +6,9 @@
  * Description: none
  * ------------------------------------------------------------------------
  */
+
+typedef struct buffer {
+    //
+} buffer_t;
+
+void init_buffer() {}

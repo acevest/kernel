@@ -46,7 +46,7 @@ const char *version = "KERNEL v" VERSION " @" BUILDER
 
 void setup_kernel() {
     printk("sysenter esp mode: %s\n",
-#if FIX_SYSENTER_ESP_MODE
+#if FIXED_SYSENTER_ESP_MODE
            "fixed to &tss.esp0"
 #else
            "use task union stack"
