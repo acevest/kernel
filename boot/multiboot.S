@@ -172,8 +172,19 @@ multiboot2_header_bgn:
     // .short MULTIBOOT_HEADER_TAG_FRAMEBUFFER
     // .short MULTIBOOT_HEADER_TAG_OPTIONAL
     // .long .framebuffer_tag_end - .framebuffer_tag_bgn
-    // .long 800
-    // .long 600
+    // # width
+    // # Contains the number of the columns. This is specified in pixels in a graphics mode,
+    // # and in characters in a text mode.
+    // # The value zero indicates that the OS image has no preference.
+    // .long 1024
+    // # height
+    // # Contains the number of the lines. This is specified in pixels in a graphics mode,
+    // # and in characters in a text mode.
+    // # The value zero indicates that the OS image has no preference.
+    // .long 768
+    // # depth
+    // # Contains the number of bits per pixel in a graphics mode, and zero in a text mode.
+    // # The value zero indicates that the OS image has no preference.
     // .long 32
     // .framebuffer_tag_end:
 

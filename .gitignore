@@ -37,3 +37,4 @@ bochsout.txt
 *.DS_Store
 .vscode/settings.json
 *.iso
+**/serial_monitor/serial_monitor

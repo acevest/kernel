@@ -100,6 +100,7 @@ void check_kernel(unsigned long addr, unsigned long magic) {
     boot_params.e820map.map_cnt = 0;
 
     while (tag->type != MULTIBOOT_TAG_TYPE_END) {
+        bool support = true;
         switch (tag->type) {
         case MULTIBOOT_TAG_TYPE_CMDLINE:
             strlcpy(boot_params.cmdline, ((struct multiboot_tag_string *)tag)->string, sizeof(boot_params.cmdline));
@@ -137,19 +138,17 @@ void check_kernel(unsigned long addr, unsigned long magic) {
             vbe = (struct multiboot_tag_vbe *)tag;
             void *vci = (void *)vbe->vbe_control_info.external_specification;
             void *vmi = (void *)vbe->vbe_mode_info.external_specification;
-            // vbe->vbe_control_info;
-            // asm volatile("xchg %%bx, %%bx;nop;nop;" ::"a"(vci), "b"(vmi));
-            // asm volatile("xchg %%bx, %%bx;nop;nop;" ::"a"(vbe->vbe_interface_seg), "b"(vbe->vbe_interface_off),
-            //              "c"(vbe->vbe_interface_len));
+            printk("VBE MODE %04x\n", vbe->vbe_mode);
             init_vbe(vci, vmi);
             break;
         case MULTIBOOT_TAG_TYPE_FRAMEBUFFER:
-            // asm volatile("xchg %bx, %bx;nop;nop;nop;nop;");
+            printk("frame buffer\n");
             break;
         default:
-            printk("tag %x size %x\n", tag->type, tag->size);
+            support = false;
             break;
         }
+        printk("tag %x size %x\t[%ssupport]\n", tag->type, tag->size, support ? "" : "un");
         // next tag
         unsigned long size = (tag->size + 7) & (~7UL);
         tag = (struct multiboot_tag *)(((unsigned long)tag) + size);
