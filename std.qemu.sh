@@ -1,19 +1,6 @@
-#!/bin/bash
-#
-# 检查serial_monitor进程是否在运行
-process_name="serial_monitor"
-if ! pgrep -x "$process_name" > /dev/null
-then
-    echo "process $process_name is not running."
-    exit 1
-fi
-
-echo "process $process_name is running."
-
-
 qemu-system-i386 \
     -boot d \
-    -serial tcp::6666,server,nowait \
+    -serial mon:stdio \
     -drive file=HDa.IMG,format=raw,index=0,media=disk \
     -drive file=kernel.iso,index=1,media=cdrom \
     -drive file=HDb.IMG,format=raw,index=2,media=disk \
