@@ -40,22 +40,24 @@ func monitor() {
 		}
 	}
 
-	// // 创建一个 WaitGroup 以便在两个协程完成时结束程序
-	// var wg sync.WaitGroup
-	// wg.Add(2)
+	defer conn.Close()
+
+	end := make(chan bool, 0)
 
 	// 将串行控制台的输出发送到屏幕
 	go func() {
 		_, _ = io.Copy(os.Stdout, conn)
-		// wg.Done()
+		log.Printf("qemu -> stdout end\n")
+		end <- true
 	}()
 
 	// 将用户输入发送到串行控制台
 	go func() {
 		_, _ = io.Copy(conn, os.Stdin)
-		// wg.Done()
+		log.Printf("stdin -> qemu end\n")
+		end <- true
 	}()
 
-	// // 等待两个协程完成
-	// wg.Wait()
+	// 只要有一方断开就退出
+	<-end
 }
