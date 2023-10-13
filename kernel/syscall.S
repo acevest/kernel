@@ -30,7 +30,7 @@
 //.global syscall_exit
 
 syscall_entry:
-#if FIX_SYSENTER_ESP_MODE
+#if FIXED_SYSENTER_ESP_MODE
     movl    (%esp),%esp
 #endif
 

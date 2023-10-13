@@ -11,7 +11,10 @@
 break *0x100000
 # break *0xC0100000
 
+#handle SIGINT nostop noprint
+
 target remote localhost:1234
+
 
 set pagination off
 

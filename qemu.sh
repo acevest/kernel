@@ -11,6 +11,9 @@ fi
 echo "process $process_name is running."
 
 
+# 使用set -m来启用作业控制，以便在后台启动 QEMU 进程。
+set -m
+
 qemu-system-i386 \
     -boot d \
     -serial tcp::6666,server,nowait \
@@ -24,42 +27,25 @@ qemu-system-i386 \
     -s -S \
     &
 
-    #-serial mon:stdio \
-    #-serial tcp::12345,server,nowait \
-#   -serial tcp::8888,server,nowait \
-#    -device ich9-ahci,id=ahci \
-#    -machine accel=tcg \
-#    -serial stdio \
-#qemu-system-x86_64 -boot d -s -S -drive file=HD.IMG,format=raw,index=0,media=disk -drive file=kernel.iso,index=1,media=cdrom &
-#
-
-# i386-elf-gdb KERNEL.ELF -x gdbscript
-
 pid=$!
 echo "pid is ${pid}"
 
-i386-elf-gdb KERNEL.ELF -x gdbscript; kill -9 $pid
+# 然后，使用set +m禁用作业控制，以便在按下 CTRL+C 时，信号不会传播到 QEMU 进程。
+# 因为在gdb里调试时经常按下 CTRL+C
+set +m
 
+# 使用了一个子shell（由圆括号括起来的部分），并在子shell中使用trap命令忽略SIGINT信号
+# 这样，在子shell中运行的i386-elf-gdb将接收到CTRL+C信号，但不会影响脚本的其他部分
+# 当 bash 执行到圆括号内的代码时，它会等待圆括号内的所有命令执行完毕，然后才会继续执行后续的代码。
+# 圆括号内的命令在子 shell 中顺序执行，因此父 shell（即脚本的主体）会等待子 shell 完成。
+# 因此当i386-elf-gdb退出时，脚本将继续执行后续代码
+#(
+#    trap '' SIGINT
+#    i386-elf-gdb KERNEL.ELF -x gdbscript
+#)
+
+i386-elf-gdb KERNEL.ELF -x gdbscript
+
+kill -9 $pid
 echo "kill pid ${pid}"
 
-#x86_64-elf-gdb -x gdbscript; kill -9 $pid
-
-
-# qemu-system-i386 -drive file=HD.IMG,format=raw,index=0,media=disk -cdrom kernel.iso
-
-
-# -cdrom kernel.iso
-# -drive file=kernel.iso,index=2,media=cdrom
-
-# connect a CDROM to the slave of ide0
-# -drive if=ide,index=1,media=cdrom
-
-# -hda,-hdb,-hdc,-hdd
-# -drive file=file,index=0,media=disk
-# -drive file=file,index=1,media=disk
-# -drive file=file,index=2,media=disk
-# -drive file=file,index=3,media=disk
-
-
-# -s shorthand for -gdb tcp::1234
-# -S freeze CPU at startup (use 'c' to start execution)
