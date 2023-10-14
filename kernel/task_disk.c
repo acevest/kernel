@@ -61,9 +61,9 @@ void disk_task_entry(void *arg) {
             asm("hlt;");
         }
 
-        // printk("wait request for hard disk %d\n", drv_no);
+        // printk("wait request for hard disk channel %d\n", channel);
         down(&ide_ctrl->request_queue.sem);
-        // printk("hard disk %d\n", drv_no);
+        // printk("hard disk channel %d\n", channel);
 
         mutex_lock(&ide_ctrl->request_mutex);
         disk_request_t *r;
@@ -76,7 +76,6 @@ void disk_task_entry(void *arg) {
         atomic_inc(&ide_ctrl->consumed_cnt);
         mutex_unlock(&ide_ctrl->request_mutex);
 
-        // TODO dev -> drv
         ide_drive_t *drv = ide_get_drive(r->dev);
         int drv_no = drv->drv_no;
         if (drv->present == 0) {
@@ -96,11 +95,12 @@ void disk_task_entry(void *arg) {
             ata_dma_read_ext(drv_no, r->pos, r->count, r->buf);
             break;
         default:
+            panic("invalid disk request command");
             break;
         }
 
         // 等待硬盘中断
-        printk("down ide req\n");
+        // printk("down ide req\n");
         down(&ide_ctrl->disk_intr_sem);
 
         // 读数据

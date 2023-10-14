@@ -69,28 +69,6 @@ void ata_read_identity_string(const uint16_t *identify, int bgn, int end, char *
     buf[i] = 0;
 }
 
-void ata_read_partions(ide_part_t *part, const char *buf) {
-    int offset = PARTITION_TABLE_OFFSET;
-    const char *p = buf + offset;
-
-    for (int i = 0; i < 4; i++) {
-        part->flags = (uint8_t)p[0];
-        part->type = (uint8_t)p[4];
-        part->lba_start = *((uint32_t *)(p + 8));
-        uint32_t size = *((uint32_t *)(p + 12));
-        part->lba_end = part->lba_start + size;
-
-        printk("part[%d] %02X %02X %u %u\n", i, part->flags, part->type, part->lba_start,
-               part->lba_end == 0 ? 0 : part->lba_end - 1);
-
-        // 这里应该再判断一下part->flags，如果是扩展分区还需要再读取
-        // 先这样实现
-
-        p += 16;  // 每个分区16个字节
-        part++;
-    }
-}
-
 // 《AT Attachment 8 - ATA/ATAPI Command Set》
 void ide_ata_init() {
     for (int i = 0; i < MAX_IDE_DRIVE_CNT; i++) {
@@ -215,6 +193,7 @@ void ide_ata_init() {
         // 1~4代表各个主分区
         // 5~15 代表各个逻辑分区
         drv->partions[0].flags = 0x00;
+        drv->partions[0].type = 0x00;
         drv->partions[0].lba_start = 0;
         drv->partions[0].lba_end = drv->max_lba;
     }
@@ -227,7 +206,9 @@ void read_partition_table(ide_drive_t *drv, uint32_t ext_lba, uint32_t offset_lb
 
     disk_request_t r;
     char *sect = kmalloc(SECT_SIZE, 0);
-    r.dev = MAKE_DEV(DEV_MAJOR_IDE0 + (drv->drv_no >> 1), drv->drv_no % 2);
+
+    // part_no == 0 代表整场硬盘
+    r.dev = MAKE_DISK_DEV(drv->drv_no, 0);
     r.command = DISK_REQ_READ;
     r.pos = base + offset_lba;
     r.count = 1;
@@ -240,13 +221,13 @@ void read_partition_table(ide_drive_t *drv, uint32_t ext_lba, uint32_t offset_lb
         // MBR里的分区占据 [1,4]
         part_id = 1;
     } else {
-        // 扩展分区里的逻辑分区占据 [5,MAX_IDE_PARTIONS)
+        // 扩展分区里的逻辑分区占据 [5,MAX_DISK_PARTIONS)
         part_id = 5 + depth - 1;
     }
 
     const char *p = sect + PARTITION_TABLE_OFFSET;
     for (int i = 0; i < 4; i++) {
-        if (part_id >= MAX_IDE_PARTIONS) {
+        if (part_id >= MAX_DISK_PARTIONS) {
             break;
         }
         part = drv->partions + part_id;
@@ -265,7 +246,7 @@ void read_partition_table(ide_drive_t *drv, uint32_t ext_lba, uint32_t offset_lb
             ext_lba = ext_lba != 0 ? ext_lba : part->lba_start;
             read_partition_table(drv, ext_lba, part->lba_start, depth + 1);
         } else {
-            printk("part[%d] %02X %u %u\n", part_id + drv->drv_no * MAX_IDE_PARTIONS, part->type, part->lba_start,
+            printk("part[%d] %02X %u %u\n", part_id + drv->drv_no * MAX_DISK_PARTIONS, part->type, part->lba_start,
                    size);
         }
 
@@ -485,4 +466,26 @@ int ata_pio_read_ext(int drv, uint64_t pos, uint16_t count, int timeout, void *d
 //     outb(PCI_IDE_STATUS_INTR, ide_pci_controller.bus_status);
 
 //     return st;
+// }
+
+// void ata_read_partions(ide_part_t *part, const char *buf) {
+//     int offset = PARTITION_TABLE_OFFSET;
+//     const char *p = buf + offset;
+
+//     for (int i = 0; i < 4; i++) {
+//         part->flags = (uint8_t)p[0];
+//         part->type = (uint8_t)p[4];
+//         part->lba_start = *((uint32_t *)(p + 8));
+//         uint32_t size = *((uint32_t *)(p + 12));
+//         part->lba_end = part->lba_start + size;
+
+//         printk("part[%d] %02X %02X %u %u\n", i, part->flags, part->type, part->lba_start,
+//                part->lba_end == 0 ? 0 : part->lba_end - 1);
+
+//         // 这里应该再判断一下part->flags，如果是扩展分区还需要再读取
+//         // 先这样实现
+
+//         p += 16;  // 每个分区16个字节
+//         part++;
+//     }
 // }

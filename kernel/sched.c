@@ -234,6 +234,7 @@ void schedule() {
     task_union *next = sel != 0 ? sel : root;
 
     next->state = TASK_RUNNING;
+    next->reason = "";
 
     if (prev != next) {
         next->sched_cnt++;

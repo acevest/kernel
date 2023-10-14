@@ -24,7 +24,7 @@ blk_buffer_t *get_hash_block_buffer(dev_t dev, uint32_t block, uint16_t size) {}
 blk_buffer_t *block_read(dev_t dev, uint32_t block) {
     blk_buffer_t *bb = 0;
 
-    assert(DEV_MAJOR(dev) == DEV_MAJOR_IDE0);
+    assert(DEV_MAJOR(dev) == DEV_MAJOR_DISK);
     assert(DEV_MINOR(dev) == 1);
 
     // 目前不提供hash表组强起来的缓冲功能
@@ -51,7 +51,7 @@ void ata_read_ext2_sb() {
     const int size = offset + 1024;
     const int block = 1;
 
-    blk_buffer_t *bb = block_read(MAKE_DEV(DEV_MAJOR_IDE0, 1), block);
+    blk_buffer_t *bb = block_read(system.root_dev, block);
 
     ext2_sb_t *p = (ext2_sb_t *)(bb->data + offset);
     printk("inodes count %u inodes per group %u free %u\n", p->s_inodes_count, p->s_inodes_per_group,

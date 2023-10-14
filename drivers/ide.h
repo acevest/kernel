@@ -151,7 +151,9 @@
 
 // #define PARTITION_CNT 4
 #define PARTITION_TABLE_OFFSET 0x1BE
-#define MAX_IDE_PARTIONS 16
+#define MAX_DISK_PARTIONS 16
+
+#define MAKE_DISK_DEV(drv_no, part_no) MAKE_DEV(DEV_MAJOR_DISK, (drv_no)*MAX_DISK_PARTIONS + (part_no))
 
 // 分区定义
 typedef struct ide_part_ {
@@ -205,7 +207,7 @@ typedef struct _ide_drive {
 
     ide_pci_controller_t *ide_pci_controller;
 
-    ide_part_t partions[MAX_IDE_PARTIONS];
+    ide_part_t partions[MAX_DISK_PARTIONS];
 } ide_drive_t;
 
 #define MAX_IDE_DRIVE_CNT 4

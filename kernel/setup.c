@@ -80,7 +80,7 @@ void setup_kernel() {
     boot_delay(DEFAULT_BOOT_DELAY_TICKS);
 
     extern tty_t *const monitor_tty;
-    // tty_switch(monitor_tty);
+    tty_switch(monitor_tty);
 
     boot_delay(DEFAULT_BOOT_DELAY_TICKS);
 

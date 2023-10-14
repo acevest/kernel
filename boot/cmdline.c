@@ -10,6 +10,7 @@
  *--------------------------------------------------------------------------
  */
 #include <fs.h>
+#include <ide.h>
 #include <printk.h>
 #include <stdlib.h>
 #include <string.h>
@@ -33,8 +34,18 @@ void parse_cmdline(const char *cmdline) {
     printk("cmdline: %s\n", system.cmdline);
 
     get_value("root", value);
-    assert(value[0] == 'h' && value[1] == 'd' && value[2] == 'a');
-    system.root_dev = MAKE_DEV(DEV_MAJOR_HDA, atoi(value + 3));
+
+    assert(strlen(value) >= 4);
+
+    assert(value[0] == 'h' && value[1] == 'd');
+    assert(value[2] >= 'a' && value[2] <= 'd');
+
+    int disk_drv_no = value[2] - 'a';
+
+    uint32_t part_no = atoi(value + 3);
+    assert(part_no >= 1);
+
+    system.root_dev = MAKE_DISK_DEV(disk_drv_no, part_no);
     printk("root device %s [0x%08x]\n", value, system.root_dev);
 
     get_value("delay", value);

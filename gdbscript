@@ -1,7 +1,5 @@
-# kill qemu on gdb exit
-#define hook-quit
-#    kill
-#end
+# 避免退出gdb时二次确认
+set confirm off
 
 #b *0x7c00
 

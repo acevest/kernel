@@ -177,13 +177,12 @@ void ide_init() {
 ide_drive_t *ide_get_drive(dev_t dev) {
     int major = DEV_MAJOR(dev);
     int minor = DEV_MINOR(dev);
-    assert(major == DEV_MAJOR_IDE0 || major == DEV_MAJOR_IDE1);
-    assert(minor < MAX_IDE_PARTIONS * 2);  // 因为一个通道有两个硬盘，每个硬盘最大MAX_IDE_PARTIONS分区
 
-    int channel = major == DEV_MAJOR_IDE0 ? 0 : 1;
-    int index = minor / MAX_IDE_PARTIONS;
+    int drv_no = minor / MAX_DISK_PARTIONS;
 
-    int drv_no = channel * 2 + index;
+    assert(major == DEV_MAJOR_DISK);
+    assert(minor >= 0);
+    assert(drv_no < MAX_IDE_DRIVE_CNT);
 
     ide_drive_t *drv = ide_drives + drv_no;
 

@@ -9,6 +9,7 @@
 
 #include <disk.h>
 #include <fcntl.h>
+#include <ide.h>
 #include <io.h>
 #include <irq.h>
 #include <page.h>
@@ -106,14 +107,14 @@ void taskA_entry() {
         memset(disk_buf1, 0, 512);
 
         disk_request_t r;
-        r.dev = 0;
+        r.dev = MAKE_DISK_DEV(0, 0);
         r.command = DISK_REQ_READ;
         r.pos = sect_nr;
         r.count = 1;
         r.buf = disk_buf1;
         send_disk_request(&r);
 
-        verify_hd_data(sect_nr, disk_buf1, current->name);
+        // verify_hd_data(sect_nr, disk_buf1, current->name);
 
         for (int i = 0; i < 2; i++) {
             asm("hlt;");
@@ -129,13 +130,13 @@ void taskB_entry() {
         uint64_t sect_nr = get_next_deubug_sect_nr();
         memset(disk_buf2, 0, 512);
         disk_request_t r;
-        r.dev = 2;
+        r.dev = MAKE_DISK_DEV(2, 0);
         r.command = DISK_REQ_READ;
         r.pos = sect_nr;
         r.count = 1;
         r.buf = disk_buf2;
         send_disk_request(&r);
-        verify_hd_data(sect_nr, disk_buf2, current->name);
+        // verify_hd_data(sect_nr, disk_buf2, current->name);
 
         for (int i = 0; i < 1; i++) {
             asm("hlt;");
@@ -178,9 +179,11 @@ void root_task_entry() {
     //     asm("hlt;");
     // }
 
-    // kernel_task("tskA", taskA_entry, NULL);
-    // kernel_task("tskB", taskB_entry, NULL);
-    // kernel_task("tskC", taskC_entry, NULL);
+#if 1
+    kernel_task("tskA", taskA_entry, NULL);
+    kernel_task("tskB", taskB_entry, NULL);
+    kernel_task("tskC", taskC_entry, NULL);
+#endif
 
     current->priority = 1;
     while (1) {

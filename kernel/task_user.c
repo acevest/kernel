@@ -43,7 +43,7 @@ void __ring3text__ __attribute__((__aligned__(PAGE_SIZE))) ring3_entry() {
                             // 共享代码会利用保存在栈上的地址返回到sysexit_return_address处
             "pushl $0;"
             "pushl $0;"
-            "movl $2, %%ebx;"
+            "movl $200, %%ebx;"
             "pushl %%ebp;"
             "movl  %%esp, %%ebp;"
             "sysenter;"
