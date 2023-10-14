@@ -8,8 +8,8 @@
 # watch point
 #wa *0x7c00
 
-break *0x100000
-# break *0xC0100000
+#break *0x100000
+
 
 #handle SIGINT nostop noprint
 

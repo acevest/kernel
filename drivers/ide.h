@@ -156,6 +156,7 @@
 // 分区定义
 typedef struct ide_part_ {
     uint8_t flags;
+    uint8_t type;
     uint32_t lba_start;
     uint32_t lba_end;
 } ide_part_t;

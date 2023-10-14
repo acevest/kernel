@@ -71,7 +71,7 @@ void user_task_entry() {
     unsigned long *p = (unsigned long *)(pa2va(current->cr3));
 
     printd("page dir : %x %x %x %x\n", p, pt_text_page, ring3_text_page);
-    printd("pt bss page %x %x", pt_bss_page, ring3_bss_page);
+    printd("pt bss page %x %x\n", pt_bss_page, ring3_bss_page);
 
     // text: 0x0800_0000
     //  bss: 0x3000_0000
