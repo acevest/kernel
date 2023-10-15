@@ -10,7 +10,6 @@
  *--------------------------------------------------------------------------
  */
 #include <fs.h>
-#include <ide.h>
 #include <printk.h>
 #include <stdlib.h>
 #include <string.h>

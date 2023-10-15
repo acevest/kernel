@@ -158,7 +158,7 @@ void dump_buddy_system() {
     for (i = 0; i < MAX_ORDER; ++i) {
         printk("order %2d free_count %d ", i, buddy_system.free_area[i].free_count);
 
-        if (buddy_system.free_area[i].free_count < 100) {
+        if (buddy_system.free_area[i].free_count < 1000) {
             list_head_t *p;
             page_t *page;
             printk("pfn:");

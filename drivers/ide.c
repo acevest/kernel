@@ -178,7 +178,7 @@ ide_drive_t *ide_get_drive(dev_t dev) {
     int major = DEV_MAJOR(dev);
     int minor = DEV_MINOR(dev);
 
-    int drv_no = minor / MAX_DISK_PARTIONS;
+    int drv_no = (minor & 0xFFFF) >> 8;
 
     assert(major == DEV_MAJOR_DISK);
     assert(minor >= 0);

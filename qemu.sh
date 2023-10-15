@@ -17,7 +17,7 @@ set -m
 qemu-system-i386 \
     -boot d \
     -serial tcp::6666,server,nowait \
-    -drive file=HDa.IMG,format=raw,index=0,media=disk \
+    -drive file=HD.IMG,format=raw,index=0,media=disk \
     -drive file=kernel.iso,index=1,media=cdrom \
     -drive file=HDb.IMG,format=raw,index=2,media=disk \
     -name kernel \

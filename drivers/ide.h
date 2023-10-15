@@ -153,8 +153,6 @@
 #define PARTITION_TABLE_OFFSET 0x1BE
 #define MAX_DISK_PARTIONS 16
 
-#define MAKE_DISK_DEV(drv_no, part_no) MAKE_DEV(DEV_MAJOR_DISK, (drv_no)*MAX_DISK_PARTIONS + (part_no))
-
 // 分区定义
 typedef struct ide_part_ {
     uint8_t flags;

@@ -24,8 +24,6 @@
 #define DEV_MAJOR_MEM 0x0001
 #define DEV_MAJOR_TTY 0x0002
 #define DEV_MAJOR_DISK 0x0003
-// #define DEV_MAJOR_IDE0 0x0003
-// #define DEV_MAJOR_HDA DEV_MAJOR_IDE0
 #define DEV_MAJOR_IDE1 0x0004
 #define DEV_MAJOR_SCSI0 0x0005
 #define DEV_MAJOR_SCSI2 0x0006
@@ -34,6 +32,7 @@
 #define DEV_MINOR_MASK ((1UL << DEV_MAJOR_BITS) - 1)
 
 #define MAKE_DEV(major, minor) ((major) << DEV_MAJOR_BITS | minor)
+#define MAKE_DISK_DEV(drv_no, part_no) MAKE_DEV(DEV_MAJOR_DISK, (((drv_no)&0x03) << 8) | (((part_no)&0xFF) << 0))
 
 #define DEV_MAJOR(dev) ((unsigned int)((dev) >> DEV_MAJOR_BITS))
 #define DEV_MINOR(dev) ((unsigned int)((dev)&DEV_MINOR_MASK))
