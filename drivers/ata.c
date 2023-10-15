@@ -200,17 +200,16 @@ void ide_ata_init() {
 }
 
 // ext_lba: 在MBR中的扩展分区记录里的偏移地址
-// offset_lba: 在扩展分区记录里的扩展分区的偏移地址
-void read_partition_table(ide_drive_t *drv, uint32_t ext_lba, uint32_t offset_lba, int depth) {
-    uint32_t base = depth <= 1 ? 0 : ext_lba;
+// partition_table_lba: 扩展分区的真实偏移地址
 
+void read_partition_table(ide_drive_t *drv, uint32_t ext_lba, uint32_t partition_table_lba, int depth) {
     disk_request_t r;
     char *sect = kmalloc(SECT_SIZE, 0);
 
     // part_no == 0 代表整场硬盘
     r.dev = MAKE_DISK_DEV(drv->drv_no, 0);
     r.command = DISK_REQ_READ;
-    r.pos = base + offset_lba;
+    r.pos = partition_table_lba;
     r.count = 1;
     r.buf = sect;
     send_disk_request(&r);
@@ -230,24 +229,31 @@ void read_partition_table(ide_drive_t *drv, uint32_t ext_lba, uint32_t offset_lb
         if (part_id >= MAX_DISK_PARTIONS) {
             break;
         }
+
         part = drv->partions + part_id;
         part->flags = (uint8_t)p[0];
         part->type = (uint8_t)p[4];
         part->lba_start = *((uint32_t *)(p + 8));
         uint32_t size = *((uint32_t *)(p + 12));
-        part->lba_end = part->lba_start + size;
-        part->lba_end = size;
-
+        part->lba_end = part->lba_start + size - 1;
         if (part->type == 0x00) {
             continue;
         }
 
+        uint32_t lba_offset = 0;
         if (part->type == 0x05) {
             ext_lba = ext_lba != 0 ? ext_lba : part->lba_start;
-            read_partition_table(drv, ext_lba, part->lba_start, depth + 1);
+            uint32_t offset = depth == 0 ? partition_table_lba : part->lba_start;
+            lba_offset = ext_lba + offset;
         } else {
-            printk("part[%d] %02X %u %u\n", part_id + drv->drv_no * MAX_DISK_PARTIONS, part->type, part->lba_start,
-                   size);
+            lba_offset = partition_table_lba + part->lba_start;
+        }
+
+        if (part->type == 0x05) {
+            read_partition_table(drv, ext_lba, lba_offset, depth + 1);
+        } else {
+            printk("part[%d] %02X %u %u\n", part_id + drv->drv_no * MAX_DISK_PARTIONS, part->type, lba_offset,
+                   lba_offset + size - 1);
         }
 
         part_id++;
