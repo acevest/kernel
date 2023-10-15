@@ -25,7 +25,7 @@ blk_buffer_t *block_read(dev_t dev, uint32_t block) {
     blk_buffer_t *bb = 0;
 
     assert(DEV_MAJOR(dev) == DEV_MAJOR_DISK);
-    assert(DEV_MINOR(dev) == 1);
+    // assert(DEV_MINOR(dev) == 1);
 
     // 目前不提供hash表组强起来的缓冲功能
     // 直接读

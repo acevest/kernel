@@ -216,13 +216,6 @@ void read_partition_table(ide_drive_t *drv, uint32_t ext_lba, uint32_t partition
 
     ide_part_t *part = 0;
     uint32_t part_id = 0;
-    if (depth == 0) {
-        // MBR里的分区占据 [1,4]
-        part_id = 1;
-    } else {
-        // 扩展分区里的逻辑分区占据 [5,MAX_DISK_PARTIONS)
-        part_id = 5 + depth - 1;
-    }
 
     const char *p = sect + PARTITION_TABLE_OFFSET;
     for (int i = 0; i < 4; i++) {
@@ -230,33 +223,45 @@ void read_partition_table(ide_drive_t *drv, uint32_t ext_lba, uint32_t partition
             break;
         }
 
-        part = drv->partions + part_id;
-        part->flags = (uint8_t)p[0];
-        part->type = (uint8_t)p[4];
-        part->lba_start = *((uint32_t *)(p + 8));
-        uint32_t size = *((uint32_t *)(p + 12));
-        part->lba_end = part->lba_start + size - 1;
-        if (part->type == 0x00) {
+        if (depth == 0) {
+            // MBR里的分区占据 [1,4]
+            part_id = 1 + i;
+        } else {
+            // 扩展分区里的逻辑分区占据 [5,MAX_DISK_PARTIONS)
+            part_id = 5 + depth - 1;
+        }
+
+        ide_part_t tpart;
+        tpart.flags = (uint8_t)p[0];
+        tpart.type = (uint8_t)p[4];
+        tpart.lba_start = *((uint32_t *)(p + 8));
+        tpart.lba_end = *((uint32_t *)(p + 12));
+
+        if (tpart.type == 0x00) {
             continue;
         }
 
         uint32_t lba_offset = 0;
-        if (part->type == 0x05) {
-            ext_lba = ext_lba != 0 ? ext_lba : part->lba_start;
-            uint32_t offset = depth == 0 ? partition_table_lba : part->lba_start;
+        if (tpart.type == 0x05) {
+            ext_lba = ext_lba != 0 ? ext_lba : tpart.lba_start;
+            uint32_t offset = depth == 0 ? partition_table_lba : tpart.lba_start;
             lba_offset = ext_lba + offset;
         } else {
-            lba_offset = partition_table_lba + part->lba_start;
+            lba_offset = partition_table_lba + tpart.lba_start;
+
+            part = drv->partions + part_id;
+            part->flags = tpart.flags;
+            part->type = tpart.type;
+            part->lba_start = lba_offset;
+            uint32_t size = tpart.lba_end;
+            part->lba_end = part->lba_start + size - 1;
         }
 
-        if (part->type == 0x05) {
+        if (tpart.type == 0x05) {
             read_partition_table(drv, ext_lba, lba_offset, depth + 1);
         } else {
-            printk("part[%d] %02X %u %u\n", part_id + drv->drv_no * MAX_DISK_PARTIONS, part->type, lba_offset,
-                   lba_offset + size - 1);
+            printk("part[%d] %02X %u %u\n", part_id, tpart.type, lba_offset, part->lba_end);
         }
-
-        part_id++;
 
         // 每个分区16个字节
         p += 16;
@@ -282,7 +287,8 @@ void ide_read_partions() {
 
 void ide_disk_read(dev_t dev, uint32_t sect_nr, uint32_t count, char *buf) {
     ide_drive_t *drv = ide_get_drive(dev);
-    uint64_t lba_offset = drv->partions[DEV_MINOR((dev))].lba_start;
+    int part_id = DEV_MINOR((dev)) & 0xFF;  // TODO: 换成宏定义
+    uint64_t lba_offset = drv->partions[part_id].lba_start;
 
     disk_request_t r;
     r.dev = dev;
