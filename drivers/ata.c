@@ -199,17 +199,16 @@ void ide_ata_init() {
     }
 }
 
-// ext_lba: 在MBR中的扩展分区记录里的偏移地址
-// partition_table_lba: 扩展分区的真实偏移地址
-
-void read_partition_table(ide_drive_t *drv, uint32_t ext_lba, uint32_t partition_table_lba, int depth) {
+// mbr_ext_offset: 在MBR中的扩展分区记录里的偏移地址
+// lba_partition_table: 扩展分区的真实偏移地址
+void read_partition_table(ide_drive_t *drv, uint32_t mbr_ext_offset, uint32_t lba_partition_table, int depth) {
     disk_request_t r;
     char *sect = kmalloc(SECT_SIZE, 0);
 
     // part_no == 0 代表整场硬盘
     r.dev = MAKE_DISK_DEV(drv->drv_no, 0);
     r.command = DISK_REQ_READ;
-    r.pos = partition_table_lba;
+    r.pos = lba_partition_table;
     r.count = 1;
     r.buf = sect;
     send_disk_request(&r);
@@ -217,7 +216,8 @@ void read_partition_table(ide_drive_t *drv, uint32_t ext_lba, uint32_t partition
     ide_part_t *part = 0;
     uint32_t part_id = 0;
 
-    const char *p = sect + PARTITION_TABLE_OFFSET;
+    uint32_t lba_extended_partition = 0;
+    const char *pe = sect + PARTITION_TABLE_OFFSET;
     for (int i = 0; i < 4; i++) {
         if (part_id >= MAX_DISK_PARTIONS) {
             break;
@@ -231,40 +231,42 @@ void read_partition_table(ide_drive_t *drv, uint32_t ext_lba, uint32_t partition
             part_id = 5 + depth - 1;
         }
 
-        ide_part_t tpart;
-        tpart.flags = (uint8_t)p[0];
-        tpart.type = (uint8_t)p[4];
-        tpart.lba_start = *((uint32_t *)(p + 8));
-        tpart.lba_end = *((uint32_t *)(p + 12));
+        ide_part_t pt;
+        pt.flags = (uint8_t)pe[0];
+        pt.type = (uint8_t)pe[4];
+        pt.lba_start = *((uint32_t *)(pe + 8));
+        pt.lba_end = *((uint32_t *)(pe + 12));
 
-        if (tpart.type == 0x00) {
+        if (0x00 == pt.type) {
             continue;
         }
 
         uint32_t lba_offset = 0;
-        if (tpart.type == 0x05) {
-            ext_lba = ext_lba != 0 ? ext_lba : tpart.lba_start;
-            uint32_t offset = depth == 0 ? partition_table_lba : tpart.lba_start;
-            lba_offset = ext_lba + offset;
+        if (0x05 == pt.type) {
+            mbr_ext_offset = mbr_ext_offset != 0 ? mbr_ext_offset : pt.lba_start;
+            uint32_t offset = depth == 0 ? lba_partition_table : pt.lba_start;
+            lba_offset = mbr_ext_offset + offset;
+            lba_extended_partition = lba_offset;
         } else {
-            lba_offset = partition_table_lba + tpart.lba_start;
+            lba_offset = lba_partition_table + pt.lba_start;
 
             part = drv->partions + part_id;
-            part->flags = tpart.flags;
-            part->type = tpart.type;
+            part->flags = pt.flags;
+            part->type = pt.type;
             part->lba_start = lba_offset;
-            uint32_t size = tpart.lba_end;
+            uint32_t size = pt.lba_end;
             part->lba_end = part->lba_start + size - 1;
-        }
-
-        if (tpart.type == 0x05) {
-            read_partition_table(drv, ext_lba, lba_offset, depth + 1);
-        } else {
-            printk("part[%d] %02X %u %u\n", part_id, tpart.type, lba_offset, part->lba_end);
+            printk("part[%02d] %02X %u %u\n", part_id, pt.type, lba_offset, part->lba_end);
         }
 
         // 每个分区16个字节
-        p += 16;
+        pe += 16;
+    }
+
+    // 把read_partition_table放到for循环结束处是为了按顺序读出分区
+    // 例如在MBR中扩展分区占据第1项，主分区占据第2项，就可能出现主分区排在最后的情况
+    if (lba_extended_partition != 0) {
+        read_partition_table(drv, mbr_ext_offset, lba_extended_partition, depth + 1);
     }
 
     kfree(sect);
