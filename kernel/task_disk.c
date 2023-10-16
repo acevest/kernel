@@ -12,6 +12,10 @@
 #include <ide.h>
 #include <sched.h>
 
+void ata_read_identify(int drv, int disable_intr);
+void ata_pio_read_data(int drv_no, int sect_cnt, void *dst);
+void ata_dma_read_ext(int drv, uint64_t pos, uint16_t count, void *dest);
+
 void disk_init() {
     // ...
 }
@@ -81,18 +85,25 @@ void disk_task_entry(void *arg) {
         if (drv->present == 0) {
             panic("disk not present");
         }
+        assert(drv->present == 1);
+
+        int part_id = DEV_MINOR((r->dev)) & 0xFF;
+        assert(part_id < MAX_DISK_PARTIONS);
+        assert(MAKE_DISK_DEV(drv_no, part_id) == r->dev);
+
+        uint64_t pos = r->pos + drv->partions[part_id].lba_start;
+        assert(pos < drv->partions[part_id].lba_end);
 
         switch (r->command) {
         case DISK_REQ_IDENTIFY:
+            printk("try to read disk drive %u identify", drv_no);
             assert(r->count == 1);
-            void ata_read_identify(int drv, int disable_intr);
             ata_read_identify(drv_no, 0);
             break;
         case DISK_REQ_READ:
             assert(r->count > 0);
             assert(r->buf != NULL);
-            void ata_dma_read_ext(int drv, uint64_t pos, uint16_t count, void *dest);
-            ata_dma_read_ext(drv_no, r->pos, r->count, r->buf);
+            ata_dma_read_ext(drv_no, pos, r->count, r->buf);
             break;
         default:
             panic("invalid disk request command");
@@ -105,8 +116,7 @@ void disk_task_entry(void *arg) {
 
         // 读数据
         if (DISK_REQ_IDENTIFY == r->command) {
-            void ata_read_data(int drv_no, int sect_cnt, void *dst);
-            ata_read_data(drv_no, 1, r->buf);
+            ata_pio_read_data(drv_no, 1, r->buf);
         }
 
         // 唤醒等待该请求的进程

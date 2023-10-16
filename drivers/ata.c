@@ -45,7 +45,9 @@ void ata_test(uint64_t nr) {
 u16 identify[256];
 void ata_send_read_identify_cmd(int drv) {}
 
-void ata_read_data(int drv, int sect_cnt, void *dst) { insl(REG_DATA(drv), dst, (512 * sect_cnt) / sizeof(uint32_t)); }
+void ata_pio_read_data(int drv, int sect_cnt, void *dst) {
+    insl(REG_DATA(drv), dst, (512 * sect_cnt) / sizeof(uint32_t));
+}
 
 // 这里所用的drv是逻辑编号 ATA0、ATA1下的Master、Salve的drv分别为0,1,2,3
 void ata_read_identify(int drv, int disable_intr) {
@@ -216,6 +218,7 @@ void read_partition_table(ide_drive_t *drv, uint32_t mbr_ext_offset, uint32_t lb
     ide_part_t *part = 0;
     uint32_t part_id = 0;
 
+    // 用来计算保存下一个扩展分区的起始位置
     uint32_t lba_extended_partition = 0;
     const char *pe = sect + PARTITION_TABLE_OFFSET;
     for (int i = 0; i < 4; i++) {
@@ -241,8 +244,10 @@ void read_partition_table(ide_drive_t *drv, uint32_t mbr_ext_offset, uint32_t lb
             continue;
         }
 
+        // 用于计算保存下一个分区的起始位置
         uint32_t lba_offset = 0;
         if (0x05 == pt.type) {
+            assert(lba_extended_partition == 0);  // 最多只允许有一个扩展分区
             mbr_ext_offset = mbr_ext_offset != 0 ? mbr_ext_offset : pt.lba_start;
             uint32_t offset = depth == 0 ? lba_partition_table : pt.lba_start;
             lba_offset = mbr_ext_offset + offset;
@@ -255,8 +260,8 @@ void read_partition_table(ide_drive_t *drv, uint32_t mbr_ext_offset, uint32_t lb
             part->type = pt.type;
             part->lba_start = lba_offset;
             uint32_t size = pt.lba_end;
-            part->lba_end = part->lba_start + size - 1;
-            printk("part[%02d] %02X %u %u\n", part_id, pt.type, lba_offset, part->lba_end);
+            part->lba_end = part->lba_start + size;
+            printk("part[%02d] %02X %10u %-10u\n", part_id, pt.type, lba_offset, part->lba_end - 1);
         }
 
         // 每个分区16个字节
@@ -288,14 +293,10 @@ void ide_read_partions() {
 }
 
 void ide_disk_read(dev_t dev, uint32_t sect_nr, uint32_t count, char *buf) {
-    ide_drive_t *drv = ide_get_drive(dev);
-    int part_id = DEV_MINOR((dev)) & 0xFF;  // TODO: 换成宏定义
-    uint64_t lba_offset = drv->partions[part_id].lba_start;
-
     disk_request_t r;
     r.dev = dev;
     r.command = DISK_REQ_READ;
-    r.pos = lba_offset + sect_nr;
+    r.pos = sect_nr;
     r.count = count;
     r.buf = buf;
     send_disk_request(&r);
