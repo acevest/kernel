@@ -72,7 +72,7 @@ typedef union task_union {
 
         list_head_t pend;  // 某些条件串成一个链表
 
-        wait_queue_head_t wait;
+        list_head_t wait;
 
         uint32_t sched_cnt;       // 被调度换上CPU的次数
         uint32_t sched_keep_cnt;  // 时间片到了，但是没有被换出，又重新执行的次数

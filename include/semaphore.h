@@ -34,7 +34,10 @@ void up(semaphore_t *s);
 
 typedef semaphore_t mutex_t;
 
-#define DECLARE_MUTEX(name) semaphore_t name = SEMAPHORE_INITIALIZER(name, 1)
+#define MUTEX_INITIALIZER(name) \
+    { .cnt = (1), .wait_list = LIST_HEAD_INIT((name).wait_list) }
+
+#define DECLARE_MUTEX(name) mutex_t name = MUTEX_INITIALIZER(name)
 
 #define INIT_MUTEX(ptr)                      \
     do {                                     \

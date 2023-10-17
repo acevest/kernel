@@ -60,7 +60,10 @@ void ata_read_ext2_sb() {
            p->s_free_blocks_count, p->s_magic);
     printk("first ino %u inode size %u first data block %u\n", p->s_first_ino, p->s_inode_size, p->s_first_data_block);
     printk("log block size %u write time %u\n", p->s_log_block_size, p->s_wtime);
-    p->s_volume_name[63] = 0;
-    printk("volume %s\n", p->s_volume_name);
+    char volume_name[16 + 1];
+    strncpy(volume_name, p->s_volume_name, 16);
+    volume_name[16] = 0;
+    printk("volume %s\n", volume_name);
+    // printk("last mounted %s\n", p->s_last_mounted);
     kfree(bb->data);
 }
