@@ -14,6 +14,36 @@
 
 volatile void init_wait_queue_head(wait_queue_head_t *wqh) { INIT_LIST_HEAD(&wqh->task_list); }
 
+volatile void prepare_to_wait(wait_queue_head_t *head, wait_queue_t *wq, unsigned int state) {
+    unsigned long flags;
+    irq_save(flags);
+    if (list_empty(&wq->task_list)) {
+        list_add_tail(&wq->task_list, &head->task_list);
+    }
+    set_current_state(state);
+    irq_restore(flags);
+}
+
+volatile void __end_wait(wait_queue_t *wq) {
+    set_current_state(TASK_READY);
+    unsigned long flags;
+    irq_save(flags);
+    list_del_init(&wq->task_list);
+    irq_restore(flags);
+}
+
+volatile void wake_up(wait_queue_head_t *head) {
+    unsigned long flags;
+    wait_queue_t *p, *tmp;
+    irq_save(flags);
+    list_for_each_entry_safe(p, tmp, &head->task_list, task_list) {
+        list_del(&p->task_list);
+        // printk("wakeup: %s\n", p->task->name);
+        p->task->state = TASK_READY;
+    }
+    irq_restore(flags);
+}
+
 volatile void add_wait_queue(wait_queue_head_t *head, wait_queue_t *wq) {
     unsigned long flags;
     irq_save(flags);
@@ -28,97 +58,79 @@ volatile void del_wait_queue(wait_queue_head_t *head, wait_queue_t *wq) {
     irq_restore(flags);
 }
 
-volatile void prepare_to_wait(wait_queue_head_t *head, wait_queue_t *wq, unsigned int state) {
-    unsigned long flags;
-    irq_save(flags);
-    if (list_empty(&wq->task_list)) {
-        list_add_tail(&wq->task_list, &head->task_list);
-    }
-    set_current_state(state);
-    irq_restore(flags);
-}
+// volatile void sleep_on(wait_queue_head_t *head) {
+//     DECLARE_WAIT_QUEUE(wait, current);
 
-volatile void __end_wait(wait_queue_head_t *head, wait_queue_t *wq) {
-    set_current_state(TASK_READY);
-    unsigned long flags;
-    irq_save(flags);
-    list_del_init(&wq->task_list);
-    irq_restore(flags);
-}
+//     unsigned long flags;
+//     irq_save(flags);
 
-volatile void sleep_on(wait_queue_head_t *head) {
-    DECLARE_WAIT_QUEUE(wait, current);
+//     current->state = TASK_WAIT;
+//     current->reason = "sleep_on";
 
-    unsigned long flags;
-    irq_save(flags);
+//     list_add_tail(&wait.task_list, &head->task_list);
 
-    current->state = TASK_WAIT;
-    current->reason = "sleep_on";
+//     irq_restore(flags);
 
-    list_add_tail(&wait.task_list, &head->task_list);
+//     schedule();
 
-    irq_restore(flags);
+//     // wake_up操作会把wait从heat链表上删除
+//     // 所以这里就不用做什么了
+// }
 
-    schedule();
+// volatile void __wake_up(wait_queue_head_t *head, int nr) {
+//     unsigned long flags;
+//     wait_queue_t *p, *tmp;
+//     irq_save(flags);
+//     list_for_each_entry_safe(p, tmp, &head->task_list, task_list) {
+//         list_del(&p->task_list);
+//         // printk("wakeup: %s\n", p->task->name);
+//         p->task->state = TASK_READY;
+//         current->reason = "wake_up";
 
-    // wake_up操作会把wait从heat链表上删除
-    // 所以这里就不用做什么了
-}
+//         --nr;
+//         if (nr == 0) {
+//             break;
+//         }
+//     }
+//     irq_restore(flags);
 
-volatile void __wake_up(wait_queue_head_t *head, int nr) {
-    unsigned long flags;
-    wait_queue_t *p, *tmp;
-    irq_save(flags);
-    list_for_each_entry_safe(p, tmp, &head->task_list, task_list) {
-        list_del(&p->task_list);
-        // printk("wakeup: %s\n", p->task->name);
-        p->task->state = TASK_READY;
-        current->reason = "wake_up";
+//     // no schedule() here.
+// }
 
-        --nr;
-        if (nr == 0) {
-            break;
-        }
-    }
-    irq_restore(flags);
+// volatile void wake_up(wait_queue_head_t *head) { __wake_up(head, 1); }
 
-    // no schedule() here.
-}
+// #include <irq.h>
+// DECLARE_WAIT_QUEUE_HEAD(debug_wq);
+// unsigned int debug_global_var = 0;
+// int debug_wait_queue_get() {
+//     unsigned int v = 0;
+//     task_union *task = current;
+//     DECLARE_WAIT_QUEUE(wait, task);
+//     add_wait_queue(&debug_wq, &wait);
 
-volatile void wake_up(wait_queue_head_t *head) { __wake_up(head, 1); }
+//     while (1) {
+//         printd("pid %d is going to wait\n", sysc_getpid());
+//         task->state = TASK_WAIT;
 
-#include <irq.h>
-DECLARE_WAIT_QUEUE_HEAD(debug_wq);
-unsigned int debug_global_var = 0;
-int debug_wait_queue_get() {
-    unsigned int v = 0;
-    task_union *task = current;
-    DECLARE_WAIT_QUEUE(wait, task);
-    add_wait_queue(&debug_wq, &wait);
+//         disable_irq();
+//         v = debug_global_var;
+//         if (debug_global_var != 0) debug_global_var--;
+//         enable_irq();
 
-    while (1) {
-        printd("pid %d is going to wait\n", sysc_getpid());
-        task->state = TASK_WAIT;
+//         if (v != 0) break;
 
-        disable_irq();
-        v = debug_global_var;
-        if (debug_global_var != 0) debug_global_var--;
-        enable_irq();
+//         schedule();
+//         printd("pid %d is running\n", sysc_getpid());
+//     }
 
-        if (v != 0) break;
+//     printd("pid %d is really running\n", sysc_getpid());
+//     task->state = TASK_READY;
+//     del_wait_queue(&debug_wq, &wait);
 
-        schedule();
-        printd("pid %d is running\n", sysc_getpid());
-    }
-
-    printd("pid %d is really running\n", sysc_getpid());
-    task->state = TASK_READY;
-    del_wait_queue(&debug_wq, &wait);
-
-    return v;
-}
+//     return v;
+// }
 
 int debug_wait_queue_put(unsigned int v) {
-    debug_global_var = v;
-    wake_up(&debug_wq);
+    // debug_global_var = v;
+    // wake_up(&debug_wq);
 }

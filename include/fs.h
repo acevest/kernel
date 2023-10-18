@@ -109,14 +109,4 @@ static inline pInode find_empty_inode()
 
 typedef uint32_t dev_t;
 
-typedef struct blk_buffer {
-    uint32_t block;       // block number
-    char *data;           //
-    uint16_t block_size;  // block size
-    dev_t dev;
-    page_t *page;
-    struct blk_buffer *next;
-    struct blk_buffer *hash_next;
-} blk_buffer_t;
-
 #endif  //_FS_H

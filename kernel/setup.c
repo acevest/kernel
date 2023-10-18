@@ -20,6 +20,7 @@
 #include <tty.h>
 
 extern void init_mm();
+extern void init_buffer();
 extern void setup_gdt();
 extern void setup_idt();
 extern void setup_gate();
@@ -54,6 +55,8 @@ void setup_kernel() {
     );
 
     init_mm();
+
+    init_buffer();
 
     // printk("kernel: %08x - %08x\n", system.kernel_begin, system.kernel_end);
     boot_delay(DEFAULT_BOOT_DELAY_TICKS);
