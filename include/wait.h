@@ -45,10 +45,15 @@ void prepare_to_wait(wait_queue_head_t *head, wait_queue_t *wq, unsigned int sta
 
 void __end_wait(wait_queue_t *wq);
 
-// void sleep_on(wait_queue_head_t *head);
+// 使用这个函数的时候需要注意
+// 设置condition为真的语句和wake_up原子地执行
 void wake_up(wait_queue_head_t *head);
+void __wake_up(wait_queue_head_t *head, int nr);
 
-void schedule();
+// 只要保证condition设置为真时，它是和wake_up一起原子执行的
+// 那就能保证condition为真是如下__wait_event和wait_event里的if不出问题
+// 也就是不会出现if-break后进程又再次因为其它原因阻塞后，又被wake_up的逻辑
+// 设置为READY状态
 #define __wait_event(head, condition)                  \
     do {                                               \
         DECLARE_WAIT_QUEUE(__wait, current);           \
@@ -57,6 +62,7 @@ void schedule();
             if ((condition)) {                         \
                 break;                                 \
             }                                          \
+            void schedule();                           \
             schedule();                                \
         }                                              \
         __end_wait(&__wait);                           \
@@ -68,3 +74,6 @@ void schedule();
             __wait_event(head, (condition)); \
         }                                    \
     } while (0)
+
+// 无条件wait
+void wait_on(wait_queue_head_t *head);

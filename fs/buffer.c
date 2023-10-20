@@ -24,6 +24,7 @@ typedef struct bbuffer_store {
     int blocksize;
     // list_head_t cache_list;
     list_head_t free_list;
+    wait_queue_head_t waitq;
 } bbuffer_store_t;
 
 // 1024, 2048, 4096
@@ -51,26 +52,29 @@ bbuffer_store_t *getstore(uint32_t size) {
 
 bbuffer_t *get_from_hash_table(dev_t dev, uint64_t block, uint32_t size) {
     list_head_t *p = 0;
+    bbuffer_t *b = 0;
+
     uint32_t hash = hashfn(dev, block);
     assert(hash < BLOCK_BUFFER_HASH_TABLE_SIZE);
     list_for_each(p, block_buffer_hash_table + hash) {
-        bbuffer_t *b = list_entry(p, bbuffer_t, node);
-        if (b->dev != dev) {
+        bbuffer_t *t = list_entry(p, bbuffer_t, node);
+        if (t->dev != dev) {
             continue;
         }
 
-        if (b->block != block) {
+        if (t->block != block) {
             continue;
         }
 
-        assert(b->block_size == size);
+        assert(t->block_size == size);
+
+        b = t;
 
         break;
     }
 
     // 如果找到了就直接返回
-    if (0 != p) {
-        bbuffer_t *b = list_entry(p, bbuffer_t, node);
+    if (b != NULL) {
         atomic_inc(&b->ref_count);
         assert(0 != b);
         assert(0 != b->data);
@@ -119,7 +123,7 @@ again:
         irq_restore(iflags);
         retry++;
         // wait on free list
-        // ...
+        wait_on(&s->waitq);
         goto again;
     }
 
@@ -138,17 +142,44 @@ again:
     b->ref_count = 1;
     b->uptodate = 0;
 
-    list_init(&b->node);
-
-    irq_restore(iflags);
-
     return b;
+}
+
+void brelse(bbuffer_t *b) {
+    assert(b != NULL);
+    assert(b->ref_count > 0);
+
+    wait_completion(&b->io_done);
+
+    bbuffer_store_t *s = getstore(b->block_size);
+    assert(s != NULL);
+    assert(s - store < 3);
+
+    wake_up(&s->waitq);
 }
 
 bbuffer_t *bread(dev_t dev, uint64_t block, uint32_t size) {
     bbuffer_t *b = getblk(dev, block, size);
 
-    return b;
+    assert(b != NULL);
+
+    if (b->uptodate == 1) {
+        return b;
+    }
+
+    // READ
+    void block_read(bbuffer_t * b);
+    block_read(b);
+
+    // 等待I/O结束
+    wait_completion(&b->io_done);
+    if (b->uptodate == 1) {
+        return b;
+    }
+
+    brelse(b);
+
+    return NULL;
 }
 
 void init_buffer() {
@@ -170,6 +201,7 @@ void init_buffer() {
         store[i].blocksize = blocksize;
         // list_init(&store[i].cache_list);
         list_init(&store[i].free_list);
+        init_wait_queue_head(&store[i].waitq);
 
         int page_left_space = 0;
         void *data = NULL;
@@ -191,6 +223,7 @@ void init_buffer() {
             b->page = page;
             b->uptodate = 0;
             init_completion(&b->io_done);
+            complete(&b->io_done);
             list_init(&b->node);
 
             assert(NULL != b->data);

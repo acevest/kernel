@@ -26,3 +26,7 @@ typedef struct bbuffer {
     uint16_t block_size;  // block size
     uint16_t uptodate : 1;
 } bbuffer_t;
+
+bbuffer_t *bread(dev_t dev, uint64_t block, uint32_t size);
+
+void brelse(bbuffer_t *b);
