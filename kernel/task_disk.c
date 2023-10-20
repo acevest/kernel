@@ -102,8 +102,13 @@ void disk_task_entry(void *arg) {
             break;
         case DISK_REQ_READ:
             assert(r->count > 0);
-            assert(r->buf != NULL);
-            ata_dma_read_ext(drv_no, pos, r->count, r->buf);
+            assert(r->buf != NULL || r->bb->data != NULL);
+            // printk("DISK READ drv_no %u pos %u count %u\n", drv_no, (uint32_t)pos, r->count);
+            if (r->bb != 0) {
+                ata_dma_read_ext(drv_no, pos, r->count, r->bb->data);
+            } else {
+                ata_dma_read_ext(drv_no, pos, r->count, r->buf);
+            }
             break;
         default:
             panic("invalid disk request command");
@@ -117,6 +122,11 @@ void disk_task_entry(void *arg) {
         // 读数据
         if (DISK_REQ_IDENTIFY == r->command) {
             ata_pio_read_data(drv_no, 1, r->buf);
+        }
+
+        if (r->bb != 0) {
+            r->bb->uptodate = 1;
+            complete(&r->bb->io_done);
         }
 
         // 唤醒等待该请求的进程

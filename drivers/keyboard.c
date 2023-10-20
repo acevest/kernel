@@ -28,8 +28,6 @@ void ide_debug();
 void ide_status();
 void debug_sched();
 
-int debug_wait_queue_put(unsigned int v);
-
 void kbd_debug(uint8_t scan_code);
 
 char kbd_char_tbl[] = {
@@ -92,15 +90,6 @@ void kbd_debug(uint8_t scan_code) {
     } else if (scan_code == 0x3D) {  // F3
         tty_switch(debug_tty);
     }
-
-    if (scan_code == 0x3F)  // F5
-        debug_wait_queue_put(0);
-    if (scan_code == 0x40)  // F6
-        debug_wait_queue_put(1);
-    if (scan_code == 0x41)  // F7
-        debug_wait_queue_put(2);
-    if (scan_code == 0x42)  // F8
-        debug_wait_queue_put(7);
 
     if (scan_code == 0x43) {  // F9
         void ata_test(uint64_t nr);

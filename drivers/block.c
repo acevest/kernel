@@ -12,23 +12,15 @@
 #include <fs.h>
 #include <ide.h>
 
-bbuffer_t *block_read(dev_t dev, uint32_t block) {
-    bbuffer_t *bb = 0;
+void ide_disk_read(dev_t dev, uint32_t sect_nr, uint32_t count, bbuffer_t *b);
+void block_read(bbuffer_t *b) {
+    assert(b != NULL);
+    assert(b->data != NULL);
+    assert(b->page != NULL);
+    assert(DEV_MAJOR(b->dev) == DEV_MAJOR_DISK);
+    assert(b->block_size != 0);
 
-    assert(DEV_MAJOR(dev) == DEV_MAJOR_DISK);
-    // assert(DEV_MINOR(dev) == 1);
-
-    // 目前不提供hash表组强起来的缓冲功能
-    // 直接读
-
-    // TODO:根据dev得到正确的blocksize
-    const int blocksize = 1024;
-
-    bb->data = kmalloc(blocksize, 0);  // debug
-
-    ide_disk_read(dev, block * blocksize / 512, 1, bb->data);
-
-    return bb;
+    ide_disk_read(b->dev, (b->block * b->block_size) / 512, b->block_size / 512, b);
 }
 
 #include <ext2.h>
@@ -38,11 +30,10 @@ void ata_read_ext2_sb() {
     // 则ext2_superblock应该在第1个block的offset为0的位置
     // ext2_superblock默认大小1024
 
-    const int offset = 0;
-    const int size = offset + 1024;
-    const int block = 1;
-
-    bbuffer_t *bb = block_read(system.root_dev, block);
+    const int block = 0;
+    const int offset = 1024;
+    const int size = 4096;
+    bbuffer_t *bb = bread(system.root_dev, block, size);
 
     ext2_sb_t *p = (ext2_sb_t *)(bb->data + offset);
     printk("inodes count %u inodes per group %u free %u\n", p->s_inodes_count, p->s_inodes_per_group,
@@ -55,6 +46,4 @@ void ata_read_ext2_sb() {
     strncpy(volume_name, p->s_volume_name, 16);
     volume_name[16] = 0;
     printk("volume %s\n", volume_name);
-    // printk("last mounted %s\n", p->s_last_mounted);
-    kfree(bb->data);
 }

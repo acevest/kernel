@@ -10,13 +10,17 @@
 #include <completion.h>
 #include <sched.h>
 
-void wait_completion(completion_t *x) { wait_event(&x->wait, (x->done == 1)); }
+void wait_completion(completion_t *x) {
+    //
+    wait_event(&x->wait, (x->done == 1));
+}
 
 void complete(completion_t *x) {
     uint32_t iflags;
     irq_save(iflags);
     x->done = 1;
-    wake_up(&x->wait);
+    // wake_up(&x->wait);
+    __wake_up(&x->wait, 0);
     irq_restore(iflags);
 }
 

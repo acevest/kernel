@@ -201,19 +201,47 @@ void ide_ata_init() {
     }
 }
 
+void ide_disk_read(dev_t dev, uint32_t sect_nr, uint32_t count, bbuffer_t *b) {
+    disk_request_t r;
+    r.dev = dev;
+    r.command = DISK_REQ_READ;
+    r.pos = sect_nr;
+    r.count = count;
+    r.buf = NULL;
+    r.bb = b;
+    send_disk_request(&r);
+}
+
+void tmp_ide_disk_read(dev_t dev, uint32_t sect_nr, uint32_t count, char *buf) {
+    disk_request_t r;
+    r.dev = dev;
+    r.command = DISK_REQ_READ;
+    r.pos = sect_nr;
+    r.count = count;
+    r.buf = buf;
+    r.bb = NULL;
+    send_disk_request(&r);
+}
+
 // mbr_ext_offset: 在MBR中的扩展分区记录里的偏移地址
 // lba_partition_table: 扩展分区的真实偏移地址
 void read_partition_table(ide_drive_t *drv, uint32_t mbr_ext_offset, uint32_t lba_partition_table, int depth) {
     disk_request_t r;
     char *sect = kmalloc(SECT_SIZE, 0);
 
+#if 1
+    // part_no == 0 代表整场硬盘
+    tmp_ide_disk_read(MAKE_DISK_DEV(drv->drv_no, 0), lba_partition_table, 1, sect);
+#else
     // part_no == 0 代表整场硬盘
     r.dev = MAKE_DISK_DEV(drv->drv_no, 0);
     r.command = DISK_REQ_READ;
     r.pos = lba_partition_table;
     r.count = 1;
     r.buf = sect;
+    r.bb = NULL;
     send_disk_request(&r);
+#endif
 
     ide_part_t *part = 0;
     uint32_t part_id = 0;
@@ -290,16 +318,6 @@ void ide_read_partions() {
         read_partition_table(drv, 0, 0, 0);
         printk("--------------\n");
     }
-}
-
-void ide_disk_read(dev_t dev, uint32_t sect_nr, uint32_t count, char *buf) {
-    disk_request_t r;
-    r.dev = dev;
-    r.command = DISK_REQ_READ;
-    r.pos = sect_nr;
-    r.count = count;
-    r.buf = buf;
-    send_disk_request(&r);
 }
 
 // ATA_CMD_READ_DMA_EXT
