@@ -9,7 +9,6 @@
 
 #pragma once
 
-#if 0
 #include <wait.h>
 
 typedef struct completion {
@@ -24,4 +23,3 @@ void wait_completion(completion_t *x);
 void init_completion(completion_t *x);
 
 void complete(completion_t *x);
-#endif

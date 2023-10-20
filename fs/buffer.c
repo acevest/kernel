@@ -108,7 +108,7 @@ again:
         assert(NULL != t);
         assert(t->block_size == size);
 
-        if (t->ref_count == 0 && t->locked == 0) {
+        if (t->ref_count == 0) {
             b = t;
             break;
         }
@@ -123,11 +123,13 @@ again:
         goto again;
     }
 
-    // 此时b->locked不一定为0
+    // 把它从free_list上删掉
+    list_del_init(&b->node);
+
+    // 虽然此时该bbuffer_t上的ref_count为0但其可能还有I/O操作没有完成
     // 因为可能有的进程调用了write、read后再直接调用brelse
-    // 虽然此时ref_count为0，但io操作标记的b->locked并未结束
     // 所以需要在此等待其结束
-    wait_event(&b->waitq_lock, b->locked == 0);
+    wait_completion(&b->io_done);
 
     // 找到了
     b->block = block;
@@ -188,8 +190,7 @@ void init_buffer() {
             b->dev = 0;
             b->page = page;
             b->uptodate = 0;
-            b->locked = 0;
-            init_wait_queue_head(&b->waitq_lock);
+            init_completion(&b->io_done);
             list_init(&b->node);
 
             assert(NULL != b->data);

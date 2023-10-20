@@ -7,7 +7,6 @@
  * ------------------------------------------------------------------------
  */
 
-#if 0
 #include <completion.h>
 #include <sched.h>
 
@@ -25,4 +24,3 @@ void init_completion(completion_t *x) {
     x->done = 0;
     init_wait_queue_head(&x->wait);
 }
-#endif
