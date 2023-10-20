@@ -127,9 +127,7 @@ again:
     // 因为可能有的进程调用了write、read后再直接调用brelse
     // 虽然此时ref_count为0，但io操作标记的b->locked并未结束
     // 所以需要在此等待其结束
-    while (b->locked == 1) {
-        // 此时是不用担心wake_up在这个sleep_on之前调用
-    }
+    wait_event(&b->waitq_lock, b->locked == 0);
 
     // 找到了
     b->block = block;
@@ -191,6 +189,7 @@ void init_buffer() {
             b->page = page;
             b->uptodate = 0;
             b->locked = 0;
+            init_wait_queue_head(&b->waitq_lock);
             list_init(&b->node);
 
             assert(NULL != b->data);

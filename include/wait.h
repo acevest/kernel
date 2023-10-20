@@ -14,7 +14,7 @@
 
 #include <irq.h>
 #include <list.h>
-
+#include <sched.h>
 union task_union;
 
 typedef struct wait_queue_head {
