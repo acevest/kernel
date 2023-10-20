@@ -28,8 +28,6 @@ void semaphore_init(semaphore_t *s, unsigned int v);
 // 如果s->cnt == 0 会重新调度进程
 volatile void down(semaphore_t *s);
 
-// volatile bool try_down(semaphore_t *s);
-
 // up
 // 只会唤醒进程，但不会立即重新调度进程
 volatile void up(semaphore_t *s);

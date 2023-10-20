@@ -75,6 +75,7 @@ void dump_irq_nr_stack() {
 #endif
 
 void irq_bh_handler();
+void schedule();
 
 __attribute__((regparm(1))) void irq_handler(pt_regs_t *regs) {
     unsigned int irq = regs->irq;
