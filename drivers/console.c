@@ -9,6 +9,7 @@
 
 #include <console.h>
 #include <sched.h>
+#include <semaphore.h>
 #include <string.h>
 #include <tty.h>
 #include <wait.h>
@@ -56,13 +57,14 @@ static void cnsl_queue_init(cnsl_queue_t *cq) {
     init_wait_queue_head(&cq->wait);
 }
 
-wait_queue_head_t rdwq;
-
+// wait_queue_head_t rdwq;
+semaphore_t sem;
 void cnsl_init() {
     cnsl_queue_init(&cnsl.rd_q);
     cnsl_queue_init(&cnsl.wr_q);
     cnsl_queue_init(&cnsl.sc_q);
-    init_wait_queue_head(&rdwq);
+    // init_wait_queue_head(&rdwq);
+    semaphore_init(&sem, 0);
 }
 
 int cnsl_kbd_write(char ch) {
@@ -87,7 +89,8 @@ int cnsl_kbd_write(char ch) {
         clear(&cnsl.wr_q);
         return 0;  // TODO FIX
         while (get(&cnsl.sc_q, &ch)) put(&cnsl.rd_q, ch);
-        wake_up(&rdwq);
+        // wake_up(&rdwq);
+        up(&sem);
     }
 }
 
@@ -98,6 +101,21 @@ int cnsl_read(char *buf, size_t count) {
     int cnt = 0;
     for (cnt = 0; cnt < count;) {
         char ch;
+#if 1
+        while (true) {
+            down(&sem);
+
+            bool r = get(&cnsl.rd_q, &ch);
+            if (r) {
+                buf[cnt++] = ch;
+                if (ch == '\n') {
+                    goto end;
+                }
+            } else {
+                break;
+            }
+        }
+#else
         task_union *task = current;
         DECLARE_WAIT_QUEUE(wait, task);
         add_wait_queue(&rdwq, &wait);
@@ -121,6 +139,7 @@ int cnsl_read(char *buf, size_t count) {
 
             schedule();
         }
+#endif
     }
 
 end:

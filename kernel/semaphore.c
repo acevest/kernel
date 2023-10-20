@@ -35,6 +35,15 @@ volatile void down(semaphore_t *s) {
     irq_restore(iflags);
 }
 
+// volatile bool try_down(semaphore_t *s) {
+//     unsigned long iflags;
+//     irq_save(iflags);
+
+//     // if(s->cnt )
+
+//     irq_restore(iflags);
+// }
+
 volatile void up(semaphore_t *s) {
     unsigned long iflags;
     irq_save(iflags);

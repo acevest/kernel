@@ -43,9 +43,9 @@ void del_wait_queue(wait_queue_head_t *head, wait_queue_t *wq);
 // prepare_to_wait 不会调用schedule
 void prepare_to_wait(wait_queue_head_t *head, wait_queue_t *wq, unsigned int state);
 
-void __end_wait(wait_queue_head_t *head, wait_queue_t *wq);
+void __end_wait(wait_queue_t *wq);
 
-void sleep_on(wait_queue_head_t *head);
+// void sleep_on(wait_queue_head_t *head);
 void wake_up(wait_queue_head_t *head);
 
 void schedule();
@@ -59,7 +59,7 @@ void schedule();
             }                                          \
             schedule();                                \
         }                                              \
-        __end_wait(head, &__wait);                     \
+        __end_wait(&__wait);                           \
     } while (0)
 
 #define wait_event(head, condition)          \
