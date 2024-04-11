@@ -38,3 +38,6 @@ bochsout.txt
 .vscode/settings.json
 *.iso
 **/serial_monitor/serial_monitor
+**/mkrootfs/mkrootfs
+initrd
+rootfs

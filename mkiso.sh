@@ -1,4 +1,5 @@
-
+#!/bin/bash
+#
 if [ $# -ne 1 ]; then
     docker ps -a
     echo "input containerid "
