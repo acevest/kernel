@@ -20,32 +20,37 @@ echo "container id ${CONTAINER_ID}"
 sync
 
 
+mkrootfs -name rootfs -path initrd
+
+grub2_boot_dir="/tmp/iso/boot"
+docker exec -it $CONTAINER_ID rm -rf /tmp/iso
+docker exec -it $CONTAINER_ID rm -rf /tmp/kernel.iso
+docker exec -it $CONTAINER_ID mkdir -p $grub2_boot_dir/grub/
+
 
 # 指定要拷贝的文件和目标文件路径及名字
-files[0]="KERNEL.ELF:Kernel"
-files[1]="scripts/iso.grub.cfg:grub/grub.cfg"
+files[0]="KERNEL.ELF:$grub2_boot_dir/Kernel"
+files[1]="scripts/iso.grub.cfg:$grub2_boot_dir/grub/grub.cfg"
+files[2]="rootfs:$grub2_boot_dir/rootfs"
 
-declare -a params
 
 for i in "${!files[@]}"; do
     file_line="${files[$i]}"
     
     IFS=':' read -ra parts <<< "${file_line}"
     src_file="${parts[0]}"
+    dst_file="${parts[1]}"
     src_file_md5=$($MD5 "$src_file" | awk '{ print $1 }')
 
-    s="$src_file_md5:$file_line"
-
-    params[$i]="$s"
-
-    echo "$s"
+    docker cp $src_file $CONTAINER_ID:$dst_file
+    echo "$src_file $src_file_md5"
+    docker exec -it $CONTAINER_ID md5sum $dst_file
 done
 
-#echo ${params[@]}
+#docker exec -it $CONTAINER_ID /usr/bin/grub2-mkrescue -o /tmp/kernel.iso /tmp/iso/
+docker exec -it $CONTAINER_ID bash -c "cd /tmp && grub2-mkrescue -o kernel.iso /tmp/iso/"
 
-params_line="${params[@]}"
-docker exec -it $CONTAINER_ID /bin/bash -c "cd /root/workspace/kernel && ./scripts/mkiso.sh ${params_line}"
 
-sync
+docker cp $CONTAINER_ID:/tmp/kernel.iso .
 
 $MD5 kernel.iso
