@@ -30,13 +30,20 @@
 
 #define MULTIBOOT_STACK_SIZE 0x4000
 
-.text
-.code32
-.align 32
+.section .kernel_entry_text
 kernel_entry:
 main:
     cli
+    jmp real_kernel_entry
 
+#
+# 这之间放multiboot2_header
+#
+
+.text
+.code32
+.align 4
+real_kernel_entry:
     # Load GDT's Information To GDTR
     lgdt    GDTR-KRNLADDR
 
@@ -155,8 +162,14 @@ GDTR:
 
 
 .section .multiboot2_header
-# section align 64 bits boundary
-.align 64
+# An OS image must contain an additional header called Multiboot2 header,
+# besides the headers of the format used by the OS image.
+# The Multiboot2 header must be contained completely within the first 32768 bytes of the OS image,
+# and must be 64-bit aligned.
+# In general, it should come as early as possible,
+# and may be embedded in the beginning of the text segment after the real executable header.
+# 64-bit 对齐 就是 8 字节对齐
+.align 8
 multiboot2_header_bgn:
     # magic
     .long MULTIBOOT2_HEADER_MAGIC
