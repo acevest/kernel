@@ -1,9 +1,24 @@
 #!/bin/bash
+#
+# 需要先创建一个容器 docker run -it --name kernel fedora:38_x86_64
+# 并安装 grub2-mkrescue
+# docker exec -it kernel bash
+# dnf install grub2-tools-extra.x86_64 -y  grub2-mkrescue在这个包里
+# dnf install grub2-pc.x86_64 -y  没有这个生成的 iso 文件 MBR 没有启动代码
+# dnf install xorriso -y
 
 # 兼容md5 命令
 MD5=md5sum
 if [[ `uname` == 'Darwin' ]]; then
     MD5="md5 -q"
+fi
+
+
+# 检查smkrootfs命令是否存在
+# 若不存在，需要进scripts/mkrootfs手动编译一个
+if ! type mkrootfs >/dev/null 2>&1; then
+    echo "mkrootfs command not found."
+    exit 1
 fi
 
 
@@ -17,8 +32,6 @@ else
 fi
 
 echo "container id ${CONTAINER_ID}"
-sync
-
 
 mkrootfs -name rootfs -path initrd
 
@@ -36,7 +49,7 @@ files[2]="rootfs:$grub2_boot_dir/rootfs"
 
 for i in "${!files[@]}"; do
     file_line="${files[$i]}"
-    
+
     IFS=':' read -ra parts <<< "${file_line}"
     src_file="${parts[0]}"
     dst_file="${parts[1]}"
