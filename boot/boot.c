@@ -112,12 +112,13 @@ void check_kernel(unsigned long addr, unsigned long magic) {
             break;
         case MULTIBOOT_TAG_TYPE_MODULE:
             struct multiboot_tag_module *m = (struct multiboot_tag_module *)tag;
+            void *mod_start = (void *)m->mod_start;
             printk("module 0x%08x - 0x%08x size %u cmdline %s\n", m->mod_start, m->mod_end, m->size, m->cmdline);
             // TODO 在操作系统中保留这段内存
-            uint32_t *mod_magic = m->mod_start + 0;
-            uint32_t *mod_timestamp = m->mod_start + 8;
-            uint32_t *mod_file_entry_cnt = m->mod_start + 12;
-            char *mod_name = m->mod_start + 16;
+            uint32_t *mod_magic = (uint32_t *)(mod_start + 0);
+            uint32_t *mod_timestamp = (uint32_t *)(mod_start + 8);
+            uint32_t *mod_file_entry_cnt = (uint32_t *)(mod_start + 12);
+            char *mod_name = (char *)mod_start + 16;
             printk("module magic %08x timestamp %u file entry cnt %u name %s \n", *mod_magic, *mod_timestamp,
                    *mod_file_entry_cnt, mod_name);
             void timestamp_to_date(uint32_t ts);

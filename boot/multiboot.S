@@ -189,13 +189,13 @@ multiboot2_header_bgn:
     // .framebuffer_tag_end:
 
     // // .align 2
-    .multiboot2_header_tag_module:
-    .short MULTIBOOT_HEADER_TAG_MODULE_ALIGN
-    .short 0
-    .long  8
-    .long 0
+    // .multiboot2_header_tag_module:
+    // .short MULTIBOOT_HEADER_TAG_MODULE_ALIGN
+    // .short 0
+    // .long  8
+    // .long 0
 
-    .align 2
+    .align 8
     .multiboot2_tag_end:
     .short MULTIBOOT_HEADER_TAG_END
     .short 0

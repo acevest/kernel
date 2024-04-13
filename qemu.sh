@@ -1,5 +1,8 @@
 #!/bin/bash
 #
+echo "------------------"
+echo `md5 kernel.iso`
+echo "------------------"
 # 检查serial_monitor进程是否在运行
 process_name="serial_monitor"
 if ! pgrep -x "$process_name" > /dev/null
