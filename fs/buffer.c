@@ -112,7 +112,8 @@ again:
         assert(NULL != t);
         assert(t->block_size == size);
 
-        if (t->ref_count == 0) {
+        // if (t->ref_count == 0) {
+        if (atomic_read(&t->ref_count) == 0) {
             b = t;
             break;
         }
@@ -139,7 +140,7 @@ again:
     b->block = block;
     b->block_size = size;
     b->dev = dev;
-    b->ref_count = 1;
+    atomic_set(&(b->ref_count), 1);
     b->uptodate = 0;
 
     return b;
@@ -147,7 +148,7 @@ again:
 
 void brelse(bbuffer_t *b) {
     assert(b != NULL);
-    assert(b->ref_count > 0);
+    assert(atomic_read(&(b->ref_count)) > 0);
 
     wait_completion(&b->io_done);
 
@@ -217,7 +218,7 @@ void init_buffer() {
 
             b->block = 0;
             b->block_size = blocksize;
-            b->ref_count = 0;
+            atomic_set(&(b->ref_count), 0);
             b->data = data + j * blocksize;
             b->dev = 0;
             b->page = page;

@@ -49,9 +49,9 @@ void ide_pci_init(pci_device_t *pci) {
         semaphore_init(&ide_pci_controller[i].request_queue.sem, 0);
         semaphore_init(&ide_pci_controller[i].disk_intr_sem, 0);
 
-        ide_pci_controller[i].request_cnt = 0;
-        ide_pci_controller[i].irq_cnt = 0;
-        ide_pci_controller[i].consumed_cnt = 0;
+        atomic_set(&ide_pci_controller[i].request_cnt, 0);
+        atomic_set(&ide_pci_controller[i].irq_cnt, 0);
+        atomic_set(&ide_pci_controller[i].consumed_cnt, 0);
 
         iobase += i * 8;  // secondary channel 需要加8
         printd("ide pci Base IO Address Register %08x\n", iobase);
@@ -137,8 +137,8 @@ void ide_irq_bh_handler(void *arg) {
     // printlxy(MPL_IDE, MPO_IDE, "disk irq %u req %u consumed %u ", disk_inter_cnt, disk_request_cnt,
     // disk_handled_cnt);
 
-    printlxy(MPL_IDE0 + channel, MPO_IDE, "IDE%d req %u irq %u consumed %u", channel, ide_ctrl->request_cnt,
-             ide_ctrl->irq_cnt, ide_ctrl->consumed_cnt);
+    printlxy(MPL_IDE0 + channel, MPO_IDE, "IDE%d req %u irq %u consumed %u", channel,
+             atomic_read(&(ide_ctrl->request_cnt)), ide_ctrl->irq_cnt, ide_ctrl->consumed_cnt);
 
     // up里不会立即重新调度进程
     up(&ide_ctrl->disk_intr_sem);
