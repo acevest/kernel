@@ -53,11 +53,11 @@ void clk_handler(unsigned int irq, pt_regs_t *regs, void *dev_id) {
 // 后续放到一个内核任务中去做，需要先把禁止内核抢占做了
 const char *task_state(unsigned int state);
 void clk_bh_handler(void *arg) {
-    task_union *p = 0;
+    task_t *p = 0;
     list_head_t *t = 0;
     list_head_t *pos = 0;
     list_for_each_safe(pos, t, &delay_tasks) {
-        p = list_entry(pos, task_union, pend);
+        p = list_entry(pos, task_t, pend);
         // printk("%s state: %s\n", p->name, task_state(p->state));
         assert(p->state == TASK_WAIT);
         assert(p->delay_jiffies != 0);

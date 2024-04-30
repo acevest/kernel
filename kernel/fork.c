@@ -19,15 +19,15 @@ extern pid_t get_next_pid();
 extern list_head_t all_tasks;
 
 int do_fork(pt_regs_t *regs, unsigned long flags) {
-    task_union *tsk;
-    tsk = alloc_task_union();
+    task_t *tsk;
+    tsk = alloc_task_t();
 
     printd("fork task %08x flags %08x\n", tsk, flags);
     if (tsk == NULL) {
         panic("can not malloc PCB");
     }
 
-    memcpy(tsk, current, sizeof(task_union));
+    memcpy(tsk, current, sizeof(task_t));
 
     assert(tsk->magic == TASK_MAGIC);
 

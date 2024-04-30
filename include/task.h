@@ -72,7 +72,7 @@ typedef union task_union {
 
         list_head_t pend;  // 某些条件串成一个链表
 
-        list_head_t wait;
+        // list_head_t wait;
 
         uint32_t sched_cnt;       // 被调度换上CPU的次数
         uint32_t sched_keep_cnt;  // 时间片到了，但是没有被换出，又重新执行的次数
@@ -83,12 +83,12 @@ typedef union task_union {
     };
 
     unsigned char stack[TASK_SIZE];
-} task_union;
+} task_t;
 
-task_union *alloc_task_union();
+task_t *alloc_task_t();
 
-static inline task_union *get_current() {
-    task_union *tsk;
+static inline task_t *get_current() {
+    task_t *tsk;
     asm("andl %%esp, %0;" : "=r"(tsk) : "0"(~(TASK_SIZE - 1)));
     return tsk;
 }
@@ -97,7 +97,7 @@ static inline task_union *get_current() {
 
 static inline pid_t sysc_getpid() { return current->pid; }
 
-task_union *find_task(pid_t pid);
+task_t *find_task(pid_t pid);
 
 #define ROOT_TSK_PID (0)
 

@@ -23,7 +23,7 @@
 #include "mm.h"
 #include "msr.h"
 
-task_union root_task __attribute__((__aligned__(PAGE_SIZE)));
+task_t root_task __attribute__((__aligned__(PAGE_SIZE)));
 
 // 暂时不考虑pid回绕问题
 pid_t get_next_pid() {
@@ -40,7 +40,7 @@ pid_t get_next_pid() {
     return pid;
 }
 
-void load_cr3(task_union *tsk) { LoadCR3(tsk->cr3); }
+void load_cr3(task_t *tsk) { LoadCR3(tsk->cr3); }
 
 extern pde_t __initdata init_pgd[PDECNT_PER_PAGE] __attribute__((__aligned__(PAGE_SIZE)));
 
@@ -86,7 +86,7 @@ void init_root_task() {
     printk("init_root_task tss.esp0 %08x\n", tss.esp0);
 }
 
-kmem_cache_t *task_union_cache;
+kmem_cache_t *task_t_cache;
 
 void setup_tasks() {
     INIT_LIST_HEAD(&all_tasks);
@@ -94,15 +94,15 @@ void setup_tasks() {
 
     init_root_task();
 
-    task_union_cache = kmem_cache_create("task_union", sizeof(task_union), PAGE_SIZE);
-    if (0 == task_union_cache) {
+    task_t_cache = kmem_cache_create("task_t", sizeof(task_t), PAGE_SIZE);
+    if (0 == task_t_cache) {
         panic("setup tasks failed. out of memory");
     }
 }
 
-task_union *alloc_task_union() {
-    task_union *task;
-    task = (task_union *)kmem_cache_alloc(task_union_cache, 0);
+task_t *alloc_task_t() {
+    task_t *task;
+    task = (task_t *)kmem_cache_alloc(task_t_cache, 0);
     return task;
 }
 
@@ -116,7 +116,7 @@ void switch_to() {
 #endif
 }
 
-void context_switch(task_union *prev, task_union *next) {
+void context_switch(task_t *prev, task_t *next) {
     unsigned long eax, ebx, ecx, edx, esi, edi;
     asm volatile(
         "pushfl;"
@@ -135,14 +135,14 @@ void context_switch(task_union *prev, task_union *next) {
         : "memory");
 }
 
-task_union *find_task(pid_t pid) {
-    task_union *p = 0;
+task_t *find_task(pid_t pid) {
+    task_t *p = 0;
     list_head_t *pos = 0, *tmp = 0;
 
     unsigned long iflags;
     irq_save(iflags);
     list_for_each_safe(pos, tmp, &all_tasks) {
-        p = list_entry(pos, task_union, list);
+        p = list_entry(pos, task_t, list);
         if (p->pid == pid) {
             break;
         }
@@ -165,11 +165,11 @@ const char *task_state(unsigned int state) {
 }
 
 void debug_print_all_tasks() {
-    task_union *p = 0;
+    task_t *p = 0;
     list_head_t *pos = 0, *t = 0;
     printl(MPL_TASK_TITLE, "         NAME       STATE TK/PI REASON     SCHED      KEEP");
     list_for_each_safe(pos, t, &all_tasks) {
-        p = list_entry(pos, task_union, list);
+        p = list_entry(pos, task_t, list);
         printl(MPL_TASK_0 + p->pid, "%08x%s%-6s:%u %s %02u/%02u %-10s %-10u %-10u", p,
                p->state == TASK_RUNNING ? ">" : " ", p->name, p->pid, task_state(p->state), p->ticks, p->priority,
                p->reason, p->sched_cnt, p->sched_keep_cnt);
@@ -177,9 +177,9 @@ void debug_print_all_tasks() {
 }
 
 void schedule() {
-    task_union *root = &root_task;
-    task_union *sel = 0;
-    task_union *p = 0;
+    task_t *root = &root_task;
+    task_t *sel = 0;
+    task_t *p = 0;
     list_head_t *pos = 0, *t = 0;
 
     assert(current->ticks <= TASK_MAX_PRIORITY);
@@ -198,7 +198,7 @@ void schedule() {
     }
 
     list_for_each_safe(pos, t, &all_tasks) {
-        p = list_entry(pos, task_union, list);
+        p = list_entry(pos, task_t, list);
 
         if (p == &root_task) {
             continue;
@@ -230,8 +230,8 @@ void schedule() {
         }
     }
 
-    task_union *prev = current;
-    task_union *next = sel != 0 ? sel : root;
+    task_t *prev = current;
+    task_t *next = sel != 0 ? sel : root;
 
     next->state = TASK_RUNNING;
     next->reason = "";
@@ -252,6 +252,6 @@ void schedule() {
 }
 
 void debug_sched() {
-    task_union *p = list_entry(current->list.next, task_union, list);
+    task_t *p = list_entry(current->list.next, task_t, list);
     p->state = (p->state == TASK_READY) ? TASK_WAIT : TASK_READY;
 }
