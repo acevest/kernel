@@ -14,13 +14,26 @@
 #include <printk.h>
 #include <system.h>
 
+// void ramfs_setup();
+// void ext2_setup();
+
+// void setup_fs() {
+//     ramfs_setup();
+
+//     // ext2_setup();
+// }
+
+//--------------------------------------------------------------------------
+
 extern chrdev_t cnsl_chrdev;
 
 chrdev_t *chrdev[CHRDEV_SIZE] = {&cnsl_chrdev};
 
-void ext2_setup_fs();
+// void ext2_setup_fs();
 unsigned int ext2_search_inpath(const char *path);
 
-void setup_fs() { ext2_setup_fs(); }
+// void setup_fs() {
+//     ext2_setup_fs();
+// }
 
 unsigned int namei(const char *path) { return ext2_search_inpath(path); }

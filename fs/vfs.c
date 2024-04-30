@@ -8,6 +8,7 @@
  */
 
 #include <string.h>
+#include <system.h>
 #include <vfs.h>
 
 // 要访问一个文件就必需先访问一个目录，才能根据文件名从目录中找到该文件的目录项，进而找到其inode
@@ -41,4 +42,25 @@ void vfs_register_filesystem(fs_type_t *fs) {
 
     add->next = fs;
     fs->next = 0;
+}
+
+fs_type_t *vfs_find_filesystem(const char *name) {
+    for (fs_type_t *fs = &file_systems; fs != 0; fs = fs->next) {
+        if (strcmp(fs->name, name) == 0) {
+            return fs;
+        }
+    }
+
+    return NULL;
+}
+
+void ramfs_init();
+void vfs_init() {
+    ramfs_init();
+    fs_type_t *fs = vfs_find_filesystem("ramfs");
+    if (NULL == fs) {
+        panic("no ramfs");
+    }
+
+    superblock_t *sb = fs->read_super(NULL, NULL);
 }

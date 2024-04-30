@@ -17,11 +17,14 @@
 superblock_t *ext2_read_super(superblock_t *sb, void *data) { return sb; }
 
 fs_type_t ext2_fs_type = {
-    "ext2",
-    ext2_read_super,
-    0,
+    .name = "ext2",
+    .read_super = ext2_read_super,
+    .next = 0,
 };
 
+void ext2_setup() { vfs_register_filesystem(&ext2_fs_type); }
+
+//--------------------------------------------------------------------------
 struct {
     ext2_sb_t ext2_sb;
     ext2_gd_t *ext2_gd;
@@ -30,9 +33,9 @@ struct {
 extern void blk_rw(dev_t dev, u64_t offset, u32_t scnt, char *buf);
 extern void kmem_cache_free(kmem_cache_t *cache, void *addr);
 
-#define BLKRW(blkid, blkcnt, buf)                                                               \
-    do {                                                                                        \
-        blk_rw(system.root_dev, 1ULL * (blkid)*EXT2_BLOCK_SIZE, (blkcnt)*EXT2_BLOCK_SIZE, buf); \
+#define BLKRW(blkid, blkcnt, buf)                                                                   \
+    do {                                                                                            \
+        blk_rw(system.root_dev, 1ULL * (blkid) * EXT2_BLOCK_SIZE, (blkcnt) * EXT2_BLOCK_SIZE, buf); \
     } while (0)
 
 kmem_cache_t *ext2_block_cache;
@@ -213,7 +216,9 @@ void ext2_setup_fs() {
     memset(&ext2_fs, 0, sizeof(ext2_fs));
 
     char *buf = kmalloc(EXT2_BLOCK_SIZE, 0);
-    if (buf == 0) panic("out of memory");
+    if (buf == 0) {
+        panic("out of memory");
+    }
 
     BLKRW(1, 1, buf);  // now blocksize == 1024, so blkid == 1
 

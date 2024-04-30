@@ -89,6 +89,8 @@ __attribute__((regparm(1))) void irq_handler(pt_regs_t *regs) {
     assert(irq_disabled());
     reenter++;
 
+    // TODO 判断打断的是否是内核态代码
+
     // 屏蔽当前中断
     p->chip->disable(irq);
 
