@@ -14,43 +14,43 @@
 
 volatile void init_wait_queue_head(wait_queue_head_t *wqh) { INIT_LIST_HEAD(&wqh->task_list); }
 
-volatile void prepare_to_wait(wait_queue_head_t *head, wait_queue_t *wq, unsigned int state) {
+volatile void prepare_to_wait(wait_queue_head_t *head, wait_queue_entry_t *wqe, unsigned int state) {
     unsigned long flags;
     irq_save(flags);
-    if (list_empty(&wq->task_list)) {
-        list_add_tail(&wq->task_list, &head->task_list);
+    if (list_empty(&wqe->entry)) {
+        list_add_tail(&wqe->entry, &head->task_list);
     }
     set_current_state(state);
     irq_restore(flags);
 }
 
-volatile void __end_wait(wait_queue_t *wq) {
+volatile void __end_wait(wait_queue_entry_t *wqe) {
     set_current_state(TASK_READY);
     unsigned long flags;
     irq_save(flags);
-    list_del_init(&wq->task_list);
+    list_del_init(&wqe->entry);
     irq_restore(flags);
 }
 
-volatile void add_wait_queue(wait_queue_head_t *head, wait_queue_t *wq) {
+volatile void add_wait_queue(wait_queue_head_t *head, wait_queue_entry_t *wqe) {
     unsigned long flags;
     irq_save(flags);
-    list_add_tail(&wq->task_list, &head->task_list);
+    list_add_tail(&wqe->entry, &head->task_list);
     irq_restore(flags);
 }
 
-volatile void del_wait_queue(wait_queue_head_t *head, wait_queue_t *wq) {
+volatile void del_wait_queue(wait_queue_head_t *head, wait_queue_entry_t *wqe) {
     unsigned long flags;
     irq_save(flags);
-    list_del(&wq->task_list);
+    list_del(&wqe->entry);
     irq_restore(flags);
 }
 
 volatile void __wake_up(wait_queue_head_t *head, int nr) {
     unsigned long flags;
-    wait_queue_t *p, *tmp;
+    wait_queue_entry_t *p, *tmp;
     irq_save(flags);
-    list_for_each_entry_safe(p, tmp, &head->task_list, task_list) {
+    list_for_each_entry_safe(p, tmp, &head->task_list, entry) {
         p->task->state = TASK_READY;
         current->reason = "wake_up";
 
@@ -66,11 +66,11 @@ volatile void __wake_up(wait_queue_head_t *head, int nr) {
 
 volatile void wake_up(wait_queue_head_t *head) {
     //
-    __wake_up(head, 1);
+    __wake_up(head, 0);  // wake up all
 }
 
 volatile void wait_on(wait_queue_head_t *head) {
-    DECLARE_WAIT_QUEUE(wait, current);
+    DECLARE_WAIT_QUEUE_ENTRY(wait, current);
 
     unsigned long flags;
     irq_save(flags);
@@ -78,7 +78,7 @@ volatile void wait_on(wait_queue_head_t *head) {
     current->state = TASK_WAIT;
     current->reason = "sleep_on";
 
-    list_add_tail(&wait.task_list, &head->task_list);
+    list_add_tail(&wait.entry, &head->task_list);
 
     irq_restore(flags);
 
