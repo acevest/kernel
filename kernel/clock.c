@@ -81,7 +81,7 @@ void setup_i8253(uint16_t hz) {
     const uint8_t read_write_latch = 3;  // 0 锁存数据供CPU读；1只读写低字节；2只读写高字节；3先读写低字节，后读写高字节
     const uint8_t mode = 2;  //
 
-    const uint8_t cmd = (counter_no << 6) | (read_write_latch << 4) || (mode << 1);  // 第0位为0表示二进制，为1表示BCD
+    const uint8_t cmd = (counter_no << 6) | (read_write_latch << 4) | (mode << 1);  // 第0位为0表示二进制，为1表示BCD
 
     const uint8_t i8253_cmd_port = 0x43;
     const uint8_t i8253_data_port = 0x40 + counter_no;
