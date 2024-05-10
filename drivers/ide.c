@@ -40,7 +40,13 @@ void ide_pci_init(pci_device_t *pci) {
     printd("PCI %03d:%02d.%d %02X #%02d %04X:%04X\n", pci->bus, pci->dev, pci->devfn, pci->progif, pci->intr_line,
            pci->vendor, pci->classcode);
 
-    uint32_t iobase = pci_read_config_long(pci_cmd(pci, PCI_BAR4));
+    for (int i = 0; i < 6; i++) {
+        printd("ide pci BAR%u value 0x%08X\n", i, pci->bars[i]);
+    }
+
+    // BAR4开始有16个端口，有2组，每组8个，分别控制Primary和Secondary通道的DMA
+    // BAR5: SATA AHCI Base Address
+    uint32_t iobase = pci->bars[4];
 
     for (int i = 0; i < NR_IDE_CONTROLLER; i++) {
         INIT_MUTEX(&ide_pci_controller[i].request_mutex);
@@ -55,19 +61,15 @@ void ide_pci_init(pci_device_t *pci) {
 
         iobase += i * 8;  // secondary channel 需要加8
         printd("ide pci Base IO Address Register %08x\n", iobase);
+        // 虽然iobase是uint32_t，但在PC机上最多有65536个端口，也就是有效位数为16bit
+        // 所以这里用0xFFFC或0xFFFFFFFC其实都可以
+
         iobase &= 0xFFFC;  // 最低为0是内存地址为1是端口地址
         ide_pci_controller[i].bus_iobase = iobase;
         ide_pci_controller[i].bus_cmd = iobase + PCI_IDE_CMD;
         ide_pci_controller[i].bus_status = iobase + PCI_IDE_STATUS;
         ide_pci_controller[i].bus_prdt = iobase + PCI_IDE_PRDT;
         ide_pci_controller[i].prdt = (prdte_t *)alloc_one_page(0);
-
-        printd("BARS: ");
-        for (int j = 0; j < BARS_CNT; ++j) {
-            printd("%08x ", pci->bars[j]);
-            pci->bars[j] &= (~1UL);
-        }
-        printd("\n");
 
         ide_pci_controller[i].pci = pci;
     }
