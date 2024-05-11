@@ -25,9 +25,6 @@ void debug_print_all_tasks();
 void dump_irq_nr_stack();
 void clk_bh_handler(void *arg);
 
-const char *min_ticks_name = 0;
-int min_ticks_value = 100;
-
 void clk_handler(unsigned int irq, pt_regs_t *regs, void *dev_id) {
     // if (jiffies % 100 == 0) {
     // printl(MPL_CLOCK, "clock irq: %d", jiffies);
@@ -43,7 +40,6 @@ void clk_handler(unsigned int irq, pt_regs_t *regs, void *dev_id) {
     // 而如果其下半部分需要处理的事情很多，处理时间过长，两个时钟中断之间的时间还不足以处理完
     // 那么下一个时钟中断是完全可以打断还没处理完的下半部逻辑
     // 打断后该时钟中断不应该继续减少该进程的时间片，因为这会造成该进程在后续的调底中少了实际的运行时间
-
     if (1 == current->need_resched) {
         // 这种情况必然已经发生了该时钟中断打断了下半部处理程序
         return;
@@ -51,24 +47,13 @@ void clk_handler(unsigned int irq, pt_regs_t *regs, void *dev_id) {
 
     current->ticks--;
 
-#if 1
-    int value = (int)(current->ticks);
-
-    if (min_ticks_value > value) {
-        min_ticks_value = value;
-        min_ticks_name = current->name;
-    }
-#endif
-
     if (0 == current->ticks) {
         current->need_resched = 1;
         current->ticks = current->priority;
         current->turn++;
     }
 
-    assert(current->ticks <= TASK_MAX_PRIORITY);  // 防止ticks被减到0后再减溢出
-
-    printl(MPL_TEST, "%20s %10d %20s %10d", min_ticks_name, min_ticks_value, current->name, value);
+    assert(current->ticks >= 0);  // 防止ticks被减到0后再减溢出
 
     add_irq_bh_handler(clk_bh_handler, NULL);
 }

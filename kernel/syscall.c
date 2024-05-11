@@ -43,20 +43,24 @@ int sysc_none() {
 
 extern uint64_t jiffies;
 
-// 特别说明：如果想把这个函数的参数ticks改为uint64_t
+// 特别说明：如果想把这个函数的参数ticks改为int64_t
 // 那么就需要在编写用户级的系统调用库函数的时候注意
 // 不仅需要填写 ebx，还要填写 ecx
 // 不然就可能出现诡异的一直WAIT，不会调度到该任务的问题
-int sysc_wait(uint32_t ticks) {
-    unsigned long flags;
-    irq_save(flags);
-    current->state = TASK_WAIT;
-    current->reason = "sysc_wait";
-    current->delay_jiffies = jiffies + ticks;
-    list_add(&current->pend, &delay_tasks);
-    irq_restore(flags);
-
+int sysc_wait(int ticks) {
+    if (ticks < 0) {
+        return -EINVAL;
+    } else {
+        unsigned long flags;
+        irq_save(flags);
+        current->state = TASK_WAIT;
+        current->reason = "sysc_wait";
+        current->delay_jiffies = jiffies + ticks;
+        list_add(&current->pend, &delay_tasks);
+        irq_restore(flags);
+    }
     schedule();
+    return 0;
 }
 
 int sysc_test() {}

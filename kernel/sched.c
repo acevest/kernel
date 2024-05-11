@@ -182,7 +182,7 @@ void schedule() {
     task_t *p = 0;
     list_head_t *pos = 0, *t = 0;
 
-    // assert(current->ticks <= TASK_MAX_PRIORITY);
+    assert(current->ticks >= 0);
     assert(current->priority <= TASK_MAX_PRIORITY);
 
     unsigned long iflags;

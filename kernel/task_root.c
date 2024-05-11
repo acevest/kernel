@@ -22,7 +22,7 @@
 #include <types.h>
 
 int do_fork(pt_regs_t *regs, unsigned long flags);
-int sysc_wait(uint32_t ticks);
+int sysc_wait(int ticks);
 
 #define get_eflags(x) __asm__ __volatile__("pushfl; popl %0;" : "=g"(x)::"memory")
 
