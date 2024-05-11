@@ -12,7 +12,7 @@
 #include <sched.h>
 #include <wait.h>
 
-volatile void init_wait_queue_head(wait_queue_head_t *wqh) { INIT_LIST_HEAD(&wqh->task_list); }
+volatile void init_wait_queue_head(wait_queue_head_t *wqh) { INIT_LIST_HEAD(&(wqh->task_list)); }
 
 volatile void prepare_to_wait(wait_queue_head_t *head, wait_queue_entry_t *wqe, unsigned int state) {
     unsigned long flags;
@@ -51,8 +51,12 @@ volatile void __wake_up(wait_queue_head_t *head, int nr) {
     wait_queue_entry_t *p, *tmp;
     irq_save(flags);
     list_for_each_entry_safe(p, tmp, &head->task_list, entry) {
+        assert(p->task != NULL);
+        printk("wakeup %s\n", p->task->name);
         p->task->state = TASK_READY;
-        current->reason = "wake_up";
+        p->task->reason = "wake_up";
+
+        list_del(&p->entry);
 
         --nr;
         if (nr == 0) {
