@@ -9,7 +9,7 @@
 #include <syscall.h>
 #include <system.h>
 #include <types.h>
-int sysc_wait(uint32_t ticks);
+int sysc_wait(int ticks);
 void init_task_entry() {
     current->priority = 10;
 

@@ -53,7 +53,7 @@ void setup_gdt();
 void setup_idt();
 void setup_gates();
 void set_tss();
-void setup_i8253(uint16_t);
+void setup_i8254(uint16_t);
 void setup_boot_irqs();
 
 void check_kernel(unsigned long addr, unsigned long magic) {
@@ -78,7 +78,7 @@ void check_kernel(unsigned long addr, unsigned long magic) {
 
     setup_boot_irqs();
 
-    setup_i8253(100);
+    setup_i8254(100);
 
     boot_delay(DEFAULT_BOOT_DELAY_TICKS);
 

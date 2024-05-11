@@ -136,7 +136,7 @@ __attribute__((regparm(1))) void irq_handler(pt_regs_t *regs) {
     reenter--;
 
     // 考察如果不需要调度程序，直接退出
-    if (current->ticks != 0) {
+    if (current->need_resched == 0) {
         return;
     }
 
