@@ -153,8 +153,8 @@ task_t *find_task(pid_t pid) {
 }
 
 const char *task_state(unsigned int state) {
-    static const char s[][16] = {
-        "  ERROR", "RUNNING", "  READY", "   WAIT", "   INIT", "   EXIT",
+    static const char s[][8] = {
+        " ERROR", "\x10RUN\x07\x07", " READY", " WAIT ", " INIT ", " EXIT ",
     };
 
     if (state >= TASK_END) {
@@ -167,12 +167,11 @@ const char *task_state(unsigned int state) {
 void debug_print_all_tasks() {
     task_t *p = 0;
     list_head_t *pos = 0, *t = 0;
-    printl(MPL_TASK_TITLE, "         NAME       STATE TK/PI REASON     SCHED      KEEP       TURN");
+    printl(MPL_TASK_TITLE, "         NAME      STATE TK/PI REASON     SCHED      KEEP       TURN");
     list_for_each_safe(pos, t, &all_tasks) {
         p = list_entry(pos, task_t, list);
-        printl(MPL_TASK_0 + p->pid, "%08x%s%-6s:%u %s %02u/%02u %-10s %-10u %-10u %-10u", p,
-               p->state == TASK_RUNNING ? ">" : " ", p->name, p->pid, task_state(p->state), p->ticks, p->priority,
-               p->reason, p->sched_cnt, p->sched_keep_cnt, p->turn);
+        printl(MPL_TASK_0 + p->pid, "%08x %-6s:%u %s %02u/%02u %-10s %-10u %-10u %-10u", p, p->name, p->pid,
+               task_state(p->state), p->ticks, p->priority, p->reason, p->sched_cnt, p->sched_keep_cnt, p->turn);
     }
 }
 
@@ -188,7 +187,7 @@ void schedule() {
     unsigned long iflags;
     irq_save(iflags);
 
-    if (current->state == TASK_RUNNING) {
+    if (current->state == TASK_RUN) {
         current->state = TASK_READY;
     }
 
@@ -199,7 +198,7 @@ void schedule() {
             continue;
         }
 
-        assert(p->state != TASK_RUNNING);
+        assert(p->state != TASK_RUN);
 
         if (TASK_READY != p->state) {
             continue;
@@ -230,7 +229,7 @@ void schedule() {
 
     prev->need_resched = 0;
 
-    next->state = TASK_RUNNING;
+    next->state = TASK_RUN;
     next->reason = "";
 
     if (prev != next) {
@@ -243,7 +242,7 @@ void schedule() {
         next->sched_keep_cnt++;
     }
 
-    assert(current->state == TASK_RUNNING);
+    assert(current->state == TASK_RUN);
 
     irq_restore(iflags);
 }
