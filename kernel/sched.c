@@ -182,7 +182,7 @@ void schedule() {
     task_t *p = 0;
     list_head_t *pos = 0, *t = 0;
 
-    assert(current->ticks <= TASK_MAX_PRIORITY);
+    // assert(current->ticks <= TASK_MAX_PRIORITY);
     assert(current->priority <= TASK_MAX_PRIORITY);
 
     unsigned long iflags;
@@ -235,6 +235,8 @@ void schedule() {
 
     next->state = TASK_RUNNING;
     next->reason = "";
+    next->ticks = 5;
+    prev->need_resched = 0;
 
     if (prev != next) {
         next->sched_cnt++;

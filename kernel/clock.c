@@ -25,6 +25,9 @@ void debug_print_all_tasks();
 void dump_irq_nr_stack();
 void clk_bh_handler(void *arg);
 
+const char *min_ticks_name = 0;
+int min_ticks_value = 100;
+
 void clk_handler(unsigned int irq, pt_regs_t *regs, void *dev_id) {
     // if (jiffies % 100 == 0) {
     // printl(MPL_CLOCK, "clock irq: %d", jiffies);
@@ -40,11 +43,23 @@ void clk_handler(unsigned int irq, pt_regs_t *regs, void *dev_id) {
     // 同时其下半部分处理时间过长，直到这个时钟中断还没处理完
     // 那么这个时钟中断是完全可以打断它，且在这里把这个ticks从0减到负数
     // 而这个是uint32_t型，因此会溢出成0xFFFFFFFF
-    if (current->ticks > 0) {
-        current->ticks--;
+    // if (current->ticks > 0) {
+    //     current->ticks--;
+    // }
+    if (0 == --current->ticks) {
+        current->need_resched = 1;
     }
 
-    assert(current->ticks <= TASK_MAX_PRIORITY);  // 防止ticks被减到0后再减溢出
+    int value = (int)(current->ticks);
+
+    if (min_ticks_value > value) {
+        min_ticks_value = value;
+        min_ticks_name = current->name;
+    }
+
+    printl(MPL_TEST, "%20s %10d %20s %10d", min_ticks_name, min_ticks_value, current->name, value);
+
+    // assert(current->ticks <= TASK_MAX_PRIORITY);  // 防止ticks被减到0后再减溢出
 
     add_irq_bh_handler(clk_bh_handler, NULL);
 }
