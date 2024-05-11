@@ -24,7 +24,7 @@ extern void init_buffer();
 extern void setup_gdt();
 extern void setup_idt();
 extern void setup_gate();
-void setup_i8253(uint16_t hz);
+void setup_i8254(uint16_t hz);
 extern void detect_cpu();
 extern void setup_sysc();
 extern void setup_pci();
@@ -87,7 +87,7 @@ void setup_kernel() {
 
     boot_delay(DEFAULT_BOOT_DELAY_TICKS);
 
-    setup_i8253(100);
+    setup_i8254(100);
     setup_irqs();
 
     void ide_init();
