@@ -151,10 +151,27 @@ __attribute__((regparm(1))) void irq_handler(pt_regs_t *regs) {
 
 extern uint32_t jiffies;
 void irq_bh_handler() {
-    uint32_t end = jiffies + 2;
+    uint32_t end = jiffies + 1;
     while (true) {
         irq_bh_action_t *action = NULL;
 
+#if 1
+        disable_irq();
+        action = irq_bh_actions;
+        if (action == NULL) {
+            enable_irq();
+            break;
+        }
+
+        irq_bh_actions = action->next;
+        if (irq_bh_actions == NULL) {
+            irq_bh_actions_end = NULL;
+        }
+        enable_irq();
+
+        action->handler(action->arg);
+        kfree(action);
+#else
         disable_irq();
 
         action = irq_bh_actions;
@@ -173,7 +190,7 @@ void irq_bh_handler() {
             action = action->next;
             kfree(p);
         }
-
+#endif
         if (jiffies >= end) {
             break;
         }
@@ -227,6 +244,9 @@ int request_irq(unsigned int irq, void (*handler)(unsigned int, pt_regs_t *, voi
 void add_irq_bh_handler(void (*handler)(), void *arg) {
     // 只能在中断处理函数中调用
     assert(irq_disabled());
+    assert(reenter >= 0);
+
+    // 本函数不用考虑临界问题
 
     irq_bh_action_t *p;
     p = (irq_bh_action_t *)kmalloc(sizeof(irq_bh_action_t), 0);
