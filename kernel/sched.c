@@ -83,6 +83,10 @@ void init_root_task() {
     wrmsr(MSR_SYSENTER_ESP, root_task.esp0, 0);
 #endif
 
+    for (i = 0; i < NR_TASK_OPEN_CNT; i++) {
+        root_task.files.fds[i] = NULL;
+    }
+
     printk("init_root_task tss.esp0 %08x\n", tss.esp0);
 }
 

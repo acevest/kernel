@@ -22,6 +22,7 @@
 #include <processor.h>
 #include <system.h>
 #include <types.h>
+#include <vfs.h>
 // #include <wait.h>
 
 enum {
@@ -39,6 +40,12 @@ enum {
 #define TASK_MAX_PRIORITY 99
 
 #define TASK_MAGIC 0xAABBCCDD11223344
+
+#define NR_TASK_OPEN_CNT 32
+typedef struct task_files {
+    // 暂时先不用bitmap，直接线性搜索
+    file_t *fds[NR_TASK_OPEN_CNT];
+} task_files_t;
 
 typedef union task_union {
     struct {
@@ -67,6 +74,14 @@ typedef union task_union {
         long tty;
 
         char name[TASK_NAME_SIZE];
+
+        task_files_t files;
+
+        dentry_t *dentry_root;
+        dentry_t *dentry_pwd;
+
+        vfsmount_t *mnt_root;
+        vfsmount_t *mnt_pwd;
 
         list_head_t list;  // 所有进程串成一个链表
 

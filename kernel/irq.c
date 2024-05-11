@@ -117,9 +117,10 @@ __attribute__((regparm(1))) void irq_handler(pt_regs_t *regs) {
     // 解除屏蔽当前中断
     p->chip->enable(irq);
 
+    assert(irq_disabled());
+
     // 代表当前中断程序打断了前一个中断程序的“开中断处理的底半部分逻辑”
     // 即前一个中断处理尚未完全完成
-    assert(irq_disabled());
     if (reenter != 0) {
         reenter--;
         return;
