@@ -77,6 +77,8 @@ void dump_irq_nr_stack() {
 void irq_bh_handler();
 void schedule();
 
+volatile int reenter_count = 0;
+
 __attribute__((regparm(1))) void irq_handler(pt_regs_t *regs) {
     unsigned int irq = regs->irq;
     if (irq >= NR_IRQS) {
@@ -86,8 +88,11 @@ __attribute__((regparm(1))) void irq_handler(pt_regs_t *regs) {
     irq_desc_t *p = irq_desc + irq;
     irq_action_t *action = p->action;
 
-    assert(irq_disabled());
     reenter++;
+    reenter_count += reenter == 0 ? 0 : 1;
+    assert(irq_disabled());
+    assert(reenter >= 0);
+    assert(reenter <= 1);
 
     // 屏蔽当前中断
     p->chip->disable(irq);
@@ -100,8 +105,8 @@ __attribute__((regparm(1))) void irq_handler(pt_regs_t *regs) {
 #if 1
     unsigned long esp;
     asm("movl %%esp, %%eax" : "=a"(esp));
-    printl(MPL_CURRENT, "current %08x %-6s cr3 %08x reenter %d esp %08x ticks %u", current, current->name, current->cr3,
-           reenter, esp, current->ticks);
+    printl(MPL_CURRENT, "current %08x %-6s cr3 %08x reenter %d:%u esp %08x ticks %u", current, current->name,
+           current->cr3, reenter, reenter_count, esp, current->ticks);
 #endif
 
     while (action && action->handler) {

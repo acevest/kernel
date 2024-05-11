@@ -42,6 +42,7 @@ void clk_handler(unsigned int irq, pt_regs_t *regs, void *dev_id) {
     // 打断后该时钟中断不应该继续减少该进程的时间片，因为这会造成该进程在后续的调底中少了实际的运行时间
     if (1 == current->need_resched) {
         // 这种情况必然已经发生了该时钟中断打断了下半部处理程序
+        // 反之时钟中断打断了下半部处理程序不一定need_resched就为1
         return;
     }
 
@@ -55,7 +56,9 @@ void clk_handler(unsigned int irq, pt_regs_t *regs, void *dev_id) {
 
     assert(current->ticks >= 0);  // 防止ticks被减到0后再减溢出
 
-    add_irq_bh_handler(clk_bh_handler, NULL);
+    if (reenter == 0) {
+        add_irq_bh_handler(clk_bh_handler, NULL);
+    }
 }
 
 // 开中断执行这个函数
