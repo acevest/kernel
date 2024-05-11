@@ -36,8 +36,6 @@ char idtr[6] __attribute__((__aligned__(4)));
 extern char _gdtr[6];
 extern char _idtr[6];
 
-volatile int reenter = -1;
-
 void setup_gdt() {
     pDesc pdesc;
     // change to new gdt.

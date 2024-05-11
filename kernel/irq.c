@@ -77,6 +77,12 @@ void dump_irq_nr_stack() {
 void irq_bh_handler();
 void schedule();
 
+volatile bool in_bh_logic = false;
+
+volatile uint32_t reenter_count = 0;
+
+bool in_bh() { return in_bh_logic; }
+
 __attribute__((regparm(1))) void irq_handler(pt_regs_t *regs) {
     unsigned int irq = regs->irq;
     if (irq >= NR_IRQS) {
@@ -87,7 +93,6 @@ __attribute__((regparm(1))) void irq_handler(pt_regs_t *regs) {
     irq_action_t *action = p->action;
 
     assert(irq_disabled());
-    reenter++;
 
     // 屏蔽当前中断
     p->chip->disable(irq);
@@ -100,8 +105,8 @@ __attribute__((regparm(1))) void irq_handler(pt_regs_t *regs) {
 #if 1
     unsigned long esp;
     asm("movl %%esp, %%eax" : "=a"(esp));
-    printl(MPL_CURRENT, "current %08x %-6s cr3 %08x reenter %d esp %08x ticks %u", current, current->name, current->cr3,
-           reenter, esp, current->ticks);
+    printl(MPL_CURRENT, "current %08x %-6s cr3 %08x esp %08x reenter %u ticks %u", current, current->name, current->cr3,
+           esp, reenter_count, current->ticks);
 #endif
 
     while (action && action->handler) {
@@ -115,25 +120,25 @@ __attribute__((regparm(1))) void irq_handler(pt_regs_t *regs) {
     // 代表当前中断程序打断了前一个中断程序的“开中断处理的底半部分逻辑”
     // 即前一个中断处理尚未完全完成
     assert(irq_disabled());
-    if (reenter != 0) {
-        reenter--;
+    if (in_bh_logic) {
+        reenter_count++;
         return;
     }
     // --以上逻辑CPU处于中断禁止状态--------------------------
 
     // 此处执行中断函数的下半部分逻辑，开中断执行
     {
+        in_bh_logic = true;
         enable_irq();
 
         irq_bh_handler();
 
         disable_irq();
+        in_bh_logic = false;
     }
 
     // --以下逻辑CPU处于中断禁止状态--------------------------
     assert(irq_disabled());
-    assert(reenter == 0);
-    reenter--;
 
     // 考察如果不需要调度程序，直接退出
     if (current->need_resched == 0) {

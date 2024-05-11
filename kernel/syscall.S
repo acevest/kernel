@@ -26,7 +26,6 @@
 .text
 .global syscall_entry
 .global ret_from_fork_krnl
-.extern reenter
 //.global syscall_exit
 
 syscall_entry:

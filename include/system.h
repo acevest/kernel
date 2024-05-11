@@ -77,7 +77,7 @@ extern char etext, edata, end;
 #define disableIRQ() cli()
 #define enableIRQ() sti()
 
-#define ALIGN(x, a) (((x) + (a)-1) & ~((a)-1))
+#define ALIGN(x, a) (((x) + (a) - 1) & ~((a) - 1))
 
 // 定义最大显存为 16MB
 #define VRAM_VADDR_SIZE (16 << 20)
@@ -263,8 +263,6 @@ void root_task_entry();
 void init_task_entry();
 void disk_task_entry();
 void user_task_entry();
-
-extern volatile int reenter;
 
 #define DEFAULT_BOOT_DELAY_TICKS 30
 void boot_delay(int ticks);

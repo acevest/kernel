@@ -81,4 +81,6 @@ bool irq_disabled();
 #define IRQ_CASCADE 0x02
 #define IRQ_DISK 0x0E
 
+bool in_bh();
+
 #endif  //_IRQ_H
