@@ -112,6 +112,8 @@ void taskA_entry() {
         r.pos = sect_nr;
         r.count = 1;
         r.buf = disk_buf1;
+        r.bb = 0;
+
         send_disk_request(&r);
 
         // verify_hd_data(sect_nr, disk_buf1, current->name);
@@ -135,8 +137,10 @@ void taskB_entry() {
         r.pos = sect_nr;
         r.count = 1;
         r.buf = disk_buf2;
+        r.bb = 0;
+
         send_disk_request(&r);
-        // verify_hd_data(sect_nr, disk_buf2, current->name);
+        //  verify_hd_data(sect_nr, disk_buf2, current->name);
 
         for (int i = 0; i < 1; i++) {
             asm("hlt;");

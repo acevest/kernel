@@ -226,7 +226,7 @@ void tmp_ide_disk_read(dev_t dev, uint32_t sect_nr, uint32_t count, char *buf) {
 // mbr_ext_offset: 在MBR中的扩展分区记录里的偏移地址
 // lba_partition_table: 扩展分区的真实偏移地址
 void read_partition_table(ide_drive_t *drv, uint32_t mbr_ext_offset, uint32_t lba_partition_table, int depth) {
-    disk_request_t r;
+    // disk_request_t r;
     char *sect = kmalloc(SECT_SIZE, 0);
 
 #if 1

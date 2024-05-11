@@ -58,6 +58,7 @@ volatile void up(semaphore_t *s) {
         s->cnt++;
     } else {
         semaphore_waiter_t *waiter = list_first_entry(&s->wait_list, semaphore_waiter_t, list);
+        assert(waiter != 0);
         list_del(&waiter->list);
         task_t *task = waiter->task;
 
