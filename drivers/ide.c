@@ -154,7 +154,9 @@ void ide_irq_handler(unsigned int irq, pt_regs_t *regs, void *devid) {
     ide_pci_controller_t *ide_ctrl = ide_pci_controller + channel;
     atomic_inc(&ide_ctrl->irq_cnt);
 
+#if DISK_DMA_MODE
     ata_dma_stop(channel);
+#endif
 
     add_irq_bh_handler(ide_irq_bh_handler, (void *)channel);
 }

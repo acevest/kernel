@@ -20,7 +20,7 @@ ide_drive_t ide_drives[MAX_IDE_DRIVE_CNT];
 #define ATA_TIMEOUT 10  // 10次时钟中断
 
 void ata_dma_read_ext(int drv, uint64_t pos, uint16_t count, void *dest);
-int ata_pio_read_ext(int drv, uint64_t pos, uint16_t count, int timeout, void *dest);
+int ata_pio_read_ext(int drv, uint64_t pos, uint16_t count);
 
 void *mbr_buf;
 void ata_test(uint64_t nr) {
@@ -127,6 +127,8 @@ void ide_ata_init() {
         printk("ata[%d] status %x %s exists\n", i, status, drv->present == 1 ? "" : "not");
         insl(REG_DATA(drv_no), identify, SECT_SIZE / sizeof(uint32_t));
 
+        // 详细IDENTIFY解析，可以参考文档《ATA/ATAPI Command Set - 3 (ACS-3)》 page 104
+
         // 第49个word的第8个bit位表示是否支持DMA
         // 第83个word的第10个bit位表示是否支持LBA48，为1表示支持。
         // 第100~103个word的八个字节表示user的LBA最大值
@@ -178,6 +180,39 @@ void ide_ata_init() {
             break;
         }
 #endif
+        {
+            // bit5 supports ATA/ATAPI-5
+            // bit6 supports ATA/ATAPI-6
+            // bit7 supports ATA/ATAPI-7
+            // bit8 supports ATA8-ACS
+            // bit9 supports ACS-2
+            // bit10 supports ACS-3
+            uint16_t major_version = identify[80];
+            uint16_t minor_version = identify[81];
+
+            printk("ATA %04x %04x\n", major_version, minor_version);
+        }
+
+        {
+            // bit0 Obsolete
+            // bit1为1表示64~70为有效值，这些字段包括PIO和DMA的传输时间信息
+            // bit2为1表示第88个uint16_t为有效值，其包括了Ultra DMA的支持和当前传输模式信息
+            uint16_t field_validity = identify[53];
+
+            printk("field_validity %04x\n", field_validity);
+
+            // 高8位保留0x80
+            // 低8位0x00代表Reserved，0x01~0xFF代表每次最大传输扇区数
+            printk("A: %04x\n", identify[47]);  // 高 8 位保留，低 8 位表示最大扇区数
+
+            // 第8位为1表示多扇区设置有效
+            // 当前设置的一次传送的扇区数
+            printk("B: %04x\n", identify[59]);
+
+            printk("C: %04x\n", identify[63]);
+            printk("D: %04x\n", identify[88]);
+        }
+
         printk("hard disk %s %s size: %u MB\n", drv->dma == 1 ? "DMA" : "", drv->lba48 == 1 ? "LBA48" : "LBA28",
                (max_lba * 512) >> 20);
 
@@ -437,9 +472,9 @@ int ata_dma_stop(int channel) {
 }
 
 // ATA_CMD_READ_PIO_EXT
-int ata_pio_read_ext(int drv, uint64_t pos, uint16_t count, int timeout, void *dest) {
-    // PIO读，禁用中断
-    outb(ATA_CTL_NIEN, REG_CTL(drv));
+int ata_pio_read_ext(int drv, uint64_t pos, uint16_t count) {
+    // 不再设置nIEN，需要中断
+    outb(0x00, REG_CTL(drv));
 
     // 等待硬盘不BUSY
     while (inb(REG_STATUS(drv)) & ATA_STATUS_BSY) {
@@ -465,12 +500,16 @@ int ata_pio_read_ext(int drv, uint64_t pos, uint16_t count, int timeout, void *d
     outb((pos >> 8) & 0xFF, REG_LBAM(drv));
     outb((pos >> 16) & 0xFF, REG_LBAH(drv));
 
-    while (inb(REG_STATUS(drv)) & ATA_STATUS_RDY == 0) {
+    while ((inb(REG_STATUS(drv)) & ATA_STATUS_RDY) == 0) {
         nop();
     }
 
     outb(ATA_CMD_READ_PIO_EXT, REG_CMD(drv));
 
+    return 0;
+}
+
+void ata_wait(int drv, int timeout) {
     while (timeout > 0) {
         timeout--;
 
@@ -481,17 +520,14 @@ int ata_pio_read_ext(int drv, uint64_t pos, uint16_t count, int timeout, void *d
 
         asm("sti;hlt;");
     }
-    asm("cli");
 
-    if (timeout == 0) {
-        return -1;
+    assert(timeout > 0);
+
+    // 检查硬盘是否有错误
+    if (inb(REG_STATUS(drv)) & ATA_STATUS_ERR) {
+        panic("wait disk fail");
     }
-
-    insl(REG_DATA(drv), dest, (SECT_SIZE * count) / sizeof(uint32_t));
-
-    return 0;
 }
-
 // uint8_t ata_pci_bus_status() {
 //     uint8_t st = 0;
 //     st = inb(ide_pci_controller.bus_status);

@@ -129,6 +129,7 @@ void taskB_entry() {
 
     while (1) {
         sysc_wait(7);
+#if 1
         uint64_t sect_nr = get_next_deubug_sect_nr();
         memset(disk_buf2, 0, 512);
         disk_request_t r;
@@ -141,7 +142,7 @@ void taskB_entry() {
 
         send_disk_request(&r);
         //  verify_hd_data(sect_nr, disk_buf2, current->name);
-
+#endif
         for (int i = 0; i < 1; i++) {
             asm("hlt;");
         }

@@ -7,6 +7,7 @@
  * ------------------------------------------------------------------------
  */
 
+#include <ata.h>
 #include <completion.h>
 #include <disk.h>
 #include <ide.h>
@@ -15,6 +16,7 @@
 void ata_read_identify(int drv, int disable_intr);
 void ata_pio_read_data(int drv_no, int sect_cnt, void *dst);
 void ata_dma_read_ext(int drv, uint64_t pos, uint16_t count, void *dest);
+int ata_pio_read_ext(int drv, uint64_t pos, uint16_t count);
 
 void disk_init() {
     // ...
@@ -94,34 +96,58 @@ void disk_task_entry(void *arg) {
         uint64_t pos = r->pos + drv->partions[part_id].lba_start;
         assert(pos < drv->partions[part_id].lba_end);
 
-        switch (r->command) {
-        case DISK_REQ_IDENTIFY:
-            printk("try to read disk drive %u identify", drv_no);
-            assert(r->count == 1);
-            ata_read_identify(drv_no, 0);
-            break;
-        case DISK_REQ_READ:
-            assert(r->count > 0);
-            assert(r->buf != NULL || r->bb->data != NULL);
-            // printk("DISK READ drv_no %u pos %u count %u\n", drv_no, (uint32_t)pos, r->count);
-            if (r->bb != 0) {
-                ata_dma_read_ext(drv_no, pos, r->count, r->bb->data);
-            } else {
-                ata_dma_read_ext(drv_no, pos, r->count, r->buf);
+        // 对于DMA的方式来说，一次就能搞定
+        uint16_t send_cmd_times = 1;
+#if !DISK_DMA_MODE
+        // 对于PIO的方式来说，一次只能操作一个扇区，所以有几个扇区就要重试几次
+        send_cmd_times = r->count;
+#endif
+        for (int count = 0; count < send_cmd_times; count++) {
+            switch (r->command) {
+            case DISK_REQ_IDENTIFY:
+                printk("try to read disk drive %u identify", drv_no);
+                assert(r->count == 1);
+                ata_read_identify(drv_no, 0);
+                break;
+            case DISK_REQ_READ:
+                assert(r->count > 0);
+                assert(r->buf != NULL || r->bb->data != NULL);
+#if !DISK_DMA_MODE
+                if (r->bb != 0) {
+                    ata_pio_read_ext(drv_no, pos + count, 1);
+                } else {
+                    ata_pio_read_ext(drv_no, pos + count, 1);
+                }
+#else
+                if (r->bb != 0) {
+                    ata_dma_read_ext(drv_no, pos, r->count, r->bb->data);
+                } else {
+                    ata_dma_read_ext(drv_no, pos, r->count, r->buf);
+                }
+#endif
+                break;
+            default:
+                panic("invalid disk request command");
+                break;
             }
-            break;
-        default:
-            panic("invalid disk request command");
-            break;
-        }
 
-        // 等待硬盘中断
-        // printk("down ide req\n");
-        down(&ide_ctrl->disk_intr_sem);
+            // 等待硬盘中断
+            // printk("down ide req\n");
+            down(&ide_ctrl->disk_intr_sem);
 
-        // 读数据
-        if (DISK_REQ_IDENTIFY == r->command) {
-            ata_pio_read_data(drv_no, 1, r->buf);
+#if !DISK_DMA_MODE
+            // void ata_wait(int drv, int timeout);
+            // ata_wait(drv_no, 100);
+            if (DISK_REQ_READ == r->command || DISK_REQ_IDENTIFY == r->command) {
+                uint32_t offset = SECT_SIZE * count;
+                if (r->bb != 0) {
+                    ata_pio_read_data(drv_no, 1, r->bb->data + offset);
+                } else {
+                    ata_pio_read_data(drv_no, 1, r->buf + offset);
+                }
+            }
+
+#endif
         }
 
         if (r->bb != 0) {
