@@ -71,6 +71,7 @@ void ata_read_identity_string(const uint16_t *identify, int bgn, int end, char *
     buf[i] = 0;
 }
 
+uint16_t max_sectors_per_transfer = 0;
 // 《AT Attachment 8 - ATA/ATAPI Command Set》
 void ide_ata_init() {
     for (int i = 0; i < MAX_IDE_DRIVE_CNT; i++) {
@@ -204,6 +205,8 @@ void ide_ata_init() {
             // 高8位保留0x80
             // 低8位0x00代表Reserved，0x01~0xFF代表每次最大传输扇区数
             printk("A: %04x\n", identify[47]);  // 高 8 位保留，低 8 位表示最大扇区数
+
+            max_sectors_per_transfer = identify[47];
 
             // 第8位为1表示多扇区设置有效
             // 当前设置的一次传送的扇区数
@@ -473,6 +476,8 @@ int ata_dma_stop(int channel) {
 
 // ATA_CMD_READ_PIO_EXT
 int ata_pio_read_ext(int drv, uint64_t pos, uint16_t count) {
+    assert(count <= max_sectors_per_transfer);
+
     // 不再设置nIEN，需要中断
     outb(0x00, REG_CTL(drv));
 
@@ -504,7 +509,7 @@ int ata_pio_read_ext(int drv, uint64_t pos, uint16_t count) {
         nop();
     }
 
-    outb(ATA_CMD_READ_PIO_EXT, REG_CMD(drv));
+    outb(ATA_CMD_READ_MULTIPLE_EXT, REG_CMD(drv));
 
     return 0;
 }

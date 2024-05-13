@@ -71,21 +71,27 @@ extern unsigned int IDE_CHL1_CTL_BASE;
 #define ATA_STATUS_ERR 0x01       /* error */
 
 #define ATA_CMD_IDLE 0x00
+#define ATA_CMD_DEVICE_RESET 0x08
 #define ATA_CMD_RECALIBRATE 0x10
 #define ATA_CMD_READ_PIO 0x20     /* read data */
 #define ATA_CMD_READ_PIO_EXT 0x24 /* read data (LBA-48 bit)*/
 #define ATA_CMD_READ_DMA 0xC8
 #define ATA_CMD_READ_DMA_EXT 0x25 /* read data DMA LBA48 */
+#define ATA_CMD_READ_MULTIPLE_EXT 0x29
 #define ATA_CMD_WRITE_PIO 0x30
 #define ATA_CMD_WRITE_PIO_EXT 0x34
 #define ATA_CMD_WRITE_DMA 0xCA
 #define ATA_CMD_WRITE_DMA_EXT 0X35
+#define ATA_CMD_WRITE_MULTIPLE_EXT 0x37
 #define ATA_CMD_READ_VERIFY 0x40
 #define ATA_CMD_FORMAT 0x50
 #define ATA_CMD_SEEK 0x70
 #define ATA_CMD_DIAG 0x90
 #define ATA_CMD_SPECIFY 0x91
 #define ATA_CMD_IDENTIFY_PACKET 0xA1
+#define ATA_CMD_READ_MULTIPLE 0xC4
+#define ATA_CMD_WRITE_MULTIPLE 0xC5
+#define ATA_CMD_SET_MULTIPLE_MODE 0xC6
 #define ATA_CMD_IDENTIFY 0xEC
 
 #define ATA_CTL 0

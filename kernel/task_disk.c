@@ -101,6 +101,7 @@ void disk_task_entry(void *arg) {
 #if !DISK_DMA_MODE
         // 对于PIO的方式来说，一次只能操作一个扇区，所以有几个扇区就要重试几次
         send_cmd_times = r->count;
+        send_cmd_times = 1;
 #endif
         for (int count = 0; count < send_cmd_times; count++) {
             switch (r->command) {
@@ -114,9 +115,9 @@ void disk_task_entry(void *arg) {
                 assert(r->buf != NULL || r->bb->data != NULL);
 #if !DISK_DMA_MODE
                 if (r->bb != 0) {
-                    ata_pio_read_ext(drv_no, pos + count, 1);
+                    ata_pio_read_ext(drv_no, pos + count, r->count);
                 } else {
-                    ata_pio_read_ext(drv_no, pos + count, 1);
+                    ata_pio_read_ext(drv_no, pos + count, r->count);
                 }
 #else
                 if (r->bb != 0) {
@@ -141,9 +142,9 @@ void disk_task_entry(void *arg) {
             if (DISK_REQ_READ == r->command || DISK_REQ_IDENTIFY == r->command) {
                 uint32_t offset = SECT_SIZE * count;
                 if (r->bb != 0) {
-                    ata_pio_read_data(drv_no, 1, r->bb->data + offset);
+                    ata_pio_read_data(drv_no, r->count, r->bb->data + offset);
                 } else {
-                    ata_pio_read_data(drv_no, 1, r->buf + offset);
+                    ata_pio_read_data(drv_no, r->count, r->buf + offset);
                 }
             }
 
