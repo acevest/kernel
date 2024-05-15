@@ -154,7 +154,7 @@ task_t *find_task(pid_t pid) {
 
 const char *task_state(unsigned int state) {
     static const char s[][8] = {
-        " ERROR", "\x10RUN\x07\x07", " READY", " WAIT ", " INIT ", " EXIT ",
+        " ERROR", "\x10\x07RUN\x07", " READY", " WAIT ", " INIT ", " EXIT ",
     };
 
     if (state >= TASK_END) {
@@ -209,19 +209,35 @@ void schedule() {
             continue;
         }
 
+#if 1
+        if (p->priority > sel->priority) {
+            sel = p;
+        } else if (p->priority == sel->priority) {
+            int64_t a = p->jiffies + (p->priority - p->ticks);
+            int64_t b = sel->jiffies + (sel->priority - sel->ticks);
+            if (a < b) {
+                sel = p;
+            }
+        }
+#endif
+#if 0
         // 考察三个量
         // priority 越大越优先
         // jiffies  越小越优先
         // (priority - ticks) 表示已经使用的量，越小越优先
-        int64_t a = sel->jiffies - sel->priority + (sel->priority - sel->ticks);
-        int64_t b = p->jiffies - p->priority + (p->priority - p->ticks);
-        if (a > b) {
+        // 实际简化表达式为 ticks - jiffies（选择最大的)
+        // 先这样写，后续可以在各项添加系数
+        // 这个方法的缺点是对后面新加入的进程非常不友好
+        int64_t a = sel->priority - sel->jiffies - (sel->priority - sel->ticks);
+        int64_t b = p->priority - p->jiffies - (p->priority - p->ticks);
+        if (a < b) {
             sel = p;
         } else if (a == b) {
             if (sel->priority < p->priority) {
                 sel = p;
             }
         }
+#endif
     }
 
     task_t *prev = current;

@@ -25,10 +25,13 @@ void debug_print_all_tasks();
 void dump_irq_nr_stack();
 void clk_bh_handler(void *arg);
 
+extern volatile bool enable_clock_irq_delay;
+
 void clk_handler(unsigned int irq, pt_regs_t *regs, void *dev_id) {
     // if (jiffies % 100 == 0) {
     // printl(MPL_CLOCK, "clock irq: %d", jiffies);
     printlxy(MPL_IRQ, MPO_CLOCK, "CLK irq: %d", jiffies);
+    // printk("CLK irq %d\n", jiffies);
     // }
 
     jiffies++;
@@ -45,6 +48,13 @@ void clk_handler(unsigned int irq, pt_regs_t *regs, void *dev_id) {
         // 反之时钟中断打断了下半部处理程序不一定need_resched就为1
         return;
     }
+
+#if ENABLE_CLOCK_IRQ_WAIT
+    if (enable_clock_irq_delay) {
+        return;
+    }
+    enable_clock_irq_delay = true;
+#endif
 
     current->ticks--;
 
@@ -80,9 +90,6 @@ void clk_bh_handler(void *arg) {
             p->reason = "clk_bh";
         }
     }
-
-    // 此处调用这个还是有问题的
-    debug_print_all_tasks();
 }
 
 uint16_t read_i8254_counter(uint8_t counter_no) {

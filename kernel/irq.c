@@ -79,6 +79,8 @@ void schedule();
 
 volatile int reenter_count = 0;
 
+volatile uint32_t clk_irq_cnt = 0;
+
 __attribute__((regparm(1))) void irq_handler(pt_regs_t *regs) {
     unsigned int irq = regs->irq;
     if (irq >= NR_IRQS) {
@@ -99,6 +101,16 @@ __attribute__((regparm(1))) void irq_handler(pt_regs_t *regs) {
 
     // 发送EOI
     p->chip->ack(irq);
+
+#if 0
+    if (0x00 == irq) {
+        if ((clk_irq_cnt++ & 0xFU) != 0) {
+            reenter--;
+            p->chip->enable(irq);
+            return;
+        }
+    }
+#endif
 
     assert(current->magic == TASK_MAGIC);
 
@@ -150,53 +162,85 @@ __attribute__((regparm(1))) void irq_handler(pt_regs_t *regs) {
 }
 
 extern uint32_t jiffies;
+
+volatile bool enable_clock_irq_delay = false;
+
 void irq_bh_handler() {
     uint32_t end = jiffies + 1;
-    while (true) {
-        irq_bh_action_t *action = NULL;
+
+// ENABLE_CLOCK_IRQ_WAIT是用来调试的
+// 是为了让时钟减缓进程的时间片更慢一点，以便于调试
+// 采用这种方式，而不是经过一定时钟数再减一次进程时间片的方法
+// 是因为这种方法只能让时间片减得慢，但会拉长进程的实际运行时间，效果不真实
+// 这种方法不会改变进程的运行时间
+#if ENABLE_CLOCK_IRQ_WAIT
+    uint32_t debug_end = jiffies + 20;
+    while (jiffies < debug_end)
+#endif
+    {
+        while (true) {
+            irq_bh_action_t *action = NULL;
 
 #if 1
-        disable_irq();
-        action = irq_bh_actions;
-        if (action == NULL) {
+            disable_irq();
+            action = irq_bh_actions;
+            if (action == NULL) {
+                enable_irq();
+                break;
+            }
+
+            irq_bh_actions = action->next;
+            if (irq_bh_actions == NULL) {
+                irq_bh_actions_end = NULL;
+            }
             enable_irq();
-            break;
-        }
 
-        irq_bh_actions = action->next;
-        if (irq_bh_actions == NULL) {
-            irq_bh_actions_end = NULL;
-        }
-        enable_irq();
-
-        action->handler(action->arg);
-        kfree(action);
-#else
-        disable_irq();
-
-        action = irq_bh_actions;
-        irq_bh_actions = NULL;
-        irq_bh_actions_end = NULL;
-
-        enable_irq();
-
-        if (action == NULL) {
-            break;
-        }
-
-        while (action != NULL) {
             action->handler(action->arg);
-            irq_bh_action_t *p = action;
-            action = action->next;
-            kfree(p);
+            kfree(action);
+#else
+            disable_irq();
+
+            action = irq_bh_actions;
+            irq_bh_actions = NULL;
+            irq_bh_actions_end = NULL;
+
+            enable_irq();
+
+            if (action == NULL) {
+                break;
+            }
+
+            while (action != NULL) {
+                action->handler(action->arg);
+                irq_bh_action_t *p = action;
+                action = action->next;
+                kfree(p);
+            }
+#endif
+
+            if (jiffies >= end) {
+                break;
+            }
+
+            // 这里可能存在有部分没处理完
+        }
+
+        void debug_print_all_tasks();
+#if ENABLE_CLOCK_IRQ_WAIT
+        debug_print_all_tasks();
+        if (irq_bh_actions == NULL) {
+            asm("hlt;");
+        }
+#else
+        if (jiffies < end) {
+            debug_print_all_tasks();
         }
 #endif
-        if (jiffies >= end) {
-            break;
-        }
-
-        // 这里可能存在有部分没处理完
     }
+
+#if ENABLE_CLOCK_IRQ_WAIT
+    enable_clock_irq_delay = false;
+#endif
 
     // 这之后也可能存在再次被中断加入下半部处理请求
     // 但这些都不会丢失
