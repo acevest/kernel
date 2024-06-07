@@ -80,7 +80,7 @@ volatile void wait_on(wait_queue_head_t *head) {
     irq_save(flags);
 
     current->state = TASK_WAIT;
-    current->reason = "sleep_on";
+    current->reason = "wait_on";
 
     list_add_tail(&wait.entry, &head->task_list);
 

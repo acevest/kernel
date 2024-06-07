@@ -9,7 +9,16 @@
 
 #pragma once
 
+#include <atomic.h>
 #include <list.h>
+#include <semaphore.h>
+#include <types.h>
+
+typedef struct qstr {
+    const char *name;
+    unsigned int len;
+    uint64_t hash;
+} qstr_t;
 
 typedef struct dentry dentry_t;
 
@@ -20,9 +29,11 @@ typedef struct dentry_operations dentry_operations_t;
 
 // super block
 typedef struct superblock {
-    //
+    // 该超级起的根目录的 dentry
     dentry_t *sb_root;
+    //
     void *sb_private;
+    //
     sb_operations_t *sb_ops;
 } superblock_t;
 
@@ -39,6 +50,8 @@ typedef struct inode {
 
     void *i_private;
 
+    semaphore_t i_sem;
+
     // fops - file ops 的副本
     file_operations_t *i_fops;
 
@@ -47,10 +60,20 @@ typedef struct inode {
 
     // 缓存的pages
     list_head_t i_pages;
+
+    dev_t i_dev;   // inode存储在该设备上
+    dev_t i_rdev;  // inode所代表的设备号
+
+    loff_t i_size;
 } inode_t;
 
+#define DENTRY_INLINE_NAME_LEN 16
 struct dentry {
-    char *d_name;
+    // char *d_name;
+    qstr_t d_name;
+    char d_inline_name[DENTRY_INLINE_NAME_LEN];
+
+    atomic_t d_count;
 
     //
     dentry_t *d_parent;
@@ -60,12 +83,20 @@ struct dentry {
     list_head_t d_child;
     list_head_t d_subdirs;
 
+    list_head_t d_hash;
+
     //
     superblock_t *d_sb;
 
     // 每一个dentry指向一个inode
     // 但多个dentry可以指向同一个inode(不实现)
     inode_t *d_inode;
+
+    // 需要一个标记自己已经成为挂载点的标志？
+    // uint32_t d_flags;
+    // 也可以用一个指向vfsmount的指针，非0表示挂载？
+    // 貌似应该搞个链表，因为一个点可以重复挂N次，N个文件系统
+    list_head_t d_vfsmnt;  // 所有挂载到这个目录的挂载点
 
     //
     dentry_operations_t *d_ops;
@@ -75,39 +106,77 @@ struct dentry {
 };
 
 struct sb_operations {
-    //
+    // read_inode
 };
 
-struct file_operations {
-    // open
-    // close
-    // read
-    // write
-    // lseek
-    // ioctl
-};
+// struct file_operations {
+//     // open
+//     // close
+//     // read
+//     // write
+//     // lseek
+//     // ioctl
+
+// };
 struct inode_operations {
     //
+    dentry_t *(*lookup)(inode_t *i, dentry_t *d);
 };
 
 struct dentry_operations {
     //
     // hash
     // compare
+    // d_release 关闭文件
+    // d_delete 删除文件
+    //
 };
 
 // 每当将一个存储设备安装到现有文件系统中的某个节点时，内核就要为之建立一个vfsmount结构
 // 这个结构中即包含着该设备的有关信息,也包含了安装点的信息
 // 系统中的每个文件系统，包括根设备的根文件系统,都要经过安装
+//
+// 在安装文件系统时内核主要做如下的事情
+// 创建一个vfsmount
+// 为被安装的设备创建一个superblock，并由该设备对应的文件系统来设置这个superblock
+// 为被安装的设备的根目录创建一个dentry
+// 为被安装的设备的根目录创建一个inode，由sb->sb_ops->read_inode来实现
+// 将superblock与被安装设备根目录的dentry关联
+// 将vfsmount与被安装设备的根目录dentry关联
 typedef struct vfsmount {
+    dentry_t *mnt_point;   // 挂载点 dentry
+    dentry_t *mnt_root;    // 设备根目录 dentry
+    superblock_t *mnt_sb;  // 被安装的设备的superblock
+    struct vfsmount *mnt_parent;  // 如果多个设备挂载到同一个目录，则每个vfsmount的parent都指向同一个vfsmount
+    // sb->sb_ops->read_inode得到被安装设备根目录的inode
+
+    list_head_t mnt_list;  // vfsmount 链表
+
+    list_head_t mnt_clash;
+
+    // 先简单实现：不支持一个设备挂载多次，或一个目录被挂载多次
 } vfsmount_t;
 
 typedef struct fs_type {
     const char *name;
     superblock_t *(*read_super)(superblock_t *, void *);
     struct fs_type *next;
+    list_head_t sbs;  // 同属于这个文件系统的所有超级块链表
 } fs_type_t;
 
 extern superblock_t *root_sb;
 
 void vfs_register_filesystem(fs_type_t *fs);
+
+/////
+
+dentry_t *dentry_cached_lookup(dentry_t *parent, qstr_t *s);
+int dentry_real_lookup(dentry_t *parent, qstr_t *s, dentry_t **dentry);
+
+vfsmount_t *vfsmnt_get(vfsmount_t *m);
+void vfsmnt_put(vfsmount_t *m);
+
+dentry_t *dentry_get(dentry_t *dentry);
+void dentry_get_locked(dentry_t *dentry);
+
+void dentry_put(dentry_t *dentry);
