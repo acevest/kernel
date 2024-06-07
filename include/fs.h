@@ -15,6 +15,7 @@
 
 #include <page.h>
 #include <types.h>
+#include <vfs.h>
 
 /* 分区表开始的位置 */
 #define PARTS_POS 0x1BE
@@ -32,10 +33,10 @@
 #define DEV_MINOR_MASK ((1UL << DEV_MAJOR_BITS) - 1)
 
 #define MAKE_DEV(major, minor) ((major) << DEV_MAJOR_BITS | minor)
-#define MAKE_DISK_DEV(drv_no, part_no) MAKE_DEV(DEV_MAJOR_DISK, (((drv_no)&0x03) << 8) | (((part_no)&0xFF) << 0))
+#define MAKE_DISK_DEV(drv_no, part_no) MAKE_DEV(DEV_MAJOR_DISK, (((drv_no) & 0x03) << 8) | (((part_no) & 0xFF) << 0))
 
 #define DEV_MAJOR(dev) ((unsigned int)((dev) >> DEV_MAJOR_BITS))
-#define DEV_MINOR(dev) ((unsigned int)((dev)&DEV_MINOR_MASK))
+#define DEV_MINOR(dev) ((unsigned int)((dev) & DEV_MINOR_MASK))
 
 // #define MAX_SUPT_FILE_SIZE    (1)
 #define NR_FILES (1)
@@ -53,8 +54,25 @@ enum { CHRDEV_CNSL, CHRDEV_SIZE };
 
 extern chrdev_t *chrdev[];
 
-typedef struct {
-} file_t;
+typedef struct file file_t;
+
+typedef struct file_operations {
+    int (*open)(inode_t *, file_t *);
+    int (*release)(inode_t *, file_t *);
+    ssize_t (*read)(file_t *, char *, size_t, loff_t *);
+    ssize_t (*write)(file_t *, const char *, size_t, loff_t *);
+} file_operations_t;
+
+struct file {
+    // 多个打开的文件可能是同一个文件
+    dentry_t *f_dentry;
+    file_operations_t *f_ops;
+};
+
+typedef struct namei {
+    vfsmount_t *mnt;
+    dentry_t *dentry;
+} namei_t;
 
 #if 0
 #define NR_FILES (PAGE_SIZE / sizeof(File))
@@ -106,7 +124,5 @@ static inline pInode find_empty_inode()
     return NULL;
 }
 #endif
-
-typedef uint32_t dev_t;
 
 #endif  //_FS_H

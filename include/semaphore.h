@@ -9,9 +9,7 @@
 
 #pragma once
 
-#include <irq.h>
 #include <list.h>
-#include <task.h>
 
 typedef struct semaphore {
     volatile unsigned int cnt;
@@ -44,5 +42,6 @@ typedef semaphore_t mutex_t;
         (ptr)->cnt = 1;                      \
         INIT_LIST_HEAD(&((ptr)->wait_list)); \
     } while (0)
+void mutex_init(mutex_t *);
 void mutex_lock(mutex_t *);
 void mutex_unlock(mutex_t *);

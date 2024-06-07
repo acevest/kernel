@@ -9,6 +9,7 @@
 #include <irq.h>
 #include <sched.h>
 #include <semaphore.h>
+#include <task.h>
 
 typedef struct semaphore_waiter {
     list_head_t list;
@@ -77,5 +78,6 @@ volatile void up(semaphore_t *s) {
     }
 }
 
+void mutex_init(mutex_t *s) { INIT_MUTEX(s); }
 void mutex_lock(semaphore_t *s) { down(s); }
 void mutex_unlock(semaphore_t *s) { up(s); }

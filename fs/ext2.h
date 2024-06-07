@@ -179,13 +179,6 @@ typedef struct ext2_inode {
 } ext2_inode_t;
 
 #define EXT2_NAME_LEN 255
-typedef struct ext2_dir_ent {
-    u32 inode;
-    u16 rec_len;
-    u8 name_len;
-    u8 file_type;
-    char name[EXT2_NAME_LEN];
-} ext2_dirent_t;
 
 /*
  * Ext2 目录类型.
@@ -202,6 +195,13 @@ enum {
     EXT2_FT_SYMLINK,
     EXT2_FT_MAX
 };
+typedef struct ext2_dir_ent {
+    u32 inode;
+    u16 rec_len;
+    u8 name_len;
+    u8 file_type;
+    char name[EXT2_NAME_LEN];
+} ext2_dirent_t;
 
 #define EXT2_DIR_PAD 4
 #define EXT2_DIR_ROUND (EXT2_DIR_PAD - 1)

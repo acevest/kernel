@@ -50,6 +50,10 @@ typedef long int32_t;
 typedef unsigned long long uint64_t;
 typedef long long int64_t;
 
+typedef uint64_t loff_t;
+
+typedef uint32_t dev_t;
+
 typedef unsigned long pid_t;
 typedef unsigned long mode_t;
 
