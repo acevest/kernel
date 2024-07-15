@@ -42,10 +42,10 @@ volatile void down(semaphore_t *s) {
         INIT_LIST_HEAD(&waiter.list);
         list_add(&waiter.list, &s->wait_list);
 
-        irq_restore(iflags);
-
         task->state = TASK_WAIT;
         task->reason = "down";
+
+        irq_restore(iflags);
 
         schedule();
     }
