@@ -144,6 +144,7 @@ __attribute__((regparm(1))) void irq_handler(pt_regs_t *regs) {
     {
         enable_irq();
 
+        // 这里面不能执行任务切换操作，比如信号量相关操作
         irq_bh_handler();
 
         disable_irq();

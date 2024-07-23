@@ -94,6 +94,8 @@ void disk_task_entry(void *arg) {
         uint64_t pos = r->pos + drv->partions[part_id].lba_start;
         assert(pos < drv->partions[part_id].lba_end);
 
+        // init_completion(&ide_ctrl->intr_complete);
+
         switch (r->command) {
         case DISK_REQ_IDENTIFY:
             printk("try to read disk drive %u identify", drv_no);
@@ -116,8 +118,7 @@ void disk_task_entry(void *arg) {
         }
 
         // 等待硬盘中断
-        // printk("down ide req\n");
-        down(&ide_ctrl->disk_intr_sem);
+        wait_completion(&ide_ctrl->intr_complete);
 
         // 读数据
         if (DISK_REQ_IDENTIFY == r->command) {
