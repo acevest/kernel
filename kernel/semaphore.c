@@ -57,6 +57,7 @@ volatile void up(semaphore_t *s) {
 
     if (list_empty(&s->wait_list)) {
         s->cnt++;
+        irq_restore(iflags);
     } else {
         semaphore_waiter_t *waiter = list_first_entry(&s->wait_list, semaphore_waiter_t, list);
         assert(waiter != 0);
@@ -66,13 +67,15 @@ volatile void up(semaphore_t *s) {
         task->state = TASK_READY;
         task->reason = "up";
 
-        // 这里不应该调用schedule()再重新调度一次
-        // 例如，目前在ide_irq_bh_handler里调用了up来唤醒磁盘任务
-        // 而ide_irq_bh_handler又是中断的底半处理，不应该切换任务
-        // 否则会引起irq里的reenter问题，导致不能再进底半处理，也无法切换任务
-    }
+        irq_restore(iflags);
 
-    irq_restore(iflags);
+        // 之前把这里的schedule()删除了，是因为up()被用到了 ide_irq_bh_handler 里去唤醒磁盘任务
+        // 但在中断的底半处理，不应该切换任务，因为会引起irq里的reenter问题，导致不能再进底半处理，也无法切换任务
+        // 但这种方法是不对的
+        // 后来就改用完成量来通知磁盘任务
+        // 因此信号量这里就可以加回schedule()了
+        schedule();
+    }
 }
 
 void mutex_init(mutex_t *s) { INIT_MUTEX(s); }
