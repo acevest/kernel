@@ -143,6 +143,11 @@ void ide_irq_bh_handler(void *arg) {
     printlxy(MPL_IDE0 + channel, MPO_IDE, "IDE%d req %u irq %u consumed %u", channel,
              atomic_read(&(ide_ctrl->request_cnt)), ide_ctrl->irq_cnt, ide_ctrl->consumed_cnt);
 
+    // 之前这里是用up()来唤醒磁盘任务
+    // 但在中断的底半处理，不应该切换任务，因为会引起irq里的reenter问题，导致不能再进底半处理，也无法切换任务
+    // 所以就移除了up()里的 schedule()
+    // 后来就改用完成量来通知磁盘任务，就不存在这个问题了
+
     // complete会唤醒进程，但不会立即重新调度进程
     complete(&ide_ctrl->intr_complete);
 }
