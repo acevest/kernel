@@ -53,7 +53,8 @@ void ide_pci_init(pci_device_t *pci) {
         ide_pci_controller[i].request_queue.count = 0;
         INIT_LIST_HEAD(&ide_pci_controller[i].request_queue.list);
         semaphore_init(&ide_pci_controller[i].request_queue.sem, 0);
-        semaphore_init(&ide_pci_controller[i].disk_intr_sem, 0);
+        init_completion(&ide_pci_controller[i].intr_complete);
+        ide_pci_controller[i].intr_complete.name = i == 0 ? "ide0_intr_complete" : "ide1_intr_complete";
 
         atomic_set(&ide_pci_controller[i].request_cnt, 0);
         atomic_set(&ide_pci_controller[i].irq_cnt, 0);
@@ -142,8 +143,8 @@ void ide_irq_bh_handler(void *arg) {
     printlxy(MPL_IDE0 + channel, MPO_IDE, "IDE%d req %u irq %u consumed %u", channel,
              atomic_read(&(ide_ctrl->request_cnt)), ide_ctrl->irq_cnt, ide_ctrl->consumed_cnt);
 
-    // up里不会立即重新调度进程
-    up(&ide_ctrl->disk_intr_sem);
+    // complete会唤醒进程，但不会立即重新调度进程
+    complete(&ide_ctrl->intr_complete);
 }
 
 void ide_irq_handler(unsigned int irq, pt_regs_t *regs, void *devid) {

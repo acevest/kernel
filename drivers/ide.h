@@ -184,9 +184,8 @@ typedef struct _ide_pci_controller {
     // 请求队列
     disk_request_queue_t request_queue;
 
-    // task disk与中断函数之间的信号量
-    // 初始化成0
-    semaphore_t disk_intr_sem;
+    // 中断处理函数通知task disk任务完成
+    completion_t intr_complete;
 
     atomic_t request_cnt;
     atomic_t irq_cnt;
@@ -212,6 +211,3 @@ typedef struct _ide_drive {
 extern ide_drive_t ide_drives[MAX_IDE_DRIVE_CNT];
 
 ide_drive_t *ide_get_drive(dev_t dev);
-
-void sleep_on_ide();
-void wait_on_ide();

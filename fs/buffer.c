@@ -124,7 +124,9 @@ again:
         irq_restore(iflags);
         retry++;
         // wait on free list
-        wait_on(&s->waitq);
+        // TODO
+        assert(0);
+        // wait_on(&s->waitq);
         goto again;
     }
 
@@ -156,7 +158,9 @@ void brelse(bbuffer_t *b) {
     assert(s != NULL);
     assert(s - store < 3);
 
-    wake_up(&s->waitq);
+    // TODO
+    assert(0);
+    // wake_up(&s->waitq);
 }
 
 bbuffer_t *bread(dev_t dev, uint64_t block, uint32_t size) {
