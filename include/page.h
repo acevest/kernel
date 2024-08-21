@@ -103,14 +103,14 @@ typedef unsigned long pte_t;
 #define PAGE_UP(page) (((unsigned long)page + PAGE_SIZE - 1) & PAGE_MASK)
 #define PAGE_DOWN PAGE_ALIGN
 
-#define PAGE_FLAGS(addr) ((addr)-PAGE_ALIGN(addr))
+#define PAGE_FLAGS(addr) ((addr) - PAGE_ALIGN(addr))
 
 #define va2pa(x) (((unsigned long)(x)) - PAGE_OFFSET)
 #define pa2va(x) ((void *)(((unsigned long)(x)) + PAGE_OFFSET))
 
 // pfn: page frame number
 #define pa2pfn(addr) ((addr) >> PAGE_SHIFT)
-#define pfn2pa(pfn) ((pfn) << PAGE_SHIFT)
+#define pfn2pa(pfn) ((void *)((pfn) << PAGE_SHIFT))
 
 #define va2pfn(addr) pa2pfn(va2pa(addr))
 #define pfn2va(pfn) pa2va(pfn2pa(pfn))
@@ -155,6 +155,7 @@ typedef struct page {
 } page_t;
 
 void *page2va(page_t *page);
+void *page2pa(page_t *page);
 page_t *_va2page(unsigned long addr);
 page_t *_pa2page(unsigned long addr);
 
@@ -181,7 +182,7 @@ typedef struct free_area {
     list_head_t free_list;
 } free_area_t;
 
-unsigned long alloc_pages(unsigned int gfp_mask, unsigned int order);
+page_t *alloc_pages(unsigned int gfp_mask, unsigned int order);
 void free_pages(unsigned long addr);
 
 #define alloc_one_page(gfp_mask) alloc_pages(gfp_mask, 0)

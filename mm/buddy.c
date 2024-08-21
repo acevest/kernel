@@ -46,15 +46,16 @@ page_t *_pa2page(unsigned long paddr) {
 }
 
 void *page2va(page_t *page) { return pfn2va((page)-buddy_system.page_map); }
+void *page2pa(page_t *page) { return pfn2pa((page)-buddy_system.page_map); }
 
 page_t *__alloc_pages(unsigned int order) {
     //
     page_t *page = 0;
-    page_t *buddy = 0;
     free_area_t *area;
-    unsigned long size;
     unsigned int select_order;
     unsigned int i;
+
+    // 找到首个满足 >= order的page块
     for (select_order = order; select_order < MAX_ORDER; ++select_order) {
         area = buddy_system.free_area + select_order;
         if (!list_empty(&(area->free_list))) {
@@ -65,25 +66,28 @@ page_t *__alloc_pages(unsigned int order) {
     return 0;
 
 found:
+    // 从链表取下这个连续的page块
     page = list_entry(area->free_list.next, page_t, lru);
     list_del(&(page->lru));
     ClearPagePrivate(page);
     page->private = 0;
     area->free_count--;
 
+    // 二分这个page块，把空闲的挂到对应的order队列上
+    // 直到得到order大小的page块
     while (select_order > order) {
         area--;
         select_order--;
-        size = 1UL << select_order;
+        unsigned long buddy_offset = 1UL << select_order;
 
-        buddy = page + size;
-        list_add(&(buddy->lru), &(area->free_list));
+        page_t *buddy_page = page + buddy_offset;
+        list_add(&(buddy_page->lru), &(area->free_list));
         area->free_count++;
-        buddy->private = select_order;
-        SetPagePrivate(buddy);
+        buddy_page->private = select_order;
+        SetPagePrivate(buddy_page);
     }
 
-    //
+    // 初始化这一连续的page块
     for (i = 0; i < (1UL << order); ++i) {
         page_t *p = page + i;
         p->head_page = page;
@@ -95,7 +99,7 @@ found:
     return page;
 }
 
-unsigned long alloc_pages(unsigned int gfp_mask, unsigned int order) {
+page_t *alloc_pages(unsigned int gfp_mask, unsigned int order) {
     // gfp_mask
     // ...
 
@@ -104,8 +108,10 @@ unsigned long alloc_pages(unsigned int gfp_mask, unsigned int order) {
     page_t *page = __alloc_pages(order);
     irq_restore(flags);
 
-    unsigned long addr = (unsigned long)page2va(page);
-    return addr;
+    // unsigned long addr = (unsigned long)page2va(page);
+    // return addr;
+
+    return page;
 }
 
 void __free_pages(page_t *page, unsigned int order) {
@@ -190,8 +196,7 @@ void init_buddy_system() {
     buddy_system.page_map = alloc_from_bootmem(page_map_size, "buddy");
     if (0 == buddy_system.page_map) {
         printk("can not go on playing...\n");
-        while (1)
-            ;
+        while (1);
     }
 
     buddy_system.page_map_end = buddy_system.page_map + pfn_cnt + 1;

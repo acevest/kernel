@@ -50,7 +50,7 @@ void init_paging() {
     // 最大限制内存1G
     for (pfn = pa2pfn(BOOT_INIT_PAGETBL_CNT << 22); pfn < bootmem_data.max_pfn; ++pfn) {
         unsigned long ti = pfn % PAGE_PTE_CNT;
-        unsigned long page_addr = pfn2pa(pfn);
+        unsigned long page_addr = (unsigned long)pfn2pa(pfn);
         if (ti == 0) {
             pgtb_addr = (unsigned long *)alloc_from_bootmem(PAGE_SIZE, "paging");
             if (0 == pgtb_addr) {

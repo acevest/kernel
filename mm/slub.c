@@ -28,21 +28,14 @@ page_t *get_partial(kmem_cache_t *cache, gfp_t gfpflags) {
 
 // 从伙伴系统批发页，并将之初始化成一个链表
 page_t *new_slub(kmem_cache_t *cache, gfp_t gfpflags) {
-    // alloc pages from buddy system
-    unsigned long bgn = alloc_pages(gfpflags, cache->order);
-    unsigned long end = 0;
-
-    // 找到该页的管理结构
-    page_t *page = va2page(bgn);
-
-    //
+    page_t *page = alloc_pages(gfpflags, cache->order);
     if (0 == page) {
         return 0;
     }
 
-    end = bgn + cache->objects * cache->size;
+    unsigned long bgn = (unsigned long)page2va(page);
+    unsigned long end = bgn + cache->objects * cache->size;
 
-#if 1
     unsigned long last = bgn;
     unsigned long addr;
 
@@ -55,15 +48,6 @@ page_t *new_slub(kmem_cache_t *cache, gfp_t gfpflags) {
 
     // 最后一个赋值为0
     *((void **)last) = 0;
-#else
-    unsigned long addr;
-    for (addr = bgn; addr < end; addr += cache->size) {
-        *(unsigned long *)addr = addr + cache->size;
-    }
-
-    addr = end - cache->size;
-    *(unsigned long *)addr = 0;
-#endif
 
     page->freelist = (void **)bgn;
     page->inuse = 0;

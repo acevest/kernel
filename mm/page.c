@@ -21,14 +21,14 @@ void do_no_page(void *addr) {
     pde_t *page_dir = (pde_t *)pa2va(current->cr3);
     pte_t *page_tbl = 0;
 
-    unsigned long page = alloc_one_page(0);
+    unsigned long page = (unsigned long)page2va(alloc_one_page(0));
     assert(page != 0);
 
     int npde = get_npde(addr);
     int npte = get_npte(addr);
 
     if (page_dir[npde] == 0) {
-        page_tbl = (pte_t *)alloc_one_page(0);
+        page_tbl = (pte_t *)page2va(alloc_one_page(0));
         assert(page_tbl != 0);
 
         memset((void *)page_tbl, 0, PAGE_SIZE);
@@ -57,7 +57,7 @@ void do_wp_page(void *addr) {
     // 如果是因为PDE被写保护
     if (*pde & PDE_RW == 0) {
         // 1. 分配一个页表
-        unsigned long newtbl = alloc_one_page(0);
+        unsigned long newtbl = (unsigned long)page2va(alloc_one_page(0));
         assert(newtbl != 0);
 
         // 2. 拷贝页表
@@ -88,7 +88,7 @@ void do_wp_page(void *addr) {
     // 如果PTE的位置被写保护
     if (*pte & PTE_RW == 0) {
         // 1. 分配一个页表
-        unsigned long newaddr = alloc_one_page(0);
+        unsigned long newaddr = (unsigned long)page2va(alloc_one_page(0));
         assert(newaddr != 0);
 
         // 2. 拷贝页表
@@ -113,7 +113,7 @@ void do_wp_page(void *addr) {
         page->count--;
         unsigned long flags = PAGE_FLAGS(page_tbl[npte]);
         unsigned long wp_va_addr = (unsigned long)pa2va(wp_pa_addr);
-        unsigned long newtbl = alloc_one_page(0);
+        unsigned long newtbl = (unsigned long) page2va(alloc_one_page(0));
         assert(newtbl != 0);
 
         memcpy((void *)newtbl, (void *)wp_va_addr, PAGE_SIZE);

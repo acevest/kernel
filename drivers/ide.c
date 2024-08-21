@@ -70,7 +70,7 @@ void ide_pci_init(pci_device_t *pci) {
         ide_pci_controller[i].bus_cmd = iobase + PCI_IDE_CMD;
         ide_pci_controller[i].bus_status = iobase + PCI_IDE_STATUS;
         ide_pci_controller[i].bus_prdt = iobase + PCI_IDE_PRDT;
-        ide_pci_controller[i].prdt = (prdte_t *)alloc_one_page(0);
+        ide_pci_controller[i].prdt = (prdte_t *)page2va(alloc_one_page(0));
 
         ide_pci_controller[i].pci = pci;
     }
