@@ -39,7 +39,7 @@ int do_fork(pt_regs_t *regs, unsigned long flags) {
     list_add(&tsk->list, &all_tasks);
     irq_restore(iflags);
 
-    tsk->cr3 = va2pa((unsigned long)alloc_one_page(0));
+    tsk->cr3 = (uint32_t)page2pa(alloc_one_page(0));
     assert(tsk->cr3 != 0);
 
     unsigned int i, j;
@@ -67,7 +67,7 @@ int do_fork(pt_regs_t *regs, unsigned long flags) {
         // 这里不用再为每个PDE拷贝一次PageTable，只需要拷贝PageDirectory并将其低于768的写权限去掉
         // 同时需要修改缺页异常doPageFault的逻辑
         if (PAGE_ALIGN(spde) != 0) {
-            dpde = alloc_one_page(0);
+            dpde = page2va(alloc_one_page(0));
             assert(dpde != 0);
             memset((void *)dpde, 0, PAGE_SIZE);
             dpde = PAGE_FLAGS(spde) | (unsigned long)va2pa(dpde);
@@ -102,7 +102,7 @@ int do_fork(pt_regs_t *regs, unsigned long flags) {
         strcpy(tsk->name, (char *)(child_regs->eax));
         child_regs->eax = 0;
     } else {
-        child_regs->eip = *((unsigned long *)&&fork_child);
+        child_regs->eip = *((unsigned long *) && fork_child);
     }
 
     // 这一句已经不需要了，通过fork_child已经能给子进程返回0了

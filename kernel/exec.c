@@ -35,7 +35,7 @@ void put_paging(unsigned long vaddr, unsigned long paddr, unsigned long flags) {
     pte_t *page_table = (pte_t *)PAGE_ALIGN(page_dir[npde]);
 
     if (page_table == 0) {
-        page_table = (pte_t *)alloc_one_page(0);
+        page_table = (pte_t *)page2va(alloc_one_page(0));
         memset(page_table, 0, PAGE_SIZE);
         page_table = (pte_t *)va2pa(page_table);
         assert(page_table != 0);
@@ -56,7 +56,7 @@ int sysc_exec(const char *path, char *const argv[]) {
 
     ext2_read_inode(ino, &inode);
 
-    Elf32_Ehdr *ehdr = (Elf32_Ehdr *)alloc_one_page(0);
+    Elf32_Ehdr *ehdr = (Elf32_Ehdr *)(page2va(alloc_one_page(0)));
     assert(ehdr != 0);
     ext2_read_data(&inode, 0, PAGE_SIZE, (char *)ehdr);
     printk("%08x\n", *((unsigned long *)ehdr->e_ident));
@@ -68,8 +68,8 @@ int sysc_exec(const char *path, char *const argv[]) {
         Elf32_Phdr *phdr;
         phdr = (Elf32_Phdr *)(((unsigned long)ehdr) + ehdr->e_phoff + (i * ehdr->e_phentsize));
 
-        printk("Type %08x Off %08x Va %08x Pa %08x Fsz %08x Mmsz %08x\n", phdr->p_type, phdr->p_offset, phdr->p_vaddr, phdr->p_paddr, phdr->p_filesz,
-               phdr->p_memsz);
+        printk("Type %08x Off %08x Va %08x Pa %08x Fsz %08x Mmsz %08x\n", phdr->p_type, phdr->p_offset, phdr->p_vaddr,
+               phdr->p_paddr, phdr->p_filesz, phdr->p_memsz);
 
         unsigned long vaddr = phdr->p_vaddr;
         unsigned long offset = phdr->p_offset;

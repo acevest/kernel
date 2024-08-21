@@ -213,7 +213,7 @@ void init_buffer() {
         page_t *page = NULL;
         for (int j = 0; j < MAX_BBUFFER_CNT; j++) {
             if (page_left_space < blocksize) {
-                data = (void *)(alloc_one_page(0));
+                data = (void *)page2va(alloc_one_page(0));
                 page = va2page(data);
             }
 

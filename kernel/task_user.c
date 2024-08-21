@@ -63,10 +63,10 @@ void user_task_entry() {
     current->priority = 7;
 
     unsigned long ring3_text_page = va2pa(ring3_entry);
-    unsigned long ring3_bss_page = va2pa(alloc_one_page(0));
+    unsigned long ring3_bss_page = (unsigned long)page2pa(alloc_one_page(0));
 
-    unsigned long *pt_text_page = (unsigned long *)(alloc_one_page(0));
-    unsigned long *pt_bss_page = (unsigned long *)(alloc_one_page(0));
+    unsigned long *pt_text_page = (unsigned long *)page2va(alloc_one_page(0));
+    unsigned long *pt_bss_page = (unsigned long *)page2va(alloc_one_page(0));
 
     unsigned long *p = (unsigned long *)(pa2va(current->cr3));
 
