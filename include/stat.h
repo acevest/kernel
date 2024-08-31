@@ -34,24 +34,40 @@ typedef struct stat {
     unsigned long __unused5;
 } Stat, *pStat;
 
+// 8进制
 #define S_IFMT 00170000
-#define S_IFSOCK 0140000
-#define S_IFLNK 0120000
-#define S_IFREG 0100000
-#define S_IFBLK 0060000
-#define S_IFDIR 0040000
-#define S_IFCHR 0020000
-#define S_IFIFO 0010000
+#define S_IFREG 0010000
+#define S_IFDIR 0020000
+#define S_IFBLK 0030000
+#define S_IFCHR 0040000
+#define S_IFLNK 0050000
+
 #define S_ISUID 0004000
 #define S_ISGID 0002000
 #define S_ISVTX 0001000
 
-#define S_ISLNK(m) (((m)&S_IFMT) == S_IFLNK)
-#define S_ISREG(m) (((m)&S_IFMT) == S_IFREG)
-#define S_ISDIR(m) (((m)&S_IFMT) == S_IFDIR)
-#define S_ISCHR(m) (((m)&S_IFMT) == S_IFCHR)
-#define S_ISBLK(m) (((m)&S_IFMT) == S_IFBLK)
-#define S_ISFIFO(m) (((m)&S_IFMT) == S_IFIFO)
-#define S_ISSOCK(m) (((m)&S_IFMT) == S_IFSOCK)
+#define S_ISREG(x) (((x) & S_IFMT) == S_IFREG)
+#define S_ISDIR(x) (((x) & S_IFMT) == S_IFDIR)
+#define S_ISBLK(x) (((x) & S_IFMT) == S_IFBLK)
+#define S_ISCHR(x) (((x) & S_IFMT) == S_IFCHR)
+#define S_ISLNK(x) (((x) & S_IFMT) == S_IFLNK)
+
+// user权限
+#define S_IURWX 00700
+#define S_IUSRR 00400
+#define S_IUSRW 00200
+#define S_IUSRX 00100
+
+// group权限
+#define S_IGRWX 00070
+#define S_IGRPR 00040
+#define S_IGRPW 00020
+#define S_IGRPX 00010
+
+// other权限
+#define S_IORWX 00007
+#define S_IOTHR 00004
+#define S_IOTHW 00002
+#define S_IOTHX 00001
 
 #endif  //_STAT_H

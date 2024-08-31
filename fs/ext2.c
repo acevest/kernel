@@ -14,11 +14,11 @@
 #include "system.h"
 #include "vfs.h"
 
-superblock_t *ext2_read_super(superblock_t *sb, void *data) { return sb; }
+// superblock_t *ext2_read_super(superblock_t *sb, void *data) { return sb; }
 
 fs_type_t ext2_fs_type = {
     .name = "ext2",
-    .read_super = ext2_read_super,
+    // .read_super = ext2_read_super,
     .next = 0,
 };
 

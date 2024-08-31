@@ -7,6 +7,7 @@
  * ------------------------------------------------------------------------
  */
 
+#include <errno.h>
 #include <string.h>
 #include <system.h>
 #include <vfs.h>
@@ -28,20 +29,30 @@ dentry_t *root_entry = 0;
 
 fs_type_t file_systems = {"filesystems", 0, 0};
 
-void vfs_register_filesystem(fs_type_t *fs) {
+int vfs_register_filesystem(fs_type_t *fs) {
     int ret = 0;
+
+    assert(fs != NULL);
+    if (fs->next != NULL) {
+        return -EBUSY;
+    }
+
+    INIT_LIST_HEAD(&fs->sbs);
 
     fs_type_t *add = &file_systems;
 
+    // TODO: 加锁、解锁保护
+
     for (fs_type_t *fst = &file_systems; fst != 0; fst = fst->next) {
         if (strcmp(fst->name, fs->name) == 0) {
-            return;
+            return -EBUSY;
         }
         add = fst;
     }
 
     add->next = fs;
     fs->next = 0;
+    return 0;
 }
 
 fs_type_t *vfs_find_filesystem(const char *name) {
@@ -62,7 +73,7 @@ void vfs_init() {
         panic("no ramfs");
     }
 
-    superblock_t *sb = fs->read_super(NULL, NULL);
+    // superblock_t *sb = fs->read_super(NULL, NULL);
 }
 
 /////////

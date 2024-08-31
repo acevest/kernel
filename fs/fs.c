@@ -11,6 +11,7 @@
  */
 #include <fs.h>
 #include <io.h>
+#include <mm.h>
 #include <printk.h>
 #include <system.h>
 
@@ -32,8 +33,21 @@ chrdev_t *chrdev[CHRDEV_SIZE] = {&cnsl_chrdev};
 // void ext2_setup_fs();
 unsigned int ext2_search_inpath(const char *path);
 
-// void setup_fs() {
-//     ext2_setup_fs();
-// }
-
 unsigned int namei(const char *path) { return ext2_search_inpath(path); }
+
+vfsmount_t rootfs_vfsmount;
+
+dentry_t rootfs_root_dentry;
+
+void setup_fs() {
+    // ext2_setup_fs();
+
+    void inode_cache_init();
+    inode_cache_init();
+
+    void dentry_cache_init();
+    dentry_cache_init();
+
+    void init_mount();
+    init_mount();
+}

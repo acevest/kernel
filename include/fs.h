@@ -17,6 +17,8 @@
 #include <types.h>
 #include <vfs.h>
 
+#include "stat.h"
+
 /* 分区表开始的位置 */
 #define PARTS_POS 0x1BE
 
@@ -124,5 +126,14 @@ static inline pInode find_empty_inode()
     return NULL;
 }
 #endif
+
+typedef int (*fill_super_cb_t)(superblock_t *sb, void *data);
+int read_super_for_nodev(fs_type_t *type, int flags, void *data, fill_super_cb_t fill_super, vfsmount_t *mnt);
+
+superblock_t *sget(fs_type_t *type,                      //
+                   int (*test)(superblock_t *, void *),  //
+                   int (*set)(superblock_t *, void *),   //
+                   void *data                            //
+);
 
 #endif  //_FS_H

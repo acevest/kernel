@@ -15,6 +15,7 @@
 #include <vfs.h>
 #define DENTRY_HASH_TABLE_SIZE 233
 
+static kmem_cache_t *dentry_kmem_cache = NULL;
 typedef struct {
     list_head_t list;
     mutex_t mutex;
@@ -32,10 +33,60 @@ uint32_t mod64(uint64_t x, uint32_t y) {
     return mod;
 }
 
-dentry_t *dentry_alloc(dentry_t *parent, qstr_t *s) {
+dentry_t *dentry_alloc(dentry_t *parent, const qstr_t *s) {
     dentry_t *dentry = NULL;
+
+    assert(s != NULL);
+    assert(s->len > 0);
+    assert(s->len < DENTRY_INLINE_NAME_LEN - 1);
+
+    dentry = kmem_cache_zalloc(dentry_kmem_cache, 0);
+    if (dentry == NULL) {
+        panic("no mem for dentry");
+        return dentry;
+    }
+
+    dentry->d_flags = 0;
+
+    dentry->d_name.len = 0;
+    dentry->d_name.name = 0;
+
+    memcpy(dentry->d_inline_name, s->name, s->len);
+    dentry->d_inline_name[s->len] = 0;
+
     atomic_set(&dentry->d_count, 1);
-    panic("to do");
+
+    if (parent != NULL) {
+        dentry->d_parent = parent;
+    } else {
+        dentry->d_parent = dentry;
+    }
+
+    INIT_LIST_HEAD(&dentry->d_child);
+    INIT_LIST_HEAD(&dentry->d_subdirs);
+    INIT_LIST_HEAD(&dentry->d_hash);
+
+    dentry->d_sb = NULL;
+    dentry->d_inode = NULL;
+    dentry->d_ops = NULL;
+    dentry->d_private = NULL;
+
+    return dentry;
+}
+
+dentry_t *dentry_alloc_root(inode_t *root_inode) {
+    dentry_t *dentry;
+
+    assert(root_inode != NULL);
+
+    static const qstr_t name = {.name = "/", .len = 1, .hash = 0};
+    dentry = dentry_alloc(NULL, &name);
+    if (dentry != NULL) {
+        dentry->d_sb = root_inode->i_sb;
+        dentry->d_parent = dentry;
+    }
+    dentry->d_inode = root_inode;
+
     return dentry;
 }
 
@@ -110,8 +161,6 @@ int dentry_real_lookup(dentry_t *parent, qstr_t *s, dentry_t **dentry) {
 
     return ret;
 }
-
-kmem_cache_t *dentry_kmem_cache = NULL;
 
 void dentry_cache_init() {
     kmem_cache_t *dentry_kmem_cache = kmem_cache_create("dentry_cache", sizeof(dentry_t), 4);

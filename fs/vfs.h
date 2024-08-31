@@ -21,20 +21,28 @@ typedef struct qstr {
 } qstr_t;
 
 typedef struct dentry dentry_t;
-
+typedef struct inode inode_t;
 typedef struct sb_operations sb_operations_t;
 typedef struct file_operations file_operations_t;
 typedef struct inode_operations inode_operations_t;
 typedef struct dentry_operations dentry_operations_t;
+typedef struct vfsmount vfsmount_t;
+typedef struct path path_t;
 
 // super block
 typedef struct superblock {
     // 该超级起的根目录的 dentry
     dentry_t *sb_root;
+
+    int sb_flags;
+
     //
     void *sb_private;
     //
     sb_operations_t *sb_ops;
+
+    list_head_t sb_list;
+    list_head_t sb_instance;
 } superblock_t;
 
 // dentry和inode为什么不合二为一？
@@ -45,7 +53,7 @@ typedef struct superblock {
 // 所以dentry代表逻辑意义上的文件，记录的是逻辑意义上的属性
 // 而inode结构代表的是物理意义上的文件
 // 它们之间的关系是多对一的关系
-typedef struct inode {
+struct inode {
     superblock_t *i_sb;
 
     void *i_private;
@@ -53,10 +61,10 @@ typedef struct inode {
     semaphore_t i_sem;
 
     // fops - file ops 的副本
-    file_operations_t *i_fops;
+    const file_operations_t *i_fops;
 
     // ops - inode ops
-    inode_operations_t *i_ops;
+    const inode_operations_t *i_ops;
 
     // 缓存的pages
     list_head_t i_pages;
@@ -65,11 +73,14 @@ typedef struct inode {
     dev_t i_rdev;  // inode所代表的设备号
 
     loff_t i_size;
-} inode_t;
+
+    umode_t i_mode;  // FILE DIR CHR BLK FIFO SOCK
+};
 
 #define DENTRY_INLINE_NAME_LEN 16
 struct dentry {
     // char *d_name;
+    uint32_t d_flags;
     qstr_t d_name;
     char d_inline_name[DENTRY_INLINE_NAME_LEN];
 
@@ -107,7 +118,7 @@ struct dentry {
 
 struct sb_operations {
     // alloc inode
-    inode_t *alloc_inode(superblock_t *sb);
+    inode_t *(*alloc_inode)(superblock_t *sb);
     // read_inode
 };
 
@@ -134,6 +145,11 @@ struct dentry_operations {
     //
 };
 
+struct path {
+    dentry_t *dentry;
+    vfsmount_t *mount;
+};
+
 // 每当将一个存储设备安装到现有文件系统中的某个节点时，内核就要为之建立一个vfsmount结构
 // 这个结构中即包含着该设备的有关信息,也包含了安装点的信息
 // 系统中的每个文件系统，包括根设备的根文件系统,都要经过安装
@@ -145,7 +161,8 @@ struct dentry_operations {
 // 为被安装的设备的根目录创建一个inode，由sb->sb_ops->read_inode来实现
 // 将superblock与被安装设备根目录的dentry关联
 // 将vfsmount与被安装设备的根目录dentry关联
-typedef struct vfsmount {
+#define MAX_VFSMNT_NAME_LEN 32
+struct vfsmount {
     dentry_t *mnt_point;   // 挂载点 dentry
     dentry_t *mnt_root;    // 设备根目录 dentry
     superblock_t *mnt_sb;  // 被安装的设备的superblock
@@ -154,26 +171,43 @@ typedef struct vfsmount {
 
     list_head_t mnt_list;  // vfsmount 链表
 
-    list_head_t mnt_clash;
+    vfsmount_t *hash_next;
+
+    char mnt_devname[MAX_VFSMNT_NAME_LEN];
+
+    // list_head_t mnt_clash;
 
     // 先简单实现：不支持一个设备挂载多次，或一个目录被挂载多次
-} vfsmount_t;
+};
 
-typedef struct fs_type {
+#define FS_TYPE_NODEV 1
+#define FS_TYPE_BLKDEV 2
+
+typedef struct fs_type fs_type_t;
+struct fs_type {
     const char *name;
-    superblock_t *(*read_super)(superblock_t *, void *);
+    // superblock_t *(*read_super)(superblock_t *, void *);
+    int (*read_super)(fs_type_t *type, int flags, const char *name, void *data, vfsmount_t *mnt);
+    int flags;  // FS_REQUIRES_DEV or NODEV
     struct fs_type *next;
-    list_head_t sbs;  // 同属于这个文件系统的所有超级块链表
-} fs_type_t;
+    // 同属于这个文件系统的所有超级块链表
+    // 因为同名文件系统可能有多个实例，所有的该文件系统的实例的superblock,都通过sbs这个链到一起
+    list_head_t sbs;
+};
 
 extern superblock_t *root_sb;
 
-void vfs_register_filesystem(fs_type_t *fs);
+int vfs_register_filesystem(fs_type_t *fs);
 
 /////
 
+inode_t *alloc_inode(superblock_t *sb);
+void init_special_inode(inode_t *inode, umode_t mode, dev_t rdev);
+////
+
 dentry_t *dentry_cached_lookup(dentry_t *parent, qstr_t *s);
 int dentry_real_lookup(dentry_t *parent, qstr_t *s, dentry_t **dentry);
+dentry_t *dentry_alloc_root(inode_t *root_inode);
 
 vfsmount_t *vfsmnt_get(vfsmount_t *m);
 void vfsmnt_put(vfsmount_t *m);
@@ -182,3 +216,6 @@ dentry_t *dentry_get(dentry_t *dentry);
 void dentry_get_locked(dentry_t *dentry);
 
 void dentry_put(dentry_t *dentry);
+
+/////
+extern const file_operations_t simple_dir_operations;

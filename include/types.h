@@ -53,6 +53,7 @@ typedef long long int64_t;
 typedef uint64_t loff_t;
 
 typedef uint32_t dev_t;
+typedef uint32_t umode_t;
 
 typedef unsigned long pid_t;
 typedef unsigned long mode_t;

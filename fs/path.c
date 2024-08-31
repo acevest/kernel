@@ -105,20 +105,20 @@ uint64_t compute_qstr_hash(qstr_t *q) {
 }
 
 int follow_down(dentry_t **dentry, vfsmount_t **vfsmnt) {
-    assert(*dentry != NULL);
-    assert(*vfsmnt != NULL);
+    // assert(*dentry != NULL);
+    // assert(*vfsmnt != NULL);
 
-    list_head_t *pos;
-    list_for_each(pos, &((*dentry)->d_vfsmnt)) {
-        vfsmount_t *tmp_mnt = list_entry(pos, vfsmount_t, mnt_clash);
-        if (*vfsmnt == tmp_mnt->mnt_parent) {
-            *vfsmnt = vfsmnt_get(tmp_mnt);
-            vfsmnt_put(tmp_mnt->mnt_parent);
+    // list_head_t *pos;
+    // list_for_each(pos, &((*dentry)->d_vfsmnt)) {
+    //     vfsmount_t *tmp_mnt = list_entry(pos, vfsmount_t, mnt_clash);
+    //     if (*vfsmnt == tmp_mnt->mnt_parent) {
+    //         *vfsmnt = vfsmnt_get(tmp_mnt);
+    //         vfsmnt_put(tmp_mnt->mnt_parent);
 
-            dentry_put(*dentry);
-            *dentry = dentry_get(tmp_mnt->mnt_root);
-        }
-    }
+    //         dentry_put(*dentry);
+    //         *dentry = dentry_get(tmp_mnt->mnt_root);
+    //     }
+    // }
 }
 
 int path_walk(const char *path, namei_t *ni) {

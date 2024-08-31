@@ -55,6 +55,7 @@
     })
 
 void *kmalloc(size_t size, gfp_t gfpflags);
+void *kzalloc(size_t size, gfp_t gfpflags);
 void kfree(void *addr);
 
 #define panic(msg, ...)                                                                                         \
@@ -77,7 +78,7 @@ extern char etext, edata, end;
 #define disableIRQ() cli()
 #define enableIRQ() sti()
 
-#define ALIGN(x, a) (((x) + (a)-1) & ~((a)-1))
+#define ALIGN(x, a) (((x) + (a) - 1) & ~((a) - 1))
 
 // 定义最大显存为 16MB
 #define VRAM_VADDR_SIZE (16 << 20)
@@ -268,6 +269,20 @@ extern volatile int reenter;
 
 #define DEFAULT_BOOT_DELAY_TICKS 30
 void boot_delay(int ticks);
+
+#endif
+
+#define MAX_ERRNO 4095
+
+#ifndef ASM
+
+#define IS_ERR_VALUE(x) (((unsigned long)(x)) >= ((unsigned long)(-MAX_ERRNO)))
+
+static inline void *ERR_PTR(long err) { return ((void *)(err)); }
+
+static inline long PTR_ERR(void *p) { return ((long)(p)); }
+
+static inline bool IS_ERR(void *p) { return IS_ERR_VALUE(p); }
 
 #endif
 

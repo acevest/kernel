@@ -73,6 +73,14 @@ err:
 
 void *kmem_cache_alloc(kmem_cache_t *cache, gfp_t gfpflags) { return slub_alloc(cache, gfpflags); }
 
+void *kmem_cache_zalloc(kmem_cache_t *cache, gfp_t gfpflags) {
+    void *p = slub_alloc(cache, gfpflags);
+    if (0 != p) {
+        memset(p, 0, cache->objsize);
+    }
+    return p;
+}
+
 void kmem_cache_free(kmem_cache_t *cache, void *addr) {
     page_t *page = 0;
 
@@ -119,6 +127,15 @@ void *kmalloc(size_t size, gfp_t gfpflags) {
     }
 
     return addr;
+}
+
+void *kzalloc(size_t size, gfp_t gfpflags) {
+    void *p = kmalloc(size, gfpflags);
+    if (0 != p) {
+        memset(p, 0, size);
+    }
+
+    return p;
 }
 
 void kfree(void *addr) {

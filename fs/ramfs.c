@@ -13,14 +13,6 @@
 #include "mm.h"
 #include "string.h"
 #include "system.h"
-#include "vfs.h"
-
-superblock_t *ramfs_read_super(superblock_t *sb, void *data);
-fs_type_t ramfs_type = {
-    .name = "ramfs",
-    .read_super = ramfs_read_super,
-    .next = 0,
-};
 
 typedef struct ramfs_superblock {
     //
@@ -33,8 +25,97 @@ typedef struct ramfs_dentry {
 
 typedef struct ramfs_inode {
     // d
+    inode_t vfs_inode;
 } ramfs_inode_t;
 
-void ramfs_init() { vfs_register_filesystem(&ramfs_type); }
+static kmem_cache_t *g_ramfs_inode_cache = 0;
 
-superblock_t *ramfs_read_super(superblock_t *sb, void *data) { return sb; }
+// static inode_t *ramfs_alloc_inode(superblock_t *sb) {
+//     ramfs_inode_t *inode = kmem_cache_alloc(g_ramfs_inode_cache, 0);
+//     assert(inode != 0);
+
+//     return &(inode->vfs_inode);
+// }
+
+static const file_operations_t ramfs_file_operations = {
+    .read = 0,
+};
+
+static const inode_operations_t ramfs_file_inode_operations = {
+
+};
+
+static const inode_operations_t ramfs_dir_inode_operations = {
+
+};
+
+inode_t *ramfs_get_inode(superblock_t *sb, umode_t mode, dev_t dev) {
+    inode_t *inode = alloc_inode(sb);
+
+    if (NULL == inode) {
+        return inode;
+    }
+
+    inode->i_mode = mode;
+
+    switch (mode & S_IFMT) {
+    case S_IFREG:
+        // panic("S_IFREG: not implement");
+        inode->i_fops = &ramfs_file_operations;
+        inode->i_ops = &ramfs_file_inode_operations;
+        break;
+    case S_IFDIR:
+        panic("S_IFDIR: not implement");
+        inode->i_fops = &simple_dir_operations;
+        inode->i_ops = &ramfs_dir_inode_operations;
+        break;
+    case S_IFLNK:
+        panic("S_IFLNK: not implement");
+        break;
+    default:
+        init_special_inode(inode, mode, dev);
+        break;
+    }
+
+    return NULL;
+}
+
+static sb_operations_t ramfs_ops = {
+    // .alloc_inode = ramfs_alloc_inode,
+};
+
+int ramfs_fill_super_cb(superblock_t *sb, void *data) {
+    int err = 0;
+
+    // assert(sb->sb_ops != NULL);
+    inode_t *fs_root_inode = ramfs_get_inode(sb, S_IFDIR, 0);
+    assert(fs_root_inode != NULL);
+
+    dentry_t *fs_root_dentry = 0;
+    fs_root_dentry = dentry_alloc_root(fs_root_inode);
+    assert(fs_root_dentry != NULL);
+
+    sb->sb_root = fs_root_dentry;
+
+    return err;
+}
+
+int ramfs_read_super(fs_type_t *type, int flags, const char *name, void *data, vfsmount_t *mnt) {
+    int ret = 0;
+
+    ret = read_super_for_nodev(type, flags, data, ramfs_fill_super_cb, mnt);
+
+    return ret;
+}
+
+fs_type_t ramfs_type = {
+    .name = "ramfs",
+    .read_super = ramfs_read_super,
+    .next = 0,
+};
+
+void ramfs_init() {
+    vfs_register_filesystem(&ramfs_type);
+    g_ramfs_inode_cache = kmem_cache_create("ramfs_inode_cache", sizeof(ramfs_inode_t), 4);
+    assert(0 != g_ramfs_inode_cache);
+}
