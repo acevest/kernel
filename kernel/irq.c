@@ -336,3 +336,8 @@ int disable_no_irq_chip(unsigned int irq) { return 0; }
 
 irq_chip_t no_irq_chip = {.name = "none", .enable = enable_no_irq_chip, .disable = disable_no_irq_chip};
 irq_desc_t no_irq_desc = {.chip = &no_irq_chip, .action = NULL, .status = 0, .depth = 0};
+
+// 单CPU
+static volatile uint32_t __critical_zone_eflags;
+void enter_critical_zone() { irq_save(__critical_zone_eflags); }
+void exit_critical_zone() { irq_restore(__critical_zone_eflags); }
