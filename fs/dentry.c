@@ -26,11 +26,17 @@ dentry_hash_entry_t dentry_hash_table[DENTRY_HASH_TABLE_SIZE] = {
 };
 
 uint32_t mod64(uint64_t x, uint32_t y) {
+#if 1
+    // TODO FIXME
+    uint32_t d = (uint32_t)x;
+    return d % y;
+#else
     uint32_t mod;
 
     asm("div %3;" : "=d"(mod) : "a"((uint32_t)x), "d"((uint32_t)(x >> 32)), "r"(y) : "cc");
 
     return mod;
+#endif
 }
 
 dentry_t *dentry_alloc(dentry_t *parent, const qstr_t *s) {
@@ -50,6 +56,7 @@ dentry_t *dentry_alloc(dentry_t *parent, const qstr_t *s) {
 
     dentry->d_name.len = 0;
     dentry->d_name.name = 0;
+    dentry->d_name = *s;
 
     memcpy(dentry->d_inline_name, s->name, s->len);
     dentry->d_inline_name[s->len] = 0;
@@ -90,11 +97,43 @@ dentry_t *dentry_alloc_root(inode_t *root_inode) {
     return dentry;
 }
 
-dentry_t *dentry_cached_lookup(dentry_t *parent, qstr_t *s) {
-    int index = mod64(s->hash, DENTRY_HASH_TABLE_SIZE);
+dentry_hash_entry_t *dentry_hash(dentry_t *parent, uint64_t hash) {
+    int index = mod64(hash, DENTRY_HASH_TABLE_SIZE);
     assert(index < DENTRY_HASH_TABLE_SIZE);
 
     dentry_hash_entry_t *dhe = dentry_hash_table + index;
+
+    assert(dhe != NULL);
+    assert(dhe >= dentry_hash_table);
+    assert(dhe < dentry_hash_table + DENTRY_HASH_TABLE_SIZE);
+
+    return dhe;
+}
+
+void dentry_attach_inode(dentry_t *dentry, inode_t *inode) {
+    assert(dentry != NULL);
+    // assert(inode != NULL);
+
+    dentry->d_inode = inode;
+}
+
+void dentry_rehash(dentry_t *dentry) {
+    dentry_hash_entry_t *dhe = dentry_hash(dentry->d_parent, dentry->d_name.hash);
+
+    mutex_lock(&dhe->mutex);
+
+    list_add(&dentry->d_hash, &dhe->list);
+
+    mutex_unlock(&dhe->mutex);
+}
+
+void dentry_add(dentry_t *dentry, inode_t *inode) {
+    dentry_attach_inode(dentry, inode);
+    dentry_rehash(dentry);
+}
+
+dentry_t *dentry_cached_lookup(dentry_t *parent, qstr_t *s) {
+    dentry_hash_entry_t *dhe = dentry_hash(parent, s->hash);
 
     dentry_t *dentry = NULL;
 
@@ -123,7 +162,8 @@ dentry_t *dentry_cached_lookup(dentry_t *parent, qstr_t *s) {
 
         dentry_get_locked(dentry);
 
-        break;
+        mutex_unlock(&dhe->mutex);
+        return dentry;
     }
 
     mutex_unlock(&dhe->mutex);
@@ -152,10 +192,13 @@ int dentry_real_lookup(dentry_t *parent, qstr_t *s, dentry_t **dentry) {
     if (new_dentry == NULL) {
         ret = -ENOMEM;
     } else {
+        assert(dir->i_ops != NULL);
+        assert(dir->i_ops->lookup != NULL);
+        printk(">>>>>> %x %x\n", dir->i_ops, dir->i_ops->lookup);
         *dentry = dir->i_ops->lookup(dir, new_dentry);
         // 返回 lookup 没有再分配一个dentry
         // 否则就释放dentry_new使用lookup返回的dentry
-        if (dentry == NULL) {
+        if (*dentry == NULL) {
             *dentry = new_dentry;
         } else {
             dentry_put(new_dentry);
@@ -191,9 +234,13 @@ dentry_t *dentry_get(dentry_t *dentry) {
     return dentry;
 }
 
-void dentry_get_locked(dentry_t *dentry) {}
+void dentry_get_locked(dentry_t *dentry) {
+    //
+}
 
-void dentry_put(dentry_t *dentry) { panic("todo"); }
+void dentry_put(dentry_t *dentry) {
+    //
+}
 
 // static __inline__ struct dentry * dget(struct dentry *dentry)
 // {

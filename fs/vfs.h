@@ -264,6 +264,8 @@ dentry_t *dentry_cached_lookup(dentry_t *parent, qstr_t *s);
 int dentry_real_lookup(dentry_t *parent, qstr_t *s, dentry_t **dentry);
 dentry_t *dentry_alloc_root(inode_t *root_inode);
 dentry_t *dentry_alloc(dentry_t *parent, const qstr_t *s);
+void dentry_add(dentry_t *dentry, inode_t *inode);
+void dentry_attach_inode(dentry_t *dentry, inode_t *inode);
 
 vfsmount_t *vfsmnt_get(vfsmount_t *m);
 void vfsmnt_put(vfsmount_t *m);

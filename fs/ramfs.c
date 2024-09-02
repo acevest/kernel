@@ -9,6 +9,7 @@
 
 #include "ramfs.h"
 
+#include "errno.h"
 #include "fs.h"
 #include "mm.h"
 #include "string.h"
@@ -30,6 +31,8 @@ typedef struct ramfs_inode {
 
 static kmem_cache_t *g_ramfs_inode_cache = 0;
 
+inode_t *ramfs_get_inode(superblock_t *sb, umode_t mode, dev_t dev);
+
 // static inode_t *ramfs_alloc_inode(superblock_t *sb) {
 //     ramfs_inode_t *inode = kmem_cache_alloc(g_ramfs_inode_cache, 0);
 //     assert(inode != 0);
@@ -49,14 +52,32 @@ static const file_operations_t ramfs_dir_operations = {
 
 };
 
-int ramfs_mkdir(inode_t *, dentry_t *, int) {
+int ramfs_mkdir(inode_t *dir, dentry_t *dentry, int mode) {
     int ret = 0;
+
+    inode_t *inode = NULL;
+
+    inode = ramfs_get_inode(dir->i_sb, mode | S_IFDIR, 0);
+    if (inode == NULL) {
+        return -ENOSPC;
+    }
+
+    dentry_attach_inode(dentry, inode);
+
+    dentry_get(dentry);
 
     return ret;
 }
 
+dentry_t *ramfs_lookup(inode_t *dir, dentry_t *dentry) {
+    dentry_add(dentry, NULL);
+
+    return NULL;
+}
+
 static const inode_operations_t ramfs_dir_inode_operations = {
     .mkdir = ramfs_mkdir,
+    .lookup = ramfs_lookup,
 };
 
 inode_t *ramfs_get_inode(superblock_t *sb, umode_t mode, dev_t dev) {

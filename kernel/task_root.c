@@ -164,6 +164,16 @@ void taskC_entry() {
 void root_task_entry() {
     sti();
 
+    extern __attribute__((regparm(0))) long sysc_mkdir(const char *path, int mode);
+    sysc_mkdir("/root", 0777);
+
+    {
+        namei_t ni;
+        const char *path = "/root";
+        path_init(path, 0, &ni);
+        path_walk(path, &ni);
+    }
+
     // 有一点点垃圾事情需要处理
     // 之前内核初始化都是在关中断下进行的
     // 这就段时间有可能按键盘，然而键盘不把数据读出来就不会触发下一次中断

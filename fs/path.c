@@ -14,6 +14,9 @@
 #include <vfs.h>
 
 bool path_init(const char *path, unsigned int flags, namei_t *ni) {
+    ni->flags = flags;
+    ni->last_type = LAST_ROOT;
+
     if (path == NULL) {
         return false;
     }
@@ -107,6 +110,8 @@ uint64_t compute_qstr_hash(qstr_t *q) {
 
     q->hash += q->hash >> (4 * sizeof(q->hash));
 
+    q->hash &= 0x00000000FFFFFFFF;
+
     return q->hash;
 }
 
@@ -128,7 +133,7 @@ int follow_down(dentry_t **dentry, vfsmount_t **vfsmnt) {
 }
 
 int path_walk(const char *path, namei_t *ni) {
-    dentry_t *dentry;
+    dentry_t *dentry = NULL;
     int ret = 0;
     if (path == NULL) {
         return -EINVAL;
@@ -152,7 +157,6 @@ int path_walk(const char *path, namei_t *ni) {
     while (true) {
         qstr_t this;
         this.name = path;
-
         do {
             path++;
         } while (*path != 0 && (*path != '/'));
@@ -242,6 +246,11 @@ int path_walk(const char *path, namei_t *ni) {
     last_file_name_with_slash:
         path_lookup_flags |= PATH_LOOKUP_DIRECTORY;
     last_file_name:
+
+        // 计算当前文件名的hash
+        compute_qstr_hash(&this);
+        printk("HASH %s %lu\n", this.name, this.hash);
+
         if (path_lookup_flags & PATH_LOOKUP_PARENT) {
             ni->last = this;
             ni->last_type = LAST_NORMAL;
@@ -265,8 +274,9 @@ int path_walk(const char *path, namei_t *ni) {
             goto ok;
         }
 
-        // 计算当前文件名的hash
-        compute_qstr_hash(&this);
+        // // 计算当前文件名的hash
+        // compute_qstr_hash(&this);
+        // printk("HASH %s %lu\n", this.name, this.hash);
 
         // 根据该名字，先上dentry cache里找
         dentry = dentry_cached_lookup(ni->path.dentry, &this);
