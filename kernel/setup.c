@@ -58,6 +58,9 @@ void setup_kernel() {
 
     init_buffer();
 
+    void init_mount();
+    init_mount();
+
     // printk("kernel: %08x - %08x\n", system.kernel_begin, system.kernel_end);
     boot_delay(DEFAULT_BOOT_DELAY_TICKS);
 
@@ -70,8 +73,13 @@ void setup_kernel() {
     const char *title = "KERNEL MONITOR";
     printlxy(MPL_TITLE, (80 - strlen(title)) / 2, title);
 
+    setup_fs();
+
     setup_tasks();
     boot_delay(DEFAULT_BOOT_DELAY_TICKS);
+
+    void mount_root();
+    mount_root();
 
     setup_pci();
     boot_delay(DEFAULT_BOOT_DELAY_TICKS);

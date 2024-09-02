@@ -29,6 +29,45 @@ typedef struct dentry_operations dentry_operations_t;
 typedef struct vfsmount vfsmount_t;
 typedef struct path path_t;
 
+struct path {
+    dentry_t *dentry;
+    vfsmount_t *mnt;
+};
+
+#define PATH_LOOKUP_PARENT /*    */ 0x00000001
+#define PATH_LOOKUP_DIRECTORY /* */ 0x00000002
+#define PATH_LOOKUP_MUST_HAVE_INODE 0x00000004
+
+enum {
+    LAST_FORGET_INIT = 0,
+    LAST_NORMAL = 1,
+    LAST_ROOT,
+    LAST_DOT,
+    LAST_DOTDOT,
+};
+
+typedef struct namei {
+    path_t path;
+    qstr_t last;
+    uint32_t last_type;
+    uint32_t flags;
+} namei_t;
+
+typedef struct file file_t;
+
+typedef struct file_operations {
+    int (*open)(inode_t *, file_t *);
+    int (*release)(inode_t *, file_t *);
+    ssize_t (*read)(file_t *, char *, size_t, loff_t *);
+    ssize_t (*write)(file_t *, const char *, size_t, loff_t *);
+} file_operations_t;
+
+struct file {
+    // 多个打开的文件可能是同一个文件
+    dentry_t *f_dentry;
+    file_operations_t *f_ops;
+};
+
 // super block
 typedef struct superblock {
     // 该超级起的根目录的 dentry
@@ -43,6 +82,8 @@ typedef struct superblock {
 
     list_head_t sb_list;
     list_head_t sb_instance;
+
+    dev_t sb_dev;
 } superblock_t;
 
 // dentry和inode为什么不合二为一？
@@ -77,7 +118,12 @@ struct inode {
     umode_t i_mode;  // FILE DIR CHR BLK FIFO SOCK
 };
 
+// d_flags
+#define DENTRY_FLAGS_MOUNTED 0x01
+
+// d_inline_name
 #define DENTRY_INLINE_NAME_LEN 16
+
 struct dentry {
     // char *d_name;
     uint32_t d_flags;
@@ -132,8 +178,22 @@ struct sb_operations {
 
 // };
 struct inode_operations {
-    //
-    dentry_t *(*lookup)(inode_t *i, dentry_t *d);
+    // 用于在inode下找一个dentry->d_small_name的目录项
+    dentry_t *(*lookup)(inode_t *, dentry_t *);
+
+    // 在inode下创建一个dentry->d_small_name的文件
+    int (*create)(inode_t *, dentry_t *, int, namei_t *);
+
+    // 创建文件夹
+    int (*mkdir)(inode_t *, dentry_t *, int);
+
+    // link
+    // unlink
+    // symlink
+    // link 是普通连接 symlink是符号连接
+    // 连接是指一个节点(文件或目录项)直接指向另一个节点，成为为该节点的一个代表
+    // link必需处于同一个设备上，必需连接到一个真实的文件上
+    // symlink可以处于不同的设备上，可以悬空，也就是没有连接到真实的文件上
 };
 
 struct dentry_operations {
@@ -143,11 +203,6 @@ struct dentry_operations {
     // d_release 关闭文件
     // d_delete 删除文件
     //
-};
-
-struct path {
-    dentry_t *dentry;
-    vfsmount_t *mount;
 };
 
 // 每当将一个存储设备安装到现有文件系统中的某个节点时，内核就要为之建立一个vfsmount结构
@@ -198,7 +253,7 @@ struct fs_type {
 extern superblock_t *root_sb;
 
 int vfs_register_filesystem(fs_type_t *fs);
-
+fs_type_t *vfs_find_filesystem(const char *name);
 /////
 
 inode_t *alloc_inode(superblock_t *sb);
@@ -208,6 +263,7 @@ void init_special_inode(inode_t *inode, umode_t mode, dev_t rdev);
 dentry_t *dentry_cached_lookup(dentry_t *parent, qstr_t *s);
 int dentry_real_lookup(dentry_t *parent, qstr_t *s, dentry_t **dentry);
 dentry_t *dentry_alloc_root(inode_t *root_inode);
+dentry_t *dentry_alloc(dentry_t *parent, const qstr_t *s);
 
 vfsmount_t *vfsmnt_get(vfsmount_t *m);
 void vfsmnt_put(vfsmount_t *m);
@@ -219,3 +275,8 @@ void dentry_put(dentry_t *dentry);
 
 /////
 extern const file_operations_t simple_dir_operations;
+
+//
+bool path_init(const char *path, unsigned int flags, namei_t *ni);
+int path_walk(const char *path, namei_t *ni);
+dentry_t *path_lookup_create(namei_t *ni);

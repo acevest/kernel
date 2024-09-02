@@ -48,6 +48,9 @@ void setup_fs() {
     void dentry_cache_init();
     dentry_cache_init();
 
+    void ramfs_init();
+    ramfs_init();
+
     void init_mount();
     init_mount();
 }

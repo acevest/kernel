@@ -77,11 +77,8 @@ typedef union task_union {
 
         task_files_t files;
 
-        dentry_t *dentry_root;
-        dentry_t *dentry_pwd;
-
-        vfsmount_t *mnt_root;
-        vfsmount_t *mnt_pwd;
+        path_t root;
+        path_t pwd;
 
         list_head_t list;  // 所有进程串成一个链表
 

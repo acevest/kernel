@@ -45,8 +45,18 @@ static const inode_operations_t ramfs_file_inode_operations = {
 
 };
 
-static const inode_operations_t ramfs_dir_inode_operations = {
+static const file_operations_t ramfs_dir_operations = {
 
+};
+
+int ramfs_mkdir(inode_t *, dentry_t *, int) {
+    int ret = 0;
+
+    return ret;
+}
+
+static const inode_operations_t ramfs_dir_inode_operations = {
+    .mkdir = ramfs_mkdir,
 };
 
 inode_t *ramfs_get_inode(superblock_t *sb, umode_t mode, dev_t dev) {
@@ -65,8 +75,8 @@ inode_t *ramfs_get_inode(superblock_t *sb, umode_t mode, dev_t dev) {
         inode->i_ops = &ramfs_file_inode_operations;
         break;
     case S_IFDIR:
-        panic("S_IFDIR: not implement");
-        inode->i_fops = &simple_dir_operations;
+        // panic("S_IFDIR: not implement");
+        inode->i_fops = &ramfs_dir_operations;
         inode->i_ops = &ramfs_dir_inode_operations;
         break;
     case S_IFLNK:
@@ -77,7 +87,7 @@ inode_t *ramfs_get_inode(superblock_t *sb, umode_t mode, dev_t dev) {
         break;
     }
 
-    return NULL;
+    return inode;
 }
 
 static sb_operations_t ramfs_ops = {

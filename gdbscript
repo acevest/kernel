@@ -8,10 +8,12 @@ set confirm off
 
 #break *0x100000
 
-b block.c:63
+#b block.c:63
 #b task_disk.c:94
 
 #handle SIGINT nostop noprint
+
+b root_task_entry
 
 target remote localhost:1234
 

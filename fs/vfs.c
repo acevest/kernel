@@ -65,16 +65,16 @@ fs_type_t *vfs_find_filesystem(const char *name) {
     return NULL;
 }
 
-void ramfs_init();
-void vfs_init() {
-    ramfs_init();
-    fs_type_t *fs = vfs_find_filesystem("ramfs");
-    if (NULL == fs) {
-        panic("no ramfs");
-    }
+// void ramfs_init();
+// void vfs_init() {
+//     ramfs_init();
+//     fs_type_t *fs = vfs_find_filesystem("ramfs");
+//     if (NULL == fs) {
+//         panic("no ramfs");
+//     }
 
-    // superblock_t *sb = fs->read_super(NULL, NULL);
-}
+//     // superblock_t *sb = fs->read_super(NULL, NULL);
+// }
 
 /////////
 vfsmount_t *vfsmnt_get(vfsmount_t *m) {

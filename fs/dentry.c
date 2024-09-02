@@ -15,7 +15,7 @@
 #include <vfs.h>
 #define DENTRY_HASH_TABLE_SIZE 233
 
-static kmem_cache_t *dentry_kmem_cache = NULL;
+static kmem_cache_t *g_dentry_kmem_cache = NULL;
 typedef struct {
     list_head_t list;
     mutex_t mutex;
@@ -40,7 +40,7 @@ dentry_t *dentry_alloc(dentry_t *parent, const qstr_t *s) {
     assert(s->len > 0);
     assert(s->len < DENTRY_INLINE_NAME_LEN - 1);
 
-    dentry = kmem_cache_zalloc(dentry_kmem_cache, 0);
+    dentry = kmem_cache_zalloc(g_dentry_kmem_cache, 0);
     if (dentry == NULL) {
         panic("no mem for dentry");
         return dentry;
@@ -128,20 +128,23 @@ dentry_t *dentry_cached_lookup(dentry_t *parent, qstr_t *s) {
 
     mutex_unlock(&dhe->mutex);
 
-    return dentry;
+    return NULL;
 }
 int dentry_real_lookup(dentry_t *parent, qstr_t *s, dentry_t **dentry) {
     *dentry = NULL;
     int ret = 0;
 
-    down(&parent->d_inode->i_sem);
+    assert(parent->d_inode != NULL);
+    inode_t *dir = parent->d_inode;
+
+    down(&dir->i_sem);
 
     // 在获得信号量后，需要再上cache中查找一遍
     // 因为这个过程中当前进程可能会睡眠，当被唤醒后，其它进程已经在内存准备好了
     *dentry = dentry_cached_lookup(parent, s);
 
     if (NULL != *dentry) {
-        up(&parent->d_inode->i_sem);
+        up(&dir->i_sem);
         return ret;
     }
 
@@ -149,22 +152,29 @@ int dentry_real_lookup(dentry_t *parent, qstr_t *s, dentry_t **dentry) {
     if (new_dentry == NULL) {
         ret = -ENOMEM;
     } else {
-        *dentry = parent->d_inode->i_ops->lookup(parent->d_inode, new_dentry);
-
-        // 如果找到了，刚分配的，就不用了
-        if (*dentry != NULL) {
+        *dentry = dir->i_ops->lookup(dir, new_dentry);
+        // 返回 lookup 没有再分配一个dentry
+        // 否则就释放dentry_new使用lookup返回的dentry
+        if (dentry == NULL) {
+            *dentry = new_dentry;
+        } else {
             dentry_put(new_dentry);
         }
+        // if (ret == 0) {  // 返回0才代表成功
+        //     *dentry = new_dentry;
+        // } else {
+        //     dentry_put(new_dentry);
+        // }
     }
 
-    up(&parent->d_inode->i_sem);
+    up(&dir->i_sem);
 
     return ret;
 }
 
 void dentry_cache_init() {
-    kmem_cache_t *dentry_kmem_cache = kmem_cache_create("dentry_cache", sizeof(dentry_t), 4);
-    if (NULL == dentry_kmem_cache) {
+    g_dentry_kmem_cache = kmem_cache_create("dentry_cache", sizeof(dentry_t), 4);
+    if (NULL == g_dentry_kmem_cache) {
         panic("create dentry cache faild");
     }
 

@@ -32,18 +32,31 @@ static superblock_t *alloc_super(fs_type_t *type) {
     return s;
 }
 
+static uint32_t __minor = 0;
+int set_anonymous_super(superblock_t *s, void *data) {
+    s->sb_dev = MAKE_DEV(0, ++__minor);
+    return 0;
+}
+
 int read_super_for_nodev(fs_type_t *type, int flags, void *data, fill_super_cb_t fill_super, vfsmount_t *mnt) {
     int ret = 0;
     superblock_t *s = 0;
 
     // 分配superblock
+    s = sget(type, NULL, set_anonymous_super, NULL);
+
+    assert(s != NULL);
 
     //
     s->sb_flags = flags;
 
     ret = fill_super(s, data);
     if (0 != ret) {
+        panic("ret: %d", ret);
     }
+
+    mnt->mnt_sb = s;
+    mnt->mnt_root = dentry_get(s->sb_root);
 
     return ret;
 }

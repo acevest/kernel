@@ -13,6 +13,7 @@
 #include "mm.h"
 #include "string.h"
 #include "system.h"
+#include "task.h"
 
 kmem_cache_t *vfsmount_kmem_cache = 0;
 
@@ -105,4 +106,19 @@ void init_mount() {
         }
     }
     assert(bit1_cnt == 1);
+}
+
+void mount_root() {
+    fs_type_t *type = vfs_find_filesystem("ramfs");
+    assert(type != NULL);
+
+    vfsmount_t *mnt = vfs_kernel_mount(type, 0, "ramfs", NULL);
+    assert(mnt != NULL);
+
+    assert(mnt->mnt_root != NULL);
+
+    current->root.mnt = mnt;
+    current->root.dentry = mnt->mnt_root;
+    current->pwd.mnt = mnt;
+    current->pwd.dentry = mnt->mnt_root;
 }

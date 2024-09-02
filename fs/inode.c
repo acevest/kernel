@@ -34,7 +34,7 @@ inode_t *alloc_inode(superblock_t *sb) {
     static file_operations_t empty_fops;
     static inode_operations_t empty_iops;
     inode->i_sb = sb;
-    // inode->i_sem;
+    semaphore_init(&inode->i_sem, 1);
     inode->i_fops = &empty_fops;
     inode->i_ops = &empty_iops;
     inode->i_size = 0;

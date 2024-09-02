@@ -19,18 +19,23 @@ bool path_init(const char *path, unsigned int flags, namei_t *ni) {
     }
 
     if (*path == '/') {
-        ni->mnt = current->mnt_root;
-        ni->dentry = current->dentry_root;
+        // ni->path.mnt = current->mnt_root;
+        // ni->path.dentry = current->dentry_root;
+        ni->path = current->root;
         return true;
     }
 
-    ni->mnt = current->mnt_pwd;
-    ni->dentry = current->dentry_pwd;
+    // ni->path.mnt = current->mnt_pwd;
+    // ni->path.dentry = current->dentry_pwd;
+    ni->path = current->pwd;
 
     return true;
 }
 
 void follow_dotdot(namei_t *ni) {
+#if 1
+    panic("not supported");
+#else
     while (1) {
         dentry_t *dentry = NULL;
         vfsmount_t *parent = NULL;
@@ -90,6 +95,7 @@ void follow_dotdot(namei_t *ni) {
         // 分别产生 vfsmnt_a vfsmnt_b
         // 这两个vfsmnt都会挂载到dentry->d_vfsmnt链表上
     }
+#endif
 }
 
 uint64_t compute_qstr_hash(qstr_t *q) {
@@ -139,7 +145,9 @@ int path_walk(const char *path, namei_t *ni) {
     }
 
     // 拿到当前目录的 inode
-    inode_t *inode = ni->dentry->d_inode;
+    inode_t *inode = ni->path.dentry->d_inode;
+
+    uint32_t path_lookup_flags = ni->flags;
 
     while (true) {
         qstr_t this;
@@ -147,13 +155,13 @@ int path_walk(const char *path, namei_t *ni) {
 
         do {
             path++;
-        } while (*path && (*path != '/'));
+        } while (*path != 0 && (*path != '/'));
 
         this.len = path - this.name;
 
         // 看是不是路径的最后一个文件名
         if (*path == 0) {
-            // 当前是最后一个文件名，且文件名结尾没有带上 '/'
+            goto last_file_name;
         }
 
         // 继续解析路径，此时this.name肯定带上了 '/'，现在就是要确定它是不是最后一个文件名
@@ -165,6 +173,7 @@ int path_walk(const char *path, namei_t *ni) {
         // 若路径是以'/'结尾的，则肯定是最后一个文件名
         // 但这种情况下，最后这个文件名必需是文件夹名
         if (*path == 0) {
+            goto last_file_name_with_slash;
         }
 
         // 若除了'/'又遇到了其它字符，则代表当前不是最后一个文件名
@@ -177,7 +186,7 @@ int path_walk(const char *path, namei_t *ni) {
             } else if (this.len == 2 && this.name[1] == '.') {
                 // 跳到父目录
                 follow_dotdot(ni);
-                inode = ni->dentry->d_inode;
+                inode = ni->path.dentry->d_inode;
                 continue;
             }
         }
@@ -186,25 +195,169 @@ int path_walk(const char *path, namei_t *ni) {
         compute_qstr_hash(&this);
 
         // 根据该名字，先上dentry cache里找
-        dentry = dentry_cached_lookup(ni->dentry, &this);
+        dentry = dentry_cached_lookup(ni->path.dentry, &this);
 
         // 如果找不到就上实际存储设备中去找
         if (NULL == dentry) {
-            ret = dentry_real_lookup(ni->dentry, &this, &dentry);
+            ret = dentry_real_lookup(ni->path.dentry, &this, &dentry);
             if (0 != ret) {
                 break;
             }
         }
 
-        // 找到了，先看看它是不是一个挂载点
-        while (!list_empty(&dentry->d_vfsmnt)) {
-            // 如果是一个挂载点，则更进一步
-
-            // 这种解决的是先将/a 挂载到 /b
-            // 再将/b挂载到/c
-            // 读/c时，直接读到/a的dentry
+        // 找到了，先看其是不是一个挂载点
+        // TODO
+        if (dentry->d_flags & DENTRY_FLAGS_MOUNTED) {
+            panic("not supported");
         }
+
+        // 不是挂载点 或已经处理完了挂载点
+        ret = -ENOENT;
+        inode = dentry->d_inode;
+
+        if (inode == NULL) {
+            goto out_dput_entry;
+        }
+
+        ret = -ENOTDIR;
+        if (!S_ISDIR(inode->i_mode)) {
+            goto out_dput_entry;
+        }
+        if (inode->i_ops == NULL) {
+            goto out_dput_entry;
+        }
+
+        // TODO 判断 symlink
+        // ...
+
+        dentry_put(ni->path.dentry);
+        ni->path.dentry = dentry;
+        assert(inode->i_ops->lookup != NULL);
+
+        // 进入下轮解析
+        continue;
+
+        // ---------------- 以下处理其它逻辑 ----------------
+
+    last_file_name_with_slash:
+        path_lookup_flags |= PATH_LOOKUP_DIRECTORY;
+    last_file_name:
+        if (path_lookup_flags & PATH_LOOKUP_PARENT) {
+            ni->last = this;
+            ni->last_type = LAST_NORMAL;
+            if (this.len == 1 && this.name[0] == '.') {
+                ni->last_type = LAST_DOT;
+            }
+            if (this.len == 2 && this.name[0] == '.' && this.name[1] == '.') {
+                ni->last_type = LAST_DOTDOT;
+            }
+            goto ok;
+        }
+
+        // 最后一个文件名可能是 '.' 或 '..'
+        if (this.len == 1 && this.name[0] == '.') {
+            goto ok;
+        }
+
+        if (this.len == 2 && this.name[0] == '.' && this.name[1] == '.') {
+            follow_dotdot(ni);
+            inode = ni->path.dentry->d_inode;
+            goto ok;
+        }
+
+        // 计算当前文件名的hash
+        compute_qstr_hash(&this);
+
+        // 根据该名字，先上dentry cache里找
+        dentry = dentry_cached_lookup(ni->path.dentry, &this);
+
+        // 如果找不到就上实际存储设备中去找
+        if (NULL == dentry) {
+            ret = dentry_real_lookup(ni->path.dentry, &this, &dentry);
+            if (0 != ret) {
+                break;
+            }
+        }
+
+        // 找到了，先看其是不是一个挂载点
+        // TODO
+        if (dentry->d_flags & DENTRY_FLAGS_MOUNTED) {
+            panic("not supported");
+        }
+
+        inode = dentry->d_inode;
+        // TODO 判断 symlink
+        // ...
+
+        dentry_put(dentry);
+        ni->path.dentry = dentry;
+
+        ret = -ENOENT;
+        if (inode == NULL) {
+            if (path_lookup_flags & (PATH_LOOKUP_DIRECTORY | PATH_LOOKUP_MUST_HAVE_INODE)) {
+                goto end;
+            }
+
+            goto ok;
+        }
+
+        if (path_lookup_flags & PATH_LOOKUP_MUST_HAVE_INODE) {
+            ret = -ENOTDIR;
+            if (inode->i_ops == NULL || inode->i_ops->lookup == NULL) {
+                goto end;
+            }
+        }
+    ok:
+        return 0;
+    }
+out_dput_entry:
+    dentry_put(dentry);
+end:
+    return ret;
+}
+
+dentry_t *path_lookup_hash(dentry_t *base, qstr_t *name) {
+    dentry_t *dentry = NULL;
+
+    inode_t *inode = base->d_inode;
+
+    dentry = dentry_cached_lookup(base, name);
+    if (dentry != NULL) {
+        return dentry;
     }
 
-    return ret;
+    dentry_t *dentry_new = dentry_alloc(base, name);
+    if (dentry_new == NULL) {
+        dentry = ERR_PTR(-ENOMEM);
+        return dentry;
+    }
+
+    dentry = inode->i_ops->lookup(inode, dentry_new);
+
+    if (dentry == NULL) {  // 返回 lookup 没有再分配一个dentry
+        dentry = dentry_new;
+    } else {  // 否则就释放dentry_new使用lookup返回的dentry
+        dentry_put(dentry_new);
+    }
+
+    return dentry;
+}
+
+dentry_t *path_lookup_create(namei_t *ni) {
+    dentry_t *dentry = NULL;
+
+    // 在调用完path_lookup_create后调用 up 操作
+    down(&ni->path.dentry->d_inode->i_sem);
+
+    dentry = ERR_PTR(-EEXIST);
+    if (ni->last_type != LAST_NORMAL) {
+        return dentry;
+    }
+
+    dentry = path_lookup_hash(ni->path.dentry, &ni->last);
+    if (IS_ERR(dentry)) {
+        return dentry;
+    }
+
+    return dentry;
 }
