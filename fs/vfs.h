@@ -182,10 +182,10 @@ struct inode_operations {
     dentry_t *(*lookup)(inode_t *, dentry_t *);
 
     // 在inode下创建一个dentry->d_small_name的文件
-    int (*create)(inode_t *, dentry_t *, int, namei_t *);
+    int (*create)(inode_t *, dentry_t *, umode_t, namei_t *);
 
     // 创建文件夹
-    int (*mkdir)(inode_t *, dentry_t *, int);
+    int (*mkdir)(inode_t *, dentry_t *, umode_t);
 
     // link
     // unlink

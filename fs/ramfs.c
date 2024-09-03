@@ -52,12 +52,12 @@ static const file_operations_t ramfs_dir_operations = {
 
 };
 
-int ramfs_mkdir(inode_t *dir, dentry_t *dentry, int mode) {
+static int ramfs_mknod(inode_t *dir, dentry_t *dentry, umode_t mode) {
     int ret = 0;
 
     inode_t *inode = NULL;
 
-    inode = ramfs_get_inode(dir->i_sb, mode | S_IFDIR, 0);
+    inode = ramfs_get_inode(dir->i_sb, mode, 0);
     if (inode == NULL) {
         return -ENOSPC;
     }
@@ -69,15 +69,24 @@ int ramfs_mkdir(inode_t *dir, dentry_t *dentry, int mode) {
     return ret;
 }
 
-dentry_t *ramfs_lookup(inode_t *dir, dentry_t *dentry) {
+static int ramfs_create(inode_t *dir, dentry_t *dentry, umode_t mode, namei_t *ni) {
+    return ramfs_mknod(dir, dentry, mode | S_IFREG);
+}
+
+static int ramfs_mkdir(inode_t *dir, dentry_t *dentry, umode_t mode) {
+    return ramfs_mknod(dir, dentry, mode | S_IFDIR);
+}
+
+static dentry_t *ramfs_lookup(inode_t *dir, dentry_t *dentry) {
     dentry_add(dentry, NULL);
 
     return NULL;
 }
 
 static const inode_operations_t ramfs_dir_inode_operations = {
-    .mkdir = ramfs_mkdir,
     .lookup = ramfs_lookup,
+    .create = ramfs_create,
+    .mkdir = ramfs_mkdir,
 };
 
 inode_t *ramfs_get_inode(superblock_t *sb, umode_t mode, dev_t dev) {

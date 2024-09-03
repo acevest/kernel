@@ -92,7 +92,9 @@ dentry_t *dentry_alloc_root(inode_t *root_inode) {
         dentry->d_sb = root_inode->i_sb;
         dentry->d_parent = dentry;
     }
-    dentry->d_inode = root_inode;
+
+    // dentry->d_inode = root_inode;
+    dentry_add(dentry, root_inode);
 
     return dentry;
 }
