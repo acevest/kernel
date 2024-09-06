@@ -104,13 +104,13 @@ void follow_dotdot(namei_t *ni) {
 uint64_t compute_qstr_hash(qstr_t *q) {
     q->hash = 0;
     for (int i = 0; i < q->len; i++) {
-        uint64_t x = (uint64_t)(q->name[i]);
+        uint64_t c = (uint64_t)(q->name[i]);
+        uint64_t x = q->hash;
         q->hash = (x << 4) | (x >> (8 * sizeof(q->hash) - 4));
+        q->hash ^= c;
     }
 
     q->hash += q->hash >> (4 * sizeof(q->hash));
-
-    q->hash &= 0x00000000FFFFFFFF;
 
     return q->hash;
 }

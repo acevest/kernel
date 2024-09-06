@@ -28,9 +28,15 @@ dentry_hash_entry_t dentry_hash_table[DENTRY_HASH_TABLE_SIZE] = {
 uint32_t mod64(uint64_t x, uint32_t y) {
 #if 1
     // TODO FIXME
-    uint32_t d = (uint32_t)x;
-    return d % y;
-#else
+    uint32_t a = (uint32_t)x;
+    uint32_t b = (x >> 32);
+
+    a %= y;
+    b %= y;
+
+    return (a + b) % y;
+#endif
+#if 0
     uint32_t mod;
 
     asm("div %3;" : "=d"(mod) : "a"((uint32_t)x), "d"((uint32_t)(x >> 32)), "r"(y) : "cc");
