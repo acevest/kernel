@@ -8,8 +8,10 @@
  */
 
 #include <errno.h>
+#include <fcntl.h>
 #include <fs.h>
 #include <sched.h>
+#include <system.h>
 #include <types.h>
 #include <vfs.h>
 
@@ -370,4 +372,62 @@ dentry_t *path_lookup_create(namei_t *ni) {
     }
 
     return dentry;
+}
+
+int path_open_namei(const char *path, int flags, int mode, namei_t *ni) {
+    int ret = 0;
+    dentry_t *dentry = NULL;
+    dentry_t *dir = NULL;
+    inode_t *inode = NULL;
+
+    if (flags % O_CREAT == 0) {
+        path_init(path, flags, ni);
+        ret = path_walk(path, ni);
+        if (0 != ret) {
+            return ret;
+        }
+        dentry = ni->path.dentry;
+        goto ok;
+    }
+
+    path_init(path, PATH_LOOKUP_PARENT, ni);
+    ret = path_walk(path, ni);
+    if (0 != ret) {
+        return ret;
+    }
+
+    if (ni->last_type != LAST_NORMAL) {
+        ret = -EISDIR;
+        goto end;
+    }
+
+    dir = ni->path.dentry;
+    assert(NULL != dir);
+
+    down(&dir->d_inode->i_sem);
+
+    dentry = dentry_cached_lookup(dir, &ni->last);
+    if (IS_ERR(dentry)) {
+        ret = PTR_ERR(dentry);
+        up(&dir->d_inode->i_sem);
+        goto end;
+    }
+
+    if (NULL == dentry->d_inode) {
+        // vfs_create();
+        up(&dir->d_inode->i_sem);
+        dentry_put(ni->path.dentry);
+        goto ok;
+    }
+
+ok:
+    inode = dentry->d_inode;
+    if (NULL == inode) {
+        ret = -ENOENT;
+        goto end;
+    }
+
+end:
+
+    return ret;
 }

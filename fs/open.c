@@ -32,15 +32,13 @@ int get_unused_fd() {
     return -EMFILE;
 }
 
-file_t *filp_open(const char *path, int flags, mode_t mode) {
+file_t *filp_open(const char *path, int flags, int mode) {
     int ret = 0;
-
-    // ret = open_path(path, flags, mode, nd);
 
     return NULL;
 }
 
-int sysc_open(const char *path, int flags, mode_t mode) {
+int sysc_open(const char *path, int flags, int mode) {
     int fd = 0;
 
     fd = get_unused_fd();

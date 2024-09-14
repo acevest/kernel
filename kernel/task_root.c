@@ -166,6 +166,7 @@ void root_task_entry() {
 
     extern __attribute__((regparm(0))) long sysc_mkdir(const char *path, int mode);
     sysc_mkdir("/root", 0777);
+    sysc_mkdir("/root/aaa", 0777);
 
     {
         namei_t ni;

@@ -160,6 +160,8 @@ __attribute__((regparm(1))) void irq_handler(pt_regs_t *regs) {
         return;
     }
 
+    enable_irq();
+
     // 如果需要调度程序
     schedule();
 }

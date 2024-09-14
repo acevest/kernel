@@ -13,7 +13,7 @@ set confirm off
 
 #handle SIGINT nostop noprint
 
-b root_task_entry
+#b root_task_entry
 
 target remote localhost:1234
 
@@ -29,6 +29,9 @@ set pagination off
 
 #b setup_kernel
 #b e820_init_bootmem_data
+
+#b root_task_entry
+
 c
 
 

@@ -78,6 +78,9 @@ static int ramfs_mkdir(inode_t *dir, dentry_t *dentry, umode_t mode) {
 }
 
 static dentry_t *ramfs_lookup(inode_t *dir, dentry_t *dentry) {
+    // 不用上dir去找了，直接用dentry就可以了
+
+    // dentry对应的inode在ramfs_mkdir等里去分配的
     dentry_add(dentry, NULL);
 
     return NULL;
