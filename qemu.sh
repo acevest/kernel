@@ -31,6 +31,9 @@ qemu-system-i386 \
     -s -S \
     &
 
+    #-cpu qemu32,+apic \
+    #-cpu core2duo-v1,+apic \
+
 pid=$!
 echo "pid is ${pid}"
 

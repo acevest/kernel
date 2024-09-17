@@ -22,7 +22,7 @@ CC			= $(CROSS_PREFIX)gcc
 LD			= $(CROSS_PREFIX)ld
 
 CFLAGS		= -g -c -fno-builtin -m32 -DBUILDER='"$(shell whoami)"'
-# 指示编译器生成不依赖位置无关代码
+# 指示编译器禁止生成位置无关代码
 CFLAGS     += -fno-pic
 # 指示编译器在生成目标文件时不省略函数调用栈帧指针: frame pointer
 CFLAGS     += -fno-omit-frame-pointer

@@ -90,6 +90,7 @@ __attribute__((regparm(1))) void irq_handler(pt_regs_t *regs) {
     irq_desc_t *p = irq_desc + irq;
     irq_action_t *action = p->action;
 
+    // 在qemu启动后如果gdb有加断点，就很会一直触发中断重入
     reenter++;
     reenter_count += reenter == 0 ? 0 : 1;
     assert(irq_disabled());
@@ -159,6 +160,10 @@ __attribute__((regparm(1))) void irq_handler(pt_regs_t *regs) {
     if (current->need_resched == 0) {
         return;
     }
+
+    // if (irq != 0) {
+    //     return;
+    // }
 
     enable_irq();
 

@@ -101,7 +101,7 @@ void taskA_entry() {
     current->priority = 7;
 
     while (1) {
-        sysc_wait(7);
+        sysc_wait(37);
 
         uint64_t sect_nr = get_next_deubug_sect_nr();
         memset(disk_buf1, 0, 512);
@@ -128,7 +128,7 @@ void taskB_entry() {
     current->priority = 13;
 
     while (1) {
-        sysc_wait(7);
+        sysc_wait(73);
         uint64_t sect_nr = get_next_deubug_sect_nr();
         memset(disk_buf2, 0, 512);
         disk_request_t r;
