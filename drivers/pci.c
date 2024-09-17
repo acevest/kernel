@@ -143,6 +143,23 @@ pci_device_t *pci_find_device_by_classcode(unsigned int classcode) {
     return 0;
 }
 
+const char *pci_intr_pin(int pin) {
+    switch (pin) {
+    case 0:
+        return "NOINTPIN";
+    case 1:
+        return "INTA#";
+    case 2:
+        return "INTB#";
+    case 3:
+        return "INTC#";
+    case 4:
+        return "INTD#";
+    default:
+        return "ERRPIN";
+    }
+}
+
 void dump_pci_dev() {
     list_head_t *p;
     int i;
@@ -152,8 +169,9 @@ void dump_pci_dev() {
         // printk("vendor %04x device %04x class %04x:%02x bus %d intr %3d ", pci->vendor, pci->device, pci->classcode,
         //        pci->progif, pci->bus, pci->intr_line);
         // printk("%s\n", pci_get_info(pci->classcode, pci->progif));
-        printk("PCI %03d:%02d.%d %02X #%02d %04X:%04X %s\n", pci->bus, pci->dev, pci->devfn, pci->progif,
-               pci->intr_line, pci->vendor, pci->classcode, pci_get_info(pci->classcode, pci->progif));
+        printk("PCI %03d:%02d.%d %02X %s%02d %04X%02X %04X:%04X %s\n", pci->bus, pci->dev, pci->devfn, pci->progif,
+               pci_intr_pin(pci->intr_pin), pci->intr_line, pci->classcode, pci->progif, pci->vendor, pci->device,
+               pci_get_info(pci->classcode, pci->progif));
 #if 0
         switch (pci->hdr_type) {
         case PCI_HDRTYPE_NORMAL:
@@ -170,10 +188,10 @@ void dump_pci_dev() {
             break;
         }
 #else
-        // for (int bar_inx = 0; bar_inx < BARS_CNT; bar_inx++) {
-        //     printk("%08x ", pci->bars[bar_inx]);
-        // }
-        // printk("\n");
+        for (int bar_inx = 0; bar_inx < BARS_CNT; bar_inx++) {
+            printk("%08x ", pci->bars[bar_inx]);
+        }
+        printk("\n");
 #endif
     }
 }
