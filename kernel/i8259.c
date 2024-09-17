@@ -87,9 +87,9 @@ void mask_ack_i8259_irq(unsigned int irq) {
         // ...
 #else
         // Specific EOI to slave
-        outb(0x60 + (irq & 0x07), PIC_SLAVE_CMD);
+        outb(0x20 + (irq & 0x07), PIC_SLAVE_CMD);
         // Specific EOI to master
-        outb(0x60 + (PIC_CASCADE_IR & 0x07), PIC_MASTER_CMD);
+        outb(0x20 + (PIC_CASCADE_IR & 0x07), PIC_MASTER_CMD);
 #endif
     } else  // Master
     {
@@ -101,7 +101,7 @@ void mask_ack_i8259_irq(unsigned int irq) {
         // ...
 #else
         // Specific EOI to master
-        outb(0x60 + irq, PIC_MASTER_CMD);
+        outb(0x20 + irq, PIC_MASTER_CMD);
 #endif
     }
 }
@@ -115,9 +115,9 @@ void ack_i8259_irq(unsigned int irq) {
         // ...
 #else
         // Specific EOI to slave
-        outb(0x60 + (irq & 0x07), PIC_SLAVE_CMD);
+        outb(0x20 + (irq & 0x07), PIC_SLAVE_CMD);
         // Specific EOI to master
-        outb(0x60 + (PIC_CASCADE_IR & 0x07), PIC_MASTER_CMD);
+        outb(0x20 + (PIC_CASCADE_IR & 0x07), PIC_MASTER_CMD);
 #endif
     } else  // Master
     {
@@ -125,7 +125,7 @@ void ack_i8259_irq(unsigned int irq) {
         // ...
 #else
         // Specific EOI to master
-        outb(0x60 + irq, PIC_MASTER_CMD);
+        outb(0x20 + irq, PIC_MASTER_CMD);
 #endif
     }
 }

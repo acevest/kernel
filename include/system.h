@@ -267,7 +267,7 @@ void user_task_entry();
 
 extern volatile int reenter;
 
-#define DEFAULT_BOOT_DELAY_TICKS 30
+#define DEFAULT_BOOT_DELAY_TICKS 300
 void boot_delay(int ticks);
 
 #endif

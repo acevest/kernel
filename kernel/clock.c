@@ -75,6 +75,7 @@ void clk_handler(unsigned int irq, pt_regs_t *regs, void *dev_id) {
 // 后续放到一个内核任务中去做，需要先把禁止内核抢占做了
 const char *task_state(unsigned int state);
 void clk_bh_handler(void *arg) {
+
     task_t *p = 0;
     list_head_t *t = 0;
     list_head_t *pos = 0;
