@@ -466,9 +466,15 @@ void ata_dma_read_ext(int drv, uint64_t pos, uint16_t count, void *dest) {
     unsigned long dest_paddr = va2pa(dest);
 
     // 不能跨64K边界
+#if 1
     const uint32_t size = count * SECT_SIZE;
     const uint32_t _64K = 1 << 16;
-    assert(((dest_paddr + size) & _64K) == (dest_paddr & _64K));
+    assert(((dest_paddr & (_64K - 1)) + size) <= _64K);
+#else
+    const uint32_t size = count * SECT_SIZE;
+    const uint32_t _64K = 0xFFFF0000;
+    assert(((dest_paddr + size - (size == 0 ? 0 : 1)) & _64K) == (dest_paddr & _64K));
+#endif
 
     ide_ctrl->prdt[0].phys_addr = dest_paddr;
     ide_ctrl->prdt[0].byte_count = size;

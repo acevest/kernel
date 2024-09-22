@@ -37,9 +37,19 @@ void send_disk_request(disk_request_t *r) {
 
     // 校验buffer是否跨64K
     // 先不处理
-    if (((uint32_t)r->buf & 0xFFFF0000) != (((uint32_t)(r->buf + r->count * 512)) & 0xFFFF0000)) {
+
+#if 1
+    {
+        const uint32_t size = r->count * 512;
+        const uint32_t _64K = 1 << 16;
+        assert(((((uint32_t)r->buf) & (_64K - 1)) + size) <= _64K);
+    }
+#else
+    if (((uint32_t)r->buf & 0xFFFF0000) != (((uint32_t)(r->buf + r->count * 512 - 1)) & 0xFFFF0000)) {
+        printk("dma read addr %08x count %d\n", r->buf, r->count);
         panic("disk DMA read cross 64K");
     }
+#endif
 
     mutex_lock(&drv->ide_pci_controller->request_mutex);
     atomic_inc(&drv->ide_pci_controller->request_cnt);
@@ -98,14 +108,14 @@ void disk_task_entry(void *arg) {
 
         switch (r->command) {
         case DISK_REQ_IDENTIFY:
-            printk("try to read disk drive %u identify", drv_no);
+            printk("try to read disk drive %u identify\n", drv_no);
             assert(r->count == 1);
             ata_read_identify(drv_no, 0);
             break;
         case DISK_REQ_READ:
             assert(r->count > 0);
             assert(r->buf != NULL || r->bb->data != NULL);
-            // printk("DISK READ drv_no %u pos %u count %u\n", drv_no, (uint32_t)pos, r->count);
+            // printk("DISK READ drv_no %u pos %u count %u bb %x\n", drv_no, (uint32_t)pos, r->count, r->bb);
             if (r->bb != 0) {
                 ata_dma_read_ext(drv_no, pos, r->count, r->bb->data);
             } else {

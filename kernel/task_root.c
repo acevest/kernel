@@ -94,14 +94,15 @@ void verify_hd_data(uint64_t sect_nr, uint16_t *buf, const char *name) {
     }
 }
 
-u16 disk_buf1[256];
-u16 disk_buf2[256];
+// 保存它们不跨64KB
+u16 disk_buf1[256] __attribute__((__aligned__(512)));
+u16 disk_buf2[256] __attribute__((__aligned__(512)));
 
 void taskA_entry() {
     current->priority = 7;
 
     while (1) {
-        sysc_wait(37);
+        sysc_wait(97);
 
         uint64_t sect_nr = get_next_deubug_sect_nr();
         memset(disk_buf1, 0, 512);
@@ -128,23 +129,23 @@ void taskB_entry() {
     current->priority = 13;
 
     while (1) {
-        sysc_wait(73);
-        uint64_t sect_nr = get_next_deubug_sect_nr();
-        memset(disk_buf2, 0, 512);
-        disk_request_t r;
-        r.dev = MAKE_DISK_DEV(2, 0);
-        r.command = DISK_REQ_READ;
-        r.pos = sect_nr;
-        r.count = 1;
-        r.buf = disk_buf2;
-        r.bb = 0;
+        sysc_wait(7);
+        // uint64_t sect_nr = get_next_deubug_sect_nr();
+        // memset(disk_buf2, 0, 512);
+        // disk_request_t r;
+        // r.dev = MAKE_DISK_DEV(2, 0);
+        // r.command = DISK_REQ_READ;
+        // r.pos = sect_nr;
+        // r.count = 1;
+        // r.buf = disk_buf2;
+        // r.bb = 0;
 
-        send_disk_request(&r);
-        //  verify_hd_data(sect_nr, disk_buf2, current->name);
+        // send_disk_request(&r);
+        // //  verify_hd_data(sect_nr, disk_buf2, current->name);
 
-        for (int i = 0; i < 1; i++) {
-            asm("hlt;");
-        }
+        // for (int i = 0; i < 1; i++) {
+        //     asm("hlt;");
+        // }
     }
 }
 
