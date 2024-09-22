@@ -387,7 +387,7 @@ void read_partition_table(ide_drive_t *drv, uint32_t mbr_ext_offset, uint32_t lb
 
         // 用于计算保存下一个分区的起始位置
         uint32_t lba_offset = 0;
-        if (0x05 == pt.type) {
+        if (0x05 == pt.type || 0x0F /*W95 扩展 (LBA)*/ == pt.type) {
             assert(lba_extended_partition == 0);  // 最多只允许有一个扩展分区
             mbr_ext_offset = mbr_ext_offset != 0 ? mbr_ext_offset : pt.lba_start;
             uint32_t offset = depth == 0 ? lba_partition_table : pt.lba_start;
@@ -402,7 +402,9 @@ void read_partition_table(ide_drive_t *drv, uint32_t mbr_ext_offset, uint32_t lb
             part->lba_start = lba_offset;
             uint32_t size = pt.lba_end;
             part->lba_end = part->lba_start + size;
+            ENTER_CRITICAL_ZONE;
             printk("part[%02d] %02X %10u %-10u\n", part_id, pt.type, lba_offset, part->lba_end - 1);
+            EXIT_CRITICAL_ZONE;
         }
 
         // 每个分区16个字节
