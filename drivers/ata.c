@@ -49,15 +49,89 @@ void ata_pio_read_data(int drv, int sect_cnt, void *dst) {
     insl(REG_DATA(drv), dst, (512 * sect_cnt) / sizeof(uint32_t));
 }
 
+void ata_io_wait() {
+    for (int i = 0; i < 65536; i++) {
+        asm("nop;");
+    }
+}
+
 // 这里所用的drv是逻辑编号 ATA0、ATA1下的Master、Salve的drv分别为0,1,2,3
-void ata_read_identify(int drv, int disable_intr) {
+bool ata_read_identify(int drv, int disable_intr, uint8_t *status, u16 *identify) {
+    memset(identify, 0, SECT_SIZE);
+
     uint8_t ctlv = 0x00;
     if (disable_intr != 0) {
         ctlv |= ATA_CTL_NIEN;
     }
+
     outb(ctlv, REG_CTL(drv));
+
     outb(0x00 | ((drv & 0x01) << 4), REG_DEVICE(drv));  // 根据文档P113，这里不用指定bit5, bit7，直接指示DRIVE就行
+
     outb(ATA_CMD_IDENTIFY, REG_CMD(drv));
+
+    ata_io_wait();
+
+    *status = inb(REG_STATUS(drv));
+
+    if ((*status) == 0 || (*status) == 0xFF) {
+        return false;
+    }
+
+    if (((*status) & ATA_STATUS_BSY) != 0) {
+        *status = inb(REG_STATUS(drv));
+    }
+
+    if (((*status) & ATA_STATUS_ERR) != 0) {
+        return false;
+    }
+
+    while (((*status) & ATA_STATUS_DRQ) == 0) {
+        *status = inb(REG_STATUS(drv));
+    }
+
+    insl(REG_DATA(drv), identify, SECT_SIZE / sizeof(uint32_t));
+
+    return true;
+}
+
+bool ata_read_identify_packet(int drv, int disable_intr, uint8_t *status, u16 *identify) {
+    memset(identify, 0, SECT_SIZE);
+
+    uint8_t ctlv = 0x00;
+    if (disable_intr != 0) {
+        ctlv |= ATA_CTL_NIEN;
+    }
+
+    outb(ctlv, REG_CTL(drv));
+
+    outb(0x00 | ((drv & 0x01) << 4), REG_DEVICE(drv));
+
+    outb(ATA_CMD_IDENTIFY_PACKET, REG_CMD(drv));
+
+    ata_io_wait();
+
+    *status = inb(REG_STATUS(drv));
+
+    if ((*status) == 0 || (*status) == 0xFF) {
+        return false;
+    }
+
+    if (((*status) & ATA_STATUS_BSY) != 0) {
+        *status = inb(REG_STATUS(drv));
+    }
+
+    if (((*status) & ATA_STATUS_ERR) != 0) {
+        return false;
+    }
+
+    while (((*status) & ATA_STATUS_DRQ) == 0) {
+        *status = inb(REG_STATUS(drv));
+    }
+
+    insl(REG_DATA(drv), identify, SECT_SIZE / sizeof(uint32_t));
+
+    return true;
 }
 
 void ata_read_identity_string(const uint16_t *identify, int bgn, int end, char *buf) {
@@ -71,8 +145,15 @@ void ata_read_identity_string(const uint16_t *identify, int bgn, int end, char *
     buf[i] = 0;
 }
 
+extern unsigned int IDE_CHL0_CMD_BASE;
+extern unsigned int IDE_CHL1_CMD_BASE;
+
+extern unsigned int IDE_CHL0_CTL_BASE;
+extern unsigned int IDE_CHL1_CTL_BASE;
+
 // 《AT Attachment 8 - ATA/ATAPI Command Set》
 void ide_ata_init() {
+    printk("IDE %04X %04X %04X %04X\n", IDE_CHL0_CMD_BASE, IDE_CHL1_CMD_BASE, IDE_CHL0_CTL_BASE, IDE_CHL1_CTL_BASE);
     for (int i = 0; i < MAX_IDE_DRIVE_CNT; i++) {
         int drv_no = i;
         int channel = drv_no >> 1;
@@ -113,19 +194,50 @@ void ide_ata_init() {
         //  1. 若为0，就认为没有IDE
         //  2. 等到status的BSY位清除
         //  3. 等到status的DRQ位或ERR位设置
-
-        ata_read_identify(drv_no, 1);
-
-        uint8_t status = inb(REG_STATUS(drv_no));
-        if (status == 0 || (status & ATA_STATUS_ERR) || (status & ATA_STATUS_RDY == 0)) {
-            drv->present = 0;
-            continue;
-        } else {
+        uint8_t status = 0;
+        const char *ide_drive_type = "NONE";
+        if (ata_read_identify(drv_no, 1, &status, identify)) {
             drv->present = 1;
+            drv->type = IDE_DRIVE_TYPE_ATA;
+            ide_drive_type = "ATA";
+        } else {
+            if (ata_read_identify_packet(drv_no, 1, &status, identify)) {
+                printk("ATAPI DEVICE\n");
+                drv->present = 1;
+                drv->type = IDE_DRIVE_TYPE_ATAPI;
+                ide_drive_type = "ATAPI";
+            } else {
+                drv->present = 0;
+                drv->type = IDE_DRIVE_TYPE_NONE;
+                ide_drive_type = "NONE";
+            }
         }
 
-        printk("ata[%d] status %x %s exists\n", i, status, drv->present == 1 ? "" : "not");
-        insl(REG_DATA(drv_no), identify, SECT_SIZE / sizeof(uint32_t));
+        printk("ata[%d] status %x %s exists %s\n", i, status, drv->present == 1 ? "" : "not", ide_drive_type);
+
+        // 所有ATAPI设备当成不存在
+        if (drv->type == IDE_DRIVE_TYPE_ATAPI) {
+            assert(drv->present == 1);
+            drv->present = 0;
+        }
+
+        if (drv->present == 0) {
+            continue;
+        }
+
+        // insl(REG_DATA(drv_no), identify, SECT_SIZE / sizeof(uint32_t));
+
+        // Bit 15: 0 表示 ATA 设备，1 表示 ATAPI 设备。
+        // Bit 14-8: 保留。
+        // Bit 7: 1 表示设备支持可拆卸介质。
+        // Bit 6: 1 表示设备支持硬盘缓存。
+        // Bit 5-3: 保留。
+        // Bit 2: 1 表示设备支持应急电源降级。
+        // Bit 1: 1 表示设备支持硬件重置。
+        // Bit 0: 1 表示设备支持软重置。
+        uint16_t devtype = identify[ATA_IDENT_DEVTYPE];
+
+        printk("device type %04X\n", devtype);
 
         // 第49个word的第8个bit位表示是否支持DMA
         // 第83个word的第10个bit位表示是否支持LBA48，为1表示支持。
@@ -141,25 +253,26 @@ void ide_ata_init() {
             drv->lba48 = 1;
             drv->max_lba = max_lba;
         }
-#if 0
-        uint16_t i80 = identify[80];
-        if (i80 & (1 << 8)) {
+#if 1
+        uint16_t ata_major = identify[80];
+        uint16_t ata_minor = identify[81];
+        if (ata_major & (1 << 8)) {
             printk("ATA8-ACS ");
         }
-        if (i80 & (1 << 7)) {
+        if (ata_major & (1 << 7)) {
             printk("ATA/ATAPI-7 ");
         }
-        if (i80 & (1 << 6)) {
+        if (ata_major & (1 << 6)) {
             printk("ATA/ATAPI-6 ");
         }
-        if (i80 & (1 << 5)) {
+        if (ata_major & (1 << 5)) {
             printk("ATA/ATAPI-5 ");
         }
-        if (i80 & (1 << 4)) {
+        if (ata_major & (1 << 4)) {
             printk("ATA/ATAPI-4 ");
         }
 
-        printk(" %02x\n", identify[81]);
+        printk("%04X %02X\n", ata_major, ata_minor);
 #endif
         printk("Ultra DMA modes: %04x\n", identify[88]);
 

@@ -195,7 +195,12 @@ typedef struct _ide_pci_controller {
 #define NR_IDE_CONTROLLER 2
 extern ide_pci_controller_t ide_pci_controller[NR_IDE_CONTROLLER];
 
+#define IDE_DRIVE_TYPE_NONE 0x00
+#define IDE_DRIVE_TYPE_ATA 0x01
+#define IDE_DRIVE_TYPE_ATAPI 0x02
+
 typedef struct _ide_drive {
+    int type;
     int present;
     int drv_no;
     int dma;

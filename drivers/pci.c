@@ -123,7 +123,9 @@ pci_device_t *pci_find_device(unsigned int vendor, unsigned int device) {
     list_for_each(p, &pci_devs) {
         pci = list_entry(p, pci_device_t, list);
 
-        if (pci->vendor == vendor && pci->device == device) return pci;
+        if (pci->vendor == vendor && pci->device == device) {
+            return pci;
+        }
     }
 
     return 0;

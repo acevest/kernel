@@ -120,6 +120,16 @@ typedef struct pci_device {
     unsigned int classcode;
     unsigned int hdr_type;
     // unsigned int bar0, bar1, bar2, bar3, bar4, bar5;
+    // 关于BAR寄存器
+    // 位0: 表示地址类型
+    //      0: 内存地址
+    //      1: I/O地址
+    // 若为内存地址，位1~2: 表示地址类型
+    //      00: 32位地址
+    //      01: 低位为32位，高位可扩展到64位地址
+    //      10: 保留，不使用
+    //      11: 32位地址，保留不使用
+    // 若为IO地址，位1~31：表示基地址
     unsigned int bars[BARS_CNT];
     unsigned int sub_system_id;
     unsigned int system_id;
