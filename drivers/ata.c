@@ -402,9 +402,7 @@ void read_partition_table(ide_drive_t *drv, uint32_t mbr_ext_offset, uint32_t lb
             part->lba_start = lba_offset;
             uint32_t size = pt.lba_end;
             part->lba_end = part->lba_start + size;
-            ENTER_CRITICAL_ZONE;
             printk("part[%02d] %02X %10u %-10u\n", part_id, pt.type, lba_offset, part->lba_end - 1);
-            EXIT_CRITICAL_ZONE;
         }
 
         // 每个分区16个字节

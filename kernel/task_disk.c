@@ -16,10 +16,6 @@ void ata_read_identify(int drv, int disable_intr);
 void ata_pio_read_data(int drv_no, int sect_cnt, void *dst);
 void ata_dma_read_ext(int drv, uint64_t pos, uint16_t count, void *dest);
 
-void disk_init() {
-    // ...
-}
-
 void send_disk_request(disk_request_t *r) {
     if (NULL == r) {
         panic("null disk request");
@@ -102,6 +98,7 @@ void disk_task_entry(void *arg) {
         assert(MAKE_DISK_DEV(drv_no, part_id) == r->dev);
 
         uint64_t pos = r->pos + drv->partions[part_id].lba_start;
+	//printk("pos %lu partid %d lba end %lu\n", pos, part_id, drv->partions[part_id].lba_end);
         assert(pos < drv->partions[part_id].lba_end);
 
         // init_completion(&ide_ctrl->intr_complete);

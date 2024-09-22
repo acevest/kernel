@@ -133,6 +133,10 @@ again:
     // 把它从free_list上删掉
     list_del_init(&b->node);
 
+    // FIXME
+    irq_restore(iflags);
+
+
     // 虽然此时该bbuffer_t上的ref_count为0但其可能还有I/O操作没有完成
     // 因为可能有的进程调用了write、read后再直接调用brelse
     // 所以需要在此等待其结束
@@ -144,6 +148,7 @@ again:
     b->dev = dev;
     atomic_set(&(b->ref_count), 1);
     b->uptodate = 0;
+
 
     return b;
 }
