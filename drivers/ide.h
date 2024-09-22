@@ -190,6 +190,8 @@ typedef struct _ide_pci_controller {
     atomic_t request_cnt;
     atomic_t irq_cnt;
     atomic_t consumed_cnt;
+
+    int irq_line;
 } ide_pci_controller_t;
 
 #define NR_IDE_CONTROLLER 2

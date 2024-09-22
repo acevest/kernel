@@ -151,8 +151,9 @@ void setup_irqs() {
     // 打开支持的中断
     open_irq(IRQ_CLOCK);
     open_irq(IRQ_KEYBOARD);
-    open_irq(IRQ_DISK);
-    open_irq(15);
+    // open_irq(IRQ_DISK);
+    // open_irq(15);
+    // open_irq(10);
 }
 
 void boot_irq_handler();

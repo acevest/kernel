@@ -105,6 +105,45 @@ SATA（Serial ATA）于2002年推出后，原有的ATA改名为PATA（并行高�
 // 随着SATA技术的出现，之前所有的ATA就被称为PATA
 ide_pci_controller_t ide_pci_controller[NR_IDE_CONTROLLER];
 
+void ata_dma_stop(int channel);
+
+void ide_irq_bh_handler(void *arg) {
+    int channel = (int)arg;
+
+    // printk("channel %08x\n", channel);
+    assert(channel <= 1);
+    assert(channel >= 0);
+
+    ide_pci_controller_t *ide_ctrl = ide_pci_controller + channel;
+    // printlxy(MPL_IDE, MPO_IDE, "disk irq %u req %u consumed %u ", disk_inter_cnt, disk_request_cnt,
+    // disk_handled_cnt);
+
+    printlxy(MPL_IDE0 + channel, MPO_IDE, "IDE%d req %u irq %u consumed %u", channel,
+             atomic_read(&(ide_ctrl->request_cnt)), ide_ctrl->irq_cnt, ide_ctrl->consumed_cnt);
+
+    // 之前这里是用up()来唤醒磁盘任务
+    // 但在中断的底半处理，不应该切换任务，因为会引起irq里的reenter问题，导致不能再进底半处理，也无法切换任务
+    // 所以就移除了up()里的 schedule()
+    // 后来就改用完成量来通知磁盘任务，就不存在这个问题了
+
+    // complete会唤醒进程，但不会立即重新调度进程
+    complete(&ide_ctrl->intr_complete);
+}
+
+void ide_irq_handler(unsigned int irq, pt_regs_t *regs, void *devid) {
+    // printk("ide irq %d handler pci status: 0x%02x\n", irq, ata_pci_bus_status());
+    int channel = irq == ide_pci_controller[0].irq_line ? 0 : 1;
+
+    printk("ide[%d] irq %d handler\n", channel, irq);
+
+    ide_pci_controller_t *ide_ctrl = ide_pci_controller + channel;
+    atomic_inc(&ide_ctrl->irq_cnt);
+
+    ata_dma_stop(channel);
+
+    add_irq_bh_handler(ide_irq_bh_handler, (void *)channel);
+}
+
 unsigned int IDE_CHL0_CMD_BASE = 0x1F0;
 unsigned int IDE_CHL1_CMD_BASE = 0x170;
 
@@ -164,6 +203,14 @@ void ide_pci_init(pci_device_t *pci) {
         ide_pci_controller[i].prdt = (prdte_t *)page2va(alloc_one_page(0));
 
         ide_pci_controller[i].pci = pci;
+
+        unsigned int irq_line = pci_read_config_byte(pci_cmd(pci, PCI_INTRLINE));
+        assert(irq_line <= 15);
+        if (irq_line == 0) {
+            ide_pci_controller[i].irq_line = 14 + i;
+        } else {
+            ide_pci_controller[i].irq_line = irq_line;
+        }
     }
 
     IDE_CHL0_CMD_BASE = pci->bars[0] ? (pci->bars[0] & 0xFFFFFFFE) : IDE_CHL0_CMD_BASE;
@@ -171,6 +218,12 @@ void ide_pci_init(pci_device_t *pci) {
 
     IDE_CHL1_CMD_BASE = pci->bars[2] ? (pci->bars[2] & 0xFFFFFFFE) : IDE_CHL1_CMD_BASE;
     IDE_CHL1_CTL_BASE = pci->bars[3] ? (pci->bars[3] & 0xFFFFFFFE) : IDE_CHL1_CTL_BASE;
+
+    for (int i = 0; i < NR_IDE_CONTROLLER; i++) {
+        int irq = ide_pci_controller[i].irq_line;
+        open_irq(irq);
+        request_irq(irq, ide_irq_handler, "hard", "IDE");
+    }
 
     printd("ide channel 0: cmd %04x ctl %04x\n", IDE_CHL0_CMD_BASE, IDE_CHL0_CTL_BASE);
     printd("ide channel 1: cmd %04x ctl %04x\n", IDE_CHL1_CMD_BASE, IDE_CHL1_CTL_BASE);
@@ -219,53 +272,12 @@ extern void *mbr_buf;
 
 uint8_t ata_pci_bus_status();
 
-void ata_dma_stop(int channel);
-void ide_irq_bh_handler(void *arg) {
-    int channel = (int)arg;
-
-    // printk("channel %08x\n", channel);
-    assert(channel <= 1);
-    assert(channel >= 0);
-
-    ide_pci_controller_t *ide_ctrl = ide_pci_controller + channel;
-    // printlxy(MPL_IDE, MPO_IDE, "disk irq %u req %u consumed %u ", disk_inter_cnt, disk_request_cnt,
-    // disk_handled_cnt);
-
-    printlxy(MPL_IDE0 + channel, MPO_IDE, "IDE%d req %u irq %u consumed %u", channel,
-             atomic_read(&(ide_ctrl->request_cnt)), ide_ctrl->irq_cnt, ide_ctrl->consumed_cnt);
-
-    // 之前这里是用up()来唤醒磁盘任务
-    // 但在中断的底半处理，不应该切换任务，因为会引起irq里的reenter问题，导致不能再进底半处理，也无法切换任务
-    // 所以就移除了up()里的 schedule()
-    // 后来就改用完成量来通知磁盘任务，就不存在这个问题了
-
-    // complete会唤醒进程，但不会立即重新调度进程
-    complete(&ide_ctrl->intr_complete);
-}
-
-void ide_irq_handler(unsigned int irq, pt_regs_t *regs, void *devid) {
-    // printk("ide irq %d handler pci status: 0x%02x\n", irq, ata_pci_bus_status());
-
-    int channel = irq == 14 ? 0 : 1;
-
-    ide_pci_controller_t *ide_ctrl = ide_pci_controller + channel;
-    atomic_inc(&ide_ctrl->irq_cnt);
-
-    ata_dma_stop(channel);
-
-    add_irq_bh_handler(ide_irq_bh_handler, (void *)channel);
-}
-
 void ide_ata_init();
 void ide_init() {
     memset(ide_pci_controller, 0, sizeof(ide_pci_controller[0]) * NR_IDE_CONTROLLER);
 
     // 读PCI里 IDE相关寄存器的配置
     init_pci_controller(0x0101);
-
-    request_irq(0x0E, ide_irq_handler, "hard", "IDE");
-
-    request_irq(0x0F, ide_irq_handler, "hard", "IDE");
 
     // 读IDE 硬盘的identity
     ide_ata_init();
