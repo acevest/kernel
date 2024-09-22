@@ -23,7 +23,6 @@ qemu-system-i386 \
     -serial tcp::6666,server,nowait \
     -drive file=HD.IMG,format=raw,index=0,media=disk \
     -drive file=kernel.iso,index=1,media=cdrom \
-    -drive file=HDb.IMG,format=raw,index=2,media=disk \
     -name kernel \
     -device ich9-ahci,id=ahci \
     -vga std \
@@ -31,6 +30,7 @@ qemu-system-i386 \
     -s -S \
     &
 
+    #-drive file=HDb.IMG,format=raw,index=2,media=disk \
     #-cpu qemu32,+apic \
     #-cpu core2duo-v1,+apic \
 

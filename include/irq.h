@@ -79,14 +79,13 @@ bool irq_disabled();
 void enter_critical_zone();
 void exit_critical_zone();
 
-#define ENTER_CRITICAL_ZONE    \
-    do {                       \
-        enter_critical_zone(); \
-    } while (0)
-#define EXIT_CRITICAL_ZONE    \
-    do {                      \
-        exit_critical_zone(); \
-    } while (0)
+#define ENTER_CRITICAL_ZONE(x) \
+        volatile uint32_t __critical_zone_eflags_##x = 0; \
+        irq_save(__critical_zone_eflags_##x);
+
+
+#define EXIT_CRITICAL_ZONE(x) \
+        irq_restore(__critical_zone_eflags_##x);
 
 #define IRQ_CLOCK 0x00
 #define IRQ_KEYBOARD 0x01

@@ -26,28 +26,29 @@ void serial_write(const char *buf, size_t size);
 extern tty_t *const default_tty;
 int printk(const char *fmtstr, ...) {
     static char pkbuf[1024];
-    ENTER_CRITICAL_ZONE;
+
+    ENTER_CRITICAL_ZONE(EFLAGS);
 
     char *args = (char *)(((char *)&fmtstr) + 4);
     int size = vsprintf(pkbuf, fmtstr, args);
     tty_write(default_tty, pkbuf, (size_t)size);
     serial_write(pkbuf, (size_t)size);
 
-    EXIT_CRITICAL_ZONE;
+    EXIT_CRITICAL_ZONE(EFLAGS);
     return 0;
 }
 
 extern tty_t *const debug_tty;
 int printd(const char *fmtstr, ...) {
     static char pdbuf[1024];
-    ENTER_CRITICAL_ZONE;
+    ENTER_CRITICAL_ZONE(EFLAGS);
 
     char *args = (char *)(((char *)&fmtstr) + 4);
     int size = vsprintf(pdbuf, fmtstr, args);
     tty_write(debug_tty, pdbuf, (size_t)size);
     serial_write(pdbuf, (size_t)size);
 
-    EXIT_CRITICAL_ZONE;
+    EXIT_CRITICAL_ZONE(EFLAGS);
     return 0;
 }
 
@@ -56,11 +57,11 @@ extern tty_t *const monitor_tty;
 int printlo(unsigned int xpos, unsigned int ypos, const char *fmtstr, ...) {
     static char plobuf[1024];
     char *args = (char *)(((char *)&fmtstr) + 4);
-    ENTER_CRITICAL_ZONE;
+    ENTER_CRITICAL_ZONE(EFLAGS);
     int size = vsprintf(plobuf, fmtstr, args);
 
     tty_write_at(monitor_tty, xpos, ypos, plobuf, (size_t)size);
 
-    EXIT_CRITICAL_ZONE;
+    EXIT_CRITICAL_ZONE(EFLAGS);
     return 0;
 }
