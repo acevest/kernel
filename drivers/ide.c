@@ -132,11 +132,16 @@ void ide_pci_init(pci_device_t *pci) {
 
     for (int i = 0; i < 6; i++) {
         printd("ide pci BAR%u value 0x%08X\n", i, pci->bars[i]);
+        if (pci->bars[i] != 0) {
+            assert((pci->bars[i] & 0x1) == 0x1);
+        }
     }
 
     // BAR4开始有16个端口，有2组，每组8个，分别控制Primary和Secondary通道的DMA
     // BAR5: SATA AHCI Base Address
-    uint32_t iobase = pci->bars[4];
+    // 虽然iobase是uint32_t，但在PC机上最多有65536个端口，也就是有效位数为16bit
+    // 所以这里用0xFFFE或0xFFFFFFFE其实都可以
+    uint32_t iobase = pci->bars[4] & 0xFFFFFFFE;  // 最低为0是内存地址为1是端口地址
 
     for (int i = 0; i < NR_IDE_CONTROLLER; i++) {
         INIT_MUTEX(&ide_pci_controller[i].request_mutex);
@@ -152,10 +157,6 @@ void ide_pci_init(pci_device_t *pci) {
 
         iobase += i * 8;  // secondary channel 需要加8
         printd("ide pci Base IO Address Register %08x\n", iobase);
-        // 虽然iobase是uint32_t，但在PC机上最多有65536个端口，也就是有效位数为16bit
-        // 所以这里用0xFFFC或0xFFFFFFFC其实都可以
-
-        iobase &= 0xFFFC;  // 最低为0是内存地址为1是端口地址
         ide_pci_controller[i].bus_iobase = iobase;
         ide_pci_controller[i].bus_cmd = iobase + PCI_IDE_CMD;
         ide_pci_controller[i].bus_status = iobase + PCI_IDE_STATUS;
@@ -165,11 +166,11 @@ void ide_pci_init(pci_device_t *pci) {
         ide_pci_controller[i].pci = pci;
     }
 
-    IDE_CHL0_CMD_BASE = pci->bars[0] ? pci->bars[0] : IDE_CHL0_CMD_BASE;
-    IDE_CHL0_CTL_BASE = pci->bars[1] ? pci->bars[1] : IDE_CHL0_CTL_BASE;
+    IDE_CHL0_CMD_BASE = pci->bars[0] ? (pci->bars[0] & 0xFFFFFFFE) : IDE_CHL0_CMD_BASE;
+    IDE_CHL0_CTL_BASE = pci->bars[1] ? (pci->bars[1] & 0xFFFFFFFE) : IDE_CHL0_CTL_BASE;
 
-    IDE_CHL1_CMD_BASE = pci->bars[2] ? pci->bars[2] : IDE_CHL1_CMD_BASE;
-    IDE_CHL1_CTL_BASE = pci->bars[3] ? pci->bars[3] : IDE_CHL1_CTL_BASE;
+    IDE_CHL1_CMD_BASE = pci->bars[2] ? (pci->bars[2] & 0xFFFFFFFE) : IDE_CHL1_CMD_BASE;
+    IDE_CHL1_CTL_BASE = pci->bars[3] ? (pci->bars[3] & 0xFFFFFFFE) : IDE_CHL1_CTL_BASE;
 
     printd("ide channel 0: cmd %04x ctl %04x\n", IDE_CHL0_CMD_BASE, IDE_CHL0_CTL_BASE);
     printd("ide channel 1: cmd %04x ctl %04x\n", IDE_CHL1_CMD_BASE, IDE_CHL1_CTL_BASE);
@@ -260,9 +261,7 @@ void ide_init() {
     memset(ide_pci_controller, 0, sizeof(ide_pci_controller[0]) * NR_IDE_CONTROLLER);
 
     // 读PCI里 IDE相关寄存器的配置
-    // init_pci_controller(0x0106);
     init_pci_controller(0x0101);
-    // init_pci_controller(0x7010);
 
     request_irq(0x0E, ide_irq_handler, "hard", "IDE");
 
