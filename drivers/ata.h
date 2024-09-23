@@ -42,12 +42,13 @@ extern unsigned int IDE_CHL1_CTL_BASE;
 #define ATA_LBAH 5
 
 // DEVICE寄存器
-// bit7: Obsolete
+// bit7: Obsolete Always set.
 // bit6: L 如果为1，LBA Mode
-// bit5: Obsolete
+// bit5: Obsolete Always set.
 // bit4: DRIVE
-// bit[0, 3] HS 如果L为0就是磁头号Head Number，如果L为1，则为LBA的24-27位
-#define ATA_LBA48_DEVSEL(drv) (0x40 | ((drv & 0x01) << 4))
+// bit[0, 3] HS 如果L为0就是磁头号Head Number，如果L为1，则为LBA28的24-27位
+#define ATA_LBA48_DEVSEL(drv) (0xA0 | 0x40 | (((drv) & 0x01) << 4))
+#define ATA_LBA28_DEVSEL(drv, lba24_27) (0xA0 | 0x40 | (((drv) & 0x01) << 4) | ((lba24_27) & 0xF))
 #define ATA_DEVICE 6
 
 #define ATA_CMD 7

@@ -262,10 +262,6 @@ void ide_ata_init() {
         }
 
         drv->max_lba = max_lba;
-
-        // assert(drv->lba48 == 1);
-        // assert(drv->max_lba != 0);
-        // assert(drv->dma == 1);
 #if 1
         uint16_t ata_major = identify[80];
         uint16_t ata_minor = identify[81];
@@ -332,7 +328,7 @@ void ide_ata_init() {
         ide_drive_t *drv = ide_drives + drv_no;
         if (drv->present) {
             assert(drv->dma == 1);
-            assert(drv->lba48 == 1);
+            // assert(drv->lba48 == 1);
             assert(drv->max_lba > 0);
         }
     }
@@ -458,7 +454,7 @@ void ide_read_partions() {
 }
 
 // ATA_CMD_READ_DMA_EXT
-void ata_dma_read_ext(int drv, uint64_t pos, uint16_t count, void *dest) {
+void ata_dma_read_ext(int drvid, uint64_t pos, uint16_t count, void *dest) {
     // Intel®
     //  82801CA (ICH3), 82801BA
     // (ICH2), 82801AA (ICH), and 82801AB
@@ -477,9 +473,10 @@ void ata_dma_read_ext(int drv, uint64_t pos, uint16_t count, void *dest) {
     // by writing a 0 to this bit. This results in all state information being lost (i.e., master mode
     // operation cannot be stopped and then resumed).
 
-    int channel = (drv >> 1) & 0x01;
+    int channel = (drvid >> 1) & 0x01;
     assert(channel == 0 || channel == 1);
     ide_pci_controller_t *ide_ctrl = ide_pci_controller + channel;
+    ide_drive_t *drv = ide_drives + drvid;
 
     // 停止DMA
     outb(PCI_IDE_CMD_STOP, ide_ctrl->bus_cmd);
@@ -513,38 +510,40 @@ void ata_dma_read_ext(int drv, uint64_t pos, uint16_t count, void *dest) {
     outb(PCI_IDE_STATUS_INTR | PCI_IDE_STATUS_ERR, ide_ctrl->bus_status);
 
     // 不再设置nIEN，DMA需要中断
-    outb(0x00, REG_CTL(drv));
+    outb(0x00, REG_CTL(drvid));
 
     // 等待硬盘不BUSY
-    while (inb(REG_STATUS(drv)) & ATA_STATUS_BSY) {
+    while (inb(REG_STATUS(drvid)) & ATA_STATUS_BSY) {
         nop();
     }
 
     // 选择DRIVE
-    outb(ATA_LBA48_DEVSEL(drv), REG_DEVICE(drv));
+    outb(drv->lba48 ? ATA_LBA48_DEVSEL(drvid) : ATA_LBA28_DEVSEL(drvid, (pos >> 24)), REG_DEVICE(drvid));
 
-    // 先写扇区数的高字节
-    outb((count >> 8) & 0xFF, REG_NSECTOR(drv));
+    if (drv->lba48) {
+        // 先写扇区数的高字节
+        outb((count >> 8) & 0xFF, REG_NSECTOR(drvid));
 
-    // 接着写LBA48，高三个字节
-    outb((pos >> 24) & 0xFF, REG_LBAL(drv));
-    outb((pos >> 32) & 0xFF, REG_LBAM(drv));
-    outb((pos >> 40) & 0xFF, REG_LBAH(drv));
+        // 接着写LBA48，高三个字节
+        outb((pos >> 24) & 0xFF, REG_LBAL(drvid));
+        outb((pos >> 32) & 0xFF, REG_LBAM(drvid));
+        outb((pos >> 40) & 0xFF, REG_LBAH(drvid));
+    }
 
     // 再写扇区数的低字节
-    outb((count >> 0) & 0xFF, REG_NSECTOR(drv));
+    outb((count >> 0) & 0xFF, REG_NSECTOR(drvid));
 
-    // 接着写LBA48，低三个字节
-    outb((pos >> 0) & 0xFF, REG_LBAL(drv));
-    outb((pos >> 8) & 0xFF, REG_LBAM(drv));
-    outb((pos >> 16) & 0xFF, REG_LBAH(drv));
+    // 接着写LBA48 or LBA28，低三个字节
+    outb((pos >> 0) & 0xFF, REG_LBAL(drvid));
+    outb((pos >> 8) & 0xFF, REG_LBAM(drvid));
+    outb((pos >> 16) & 0xFF, REG_LBAH(drvid));
 
     // 等待硬盘READY
-    while (inb(REG_STATUS(drv)) & ATA_STATUS_RDY == 0) {
+    while (inb(REG_STATUS(drvid)) & ATA_STATUS_RDY == 0) {
         nop();
     }
 
-    outb(ATA_CMD_READ_DMA_EXT, REG_CMD(drv));
+    outb(drv->lba48 ? ATA_CMD_READ_DMA_EXT : ATA_CMD_READ_DMA, REG_CMD(drvid));
 
     // 这一句非常重要，如果不加这一句
     // 在qemu中用DMA的方式读数据就会读不到数据，而只触是发中断，然后寄存器（Bus Master IDE Status
@@ -580,44 +579,48 @@ int ata_dma_stop(int channel) {
 }
 
 // ATA_CMD_READ_PIO_EXT
-int ata_pio_read_ext(int drv, uint64_t pos, uint16_t count, int timeout, void *dest) {
+int ata_pio_read_ext(int drvid, uint64_t pos, uint16_t count, int timeout, void *dest) {
+    ide_drive_t *drv = ide_drives + drvid;
+
     // PIO读，禁用中断
-    outb(ATA_CTL_NIEN, REG_CTL(drv));
+    outb(ATA_CTL_NIEN, REG_CTL(drvid));
 
     // 等待硬盘不BUSY
-    while (inb(REG_STATUS(drv)) & ATA_STATUS_BSY) {
+    while (inb(REG_STATUS(drvid)) & ATA_STATUS_BSY) {
         nop();
     }
 
     // 选择DRIVE
-    outb(ATA_LBA48_DEVSEL(drv), REG_DEVICE(drv));
+    outb(drv->lba48 ? ATA_LBA48_DEVSEL(drvid) : ATA_LBA28_DEVSEL(drvid, (pos >> 24)), REG_DEVICE(drvid));
 
-    // 先写扇区数的高字节
-    outb((count >> 8) & 0xFF, REG_NSECTOR(drv));
+    if (drv->lba48) {
+        // 先写扇区数的高字节
+        outb((count >> 8) & 0xFF, REG_NSECTOR(drvid));
 
-    // 接着写LBA48，高三个字节q
-    outb((pos >> 24) & 0xFF, REG_LBAL(drv));
-    outb((pos >> 32) & 0xFF, REG_LBAM(drv));
-    outb((pos >> 40) & 0xFF, REG_LBAH(drv));
+        // 接着写LBA48，高三个字节q
+        outb((pos >> 24) & 0xFF, REG_LBAL(drvid));
+        outb((pos >> 32) & 0xFF, REG_LBAM(drvid));
+        outb((pos >> 40) & 0xFF, REG_LBAH(drvid));
+    }
 
     // 再写扇区数的低字节
-    outb((count >> 0) & 0xFF, REG_NSECTOR(drv));
+    outb((count >> 0) & 0xFF, REG_NSECTOR(drvid));
 
-    // 接着写LBA48，低三个字节
-    outb((pos >> 0) & 0xFF, REG_LBAL(drv));
-    outb((pos >> 8) & 0xFF, REG_LBAM(drv));
-    outb((pos >> 16) & 0xFF, REG_LBAH(drv));
+    // 接着写LBA48 or LBA28，低三个字节
+    outb((pos >> 0) & 0xFF, REG_LBAL(drvid));
+    outb((pos >> 8) & 0xFF, REG_LBAM(drvid));
+    outb((pos >> 16) & 0xFF, REG_LBAH(drvid));
 
-    while (inb(REG_STATUS(drv)) & ATA_STATUS_RDY == 0) {
+    while (inb(REG_STATUS(drvid)) & ATA_STATUS_RDY == 0) {
         nop();
     }
 
-    outb(ATA_CMD_READ_PIO_EXT, REG_CMD(drv));
+    outb(drv->lba48 ? ATA_CMD_READ_PIO_EXT : ATA_CMD_READ_PIO, REG_CMD(drvid));
 
     while (timeout > 0) {
         timeout--;
 
-        u8 status = inb(REG_STATUS(drv));
+        u8 status = inb(REG_STATUS(drvid));
         if ((status & ATA_STATUS_BSY) == 0 && (status & ATA_STATUS_DRQ) != 0) {
             break;
         }
@@ -630,7 +633,7 @@ int ata_pio_read_ext(int drv, uint64_t pos, uint16_t count, int timeout, void *d
         return -1;
     }
 
-    insl(REG_DATA(drv), dest, (SECT_SIZE * count) / sizeof(uint32_t));
+    insl(REG_DATA(drvid), dest, (SECT_SIZE * count) / sizeof(uint32_t));
 
     return 0;
 }
