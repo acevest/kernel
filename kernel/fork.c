@@ -98,7 +98,7 @@ int do_fork(pt_regs_t *regs, unsigned long flags) {
     // printd("child regs: %x %x\n", child_regs, regs);
     memcpy(child_regs, regs, sizeof(*regs));
 
-    //child_regs->eflags |= 0x200;
+    // child_regs->eflags |= 0x200;
 
     if (flags & FORK_KRNL) {
         strcpy(tsk->name, (char *)(child_regs->eax));
@@ -106,7 +106,7 @@ int do_fork(pt_regs_t *regs, unsigned long flags) {
     } else {
         child_regs->eip = *((unsigned long *) && fork_child);
     }
-    printk("%s fork %s EFLAGS %08x\n", current->name,  tsk->name, regs->eflags);
+    printk("%s fork %s EFLAGS %08x\n", current->name, tsk->name, regs->eflags);
 
     // 这一句已经不需要了，通过fork_child已经能给子进程返回0了
     // child_regs->eax = 0;

@@ -98,8 +98,13 @@ void disk_task_entry(void *arg) {
         assert(MAKE_DISK_DEV(drv_no, part_id) == r->dev);
 
         uint64_t pos = r->pos + drv->partions[part_id].lba_start;
-	//printk("pos %lu partid %d lba end %lu\n", pos, part_id, drv->partions[part_id].lba_end);
-        assert(pos < drv->partions[part_id].lba_end);
+        // printk("pos %lu partid %d lba end %lu\n", pos, part_id, drv->partions[part_id].lba_end);
+        // assert(pos < drv->partions[part_id].lba_end);
+        if ((pos >= drv->partions[part_id].lba_end)) {
+            printk("pos %lu partid %d lba %u %u\n", pos, part_id, drv->partions[part_id].lba_start,
+                   drv->partions[part_id].lba_end);
+            panic("INVARG");
+        }
 
         // init_completion(&ide_ctrl->intr_complete);
 

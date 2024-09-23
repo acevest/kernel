@@ -205,8 +205,8 @@ typedef struct _ide_drive {
     int type;
     int present;
     int drv_no;
-    int dma;
-    uint64_t lba48;
+    int dma;    // 是否支持DMA
+    int lba48;  // 是否支持LBA48
     uint64_t max_lba;
 
     ide_pci_controller_t *ide_pci_controller;

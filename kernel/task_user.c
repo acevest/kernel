@@ -51,7 +51,7 @@ void __ring3text__ __attribute__((__aligned__(PAGE_SIZE))) ring3_entry() {
             : "=a"(__sysc_ret__)
             : "a"(SYSC_WAIT), "c"(ring3_entry));
 
-        for (int i = 100000000; i > 0; i--) {
+        for (int i = 10000000; i > 0; i--) {
             for (int j = 1; j > 0; j--) {
                 asm("nop;nop;nop;");
             }

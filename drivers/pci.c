@@ -148,7 +148,7 @@ pci_device_t *pci_find_device_by_classcode(unsigned int classcode) {
 const char *pci_intr_pin(int pin) {
     switch (pin) {
     case 0:
-        return "NOINTPIN";
+        return "NONE#";
     case 1:
         return "INTA#";
     case 2:
@@ -190,10 +190,10 @@ void dump_pci_dev() {
             break;
         }
 #else
-        for (int bar_inx = 0; bar_inx < BARS_CNT; bar_inx++) {
-            printk("%08x ", pci->bars[bar_inx]);
-        }
-        printk("\n");
+        // for (int bar_inx = 0; bar_inx < BARS_CNT; bar_inx++) {
+        //     printk("%08x ", pci->bars[bar_inx]);
+        // }
+        // printk("\n");
 #endif
     }
 }

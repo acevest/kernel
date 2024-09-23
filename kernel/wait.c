@@ -58,7 +58,7 @@ volatile void __wake_up(wait_queue_head_t *head, int nr) {
     irq_save(flags);
     list_for_each_entry_safe(p, tmp, &head->task_list, entry) {
         assert(p->task != NULL);
-        printk("wakeup %s\n", p->task->name);
+        // printk("wakeup %s\n", p->task->name);
         p->task->state = TASK_READY;
         p->task->reason = "wake_up";
 

@@ -134,7 +134,7 @@ void ide_irq_handler(unsigned int irq, pt_regs_t *regs, void *devid) {
     // printk("ide irq %d handler pci status: 0x%02x\n", irq, ata_pci_bus_status());
     int channel = irq == ide_pci_controller[0].irq_line ? 0 : 1;
 
-    printk("ide[%d] irq %d handler\n", channel, irq);
+    // printk("ide[%d] irq %d handler\n", channel, irq);
 
     ide_pci_controller_t *ide_ctrl = ide_pci_controller + channel;
     atomic_inc(&ide_ctrl->irq_cnt);

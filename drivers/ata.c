@@ -202,7 +202,7 @@ void ide_ata_init() {
             ide_drive_type = "ATA";
         } else {
             if (ata_read_identify_packet(drv_no, 1, &status, identify)) {
-                printk("ATAPI DEVICE\n");
+                // printk("ATAPI DEVICE\n");
                 drv->present = 1;
                 drv->type = IDE_DRIVE_TYPE_ATAPI;
                 ide_drive_type = "ATAPI";
@@ -237,7 +237,7 @@ void ide_ata_init() {
         // Bit 0: 1 表示设备支持软重置。
         uint16_t devtype = identify[ATA_IDENT_DEVTYPE];
 
-        printk("device type %04X\n", devtype);
+        // printk("device type %04X\n", devtype);
 
         // 第49个word的第8个bit位表示是否支持DMA
         // 第83个word的第10个bit位表示是否支持LBA48，为1表示支持。
@@ -245,14 +245,27 @@ void ide_ata_init() {
         // printk("%04x %04x %d %d\n", identify[49], 1 << 8, identify[49] & (1 << 8), (identify[49] & (1 << 8)) != 0);
         if ((identify[49] & (1 << 8)) != 0) {
             drv->dma = 1;
+        } else {
+            // panic("your ide disk drive do not support DMA");
         }
 
-        u64 max_lba = *(u64 *)(identify + 100);
+        u64 max_lba = 0;
+
+        // printk("identity[83] %04X\n", identify[83]);
 
         if ((identify[83] & (1 << 10)) != 0) {
             drv->lba48 = 1;
-            drv->max_lba = max_lba;
+            max_lba = *(u64 *)(identify + 100);
+        } else {
+            // panic("your ide disk drive do not support LBA48");
+            max_lba = (identify[61] << 16) | identify[60];
         }
+
+        drv->max_lba = max_lba;
+
+        // assert(drv->lba48 == 1);
+        // assert(drv->max_lba != 0);
+        // assert(drv->dma == 1);
 #if 1
         uint16_t ata_major = identify[80];
         uint16_t ata_minor = identify[81];
@@ -272,9 +285,8 @@ void ide_ata_init() {
             printk("ATA/ATAPI-4 ");
         }
 
-        printk("%04X %02X\n", ata_major, ata_minor);
+        printk("[Major %04X Minor %02X]\n", ata_major, ata_minor);
 #endif
-        printk("Ultra DMA modes: %04x\n", identify[88]);
 
 #if 0
         uint16_t x = identify[222];
@@ -291,8 +303,10 @@ void ide_ata_init() {
             break;
         }
 #endif
-        printk("hard disk %s %s size: %u MB\n", drv->dma == 1 ? "DMA" : "", drv->lba48 == 1 ? "LBA48" : "LBA28",
+        printk("%s %s size: %u MB ", drv->dma == 1 ? "DMA" : "", drv->lba48 == 1 ? "LBA48" : "LBA28",
                (max_lba * 512) >> 20);
+
+        printk("Ultra DMA modes: %04x\n", identify[88]);
 
         char s[64];
         ata_read_identity_string(identify, 10, 19, s);
@@ -311,6 +325,16 @@ void ide_ata_init() {
         drv->partions[0].type = 0x00;
         drv->partions[0].lba_start = 0;
         drv->partions[0].lba_end = drv->max_lba;
+    }
+
+    for (int i = 0; i < MAX_IDE_DRIVE_CNT; i++) {
+        int drv_no = i;
+        ide_drive_t *drv = ide_drives + drv_no;
+        if (drv->present) {
+            assert(drv->dma == 1);
+            assert(drv->lba48 == 1);
+            assert(drv->max_lba > 0);
+        }
     }
 }
 
@@ -343,10 +367,10 @@ void read_partition_table(ide_drive_t *drv, uint32_t mbr_ext_offset, uint32_t lb
     char *sect = kmalloc(SECT_SIZE, 0);
 
 #if 1
-    // part_no == 0 代表整场硬盘
+    // part_no == 0 代表整块硬盘
     tmp_ide_disk_read(MAKE_DISK_DEV(drv->drv_no, 0), lba_partition_table, 1, sect);
 #else
-    // part_no == 0 代表整场硬盘
+    // part_no == 0 代表整块硬盘
     r.dev = MAKE_DISK_DEV(drv->drv_no, 0);
     r.command = DISK_REQ_READ;
     r.pos = lba_partition_table;
