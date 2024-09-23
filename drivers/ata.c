@@ -249,13 +249,13 @@ void ide_ata_init() {
             // panic("your ide disk drive do not support DMA");
         }
 
-        u64 max_lba = 0;
+        uint64_t max_lba = 0;
 
         // printk("identity[83] %04X\n", identify[83]);
 
         if ((identify[83] & (1 << 10)) != 0) {
             drv->lba48 = 1;
-            max_lba = *(u64 *)(identify + 100);
+            max_lba = *(uint64_t *)(identify + 100);
         } else {
             // panic("your ide disk drive do not support LBA48");
             max_lba = (identify[61] << 16) | identify[60];
@@ -358,7 +358,7 @@ void tmp_ide_disk_read(dev_t dev, uint32_t sect_nr, uint32_t count, char *buf) {
 
 // mbr_ext_offset: 在MBR中的扩展分区记录里的偏移地址
 // lba_partition_table: 扩展分区的真实偏移地址
-void read_partition_table(ide_drive_t *drv, uint32_t mbr_ext_offset, uint32_t lba_partition_table, int depth) {
+void read_partition_table(ide_drive_t *drv, uint32_t mbr_ext_offset, uint64_t lba_partition_table, int depth) {
     // disk_request_t r;
     char *sect = kmalloc(SECT_SIZE, 0);
 
@@ -380,7 +380,7 @@ void read_partition_table(ide_drive_t *drv, uint32_t mbr_ext_offset, uint32_t lb
     uint32_t part_id = 0;
 
     // 用来计算保存下一个扩展分区的起始位置
-    uint32_t lba_extended_partition = 0;
+    uint64_t lba_extended_partition = 0;
     const char *pe = sect + PARTITION_TABLE_OFFSET;
     for (int i = 0; i < 4; i++) {
         if (part_id >= MAX_DISK_PARTIONS) {
@@ -406,11 +406,11 @@ void read_partition_table(ide_drive_t *drv, uint32_t mbr_ext_offset, uint32_t lb
         }
 
         // 用于计算保存下一个分区的起始位置
-        uint32_t lba_offset = 0;
+        uint64_t lba_offset = 0;
         if (0x05 == pt.type || 0x0F /*W95 扩展 (LBA)*/ == pt.type) {
             assert(lba_extended_partition == 0);  // 最多只允许有一个扩展分区
             mbr_ext_offset = mbr_ext_offset != 0 ? mbr_ext_offset : pt.lba_start;
-            uint32_t offset = depth == 0 ? lba_partition_table : pt.lba_start;
+            uint64_t offset = depth == 0 ? lba_partition_table : pt.lba_start;
             lba_offset = mbr_ext_offset + offset;
             lba_extended_partition = lba_offset;
         } else {
@@ -420,9 +420,9 @@ void read_partition_table(ide_drive_t *drv, uint32_t mbr_ext_offset, uint32_t lb
             part->flags = pt.flags;
             part->type = pt.type;
             part->lba_start = lba_offset;
-            uint32_t size = pt.lba_end;
+            uint64_t size = pt.lba_end;
             part->lba_end = part->lba_start + size;
-            printk("part[%02d] %02X %10u %-10u\n", part_id, pt.type, lba_offset, part->lba_end - 1);
+            printk("part[%02d] %02X %lu %lu\n", part_id, pt.type, lba_offset, part->lba_end - 1);
         }
 
         // 每个分区16个字节
