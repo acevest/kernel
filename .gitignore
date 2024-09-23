@@ -19,6 +19,7 @@
 
 *.IMG
 *.img
+*.vdi
 *build*
 *.BIN
 *.ELF

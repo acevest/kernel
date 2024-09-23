@@ -42,6 +42,7 @@ inode_t *ramfs_get_inode(superblock_t *sb, umode_t mode, dev_t dev);
 
 static const file_operations_t ramfs_file_operations = {
     .read = 0,
+    .write = 0,
 };
 
 static const inode_operations_t ramfs_file_inode_operations = {

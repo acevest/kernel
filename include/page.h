@@ -134,17 +134,24 @@ struct kmem_cache;
 typedef struct kmem_cache kmem_cache_t;
 
 struct blk_buffer;
+struct address_space;
 typedef struct page {
     unsigned long count;
     unsigned long flags;
     unsigned long private;
-    unsigned long index;
+
     list_head_t lru;
+
+    list_head_t list;
 
     struct page *head_page;  // buddy system
     unsigned int order;
 
     void **freelist;  // for slub
+
+    unsigned long index;
+    struct page *hash_next;
+    struct address_space *mapping;
 
     kmem_cache_t *cache;
 

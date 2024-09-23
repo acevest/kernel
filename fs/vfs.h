@@ -11,6 +11,7 @@
 
 #include <atomic.h>
 #include <list.h>
+#include <page.h>
 #include <semaphore.h>
 #include <types.h>
 
@@ -28,6 +29,9 @@ typedef struct inode_operations inode_operations_t;
 typedef struct dentry_operations dentry_operations_t;
 typedef struct vfsmount vfsmount_t;
 typedef struct path path_t;
+
+typedef struct address_space_operations address_space_operations_t;
+typedef struct address_space address_space_t;
 
 struct path {
     dentry_t *dentry;
@@ -66,6 +70,9 @@ struct file {
     // 多个打开的文件可能是同一个文件
     dentry_t *f_dentry;
     file_operations_t *f_ops;
+
+    loff_t f_pos;
+    uint32_t f_flags;
 };
 
 // super block
@@ -85,6 +92,18 @@ typedef struct superblock {
 
     dev_t sb_dev;
 } superblock_t;
+
+struct address_space_operations {
+    int (*write_page)(page_t *);
+    int (*read_page)(page_t *, file_t *file);
+};
+
+struct address_space {
+    list_head_t pages;
+    uint32_t total_pages;
+    inode_t *a_inode;
+    address_space_operations_t *a_ops;
+};
 
 // dentry和inode为什么不合二为一？
 // 每一个文件除了有一个索引节点inode(里面记录着文件在存储介质上的位置和分布信息)外还有一个目录项dentry
@@ -116,6 +135,8 @@ struct inode {
     loff_t i_size;
 
     umode_t i_mode;  // FILE DIR CHR BLK FIFO SOCK
+
+    address_space_t i_mapping;
 };
 
 // d_flags
@@ -255,6 +276,10 @@ extern superblock_t *root_sb;
 int vfs_register_filesystem(fs_type_t *fs);
 fs_type_t *vfs_find_filesystem(const char *name);
 /////
+
+int vfs_create(inode_t *dir, dentry_t *dentry, int mode, namei_t *ni);
+int vfs_mkdir(inode_t *dir, dentry_t *dentry, int mode);
+////
 
 inode_t *alloc_inode(superblock_t *sb);
 void init_special_inode(inode_t *inode, umode_t mode, dev_t rdev);

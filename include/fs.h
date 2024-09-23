@@ -65,4 +65,6 @@ superblock_t *sget(fs_type_t *type,                      //
                    void *data                            //
 );
 
+file_t *get_file(int fd);
+
 #endif  //_FS_H

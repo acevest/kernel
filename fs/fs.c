@@ -42,6 +42,9 @@ dentry_t rootfs_root_dentry;
 void setup_fs() {
     // ext2_setup_fs();
 
+    void vfs_page_cache_init();
+    vfs_page_cache_init();
+
     void inode_cache_init();
     inode_cache_init();
 

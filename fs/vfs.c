@@ -85,3 +85,33 @@ void vfsmnt_put(vfsmount_t *m) {
     //
     panic("todo");
 }
+
+int vfs_create(inode_t *dir, dentry_t *dentry, int mode, namei_t *ni) {
+    int ret = 0;
+
+    assert(dir->i_ops != NULL);
+    assert(dir->i_ops->create != NULL);
+
+    ret = dir->i_ops->create(dir, dentry, mode, ni);
+
+    return ret;
+}
+
+int vfs_mkdir(inode_t *dir, dentry_t *dentry, int mode) {
+    int ret = 0;
+
+    // TODO REMOVE
+    assert(dir->i_ops->mkdir != NULL);
+
+    if (dir->i_ops->mkdir == NULL) {
+        return -EPERM;
+    }
+
+    ret = dir->i_ops->mkdir(dir, dentry, mode);
+
+    if (0 != ret) {
+        printk("%s ret %d\n", __func__, ret);
+    }
+
+    return ret;
+}

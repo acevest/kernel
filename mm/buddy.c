@@ -7,6 +7,7 @@
  * ------------------------------------------------------------------------
  */
 #include <irq.h>
+#include <list.h>
 #include <mm.h>
 #include <string.h>
 #include <sysctl.h>
@@ -95,6 +96,18 @@ found:
     }
 
     page->count = 0;
+    page->buffers = NULL;
+    page->cache = NULL;
+    page->count = 0;
+    page->flags = 0;
+    page->hash_next = NULL;
+    page->index = 0;
+    page->inuse = 0;
+    page->freelist = NULL;
+    INIT_LIST_HEAD(&page->lru);
+    INIT_LIST_HEAD(&page->list);
+    page->mapping = NULL;
+    // page->private = 0;
 
     return page;
 }
