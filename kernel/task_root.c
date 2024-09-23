@@ -49,7 +49,11 @@ void kernel_task(char *name, void *entry, void *arg) {
     regs.ss = SELECTOR_KRNL_DS;
     regs.fs = SELECTOR_KRNL_DS;
     regs.gs = SELECTOR_KRNL_DS;
+#if 0
     get_eflags(regs.eflags);
+#else
+    regs.eflags = 0x200;
+#endif
 
     int pid = do_fork(&regs, FORK_KRNL);
 
@@ -70,12 +74,11 @@ void root_task_entry() {
     }
 #endif
 
-
-    sti();
+    // sti();
 
     kernel_task("init", init_task_entry, NULL);
 
-    schedule();
+    sti();
 
     current->priority = 1;
     while (1) {

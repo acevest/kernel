@@ -13,7 +13,6 @@
 int sysc_wait(int ticks);
 void kernel_task(char *name, void *entry, void *arg);
 
-
 // 测试用的代码
 // 这里存的是下标对应的每个扇区的最后2个字节
 // hexdump -C HD.IMG | less 看的，如果镜像文件有变动需要更新这里
@@ -125,7 +124,6 @@ void taskC_entry() {
     }
 }
 
-
 void init_task_entry() {
     current->priority = 10;
 
@@ -138,7 +136,6 @@ void init_task_entry() {
     // 所以得先清空一下键盘
     inb(0x60);
 #endif
-
 
 #if 1
     extern __attribute__((regparm(0))) long sysc_mkdir(const char *path, int mode);
