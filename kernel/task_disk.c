@@ -154,6 +154,8 @@ void disk_task_entry(void *arg) {
                 printk("IDE status %02X error for drv %u pos %lu count %u\n", ide_ctrl->status, drvid, pos, r->count);
                 ret = -1;
             }
+
+            ide_stat_print(ide_ctrl);
         }
 
         // 读数据

@@ -51,15 +51,15 @@ void verify_hd_data(uint64_t sect_nr, uint16_t *buf, const char *name) {
     }
 }
 
-// 保存它们不跨64KB
+// 保证它们不跨64KB
 u16 disk_buf1[256] __attribute__((__aligned__(512)));
 u16 disk_buf2[256] __attribute__((__aligned__(512)));
 
 void taskA_entry() {
-    current->priority = 7;
+    current->priority = 3;
 
     while (1) {
-        sysc_wait(7);
+        sysc_wait(197);
 
         uint64_t sect_nr = get_next_deubug_sect_nr();
         memset(disk_buf1, 0, 512);

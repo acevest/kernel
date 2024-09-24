@@ -107,6 +107,14 @@ ide_pci_controller_t ide_pci_controller[NR_IDE_CONTROLLER];
 
 void ata_dma_stop(int channel);
 
+void ide_stat_print(ide_pci_controller_t *ide_ctrl) {
+    int r = atomic_read(&(ide_ctrl->request_cnt));
+    int i = atomic_read(&(ide_ctrl->irq_cnt));
+    int c = atomic_read(&(ide_ctrl->consumed_cnt));
+    int channel = ide_ctrl->channel;
+    printlxy(MPL_IDE0 + channel, MPO_IDE, "IDE%d req %u irq %u consumed %u", channel, r, i, c);
+}
+
 void ide_irq_bh_handler(void *arg) {
     int channel = (int)arg;
 
@@ -124,10 +132,7 @@ void ide_irq_bh_handler(void *arg) {
     atomic_inc(&ide_ctrl->irq_cnt);
 
     //
-    int r = atomic_read(&(ide_ctrl->request_cnt));
-    int i = atomic_read(&(ide_ctrl->irq_cnt));
-    int c = atomic_read(&(ide_ctrl->consumed_cnt));
-    printlxy(MPL_IDE0 + channel, MPO_IDE, "IDE%d req %u irq %u consumed %u", channel, r, i, c);
+    ide_stat_print(ide_ctrl);
 
     // 之前这里是用up()来唤醒磁盘任务
     // 但在中断的底半处理，不应该切换任务，因为会引起irq里的reenter问题，导致不能再进底半处理，也无法切换任务
@@ -208,6 +213,8 @@ void ide_pci_init(pci_device_t *pci) {
         ide_pci_controller[i].pci_status = 0;
 
         ide_pci_controller[i].pci = pci;
+
+        ide_pci_controller[i].channel = i;
 
         unsigned int irq_line = pci_read_config_byte(pci_cmd(pci, PCI_INTRLINE));
         assert(irq_line <= 15);
