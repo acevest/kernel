@@ -9,8 +9,10 @@
 
 #pragma once
 
+#include <ata.h>
 #include <atomic.h>
 #include <disk.h>
+#include <io.h>
 #include <pci.h>
 #include <semaphore.h>
 #include <system.h>
@@ -178,6 +180,10 @@ typedef struct _ide_pci_controller {
 
     prdte_t *prdt;
 
+    //
+    uint8_t status;
+    uint8_t pci_status;
+
     // 提出请求的任务用这个字段互斥地添加请求到request_queue
     // 同时也和disk任务互斥
     mutex_t request_mutex;
@@ -204,7 +210,9 @@ extern ide_pci_controller_t ide_pci_controller[NR_IDE_CONTROLLER];
 typedef struct _ide_drive {
     int type;
     int present;
-    int drv_no;
+    int drvid;
+    int channel;
+
     int dma;    // 是否支持DMA
     int lba48;  // 是否支持LBA48
     uint64_t max_lba;

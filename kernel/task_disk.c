@@ -13,10 +13,10 @@
 #include <sched.h>
 
 void ata_read_identify(int drv, int disable_intr);
-void ata_pio_read_data(int drv_no, int sect_cnt, void *dst);
+void ata_pio_read_data(int drvid, int sect_cnt, void *dst);
 void ata_dma_read_ext(int drv, uint64_t pos, uint16_t count, void *dest);
 
-void send_disk_request(disk_request_t *r) {
+int send_disk_request(disk_request_t *r) {
     if (NULL == r) {
         panic("null disk request");
     }
@@ -27,6 +27,8 @@ void send_disk_request(disk_request_t *r) {
 
     // 这个用来让task_disk唤醒自己
     semaphore_init(&r->sem, 0);
+
+    r->ret = 0;
 
     // 校验pos，和pos+count是否大于硬盘返回的最大LBA48
     // ...
@@ -57,6 +59,8 @@ void send_disk_request(disk_request_t *r) {
 
     // 等待被task_disk唤醒
     down(&r->sem);
+
+    return r->ret;
 }
 
 void disk_task_entry(void *arg) {
@@ -87,7 +91,7 @@ void disk_task_entry(void *arg) {
         mutex_unlock(&ide_ctrl->request_mutex);
 
         ide_drive_t *drv = ide_get_drive(r->dev);
-        int drv_no = drv->drv_no;
+        int drvid = drv->drvid;
         if (drv->present == 0) {
             panic("disk not present");
         }
@@ -95,7 +99,7 @@ void disk_task_entry(void *arg) {
 
         int part_id = DEV_MINOR((r->dev)) & 0xFF;
         assert(part_id < MAX_DISK_PARTIONS);
-        assert(MAKE_DISK_DEV(drv_no, part_id) == r->dev);
+        assert(MAKE_DISK_DEV(drvid, part_id) == r->dev);
 
         uint64_t pos = r->pos + drv->partions[part_id].lba_start;
         // printk("pos %lu partid %d lba end %lu\n", pos, part_id, drv->partions[part_id].lba_end);
@@ -106,31 +110,31 @@ void disk_task_entry(void *arg) {
             panic("INVARG");
         }
 
-        const bool pio_mode = true;
+        const bool pio_mode = false;
         init_completion(&ide_ctrl->intr_complete);
 
         switch (r->command) {
         case DISK_REQ_IDENTIFY:
-            printk("try to read disk drive %u identify\n", drv_no);
+            printk("try to read disk drive %u identify\n", drvid);
             assert(r->count == 1);
-            ata_read_identify(drv_no, 0);
+            ata_read_identify(drvid, 0);
             break;
         case DISK_REQ_READ:
             assert(r->count > 0);
             assert(r->buf != NULL || r->bb->data != NULL);
-            // printk("DISK READ drv_no %u pos %u count %u bb %x\n", drv_no, (uint32_t)pos, r->count, r->bb);
+            // printk("DISK READ drvid %u pos %u count %u bb %x\n", drvid, (uint32_t)pos, r->count, r->bb);
             if (pio_mode) {
                 int ata_pio_read_ext(int drvid, uint64_t pos, uint16_t count, int timeout, void *dest);
                 if (r->bb != 0) {
-                    ata_pio_read_ext(drv_no, pos, r->count, 100, r->bb->data);
+                    ata_pio_read_ext(drvid, pos, r->count, 100, r->bb->data);
                 } else {
-                    ata_pio_read_ext(drv_no, pos, r->count, 100, r->buf);
+                    ata_pio_read_ext(drvid, pos, r->count, 100, r->buf);
                 }
             } else {
                 if (r->bb != 0) {
-                    ata_dma_read_ext(drv_no, pos, r->count, r->bb->data);
+                    ata_dma_read_ext(drvid, pos, r->count, r->bb->data);
                 } else {
-                    ata_dma_read_ext(drv_no, pos, r->count, r->buf);
+                    ata_dma_read_ext(drvid, pos, r->count, r->buf);
                 }
             }
             break;
@@ -139,20 +143,28 @@ void disk_task_entry(void *arg) {
             break;
         }
 
+        int ret = 0;
         if (!pio_mode) {
             // 等待硬盘中断
             wait_completion(&ide_ctrl->intr_complete);
+
+            if ((ide_ctrl->status & (ATA_STATUS_BSY | ATA_STATUS_BSY | ATA_STATUS_WF)) != 0) {
+                printk("IDE status %02X error for drv %u pos %lu count %u\n", ide_ctrl->status, drvid, pos, r->count);
+                ret = -1;
+            }
         }
 
         // 读数据
         if (DISK_REQ_IDENTIFY == r->command) {
-            ata_pio_read_data(drv_no, 1, r->buf);
+            ata_pio_read_data(drvid, 1, r->buf);
         }
 
         if (r->bb != 0) {
             r->bb->uptodate = 1;
             complete(&r->bb->io_done);
         }
+
+        r->ret = ret;
 
         // 唤醒等待该请求的进程
         up(&(r->sem));

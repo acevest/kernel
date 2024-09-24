@@ -134,14 +134,30 @@ void ide_irq_handler(unsigned int irq, pt_regs_t *regs, void *devid) {
     // printk("ide irq %d handler pci status: 0x%02x\n", irq, ata_pci_bus_status());
     int channel = irq == ide_pci_controller[0].irq_line ? 0 : 1;
 
+#if 0
     // printk("ide[%d] irq %d handler\n", channel, irq);
 
     ide_pci_controller_t *ide_ctrl = ide_pci_controller + channel;
+
     atomic_inc(&ide_ctrl->irq_cnt);
 
     ata_dma_stop(channel);
 
     add_irq_bh_handler(ide_irq_bh_handler, (void *)channel);
+#endif
+
+    const int drvid = (channel << 1);  // 虚拟一个
+    ide_pci_controller_t *ide_ctrl = ide_pci_controller + channel;
+    ide_ctrl->status = inb(REG_STATUS(drvid));
+    ide_ctrl->pci_status = inb(ide_ctrl->bus_status);
+
+    // 之前这里是用up()来唤醒磁盘任务
+    // 但在中断的底半处理，不应该切换任务，因为会引起irq里的reenter问题，导致不能再进底半处理，也无法切换任务
+    // 所以就移除了up()里的 schedule()
+    // 后来就改用完成量来通知磁盘任务，就不存在这个问题了
+
+    // complete会唤醒进程，但不会立即重新调度进程
+    complete(&ide_ctrl->intr_complete);
 }
 
 unsigned int IDE_CHL0_CMD_BASE = 0x1F0;
@@ -201,6 +217,9 @@ void ide_pci_init(pci_device_t *pci) {
         ide_pci_controller[i].bus_status = iobase + PCI_IDE_STATUS;
         ide_pci_controller[i].bus_prdt = iobase + PCI_IDE_PRDT;
         ide_pci_controller[i].prdt = (prdte_t *)page2va(alloc_one_page(0));
+
+        ide_pci_controller[i].status = 0;
+        ide_pci_controller[i].pci_status = 0;
 
         ide_pci_controller[i].pci = pci;
 
@@ -287,13 +306,13 @@ ide_drive_t *ide_get_drive(dev_t dev) {
     int major = DEV_MAJOR(dev);
     int minor = DEV_MINOR(dev);
 
-    int drv_no = (minor & 0xFFFF) >> 8;
+    int drvid = (minor & 0xFFFF) >> 8;
 
     assert(major == DEV_MAJOR_DISK);
     assert(minor >= 0);
-    assert(drv_no < MAX_IDE_DRIVE_CNT);
+    assert(drvid < MAX_IDE_DRIVE_CNT);
 
-    ide_drive_t *drv = ide_drives + drv_no;
+    ide_drive_t *drv = ide_drives + drvid;
 
     return drv;
 }

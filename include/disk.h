@@ -29,6 +29,8 @@ typedef struct disk_request {
     disk_request_cmd_t command;  // 命令
     list_head_t list;
     semaphore_t sem;
+
+    int ret;
 } disk_request_t;
 
 typedef struct {
@@ -39,4 +41,4 @@ typedef struct {
     semaphore_t sem;
 } disk_request_queue_t;
 
-void send_disk_request(disk_request_t *r);
+int send_disk_request(disk_request_t *r);

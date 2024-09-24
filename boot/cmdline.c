@@ -39,12 +39,12 @@ void parse_cmdline(const char *cmdline) {
     assert(value[0] == 'h' && value[1] == 'd');
     assert(value[2] >= 'a' && value[2] <= 'd');
 
-    int disk_drv_no = value[2] - 'a';
+    int disk_drvid = value[2] - 'a';
 
-    uint32_t part_no = atoi(value + 3);
-    assert(part_no >= 1);
+    uint32_t partid = atoi(value + 3);
+    assert(partid >= 1);
 
-    system.root_dev = MAKE_DISK_DEV(disk_drv_no, part_no);
+    system.root_dev = MAKE_DISK_DEV(disk_drvid, partid);
     printk("root device %s [0x%08x]\n", value, system.root_dev);
 
     get_value("delay", value);

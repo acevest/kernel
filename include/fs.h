@@ -35,7 +35,7 @@
 #define DEV_MINOR_MASK ((1UL << DEV_MAJOR_BITS) - 1)
 
 #define MAKE_DEV(major, minor) ((major) << DEV_MAJOR_BITS | minor)
-#define MAKE_DISK_DEV(drv_no, part_no) MAKE_DEV(DEV_MAJOR_DISK, (((drv_no) & 0x03) << 8) | (((part_no) & 0xFF) << 0))
+#define MAKE_DISK_DEV(drvid, partid) MAKE_DEV(DEV_MAJOR_DISK, (((drvid) & 0x03) << 8) | (((partid) & 0xFF) << 0))
 
 #define DEV_MAJOR(dev) ((unsigned int)((dev) >> DEV_MAJOR_BITS))
 #define DEV_MINOR(dev) ((unsigned int)((dev) & DEV_MINOR_MASK))

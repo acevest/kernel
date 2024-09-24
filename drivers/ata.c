@@ -155,12 +155,13 @@ extern unsigned int IDE_CHL1_CTL_BASE;
 void ide_ata_init() {
     printk("IDE %04X %04X %04X %04X\n", IDE_CHL0_CMD_BASE, IDE_CHL1_CMD_BASE, IDE_CHL0_CTL_BASE, IDE_CHL1_CTL_BASE);
     for (int i = 0; i < MAX_IDE_DRIVE_CNT; i++) {
-        int drv_no = i;
-        int channel = drv_no >> 1;
+        int drvid = i;
+        int channel = drvid >> 1;
         memset(ide_drives + i, 0, sizeof(ide_drive_t));
 
-        ide_drive_t *drv = ide_drives + drv_no;
-        drv->drv_no = drv_no;
+        ide_drive_t *drv = ide_drives + drvid;
+        drv->drvid = drvid;
+        drv->channel = channel;
         drv->ide_pci_controller = ide_pci_controller + channel;
 
         // https://wiki.osdev.org/ATA_PIO_Mode
@@ -196,12 +197,12 @@ void ide_ata_init() {
         //  3. 等到status的DRQ位或ERR位设置
         uint8_t status = 0;
         const char *ide_drive_type = "NONE";
-        if (ata_read_identify(drv_no, 1, &status, identify)) {
+        if (ata_read_identify(drvid, 1, &status, identify)) {
             drv->present = 1;
             drv->type = IDE_DRIVE_TYPE_ATA;
             ide_drive_type = "ATA";
         } else {
-            if (ata_read_identify_packet(drv_no, 1, &status, identify)) {
+            if (ata_read_identify_packet(drvid, 1, &status, identify)) {
                 // printk("ATAPI DEVICE\n");
                 drv->present = 1;
                 drv->type = IDE_DRIVE_TYPE_ATAPI;
@@ -225,7 +226,7 @@ void ide_ata_init() {
             continue;
         }
 
-        // insl(REG_DATA(drv_no), identify, SECT_SIZE / sizeof(uint32_t));
+        // insl(REG_DATA(drvid), identify, SECT_SIZE / sizeof(uint32_t));
 
         // Bit 15: 0 表示 ATA 设备，1 表示 ATAPI 设备。
         // Bit 14-8: 保留。
@@ -324,8 +325,8 @@ void ide_ata_init() {
     }
 
     for (int i = 0; i < MAX_IDE_DRIVE_CNT; i++) {
-        int drv_no = i;
-        ide_drive_t *drv = ide_drives + drv_no;
+        int drvid = i;
+        ide_drive_t *drv = ide_drives + drvid;
         if (drv->present) {
             assert(drv->dma == 1);
             // assert(drv->lba48 == 1);
@@ -346,14 +347,25 @@ void ide_disk_read(dev_t dev, uint32_t sect_nr, uint32_t count, bbuffer_t *b) {
 }
 
 void tmp_ide_disk_read(dev_t dev, uint32_t sect_nr, uint32_t count, char *buf) {
-    disk_request_t r;
-    r.dev = dev;
-    r.command = DISK_REQ_READ;
-    r.pos = sect_nr;
-    r.count = count;
-    r.buf = buf;
-    r.bb = NULL;
-    send_disk_request(&r);
+    int ret = 0;
+    int retry = 3;
+    while (retry--) {
+        disk_request_t r;
+        r.dev = dev;
+        r.command = DISK_REQ_READ;
+        r.pos = sect_nr;
+        r.count = count;
+        r.buf = buf;
+        r.bb = NULL;
+        ret = send_disk_request(&r);
+        if (ret == 0) {
+            break;
+        }
+    }
+
+    if (ret != 0) {
+        panic("read disk error");
+    }
 }
 
 // mbr_ext_offset: 在MBR中的扩展分区记录里的偏移地址
@@ -361,13 +373,13 @@ void tmp_ide_disk_read(dev_t dev, uint32_t sect_nr, uint32_t count, char *buf) {
 void read_partition_table(ide_drive_t *drv, uint32_t mbr_ext_offset, uint64_t lba_partition_table, int depth) {
     // disk_request_t r;
     char *sect = kmalloc(SECT_SIZE, 0);
-
+    memset(sect, 0xAA, SECT_SIZE);
 #if 1
-    // part_no == 0 代表整块硬盘
-    tmp_ide_disk_read(MAKE_DISK_DEV(drv->drv_no, 0), lba_partition_table, 1, sect);
+    // partid == 0 代表整块硬盘
+    tmp_ide_disk_read(MAKE_DISK_DEV(drv->drvid, 0), lba_partition_table, 1, sect);
 #else
-    // part_no == 0 代表整块硬盘
-    r.dev = MAKE_DISK_DEV(drv->drv_no, 0);
+    // partid == 0 代表整块硬盘
+    r.dev = MAKE_DISK_DEV(drv->drvid, 0);
     r.command = DISK_REQ_READ;
     r.pos = lba_partition_table;
     r.count = 1;
@@ -447,7 +459,7 @@ void ide_read_partions() {
             continue;
         }
 
-        printk("read ide drive %u\n", drv->drv_no);
+        printk("read ide drive %u\n", drv->drvid);
         read_partition_table(drv, 0, 0, 0);
         printk("--------------\n");
     }
@@ -494,6 +506,11 @@ void ata_dma_read_ext(int drvid, uint64_t pos, uint16_t count, void *dest) {
     const uint32_t _64K = 0xFFFF0000;
     assert(((dest_paddr + size - (size == 0 ? 0 : 1)) & _64K) == (dest_paddr & _64K));
 #endif
+
+    uint8_t pci_status = inb(ide_ctrl->bus_status);
+    if (pci_status & PCI_IDE_STATUS_ACT) {
+        panic("Bus master IDE active");
+    }
 
     ide_ctrl->prdt[0].phys_addr = dest_paddr;
     ide_ctrl->prdt[0].byte_count = size;
