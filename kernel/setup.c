@@ -48,7 +48,29 @@ const char *version = "KERNEL v" VERSION " @" BUILDER
 void print_kernel_version() {
     //
     extern tty_t *const default_tty;
-    tty_write_at(default_tty, 0, 0, version, (size_t)strlen(version));
+    tty_t *const tty = default_tty;
+
+    int len = strlen(version);
+
+    for (int i = 0; i < tty->max_x; i++) {
+        char c = i < len ? version[i] : ' ';
+        c = c != '\n' ? c : ' ';
+        c = c != '\t' ? c : ' ';
+
+        //
+        uint32_t fg_color = tty->fg_color;
+        uint32_t bg_color = tty->bg_color;
+
+        fg_color = TTY_WHITE | TTY_FG_HIGHLIGHT;
+        bg_color = TTY_CYAN;
+
+        //
+        char *dst = (char *)tty->base_addr;
+
+        //
+        dst[i * 2 + 0] = c;
+        dst[i * 2 + 1] = ((bg_color) << 4) | (fg_color);
+    }
 
     //
     printk(version);

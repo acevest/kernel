@@ -31,6 +31,10 @@ typedef struct tty {
     unsigned int fg_color;
     unsigned int bg_color;
 
+    // 最大字符数
+    int max_x;
+    int max_y;
+
     // 记录对应的显存起始位置
     unsigned long base_addr;
 } tty_t;

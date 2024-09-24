@@ -75,6 +75,9 @@ void init_tty(tty_t *tty, const char *name, unsigned long base) {
     tty->fg_color = TTY_FG_HIGHLIGHT | TTY_GREEN;  // 高亮
     tty->bg_color = TTY_BLACK;                     // 不闪
 
+    tty->max_x = MAX_X;
+    tty->max_y = MAX_Y;
+
     tty->base_addr = base;
 
     for (int i = 0; i < TTY_VRAM_SIZE; i += 2) {
