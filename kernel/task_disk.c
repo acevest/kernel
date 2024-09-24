@@ -69,7 +69,7 @@ void disk_task_entry(void *arg) {
         int channel = (int)arg;
         ide_pci_controller_t *ide_ctrl = ide_pci_controller + channel;
 
-#if 0
+#if 1
         // 为了在DEBUG时看到RUN
         int cnt = 2;
         for (int i = 0; i < cnt; i++) {
