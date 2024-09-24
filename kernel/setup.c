@@ -45,6 +45,15 @@ const char *version = "KERNEL v" VERSION " @" BUILDER
                       "]"
                       "\n\n";
 
+void print_kernel_version() {
+    //
+    extern tty_t *const default_tty;
+    tty_write_at(default_tty, 0, 0, version, (size_t)strlen(version));
+
+    //
+    printk(version);
+}
+
 void setup_kernel() {
     printk("sysenter esp mode: %s\n",
 #if FIXED_SYSENTER_ESP_MODE
@@ -87,7 +96,7 @@ void setup_kernel() {
     detect_cpu();
     boot_delay(DEFAULT_BOOT_DELAY_TICKS);
 
-    printk(version);
+    print_kernel_version();
     boot_delay(DEFAULT_BOOT_DELAY_TICKS);
 
     extern tty_t *const monitor_tty;

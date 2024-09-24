@@ -129,9 +129,11 @@ void tty_do_scroll_up(tty_t *tty) {
         return;
     }
 
-    //
-    char *dst = (char *)tty->base_addr;
-    for (int src = BYTES_PER_LINE; src < (MAX_Y * BYTES_PER_LINE); src++) {
+    // 如果是default_tty则保留用来显示内核版本及编译时间信息
+    const int keep = tty != default_tty ? 0 : BYTES_PER_LINE;
+
+    char *dst = (char *)tty->base_addr + keep;
+    for (int src = BYTES_PER_LINE + keep; src < (MAX_Y * BYTES_PER_LINE); src++) {
         *dst++ = *(char *)(tty->base_addr + src);
     }
 
@@ -260,7 +262,7 @@ void tty_switch(tty_t *tty) {
     outb(VGA_CRTC_START_ADDR_H, VGA_CRTC_ADDR);
     outb((offset >> 8) & 0xFF, VGA_CRTC_DATA);
     outb(VGA_CRTC_START_ADDR_L, VGA_CRTC_ADDR);
-    outb((offset)&0xFF, VGA_CRTC_DATA);
+    outb((offset) & 0xFF, VGA_CRTC_DATA);
     irq_restore(flags);
 
     current_tty = tty;
