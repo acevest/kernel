@@ -625,9 +625,8 @@ int ata_pio_read_ext(int drvid, uint64_t pos, uint16_t count, int timeout, void 
             break;
         }
 
-        asm("sti;hlt;");
+        asm("hlt;");
     }
-    asm("cli");
 
     if (timeout == 0) {
         return -1;

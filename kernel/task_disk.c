@@ -106,7 +106,8 @@ void disk_task_entry(void *arg) {
             panic("INVARG");
         }
 
-        // init_completion(&ide_ctrl->intr_complete);
+        const bool pio_mode = true;
+        init_completion(&ide_ctrl->intr_complete);
 
         switch (r->command) {
         case DISK_REQ_IDENTIFY:
@@ -118,10 +119,19 @@ void disk_task_entry(void *arg) {
             assert(r->count > 0);
             assert(r->buf != NULL || r->bb->data != NULL);
             // printk("DISK READ drv_no %u pos %u count %u bb %x\n", drv_no, (uint32_t)pos, r->count, r->bb);
-            if (r->bb != 0) {
-                ata_dma_read_ext(drv_no, pos, r->count, r->bb->data);
+            if (pio_mode) {
+                int ata_pio_read_ext(int drvid, uint64_t pos, uint16_t count, int timeout, void *dest);
+                if (r->bb != 0) {
+                    ata_pio_read_ext(drv_no, pos, r->count, 100, r->bb->data);
+                } else {
+                    ata_pio_read_ext(drv_no, pos, r->count, 100, r->buf);
+                }
             } else {
-                ata_dma_read_ext(drv_no, pos, r->count, r->buf);
+                if (r->bb != 0) {
+                    ata_dma_read_ext(drv_no, pos, r->count, r->bb->data);
+                } else {
+                    ata_dma_read_ext(drv_no, pos, r->count, r->buf);
+                }
             }
             break;
         default:
@@ -129,8 +139,10 @@ void disk_task_entry(void *arg) {
             break;
         }
 
-        // 等待硬盘中断
-        wait_completion(&ide_ctrl->intr_complete);
+        if (!pio_mode) {
+            // 等待硬盘中断
+            wait_completion(&ide_ctrl->intr_complete);
+        }
 
         // 读数据
         if (DISK_REQ_IDENTIFY == r->command) {
