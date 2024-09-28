@@ -59,10 +59,11 @@ extern chrdev_t *chrdev[];
 typedef int (*fill_super_cb_t)(superblock_t *sb, void *data);
 int read_super_for_nodev(fs_type_t *type, int flags, void *data, fill_super_cb_t fill_super, vfsmount_t *mnt);
 
-superblock_t *sget(fs_type_t *type,                      //
-                   int (*test)(superblock_t *, void *),  //
-                   int (*set)(superblock_t *, void *),   //
-                   void *data                            //
+int sget(fs_type_t *type,                      //
+         int (*test)(superblock_t *, void *),  //
+         int (*set)(superblock_t *, void *),   //
+         void *data,                           //
+         superblock_t **s                      // OUT
 );
 
 file_t *get_file(int fd);

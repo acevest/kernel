@@ -39,57 +39,59 @@ int set_anonymous_super(superblock_t *s, void *data) {
 }
 
 int read_super_for_nodev(fs_type_t *type, int flags, void *data, fill_super_cb_t fill_super, vfsmount_t *mnt) {
-    int ret = 0;
+    int err = 0;
     superblock_t *s = 0;
 
     // 分配superblock
-    s = sget(type, NULL, set_anonymous_super, NULL);
+    err = sget(type, NULL, set_anonymous_super, NULL, &s);
 
     assert(s != NULL);
 
     //
     s->sb_flags = flags;
 
-    ret = fill_super(s, data);
-    if (0 != ret) {
-        panic("ret: %d", ret);
+    err = fill_super(s, data);
+    if (0 != err) {
+        panic("err: %d", err);
     }
 
     mnt->mnt_sb = s;
     mnt->mnt_root = dentry_get(s->sb_root);
 
-    return ret;
+    return err;
 }
 
-superblock_t *sget(fs_type_t *type,                      //
-                   int (*test)(superblock_t *, void *),  //
-                   int (*set)(superblock_t *, void *),   //
-                   void *data                            //
+int sget(fs_type_t *type,                      //
+         int (*test)(superblock_t *, void *),  //
+         int (*set)(superblock_t *, void *),   //
+         void *data,                           //
+         superblock_t **s                      //
 ) {
-    int ret = 0;
-    superblock_t *s = 0;
+    int err = 0;
+
+    *s = 0;
 
     if (0 != test) {
         panic("not implemented");
     }
 
     // TOOD REMOVE
-    assert(0 == s);
+    assert(0 == *s);
 
-    s = alloc_super(type);
-    if (0 == s) {
-        return ERR_PTR(-ENOMEM);
+    *s = alloc_super(type);
+    if (0 == *s) {
+        return ENOMEM;
     }
 
     assert(0 != set);
 
-    ret = set(s, data);
-    assert(0 == ret);
+    err = set(*s, data);
+    assert(0 == err);
 
     uint32_t eflags;
     irq_save(eflags);
-    list_add_tail(&s->sb_list, &g_superblocks);
+    list_add_tail(&(*s)->sb_list, &g_superblocks);
     irq_restore(eflags);
 
-    return s;
+    return err;
 }

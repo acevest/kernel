@@ -272,18 +272,4 @@ void boot_delay(int ticks);
 
 #endif
 
-#define MAX_ERRNO 4095
-
-#ifndef ASM
-
-#define IS_ERR_VALUE(x) (((unsigned long)(x)) >= ((unsigned long)(-MAX_ERRNO)))
-
-static inline void *ERR_PTR(long err) { return ((void *)(err)); }
-
-static inline long PTR_ERR(void *p) { return ((long)(p)); }
-
-static inline bool IS_ERR(void *p) { return IS_ERR_VALUE(p); }
-
-#endif
-
 #endif  //_SYSTEM_H

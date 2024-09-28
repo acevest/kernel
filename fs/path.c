@@ -201,7 +201,8 @@ int path_walk(const char *path, namei_t *ni) {
         compute_qstr_hash(&this);
 
         // 根据该名字，先上dentry cache里找
-        dentry = dentry_cached_lookup(ni->path.dentry, &this);
+        ret = dentry_cached_lookup(ni->path.dentry, &this, &dentry);
+        assert(0 == ret);
 
         // 如果找不到就上实际存储设备中去找
         if (NULL == dentry) {
@@ -281,7 +282,8 @@ int path_walk(const char *path, namei_t *ni) {
         // printk("HASH %s %lu\n", this.name, this.hash);
 
         // 根据该名字，先上dentry cache里找
-        dentry = dentry_cached_lookup(ni->path.dentry, &this);
+        ret = dentry_cached_lookup(ni->path.dentry, &this, &dentry);
+        assert(0 == ret);
 
         // 如果找不到就上实际存储设备中去找
         if (NULL == dentry) {
@@ -328,50 +330,49 @@ end:
     return ret;
 }
 
-dentry_t *path_lookup_hash(dentry_t *base, qstr_t *name) {
-    dentry_t *dentry = NULL;
-
+int path_lookup_hash(dentry_t *base, qstr_t *name, dentry_t **dentry) {
+    int ret = 0;
     inode_t *inode = base->d_inode;
 
-    dentry = dentry_cached_lookup(base, name);
-    if (dentry != NULL) {
-        return dentry;
+    ret = dentry_cached_lookup(base, name, dentry);
+    assert(0 == ret);
+    if (*dentry != NULL) {
+        return 0;
     }
 
     dentry_t *dentry_new = dentry_alloc(base, name);
     if (dentry_new == NULL) {
-        dentry = ERR_PTR(-ENOMEM);
-        return dentry;
+        return ENOMEM;
     }
 
-    dentry = inode->i_ops->lookup(inode, dentry_new);
+    *dentry = inode->i_ops->lookup(inode, dentry_new);
 
-    if (dentry == NULL) {  // 返回 lookup 没有再分配一个dentry
-        dentry = dentry_new;
+    if (*dentry == NULL) {  // 返回 lookup 没有再分配一个dentry
+        *dentry = dentry_new;
     } else {  // 否则就释放dentry_new使用lookup返回的dentry
         dentry_put(dentry_new);
     }
 
-    return dentry;
+    return 0;
 }
 
-dentry_t *path_lookup_create(namei_t *ni) {
-    dentry_t *dentry = NULL;
+int path_lookup_create(namei_t *ni, dentry_t **dentry) {
+    int err = 0;
 
     // 在调用完path_lookup_create后调用 up 操作
     down(&ni->path.dentry->d_inode->i_sem);
 
-    dentry = ERR_PTR(-EEXIST);
+    //
     if (ni->last_type != LAST_NORMAL) {
-        return dentry;
+        return EEXIST;
     }
 
-    dentry = path_lookup_hash(ni->path.dentry, &ni->last);
-    if (IS_ERR(dentry)) {
-        return dentry;
+    err = path_lookup_hash(ni->path.dentry, &ni->last, dentry);
+    if (err != 0) {
+        return err;
     }
 
-    return dentry;
+    return err;
 }
 
 int path_open_namei(const char *path, int flags, int mode, namei_t *ni) {
@@ -406,9 +407,8 @@ int path_open_namei(const char *path, int flags, int mode, namei_t *ni) {
 
     down(&dir->d_inode->i_sem);
 
-    dentry = dentry_cached_lookup(dir, &ni->last);
-    if (IS_ERR(dentry)) {
-        ret = PTR_ERR(dentry);
+    ret = path_lookup_hash(dir, &ni->last, &dentry);
+    if (0 != ret) {
         up(&dir->d_inode->i_sem);
         goto end;
     }

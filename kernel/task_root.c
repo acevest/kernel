@@ -49,7 +49,7 @@ void kernel_task(char *name, void *entry, void *arg) {
     regs.ss = SELECTOR_KRNL_DS;
     regs.fs = SELECTOR_KRNL_DS;
     regs.gs = SELECTOR_KRNL_DS;
-#if 0
+#if 1
     get_eflags(regs.eflags);
 #else
     regs.eflags = 0x200;
@@ -74,11 +74,9 @@ void root_task_entry() {
     }
 #endif
 
-    // sti();
+    sti();
 
     kernel_task("init", init_task_entry, NULL);
-
-    sti();
 
     current->priority = 1;
     while (1) {

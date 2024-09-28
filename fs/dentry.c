@@ -140,44 +140,45 @@ void dentry_add(dentry_t *dentry, inode_t *inode) {
     dentry_rehash(dentry);
 }
 
-dentry_t *dentry_cached_lookup(dentry_t *parent, qstr_t *s) {
+int dentry_cached_lookup(dentry_t *parent, qstr_t *s, dentry_t **dentry) {
     dentry_hash_entry_t *dhe = dentry_hash(parent, s->hash);
 
-    dentry_t *dentry = NULL;
+    *dentry = NULL;
 
     mutex_lock(&dhe->mutex);
 
     list_head_t *p;
     list_for_each(p, &dhe->list) {
-        dentry = list_entry(p, dentry_t, d_hash);
-        assert(dentry != NULL);
+        *dentry = list_entry(p, dentry_t, d_hash);
+        assert(*dentry != NULL);
 
-        if (dentry->d_name.hash != s->hash) {
+        if ((*dentry)->d_name.hash != s->hash) {
             continue;
         }
 
-        if (dentry->d_name.len != s->len) {
+        if ((*dentry)->d_name.len != s->len) {
             continue;
         }
 
-        if (dentry->d_parent != parent) {
+        if ((*dentry)->d_parent != parent) {
             continue;
         }
 
-        if (memcmp(dentry->d_name.name, s->name, s->len) != 0) {
+        if (memcmp((*dentry)->d_name.name, s->name, s->len) != 0) {
             continue;
         }
 
-        dentry_get_locked(dentry);
+        dentry_get_locked(*dentry);
 
         mutex_unlock(&dhe->mutex);
-        return dentry;
+        return 0;
     }
 
     mutex_unlock(&dhe->mutex);
 
-    return NULL;
+    return 0;
 }
+
 int dentry_real_lookup(dentry_t *parent, qstr_t *s, dentry_t **dentry) {
     *dentry = NULL;
     int ret = 0;
@@ -189,7 +190,8 @@ int dentry_real_lookup(dentry_t *parent, qstr_t *s, dentry_t **dentry) {
 
     // 在获得信号量后，需要再上cache中查找一遍
     // 因为这个过程中当前进程可能会睡眠，当被唤醒后，其它进程已经在内存准备好了
-    *dentry = dentry_cached_lookup(parent, s);
+    ret = dentry_cached_lookup(parent, s, dentry);
+    assert(0 == ret);
 
     if (NULL != *dentry) {
         up(&dir->i_sem);

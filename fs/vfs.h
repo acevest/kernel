@@ -285,8 +285,16 @@ inode_t *alloc_inode(superblock_t *sb);
 void init_special_inode(inode_t *inode, umode_t mode, dev_t rdev);
 ////
 
-dentry_t *dentry_cached_lookup(dentry_t *parent, qstr_t *s);
-int dentry_real_lookup(dentry_t *parent, qstr_t *s, dentry_t **dentry);
+int dentry_cached_lookup(dentry_t *parent,  //
+                         qstr_t *s,         //
+                         dentry_t **dentry  // OUT
+);
+
+int dentry_real_lookup(dentry_t *parent,  //
+                       qstr_t *s,         //
+                       dentry_t **dentry  // OUT
+);
+
 dentry_t *dentry_alloc_root(inode_t *root_inode);
 dentry_t *dentry_alloc(dentry_t *parent, const qstr_t *s);
 void dentry_add(dentry_t *dentry, inode_t *inode);
@@ -306,4 +314,6 @@ extern const file_operations_t simple_dir_operations;
 //
 bool path_init(const char *path, unsigned int flags, namei_t *ni);
 int path_walk(const char *path, namei_t *ni);
-dentry_t *path_lookup_create(namei_t *ni);
+int path_lookup_create(namei_t *ni,       //
+                       dentry_t **dentry  // OUT
+);

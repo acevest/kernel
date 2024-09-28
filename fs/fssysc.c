@@ -26,12 +26,14 @@ __attribute__((regparm(0))) long sysc_mkdir(const char *path, int mode) {
         }
     }
 
-    dentry_t *dentry;
-    dentry = path_lookup_create(&ni);
-    ret = PTR_ERR(dentry);
-    if (!IS_ERR(dentry)) {
+    dentry_t *dentry = NULL;
+    ret = path_lookup_create(&ni, &dentry);
+    if (0 != ret) {
+        assert(dentry == NULL);
         ret = vfs_mkdir(ni.path.dentry->d_inode, dentry, mode);
         dentry_put(dentry);
+    } else {
+        assert(dentry != NULL);
     }
 
     up(&ni.path.dentry->d_inode->i_sem);
