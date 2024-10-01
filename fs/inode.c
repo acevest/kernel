@@ -38,6 +38,10 @@ inode_t *alloc_inode(superblock_t *sb) {
     inode->i_fops = &empty_fops;
     inode->i_ops = &empty_iops;
     inode->i_size = 0;
+    inode->i_mapping = &inode->i_as;
+    inode->i_mapping->a_inode = inode;
+    inode->i_mapping->pages;
+    INIT_LIST_HEAD(&inode->i_mapping->pages);
     return inode;
 }
 

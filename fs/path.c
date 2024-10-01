@@ -413,9 +413,8 @@ int path_open_namei(const char *path, int flags, int mode, namei_t *ni) {
         goto end;
     }
 
+    assert(dentry != NULL);
     if (NULL == dentry->d_inode) {
-        // vfs_create();
-
         ret = vfs_create(dir->d_inode, dentry, mode, ni);
 
         up(&dir->d_inode->i_sem);
@@ -428,16 +427,26 @@ int path_open_namei(const char *path, int flags, int mode, namei_t *ni) {
 
     // 上述是文件不存在的逻辑
     // 此处是文件存在的情况下的处理逻辑
+    up(&dir->d_inode->i_sem);
 
     if ((flags & O_EXCL) == 0) {
-        panic("unsupport O_EXCL")
+        panic("unsupport O_EXCL");
     }
 
 ok:
     inode = dentry->d_inode;
     if (NULL == inode) {
-        ret = -ENOENT;
+        ret = ENOENT;
         goto end;
+    }
+
+    if (S_ISDIR(inode->i_mode)) {
+        ret = EISDIR;
+        goto end;
+    }
+
+    if ((flags & O_TRUNC) == 0) {
+        panic("unsupport O_TRUNC");
     }
 
 end:

@@ -18,7 +18,12 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <fs.h>
+#include <page.h>
+#include <string.h>
 #include <types.h>
+
+page_t *get_cached_page(address_space_t *mapping, uint32_t index);
+
 ssize_t vfs_generic_file_write(file_t *file, const char *buf, size_t size, loff_t *p_pos) {
     ssize_t ret = 0;
 
@@ -28,21 +33,48 @@ ssize_t vfs_generic_file_write(file_t *file, const char *buf, size_t size, loff_
     }
 
     assert(file->f_dentry->d_inode != NULL);
+    printk("FLAGS %08x\n", file->f_flags);
     assert((file->f_flags & O_APPEND) == O_APPEND);  // 目前只支持这个
 
     inode_t *inode = file->f_dentry->d_inode;
+    assert(inode != NULL);
+
+    address_space_t *mapping = inode->i_mapping;
+    assert(mapping->a_inode == inode);
+    assert(mapping->a_ops != NULL);
+    assert(mapping->a_ops->read_page != NULL);
+    assert(mapping->a_ops->write_page != NULL);
 
     down(&inode->i_sem);
 
     while (size > 0) {
-        uint32_t index = pos >> PAGE_SHIFT;
-        uint32_t offset = pos & (PAGE_SIZE - 1);
-        uint32_t bytes = PAGE_SIZE - offset;
+        uint32_t index = pos >> PAGE_SHIFT;       // 所在页号索引
+        uint32_t offset = pos & (PAGE_SIZE - 1);  // 所在页内偏移
+        uint32_t bytes = PAGE_SIZE - offset;      // 要在这一页写的字节数
         if (size < bytes) {
             bytes = size;
         }
 
+        // 找出page
+        // 若找不出，则分配一个，并加到cache里
+        page_t *page = get_cached_page(mapping, index);
+        assert(page != NULL);
+        assert(page->index == index);
+        assert(page->mapping == mapping);
+
+        void *addr = page2va(page);
+
+        // TODO
+        // ...
+
+        // 写入page
+        memcpy(addr, buf, size);
+
+        // TODO
+        // ...
+
         //
+        size -= bytes;
     }
 
 end:

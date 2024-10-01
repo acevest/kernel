@@ -69,7 +69,7 @@ typedef struct file_operations {
 struct file {
     // 多个打开的文件可能是同一个文件
     dentry_t *f_dentry;
-    file_operations_t *f_ops;
+    const file_operations_t *f_ops;
 
     loff_t f_pos;
     uint32_t f_flags;
@@ -102,7 +102,7 @@ struct address_space {
     list_head_t pages;
     uint32_t total_pages;
     inode_t *a_inode;
-    address_space_operations_t *a_ops;
+    const address_space_operations_t *a_ops;
 };
 
 // dentry和inode为什么不合二为一？
@@ -136,7 +136,8 @@ struct inode {
 
     umode_t i_mode;  // FILE DIR CHR BLK FIFO SOCK
 
-    address_space_t i_mapping;
+    address_space_t *i_mapping;
+    address_space_t i_as;
 };
 
 // d_flags
@@ -308,12 +309,14 @@ void dentry_get_locked(dentry_t *dentry);
 
 void dentry_put(dentry_t *dentry);
 
-/////
-extern const file_operations_t simple_dir_operations;
-
 //
 bool path_init(const char *path, unsigned int flags, namei_t *ni);
 int path_walk(const char *path, namei_t *ni);
 int path_lookup_create(namei_t *ni,       //
                        dentry_t **dentry  // OUT
 );
+
+int path_open_namei(const char *path, int flags, int mode, namei_t *ni);
+
+//
+ssize_t vfs_generic_file_write(file_t *file, const char *buf, size_t size, loff_t *p_pos);
