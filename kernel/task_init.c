@@ -140,13 +140,40 @@ void init_task_entry() {
 #if 1
     extern __attribute__((regparm(0))) long sysc_mkdir(const char *path, int mode);
     sysc_mkdir("/root", 0777);
-    sysc_mkdir("/root/aaa", 0777);
+    sysc_mkdir("/root/sbin/", 0777);
 
     {
         namei_t ni;
-        const char *path = "/root";
-        path_init(path, 0, &ni);
+        const char *path = "/root/sbin/init.elf";
+        path_init(path, PATH_LOOKUP_PARENT, &ni);
         path_walk(path, &ni);
+
+        printk("FLAGS %08x\n", ni.flags);
+        ni.flags = O_CREAT | O_APPEND;
+        path_open_namei(path, ni.flags, S_IFREG, &ni);
+        ni.flags = O_CREAT | O_APPEND;
+        printk("FLAGS %08x\n", ni.flags);
+        void ramfs_debug_set_f_ops(file_t * filp);
+        loff_t pos = 0;
+        file_t file;
+        file.f_dentry = ni.path.dentry;
+        file.f_flags = ni.flags;
+        printk("FLAGS %08x\n", ni.flags);
+        printk("FLAGS %08x\n", file.f_flags);
+        file.f_ops = 0;
+        file.f_pos = 0;
+        ramfs_debug_set_f_ops(&file);
+        vfs_generic_file_write(&file, "aaa1234567", 10, &file.f_pos);
+        file.f_pos = 0;
+        char buf[128] = {
+            'b',
+            'u',
+            'f',
+        };
+        vfs_generic_file_read(&file, buf, 4, &file.f_pos);
+        for (int i = 0; i < 16; i++) {
+            printk("%c\n", buf[i]);
+        }
     }
 #endif
 

@@ -70,6 +70,8 @@ void add_page_to_hash(page_t *page, address_space_t *mapping, uint32_t index) {
     uint32_t hash = page_hash_func(mapping, index);
     assert(hash < PAGE_HASH_SIZE);
 
+    assert(page->mapping == mapping);
+
     ENTER_CRITICAL_ZONE(EFLAGS);
     page_t *p = 0;
     p = page_hash_table[hash];
@@ -78,17 +80,28 @@ void add_page_to_hash(page_t *page, address_space_t *mapping, uint32_t index) {
     EXIT_CRITICAL_ZONE(EFLAGS);
 }
 
+void add_page_to_inode(address_space_t *mapping, page_t *page) {
+    assert(mapping != NULL);
+    assert(page != NULL);
+    assert(page->mapping == mapping);
+
+    ENTER_CRITICAL_ZONE(EFLAGS);
+    list_add(&page->list, &mapping->pages);
+    EXIT_CRITICAL_ZONE(EFLAGS);
+}
+
 page_t *get_cached_page(address_space_t *mapping, uint32_t index) {
     page_t *page = NULL;
     page = find_hash_page(mapping, index);
-
     if (NULL == page) {
         page = alloc_one_page(0);
         assert(page != NULL);
 
         page->index = index;
+        page->mapping = mapping;
 
         add_page_to_hash(page, mapping, index);
+        add_page_to_inode(mapping, page);
 
         ENTER_CRITICAL_ZONE(EFLAGS);
         list_add(&page->list, &mapping->pages);

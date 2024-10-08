@@ -42,7 +42,7 @@ inode_t *ramfs_get_inode(superblock_t *sb, umode_t mode, dev_t dev);
 
 static const file_operations_t ramfs_file_operations = {
     .read = 0,
-    .write = 0,
+    .write = vfs_generic_file_write,
 };
 
 static const inode_operations_t ramfs_file_inode_operations = {
@@ -51,6 +51,13 @@ static const inode_operations_t ramfs_file_inode_operations = {
 
 static const file_operations_t ramfs_dir_operations = {
 
+};
+
+static const address_space_operations_t ramfs_address_space_operations = {
+    .read_page = NULL,
+    .write_page = NULL,
+    .write_begin = NULL,
+    .write_end = NULL,
 };
 
 static int ramfs_mknod(inode_t *dir, dentry_t *dentry, umode_t mode) {
@@ -62,6 +69,8 @@ static int ramfs_mknod(inode_t *dir, dentry_t *dentry, umode_t mode) {
     if (inode == NULL) {
         return -ENOSPC;
     }
+
+    assert(inode != NULL);
 
     dentry_attach_inode(dentry, inode);
 
@@ -93,6 +102,11 @@ static const inode_operations_t ramfs_dir_inode_operations = {
     .mkdir = ramfs_mkdir,
 };
 
+void ramfs_debug_set_f_ops(file_t *filp) {
+    //
+    filp->f_ops = &ramfs_file_operations;
+}
+
 inode_t *ramfs_get_inode(superblock_t *sb, umode_t mode, dev_t dev) {
     inode_t *inode = alloc_inode(sb);
 
@@ -107,11 +121,13 @@ inode_t *ramfs_get_inode(superblock_t *sb, umode_t mode, dev_t dev) {
         // panic("S_IFREG: not implement");
         inode->i_fops = &ramfs_file_operations;
         inode->i_ops = &ramfs_file_inode_operations;
+        inode->i_mapping->a_ops = &ramfs_address_space_operations;
         break;
     case S_IFDIR:
         // panic("S_IFDIR: not implement");
         inode->i_fops = &ramfs_dir_operations;
         inode->i_ops = &ramfs_dir_inode_operations;
+        inode->i_mapping->a_ops = &ramfs_address_space_operations;
         break;
     case S_IFLNK:
         panic("S_IFLNK: not implement");

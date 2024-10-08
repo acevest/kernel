@@ -3,15 +3,19 @@
 //     wed, 30 Jul 2008 14:47 +0800
 //     Add %012d %012x %12d %12x Support  Mon, 20 Jul 2009 19:30:34
 //     Add %u Support                     Sun, 06 Jul 2014 12:07:54
+//     Add %o Support                     Tue, 08 Oct 2024 22:54:36
 // ========================================================================
+#include <assert.h>
 #include <types.h>
 
 #include "string.h"
 
 char *itoa(char *s, int n);
 char *itou(char *s, unsigned int n);
+char *itoo(char *s, unsigned int n);
 char *itox(char *s, unsigned int n, int upper);
-char *i64tou(char *s, int64_t n);
+char *i64tou(char *s, uint64_t n);
+char *i64too(char *s, uint64_t n);
 char *i64tox(char *s, uint64_t n, int upper);
 
 enum { ALIGN_RIGHT, ALIGN_LEFT };
@@ -87,6 +91,10 @@ int vsprintf(char *buf, const char *fmt, char *args) {
                 i64tou(tmp, *((int64_t *)args));
                 p += write_buf(p, tmp, char_fill, char_cnt, align);
                 args += 4;
+            } else if (*fmt == 'o') {
+                i64too(tmp, *((uint64_t *)args));
+                p += write_buf(p, tmp, char_fill, char_cnt, align);
+                args += 4;
             } else if (*fmt == 'x' || *fmt == 'X') {
                 // i64tox(tmp, *((uint64_t *)args), *fmt == 'X' ? 1 : 0);
                 i64tox(tmp, *((uint64_t *)args), 1);  // x X都强制为大写
@@ -105,6 +113,10 @@ int vsprintf(char *buf, const char *fmt, char *args) {
         case 'X':
             // itox(tmp, *((unsigned int *)args), *fmt == 'X' ? 1 : 0);
             itox(tmp, *((unsigned int *)args), 1);  // x X都强制为大写
+            p += write_buf(p, tmp, char_fill, char_cnt, align);
+            break;
+        case 'o':
+            itoo(tmp, *((unsigned *)args));
             p += write_buf(p, tmp, char_fill, char_cnt, align);
             break;
         default:
@@ -150,7 +162,7 @@ char *itoa(char *s, int n) {
     }
 }
 
-char *i64tou(char *s, int64_t n) {
+char *i64tou(char *s, uint64_t n) {
     itou(s, n >> 32);
     int i = 0;
     if ((n >> 32) > 0) {
@@ -177,41 +189,55 @@ char *itou(char *s, unsigned int n) {
     }
 }
 
-char *itox(char *s, unsigned int n, int upper) {
+char *_itoo(char *s, uint64_t n, int bgn) {
     char *p = s;
     char ch;
     int i;
     bool flag = false;
 
-    for (i = 28; i >= 0; i -= 4) {
-        ch = (n >> i) & 0x0F;
+    for (i = bgn; i >= 0; i -= 3) {
+        ch = (n >> i) & 0x07;
 
-        if (ch >= 0 && ch <= 9) {
-            ch += '0';
-        } else {
-            ch -= 10;
-            ch += upper == 1 ? 'A' : 'a';
+        assert(ch >= 0);
+        assert(ch <= 7);
+
+        ch += '0';
+
+        if (ch != '0') {
+            flag = true;
         }
 
-        if (ch != '0') flag = true;
-
-        if (flag || ch != '0') *p++ = ch;
+        if (flag || ch != '0') {
+            *p++ = ch;
+        }
     }
 
-    if (s == p) *p++ = '0';
+    if (s == p) {
+        *p++ = '0';
+    }
 
     *p = 0;
 
     return s;
 }
 
-char *i64tox(char *s, uint64_t n, int upper) {
+char *itoo(char *s, unsigned int n) {
+    //
+    return _itoo(s, n, 30);
+}
+
+char *i64too(char *s, uint64_t n) {
+    //
+    return _itoo(s, n, 63);
+}
+
+char *_itox(char *s, uint64_t n, int upper, int bgn) {
     char *p = s;
     char ch;
     int i;
     bool flag = false;
 
-    for (i = 60; i >= 0; i -= 4) {
+    for (i = bgn; i >= 0; i -= 4) {
         ch = (n >> i) & 0x0F;
 
         if (ch >= 0 && ch <= 9) {
@@ -221,14 +247,30 @@ char *i64tox(char *s, uint64_t n, int upper) {
             ch += upper == 1 ? 'A' : 'a';
         }
 
-        if (ch != '0') flag = true;
+        if (ch != '0') {
+            flag = true;
+        }
 
-        if (flag || ch != '0') *p++ = ch;
+        if (flag || ch != '0') {
+            *p++ = ch;
+        }
     }
 
-    if (s == p) *p++ = '0';
+    if (s == p) {
+        *p++ = '0';
+    }
 
     *p = 0;
 
     return s;
+}
+
+char *itox(char *s, unsigned int n, int upper) {
+    //
+    return _itox(s, n, upper, 28);
+}
+
+char *i64tox(char *s, uint64_t n, int upper) {
+    //
+    return _itox(s, n, upper, 60);
 }
