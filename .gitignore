@@ -41,4 +41,5 @@ bochsout.txt
 **/serial_monitor/serial_monitor
 **/mkrootfs/mkrootfs
 initrd
+initfs
 rootfs

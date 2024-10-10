@@ -5,7 +5,6 @@
 //     Add %u Support                     Sun, 06 Jul 2014 12:07:54
 //     Add %o Support                     Tue, 08 Oct 2024 22:54:36
 // ========================================================================
-#include <assert.h>
 #include <types.h>
 
 #include "string.h"
@@ -197,9 +196,6 @@ char *_itoo(char *s, uint64_t n, int bgn) {
 
     for (i = bgn; i >= 0; i -= 3) {
         ch = (n >> i) & 0x07;
-
-        assert(ch >= 0);
-        assert(ch <= 7);
 
         ch += '0';
 

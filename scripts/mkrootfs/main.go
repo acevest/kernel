@@ -125,9 +125,9 @@ func main() {
 		}
 
 		path := strings.TrimPrefix(filePath, pathPrefix)
-
+		path += strings.Repeat("\x00", 4-(len(path)%4))
 		entry := FileEntry{
-			EntrySize: uint32(8 + len(path)),
+			EntrySize: uint32(16 + len(path)),
 			FileType:  fileType,
 			FileName:  path,
 			FileSize:  fileSize,
@@ -157,6 +157,7 @@ func main() {
 	hdr.Timestamp = uint32(time.Now().Unix())
 	hdr.FileEntryCnt = uint32(len(entries))
 	hdr.Name = outputFileName + "\x00"
+	hdr.Name += strings.Repeat("\x00", 4-(len(hdr.Name)%4))
 	hdr.CalculateHeaderSize()
 
 	binary.Write(outputFile, binary.LittleEndian, hdr.Magic)
@@ -186,10 +187,21 @@ func main() {
 	// 	log.Fatal(err)
 	// }
 
-	// 写入每个文件项
-	currentOffset := uint32(4 + len(entries)*12)
+	fileHeaderSize, _ := outputFile.Seek(0, io.SeekCurrent)
+	fileContentOffset := uint32(fileHeaderSize)
+	log.Printf("file header size %v\n", fileHeaderSize)
 	for _, entry := range entries {
-		entry.Offset = currentOffset
+		fileContentOffset += 4 // EntrySize
+		fileContentOffset += 4 // FileType
+		fileContentOffset += 4 // FileSize
+		fileContentOffset += 4 // FileContentOffset
+		fileContentOffset += uint32(len(entry.FileName))
+		log.Printf("fe %v\n", fileContentOffset)
+	}
+
+	// 写入每个文件项
+	for _, entry := range entries {
+		entry.Offset = fileContentOffset
 
 		err = binary.Write(outputFile, binary.LittleEndian, entry.EntrySize)
 		if err != nil {
@@ -201,12 +213,22 @@ func main() {
 			log.Fatal(err)
 		}
 
+		err = binary.Write(outputFile, binary.LittleEndian, entry.FileSize)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		err = binary.Write(outputFile, binary.LittleEndian, fileContentOffset)
+		if err != nil {
+			log.Fatal(err)
+		}
+
 		_, err = outputFile.WriteString(entry.FileName)
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		currentOffset += entry.FileSize
+		fileContentOffset += entry.FileSize
 	}
 
 	// 逐个读取文件并追加到 outputFileName

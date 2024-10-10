@@ -114,15 +114,41 @@ void check_kernel(unsigned long addr, unsigned long magic) {
             struct multiboot_tag_module *m = (struct multiboot_tag_module *)tag;
             void *mod_start = (void *)m->mod_start;
             printk("module 0x%08x - 0x%08x size %u cmdline %s\n", m->mod_start, m->mod_end, m->size, m->cmdline);
-            // TODO 在操作系统中保留这段内存
-            uint32_t *mod_magic = (uint32_t *)(mod_start + 0);
-            uint32_t *mod_timestamp = (uint32_t *)(mod_start + 8);
-            uint32_t *mod_file_entry_cnt = (uint32_t *)(mod_start + 12);
-            char *mod_name = (char *)mod_start + 16;
-            printk("module magic %08x timestamp %u file entry cnt %u name %s \n", *mod_magic, *mod_timestamp,
-                   *mod_file_entry_cnt, mod_name);
+            boot_params.boot_module_begin = (void *)m->mod_start;
+            boot_params.boot_module_end = (void *)m->mod_end;
+
+            const uint32_t mod_magic = *(uint32_t *)(mod_start + 0);
+            const uint32_t mod_head_size = *(uint32_t *)(mod_start + 4);
+            const uint32_t mod_timestamp = *(uint32_t *)(mod_start + 8);
+            const uint32_t mod_file_entry_cnt = *(uint32_t *)(mod_start + 12);
+            const char *mod_name = (const char *)mod_start + 16;
+            printk("module magic %08x header size %u timestamp %u file entry cnt %u name %s \n", mod_magic,
+                   mod_head_size, mod_timestamp, mod_file_entry_cnt, mod_name);
             void timestamp_to_date(uint32_t ts);
-            timestamp_to_date(*mod_timestamp);
+            timestamp_to_date(mod_timestamp);
+
+            int file_entry_offset = mod_head_size;
+            for (int i = 0; i < mod_file_entry_cnt; i++) {
+                void *fe = mod_start + file_entry_offset;
+
+                const uint32_t fe_size = *(uint32_t *)(fe + 0);
+                const uint32_t fe_type = *(uint32_t *)(fe + 4);
+                const uint32_t fe_filesz = *(uint32_t *)(fe + 8);
+                const uint32_t fe_offset = *(uint32_t *)(fe + 12);
+                const char *fe_name = (const char *)(fe + 16);
+
+                file_entry_offset += fe_size;
+
+                void *fc = mod_start + fe_offset;
+
+                printk("[fe:%u:%u] file size %u type %u name %s\n", i, fe_size, fe_filesz, fe_type, fe_name);
+
+                for (int k = 0; k < 16; k++) {
+                    uint8_t c = *(uint8_t *)(fc + k);
+                    printk("%02X ", c);
+                }
+                printk("\n");
+            }
             break;
         case MULTIBOOT_TAG_TYPE_BASIC_MEMINFO:
             mminfo = (struct multiboot_tag_basic_meminfo *)tag;

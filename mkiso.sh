@@ -14,7 +14,7 @@ if [[ `uname` == 'Darwin' ]]; then
 fi
 
 
-# 检查smkrootfs命令是否存在
+# 检查mkrootfs命令是否存在
 # 若不存在，需要进scripts/mkrootfs手动编译一个
 if ! type mkrootfs >/dev/null 2>&1; then
     echo "mkrootfs command not found."
@@ -33,7 +33,8 @@ fi
 
 echo "container id ${CONTAINER_ID}"
 
-mkrootfs -name rootfs -path initrd
+mkdir -p initfs
+mkrootfs -name rootfs -path initfs
 
 grub2_boot_dir="/tmp/iso/boot"
 docker exec -it $CONTAINER_ID rm -rf /tmp/iso
