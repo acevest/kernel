@@ -29,7 +29,7 @@ ssize_t vfs_generic_file_read(file_t *file, char *buf, size_t size, loff_t *p_po
     uint32_t offset = pos & (PAGE_SIZE - 1);
     size_t left = size;
 
-    while (true) {
+    while (left > 0) {
         page_t *page = NULL;
         uint32_t end_index = inode->i_size >> PAGE_SHIFT;
         if (index > end_index) {
@@ -57,9 +57,13 @@ ssize_t vfs_generic_file_read(file_t *file, char *buf, size_t size, loff_t *p_po
         // TODO 增加page引用计数
 
         // copy data
+        bytes = bytes < left ? bytes : left;
         void *addr = page2va(page);
+        // printk("memcpy bytes %u index %u\n", bytes, index);
+        // printk("read addr %x bytes %u index %u offset %u\n", addr, bytes, index, offset);
         memcpy(buf, addr, bytes);
 
+        buf += bytes;
         offset += bytes;
         index += offset >> PAGE_SHIFT;
         offset &= (PAGE_SIZE - 1);
