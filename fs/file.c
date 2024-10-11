@@ -52,13 +52,14 @@ page_t *find_hash_page(address_space_t *mapping, uint32_t index) {
     page_t *p = page_hash_table[hash];
 
     while (p != NULL) {
-        if (p->mapping != mapping) {
-            continue;
+        if (p->mapping == mapping) {
+            if (p->index == index) {
+                page = p;
+                break;
+            }
         }
-        if (p->index == index) {
-            page = p;
-            break;
-        }
+
+        p = p->hash_next;
     }
 
     EXIT_CRITICAL_ZONE(EFLAGS);
