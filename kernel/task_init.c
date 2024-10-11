@@ -145,37 +145,33 @@ void init_task_entry() {
     {
         namei_t ni;
         const char *path = "/root/sbin/init.elf";
-        path_init(path, PATH_LOOKUP_PARENT, &ni);
-        path_walk(path, &ni);
+        // path_init(path, PATH_LOOKUP_PARENT, &ni);
+        // path_walk(path, &ni);
 
-        printk("FLAGS %08x\n", ni.flags);
-        ni.flags = O_CREAT | O_APPEND;
-        path_open_namei(path, ni.flags, S_IFREG, &ni);
-        ni.flags = O_CREAT | O_APPEND;
-        printk("FLAGS %08x\n", ni.flags);
-        void ramfs_debug_set_f_ops(file_t * filp);
-        loff_t pos = 0;
+        const int flags = O_CREAT | O_APPEND;
+
+        path_open_namei(path, flags, S_IFREG, &ni);
+
         file_t file;
+        file.f_flags = flags;
+        file.f_ops = NULL;
+        file.f_pos = 0;
         file.f_dentry = ni.path.dentry;
-        file.f_flags = ni.flags;
-        printk("FLAGS %08x\n", ni.flags);
-        printk("FLAGS %08x\n", file.f_flags);
-        file.f_ops = 0;
-        file.f_pos = 0;
-        ramfs_debug_set_f_ops(&file);
+        file.f_ops = file.f_dentry->d_inode->i_fops;
+
         vfs_generic_file_write(&file, "aaa1234567", 10, &file.f_pos);
+
         file.f_pos = 0;
-        char buf[128] = {
-            'b',
-            'u',
-            'f',
-        };
+        char buf[128] = {'b', 'u', 'f'};
         vfs_generic_file_read(&file, buf, 4, &file.f_pos);
         for (int i = 0; i < 16; i++) {
-            printk("%c\n", buf[i]);
+            printk("%c ", buf[i]);
         }
+        printk("\n");
     }
 #endif
+    void init_rootfs();
+    init_rootfs();
 
 #if 1
     kernel_task("ide/0", disk_task_entry, (void *)0);
@@ -205,5 +201,71 @@ void init_task_entry() {
 
     while (1) {
         sysc_wait(1);
+    }
+}
+
+#include <boot.h>
+void init_rootfs() {
+    void *mod_start = pa2va(boot_params.boot_module_begin);
+
+    const uint32_t mod_magic = *(uint32_t *)(mod_start + 0);
+    const uint32_t mod_head_size = *(uint32_t *)(mod_start + 4);
+    const uint32_t mod_timestamp = *(uint32_t *)(mod_start + 8);
+    const uint32_t mod_file_entry_cnt = *(uint32_t *)(mod_start + 12);
+    const char *mod_name = (const char *)mod_start + 16;
+
+    printk("%x %x\n", boot_params.boot_module_begin, boot_params.boot_module_end);
+    printk("module magic %08x header size %u timestamp %u file entry cnt %u name %s \n", mod_magic, mod_head_size,
+           mod_timestamp, mod_file_entry_cnt, mod_name);
+
+    int file_entry_offset = mod_head_size;
+    for (int i = 0; i < mod_file_entry_cnt; i++) {
+        void *fe = mod_start + file_entry_offset;
+
+        const uint32_t fe_size = *(uint32_t *)(fe + 0);
+        const uint32_t fe_type = *(uint32_t *)(fe + 4);
+        const uint32_t fe_filesz = *(uint32_t *)(fe + 8);
+        const uint32_t fe_offset = *(uint32_t *)(fe + 12);
+        const char *fe_name = (const char *)(fe + 16);
+
+        file_entry_offset += fe_size;
+
+        void *fc = mod_start + fe_offset;
+
+        printk(">[fe:%u:%u] file size %u type %u name %s\n", i, fe_size, fe_filesz, fe_type, fe_name);
+
+        for (int k = 0; k < 16; k++) {
+            uint8_t c = *(uint8_t *)(fc + k);
+            printk("%02X ", c);
+        }
+        printk("\n");
+
+        {
+            namei_t ni;
+            const char *path = fe_name;
+            const int flags = O_CREAT | O_APPEND;
+
+            // TODO支持带多层目录的fe_name
+
+            path_open_namei(path, flags, S_IFREG, &ni);
+
+            file_t file;
+            file.f_flags = flags;
+            file.f_ops = NULL;
+            file.f_pos = 0;
+            file.f_dentry = ni.path.dentry;
+            file.f_ops = file.f_dentry->d_inode->i_fops;
+
+            vfs_generic_file_write(&file, fc, fe_filesz, &file.f_pos);
+
+            file.f_pos = 0;
+#define bufsz 5223
+            static char buf[bufsz] = {'b', 'u', 'f'};
+            vfs_generic_file_read(&file, buf, bufsz, &file.f_pos);
+            for (int i = 0; i < bufsz; i++) {
+                printk("%c", buf[i]);
+            }
+            printk("\n");
+        }
     }
 }
