@@ -61,7 +61,7 @@ ssize_t vfs_generic_file_read(file_t *file, char *buf, size_t size, loff_t *p_po
         void *addr = page2va(page);
         // printk("memcpy bytes %u index %u\n", bytes, index);
         // printk("read addr %x bytes %u index %u offset %u\n", addr, bytes, index, offset);
-        memcpy(buf, addr, bytes);
+        memcpy(buf, addr + offset, bytes);
 
         buf += bytes;
         offset += bytes;
@@ -122,6 +122,8 @@ ssize_t sysc_read(int fd, void *buf, size_t count) {
     read = file->f_ops->read;
 
     loff_t pos = file->f_pos;
+    pos = 0;  // TODO add sysc_seek
+    // printk("%s  pos %lu\n", file->f_dentry->d_inline_name, pos);
     ret = read(file, buf, count, &pos);
 
     return ret;

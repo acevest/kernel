@@ -41,7 +41,7 @@ inode_t *ramfs_get_inode(superblock_t *sb, umode_t mode, dev_t dev);
 // }
 
 static const file_operations_t ramfs_file_operations = {
-    .read = 0,
+    .read = vfs_generic_file_read,
     .write = vfs_generic_file_write,
 };
 

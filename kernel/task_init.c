@@ -241,12 +241,24 @@ void init_rootfs() {
         printk("\n");
 
         {
+            // TODO支持带多层目录的fe_name
+
             namei_t ni;
             const char *path = fe_name;
             const int flags = O_CREAT | O_APPEND;
+#define bufsz 5223
+            static char buf[bufsz] = {'b', 'u', 'f'};
+#if 1
+            int sysc_open(const char *path, int flags, int mode);
+            int fd = sysc_open(path, flags, 0700);
+            assert(fd >= 0);
 
-            // TODO支持带多层目录的fe_name
+            ssize_t sysc_write(int fd, const char *buf, size_t size);
+            sysc_write(fd, fc, fe_filesz);
 
+            ssize_t sysc_read(int fd, void *buf, size_t count);
+            sysc_read(fd, buf, bufsz);
+#else
             path_open_namei(path, flags, S_IFREG, &ni);
 
             file_t file;
@@ -259,9 +271,9 @@ void init_rootfs() {
             vfs_generic_file_write(&file, fc, fe_filesz, &file.f_pos);
 
             file.f_pos = 0;
-#define bufsz 5223
-            static char buf[bufsz] = {'b', 'u', 'f'};
+
             vfs_generic_file_read(&file, buf, bufsz, &file.f_pos);
+#endif
             for (int i = 0; i < bufsz; i++) {
                 printk("%c", buf[i]);
             }

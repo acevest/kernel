@@ -117,3 +117,46 @@ void vfs_page_cache_init() {
     assert(page_hash_table != NULL);
     memset(page_hash_table, 0, PAGE_SIZE);
 }
+
+///
+#define MAX_FILES 1024
+static file_t g_files[MAX_FILES] = {
+    0,
+};
+
+void init_file(file_t *fp) {
+    fp->f_dentry = NULL;
+    fp->f_flags = 0;
+    fp->f_ops = NULL;
+    fp->f_pos = 0;
+
+    fp->f_state = 0;
+}
+
+void init_files() {
+    for (int i = 0; i < MAX_FILES; i++) {
+        init_file(g_files + i);
+    }
+}
+
+file_t *get_empty_filp() {
+    file_t *fp = NULL;
+
+    for (int i = 0; i < MAX_FILES; i++) {
+        file_t *p = g_files + i;
+        if (p->f_state == 0) {
+            ENTER_CRITICAL_ZONE(EFLAGS);
+
+            if (p->f_state == 0) {
+                p->f_state = 1;
+                fp = p;
+                EXIT_CRITICAL_ZONE(EFLAGS);
+                break;
+            }
+
+            EXIT_CRITICAL_ZONE(EFLAGS);
+        }
+    }
+
+    return fp;
+}

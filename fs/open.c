@@ -32,10 +32,30 @@ int get_unused_fd() {
     return -EMFILE;
 }
 
-file_t *filp_open(const char *path, int flags, int mode) {
+int filp_open(const char *path, int flags, int mode, file_t **fp) {
     int ret = 0;
 
-    return NULL;
+    assert(path != NULL);
+
+    *fp = get_empty_filp();
+    if (*fp == NULL) {
+        return -ENFILE;
+    }
+
+    namei_t ni;
+    path_open_namei(path, flags, mode, &ni);
+
+    (*fp)->f_dentry = ni.path.dentry;
+    (*fp)->f_flags = flags;
+    (*fp)->f_ops = (*fp)->f_dentry->d_inode->i_fops;
+    (*fp)->f_pos = 0;
+
+    assert((*fp)->f_ops != NULL);
+
+    // TODO: 添加open支持
+    assert((*fp)->f_ops->open == NULL);
+
+    return ret;
 }
 
 int sysc_open(const char *path, int flags, int mode) {
@@ -47,9 +67,14 @@ int sysc_open(const char *path, int flags, int mode) {
         return fd;
     }
 
-    file_t *fp = filp_open(path, flags, mode);
+    file_t *fp;
+
+    int ret = filp_open(path, flags, mode, &fp);
+    if (ret != 0) {
+        return ret;
+    }
 
     current->files.fds[fd] = fp;
 
-    return 0;
+    return fd;
 }

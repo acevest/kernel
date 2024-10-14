@@ -73,6 +73,8 @@ struct file {
 
     loff_t f_pos;
     uint32_t f_flags;
+
+    int f_state;  // 0 EMPTY 1 USED
 };
 
 // super block
@@ -323,3 +325,6 @@ int path_open_namei(const char *path, int flags, int mode, namei_t *ni);
 //
 ssize_t vfs_generic_file_read(file_t *file, char *buf, size_t size, loff_t *p_pos);
 ssize_t vfs_generic_file_write(file_t *file, const char *buf, size_t size, loff_t *p_pos);
+
+// file
+file_t *get_empty_filp();

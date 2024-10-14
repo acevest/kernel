@@ -68,7 +68,7 @@ ssize_t vfs_generic_file_write(file_t *file, const char *buf, size_t size, loff_
         // ...
 
         // 写入page
-        memcpy(addr, buf + pos, bytes);
+        memcpy(addr + offset, buf + pos, bytes);
         // printk("write addr %x bytes %u index %u offset %u\n", addr, bytes, index, offset);
 
         // TODO
