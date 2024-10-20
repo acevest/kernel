@@ -116,7 +116,7 @@ void check_kernel(unsigned long addr, unsigned long magic) {
             printk("module 0x%08x - 0x%08x size %u cmdline %s\n", m->mod_start, m->mod_end, m->size, m->cmdline);
             boot_params.boot_module_begin = (void *)m->mod_start;
             boot_params.boot_module_end = (void *)m->mod_end;
-
+#if 0
             const uint32_t mod_magic = *(uint32_t *)(mod_start + 0);
             const uint32_t mod_head_size = *(uint32_t *)(mod_start + 4);
             const uint32_t mod_timestamp = *(uint32_t *)(mod_start + 8);
@@ -148,7 +148,9 @@ void check_kernel(unsigned long addr, unsigned long magic) {
                     printk("%02X ", c);
                 }
                 printk("\n");
+
             }
+#endif
             break;
         case MULTIBOOT_TAG_TYPE_BASIC_MEMINFO:
             mminfo = (struct multiboot_tag_basic_meminfo *)tag;

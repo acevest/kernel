@@ -41,6 +41,12 @@ hello: hello.o
 	$(CC) $(CFLAGS) hello.c -o hello.o
 	$(LD)  -m elf_i386 $(LIBC_OBJS) hello.o -o hello
 
+init: init.o
+	$(CC) $(CFLAGS) init.S -o init.o
+	#$(LD)  -m elf_i386 $(LIBC_OBJS) hello.o -o hello
+	#$(LD)  -m elf_i386 init.o -o init
+	#$(LD)  -m elf_i386 -Ttext 0xc017f000 --oformat binary init.o -o init
+	$(LD)  -m elf_i386 -Ttext 0x0017f000 --oformat binary init.o -o init
 
 .PHONY:clean
 clean:

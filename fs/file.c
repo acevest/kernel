@@ -120,9 +120,7 @@ void vfs_page_cache_init() {
 
 ///
 #define MAX_FILES 1024
-static file_t g_files[MAX_FILES] = {
-    0,
-};
+file_t g_files[MAX_FILES];
 
 void init_file(file_t *fp) {
     fp->f_dentry = NULL;

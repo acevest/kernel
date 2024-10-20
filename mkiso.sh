@@ -46,7 +46,7 @@ docker exec -it $CONTAINER_ID mkdir -p $grub2_boot_dir/grub/
 files[0]="KERNEL.ELF:$grub2_boot_dir/Kernel"
 files[1]="scripts/iso.grub.cfg:$grub2_boot_dir/grub/grub.cfg"
 files[2]="rootfs:$grub2_boot_dir/rootfs"
-
+files[3]="bin/init:$grub2_boot_dir/init"
 
 for i in "${!files[@]}"; do
     file_line="${files[$i]}"

@@ -34,6 +34,9 @@ set pagination off
 
 #b init_task_entry
 
+#b task_init.c:216
+#b *0xC017F000
+#b *0x0017F000
 c
 
 

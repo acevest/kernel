@@ -78,6 +78,8 @@ void root_task_entry() {
 
     kernel_task("init", init_task_entry, NULL);
 
+    strcpy(current->name, "idle");
+
     current->priority = 1;
     while (1) {
         asm("hlt;");

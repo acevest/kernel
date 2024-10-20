@@ -1,3 +1,4 @@
+#include <boot.h>
 #include <disk.h>
 #include <fcntl.h>
 #include <io.h>
@@ -199,13 +200,61 @@ void init_task_entry() {
     kernel_task("tskC", taskC_entry, NULL);
 #endif
 
+#if 1
+    void *mod_start = pa2va(boot_params.boot_module_begin);
+
+    mod_start = (void *)va2pa(mod_start);
+
+    unsigned long text_at = (unsigned long)mod_start;
+    text_at &= 0xFFFFF000;
+
+    int pgd_index = (text_at >> 22) & 0x3FF;
+    int pt_index = (text_at >> 12) & 0x3FF;
+
+    unsigned long *pgd = (unsigned long *)(pa2va(current->cr3));
+
+    unsigned long *pt_page = (unsigned long *)page2va(alloc_one_page(0));
+    memset(pt_page, 0, PAGE_SIZE);
+
+    pgd[pgd_index] = va2pa(pt_page) | PAGE_P | PAGE_WR | PAGE_US;
+
+    pt_page[pt_index] = text_at | PAGE_P | PAGE_WR | PAGE_US;
+
+    printk("RING3 ENTRY %x page %x pgd inx %u pt inx %u\n", mod_start, text_at, pgd_index, pt_index);
+
+    LoadCR3(current->cr3);
+
+    asm("sysexit;" ::"d"(mod_start), "c"(mod_start + PAGE_SIZE - 4));
+#else
+    void *mod_start = pa2va(boot_params.boot_module_begin);
+    printk("RING3 ENTRY %x\n", mod_start);
+
+    unsigned long text_at = mod_start;
+    int pgd_index = (text_at >> 22) & 0x3FF;
+    int pt_index = (text_at >> 12) & 0x3FF;
+    unsigned long *pgd = (unsigned long *)(pa2va(current->cr3));
+    pgd[pgd_index] = pgd[pgd_index] | PAGE_WR | PAGE_US;
+
+    unsigned long pgde = pgd[pgd_index];
+    pgde &= 0xFFFFF000;
+
+    unsigned long *pt = (unsigned long *)pa2va(pgde);
+    pt[pt_index] = pt[pt_index] | PAGE_WR | PAGE_US;
+
+    asm("sysexit;" ::"d"(mod_start), "c"(mod_start + PAGE_SIZE - 4));
+#endif
+
     while (1) {
+        asm("nop;");
+        asm("nop;");
+        asm("nop;");
+        asm("nop;");
         sysc_wait(1);
     }
 }
 
-#include <boot.h>
 void init_rootfs() {
+#if 0
     void *mod_start = pa2va(boot_params.boot_module_begin);
 
     const uint32_t mod_magic = *(uint32_t *)(mod_start + 0);
@@ -280,4 +329,5 @@ void init_rootfs() {
             printk("\n");
         }
     }
+#endif
 }
