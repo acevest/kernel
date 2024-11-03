@@ -18,10 +18,10 @@ else ifeq ($(OS), Linux)
 endif
 
 
-CC			= $(CROSS_PREFIX)gcc
-LD			= $(CROSS_PREFIX)ld
+CC          = $(CROSS_PREFIX)gcc
+LD          = $(CROSS_PREFIX)ld
 
-CFLAGS		= -g -c -fno-builtin -m32 -DBUILDER='"$(shell whoami)"'
+CFLAGS      = -g -c -fno-builtin -m32 -DBUILDER='"$(shell whoami)"'
 # 指示编译器禁止生成位置无关代码
 CFLAGS     += -fno-pic
 # 指示编译器在生成目标文件时不省略函数调用栈帧指针: frame pointer
@@ -33,9 +33,13 @@ CFLAGS     += -DFIXED_SYSENTER_ESP_MODE=1
 CFLAGS     += -DENABLE_BOOT_WAIT=0
 CFLAGS     += -DENABLE_CLOCK_IRQ_WAIT=0
 
-SYSTEMMAP	= System.map
-KERNELBIN	= KERNEL.ELF
-LINKSCRIPT	= scripts/link.ld
+LDFLAGS     = -z noexecstack
+LDFLAGS    += -m elf_i386
+LDFLAGS    += -M
+LDFLAGS    += -T$(LINKSCRIPT)
+SYSTEMMAP   = System.map
+KERNELBIN   = KERNEL.ELF
+LINKSCRIPT  = scripts/link.ld
 
 SRC_DIRS = boot mm lib fs kernel drivers
 INC_DIRS = include drivers boot mm fs
@@ -47,16 +51,32 @@ HEADER_FILES := $(foreach DIR, $(INC_DIRS), $(wildcard $(DIR)/*.h))
 
 OBJS := $(patsubst %,%.o,$(SOURCE_FILES))
 
-${KERNELBIN}: ${OBJS}
-	${LD} -z noexecstack -m elf_i386 -M -T$(LINKSCRIPT) $(OBJS) -o $@ > $(SYSTEMMAP)
-	nm -a $@ > kernel.sym
-	rm kernel/setup.c.o
+eighty_dashes := $(repeat 80,-)
+
+.PHONY: print_flags
+print_flags:
+	echo "${eighty_dashes}"
+	@echo "---------------------------------"
+	@echo 'CC=${CC}'
+	@echo 'LD=${LD}'
+	@echo 'CFLAGS=${CFLAGS}'
+	@echo 'LDFLAGS=${LDFLAGS}'
+	@echo "---------------------------------\n"
+
+.DEFAULT_GOAL := ${KERNELBIN}
+${KERNELBIN}: print_flags ${OBJS}
+	@echo 'LD ${KERNELBIN}'
+	@${LD} ${LDFLAGS} $(OBJS) -o $@ > $(SYSTEMMAP)
+	@nm -a $@ > kernel.sym
+# rm kernel/setup.c.o
 
 %.S.o: %.S ${HEADER_FILES}
-	${CC} ${CFLAGS} $< -o $@
+	@echo 'CC $<'
+	@${CC} ${CFLAGS} $< -o $@
 
 %.c.o: %.c ${HEADER_FILES}
-	${CC} ${CFLAGS} $< -o $@
+	@echo 'CC $<'
+	@${CC} ${CFLAGS} $< -o $@
 
 .PHONY: c
 c:
