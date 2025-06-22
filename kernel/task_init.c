@@ -200,7 +200,7 @@ void init_task_entry() {
     kernel_task("tskC", taskC_entry, NULL);
 #endif
 
-#if 1
+#if 0
     void *mod_start = pa2va(boot_params.boot_module_begin);
 
     mod_start = (void *)va2pa(mod_start);
@@ -225,7 +225,8 @@ void init_task_entry() {
     LoadCR3(current->cr3);
 
     asm("sysexit;" ::"d"(mod_start), "c"(mod_start + PAGE_SIZE - 4));
-#else
+#endif
+#if 0
     void *mod_start = pa2va(boot_params.boot_module_begin);
     printk("RING3 ENTRY %x\n", mod_start);
 
@@ -254,7 +255,7 @@ void init_task_entry() {
 }
 
 void init_rootfs() {
-#if 0
+#if 1
     void *mod_start = pa2va(boot_params.boot_module_begin);
 
     const uint32_t mod_magic = *(uint32_t *)(mod_start + 0);

@@ -34,5 +34,5 @@ typedef struct vm_area {
 
     uint32_t vm_flags;
 
-    struct vma *vm_next;
+    struct vm_area *vm_next;
 } vm_area_t;
