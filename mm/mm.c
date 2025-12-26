@@ -21,6 +21,7 @@
 #include <printk.h>
 #include <string.h>
 #include <system.h>
+#include <task.h>
 #include <types.h>
 
 extern char etext, edata, end;
@@ -121,6 +122,8 @@ void init_paging() {
 
 extern void init_ttys();
 
+kmem_cache_t *g_vma_kmem_cache = NULL;
+
 void init_mm() {
     printk("init bootmem alloc...\n");
     extern void init_bootmem();
@@ -140,4 +143,54 @@ void init_mm() {
     init_kmem_caches();
     printk("memory init finished...\n");
     boot_delay(DEFAULT_BOOT_DELAY_TICKS);
+
+    g_vma_kmem_cache = kmem_cache_create("vma", sizeof(vm_area_t), 4);
+    assert(g_vma_kmem_cache != NULL);
+}
+
+vm_area_t *vma_alloc() {
+    vm_area_t *vma = kmem_cache_alloc(g_vma_kmem_cache, 0);
+    vma->vm_bgn = 0;
+    vma->vm_end = 0;
+    vma->vm_flags = 0;
+    vma->vm_next = NULL;
+    return vma;
+}
+
+void vma_insert(task_t *tsk, vm_area_t *vma_new) {
+    //
+    vm_area_t **p = &tsk->vma_list;
+
+    while (*p != NULL) {
+        vm_area_t *v = *p;
+
+        assert(v->vm_bgn < v->vm_end);
+        assert(vma_new->vm_bgn < vma_new->vm_end);
+        assert(vma_new->vm_bgn < v->vm_bgn || vma_new->vm_bgn > v->vm_end);
+        assert(vma_new->vm_end < v->vm_bgn || vma_new->vm_end > v->vm_end);
+
+        if (vma_new->vm_end < v->vm_bgn) {
+            break;
+        }
+
+        p = &v->vm_next;
+    }
+
+    vma_new->vm_next = *p;
+    *p = vma_new;
+}
+
+vm_area_t *vma_find(task_t *tsk, vm_area_t *vma, uint32_t addr) {
+    vm_area_t **p = &tsk->vma_list;
+    while (*p != NULL) {
+        vm_area_t *v = *p;
+
+        if (addr <= v->vm_end) {
+            break;
+        }
+
+        p = &v->vm_next;
+    }
+
+    return *p;
 }

@@ -56,4 +56,6 @@ int _syscall2(int nr, unsigned long a, unsigned long b) { return __syscall2(nr, 
 
 int _syscall3(int nr, unsigned long a, unsigned long b, unsigned long c) { return __syscall3(nr, a, b, c); }
 
-int _syscall4(int nr, unsigned long a, unsigned long b, unsigned long c, unsigned long d) { return __syscall4(nr, a, b, c, d); }
+int _syscall4(int nr, unsigned long a, unsigned long b, unsigned long c, unsigned long d) {
+    return __syscall4(nr, a, b, c, d);
+}

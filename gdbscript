@@ -20,6 +20,10 @@ target remote localhost:1234
 
 set pagination off
 
+display/z $ss
+
+set disassemble-next-line on
+
 #b init_serial
 
 #b init_system_info
@@ -32,6 +36,11 @@ set pagination off
 
 #b root_task_entry
 
+#b init_task_entry
+
+#b task_init.c:216
+#b *0xC017F000
+#b *0x0017F000
 c
 
 

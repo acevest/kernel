@@ -213,6 +213,13 @@ void reserve_bootmem_bitmap() {
     reserve_bootmem(bgn_pfn, end_pfn);
 }
 
+void reserve_bootmem_boot_module() {
+    unsigned long bgn_pfn = PFN_DW((unsigned long)boot_params.boot_module_begin);
+    unsigned long end_pfn = PFN_UP((unsigned long)boot_params.boot_module_end);
+
+    reserve_bootmem(bgn_pfn, end_pfn);
+}
+
 void init_bootmem_allocator() {
     int mapsize = (bootmem_data.max_pfn + 7) / 8;
 
@@ -229,6 +236,10 @@ void init_bootmem_allocator() {
 
     // 保留管理所有空闲内存的bitmap所占用的内存
     reserve_bootmem_bitmap();
+
+    // 保留rootfs的内存
+    // TODO: 在加载进内核后释放这部分空间
+    reserve_bootmem_boot_module();
 
     // 强制保留最开始的一页
     // 免得alloc的时候分不清是失败，还是分配的第0页

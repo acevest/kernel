@@ -1,3 +1,4 @@
+#include <boot.h>
 #include <disk.h>
 #include <fcntl.h>
 #include <io.h>
@@ -140,15 +141,38 @@ void init_task_entry() {
 #if 1
     extern __attribute__((regparm(0))) long sysc_mkdir(const char *path, int mode);
     sysc_mkdir("/root", 0777);
-    sysc_mkdir("/root/aaa", 0777);
+    sysc_mkdir("/root/sbin/", 0777);
 
     {
         namei_t ni;
-        const char *path = "/root";
-        path_init(path, 0, &ni);
-        path_walk(path, &ni);
+        const char *path = "/root/sbin/init.elf";
+        // path_init(path, PATH_LOOKUP_PARENT, &ni);
+        // path_walk(path, &ni);
+
+        const int flags = O_CREAT | O_APPEND;
+
+        path_open_namei(path, flags, S_IFREG, &ni);
+
+        file_t file;
+        file.f_flags = flags;
+        file.f_ops = NULL;
+        file.f_pos = 0;
+        file.f_dentry = ni.path.dentry;
+        file.f_ops = file.f_dentry->d_inode->i_fops;
+
+        vfs_generic_file_write(&file, "aaa1234567", 10, &file.f_pos);
+
+        file.f_pos = 0;
+        char buf[128] = {'b', 'u', 'f'};
+        vfs_generic_file_read(&file, buf, 4, &file.f_pos);
+        for (int i = 0; i < 16; i++) {
+            printk("%c ", buf[i]);
+        }
+        printk("\n");
     }
 #endif
+    void init_rootfs();
+    init_rootfs();
 
 #if 1
     kernel_task("ide/0", disk_task_entry, (void *)0);
@@ -176,7 +200,135 @@ void init_task_entry() {
     kernel_task("tskC", taskC_entry, NULL);
 #endif
 
+#if 0
+    void *mod_start = pa2va(boot_params.boot_module_begin);
+
+    mod_start = (void *)va2pa(mod_start);
+
+    unsigned long text_at = (unsigned long)mod_start;
+    text_at &= 0xFFFFF000;
+
+    int pgd_index = (text_at >> 22) & 0x3FF;
+    int pt_index = (text_at >> 12) & 0x3FF;
+
+    unsigned long *pgd = (unsigned long *)(pa2va(current->cr3));
+
+    unsigned long *pt_page = (unsigned long *)page2va(alloc_one_page(0));
+    memset(pt_page, 0, PAGE_SIZE);
+
+    pgd[pgd_index] = va2pa(pt_page) | PAGE_P | PAGE_WR | PAGE_US;
+
+    pt_page[pt_index] = text_at | PAGE_P | PAGE_WR | PAGE_US;
+
+    printk("RING3 ENTRY %x page %x pgd inx %u pt inx %u\n", mod_start, text_at, pgd_index, pt_index);
+
+    LoadCR3(current->cr3);
+
+    asm("sysexit;" ::"d"(mod_start), "c"(mod_start + PAGE_SIZE - 4));
+#endif
+#if 0
+    void *mod_start = pa2va(boot_params.boot_module_begin);
+    printk("RING3 ENTRY %x\n", mod_start);
+
+    unsigned long text_at = mod_start;
+    int pgd_index = (text_at >> 22) & 0x3FF;
+    int pt_index = (text_at >> 12) & 0x3FF;
+    unsigned long *pgd = (unsigned long *)(pa2va(current->cr3));
+    pgd[pgd_index] = pgd[pgd_index] | PAGE_WR | PAGE_US;
+
+    unsigned long pgde = pgd[pgd_index];
+    pgde &= 0xFFFFF000;
+
+    unsigned long *pt = (unsigned long *)pa2va(pgde);
+    pt[pt_index] = pt[pt_index] | PAGE_WR | PAGE_US;
+
+    asm("sysexit;" ::"d"(mod_start), "c"(mod_start + PAGE_SIZE - 4));
+#endif
+
     while (1) {
+        asm("nop;");
+        asm("nop;");
+        asm("nop;");
+        asm("nop;");
         sysc_wait(1);
     }
+}
+
+void init_rootfs() {
+#if 1
+    void *mod_start = pa2va(boot_params.boot_module_begin);
+
+    const uint32_t mod_magic = *(uint32_t *)(mod_start + 0);
+    const uint32_t mod_head_size = *(uint32_t *)(mod_start + 4);
+    const uint32_t mod_timestamp = *(uint32_t *)(mod_start + 8);
+    const uint32_t mod_file_entry_cnt = *(uint32_t *)(mod_start + 12);
+    const char *mod_name = (const char *)mod_start + 16;
+
+    printk("%x %x\n", boot_params.boot_module_begin, boot_params.boot_module_end);
+    printk("module magic %08x header size %u timestamp %u file entry cnt %u name %s \n", mod_magic, mod_head_size,
+           mod_timestamp, mod_file_entry_cnt, mod_name);
+
+    int file_entry_offset = mod_head_size;
+    for (int i = 0; i < mod_file_entry_cnt; i++) {
+        void *fe = mod_start + file_entry_offset;
+
+        const uint32_t fe_size = *(uint32_t *)(fe + 0);
+        const uint32_t fe_type = *(uint32_t *)(fe + 4);
+        const uint32_t fe_filesz = *(uint32_t *)(fe + 8);
+        const uint32_t fe_offset = *(uint32_t *)(fe + 12);
+        const char *fe_name = (const char *)(fe + 16);
+
+        file_entry_offset += fe_size;
+
+        void *fc = mod_start + fe_offset;
+
+        printk(">[fe:%u:%u] file size %u type %u name %s\n", i, fe_size, fe_filesz, fe_type, fe_name);
+
+        for (int k = 0; k < 16; k++) {
+            uint8_t c = *(uint8_t *)(fc + k);
+            printk("%02X ", c);
+        }
+        printk("\n");
+
+        {
+            // TODO支持带多层目录的fe_name
+
+            namei_t ni;
+            const char *path = fe_name;
+            const int flags = O_CREAT | O_APPEND;
+#define bufsz 5223
+            static char buf[bufsz] = {'b', 'u', 'f'};
+#if 1
+            int sysc_open(const char *path, int flags, int mode);
+            int fd = sysc_open(path, flags, 0700);
+            assert(fd >= 0);
+
+            ssize_t sysc_write(int fd, const char *buf, size_t size);
+            sysc_write(fd, fc, fe_filesz);
+
+            ssize_t sysc_read(int fd, void *buf, size_t count);
+            sysc_read(fd, buf, bufsz);
+#else
+            path_open_namei(path, flags, S_IFREG, &ni);
+
+            file_t file;
+            file.f_flags = flags;
+            file.f_ops = NULL;
+            file.f_pos = 0;
+            file.f_dentry = ni.path.dentry;
+            file.f_ops = file.f_dentry->d_inode->i_fops;
+
+            vfs_generic_file_write(&file, fc, fe_filesz, &file.f_pos);
+
+            file.f_pos = 0;
+
+            vfs_generic_file_read(&file, buf, bufsz, &file.f_pos);
+#endif
+            for (int i = 0; i < bufsz; i++) {
+                printk("%c", buf[i]);
+            }
+            printk("\n");
+        }
+    }
+#endif
 }

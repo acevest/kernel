@@ -18,6 +18,7 @@
 #ifndef ASM
 #include <fs.h>
 #include <list.h>
+#include <mm.h>
 #include <page.h>
 #include <processor.h>
 #include <system.h>
@@ -79,6 +80,8 @@ typedef union task_union {
 
         path_t root;
         path_t pwd;
+
+        vm_area_t *vma_list;
 
         list_head_t list;  // 所有进程串成一个链表
 

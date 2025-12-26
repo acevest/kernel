@@ -44,6 +44,9 @@ struct boot_params {
     unsigned long mem_lower;  // in bytes
     unsigned long mem_upper;
 
+    void *boot_module_begin;
+    void *boot_module_end;
+
     unsigned long biosdev;
     unsigned long partition;
     unsigned long sub_partition;

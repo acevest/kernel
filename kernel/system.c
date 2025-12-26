@@ -82,7 +82,7 @@ void setup_gates() {
     set_sys_int(0x0B, TRAP_GATE, PRIVILEGE_KRNL, SegNotPresent);
     set_sys_int(0x0C, TRAP_GATE, PRIVILEGE_KRNL, StackFault);
     set_sys_int(0x0D, TRAP_GATE, PRIVILEGE_KRNL, GeneralProtection);
-    set_sys_int(0x0E, TRAP_GATE, PRIVILEGE_KRNL, PageFault);
+    set_sys_int(0x0E, TRAP_GATE, PRIVILEGE_KRNL, _page_fault);
     set_sys_int(0x10, TRAP_GATE, PRIVILEGE_KRNL, CoprocError);
 
     for (int i = 0x11; i < 0x20; i++) {

@@ -221,7 +221,6 @@ int path_walk(const char *path, namei_t *ni) {
         // 不是挂载点 或已经处理完了挂载点
         ret = -ENOENT;
         inode = dentry->d_inode;
-
         if (inode == NULL) {
             goto out_dput_entry;
         }
@@ -324,6 +323,7 @@ int path_walk(const char *path, namei_t *ni) {
     ok:
         return 0;
     }
+
 out_dput_entry:
     dentry_put(dentry);
 end:
@@ -353,7 +353,7 @@ int path_lookup_hash(dentry_t *base, qstr_t *name, dentry_t **dentry) {
         dentry_put(dentry_new);
     }
 
-    return 0;
+    return ret;
 }
 
 int path_lookup_create(namei_t *ni, dentry_t **dentry) {
@@ -404,7 +404,6 @@ int path_open_namei(const char *path, int flags, int mode, namei_t *ni) {
 
     dir = ni->path.dentry;
     assert(NULL != dir);
-
     down(&dir->d_inode->i_sem);
 
     ret = path_lookup_hash(dir, &ni->last, &dentry);
@@ -413,13 +412,12 @@ int path_open_namei(const char *path, int flags, int mode, namei_t *ni) {
         goto end;
     }
 
+    assert(dentry != NULL);
     if (NULL == dentry->d_inode) {
-        // vfs_create();
-
         ret = vfs_create(dir->d_inode, dentry, mode, ni);
-
         up(&dir->d_inode->i_sem);
         dentry_put(ni->path.dentry);
+        ni->path.dentry = dentry;
         if (0 != ret) {
             goto end;
         }
@@ -428,16 +426,26 @@ int path_open_namei(const char *path, int flags, int mode, namei_t *ni) {
 
     // 上述是文件不存在的逻辑
     // 此处是文件存在的情况下的处理逻辑
+    up(&dir->d_inode->i_sem);
 
     if ((flags & O_EXCL) == 0) {
-        panic("unsupport O_EXCL")
+        panic("unsupport O_EXCL");
     }
 
 ok:
     inode = dentry->d_inode;
     if (NULL == inode) {
-        ret = -ENOENT;
+        ret = ENOENT;
         goto end;
+    }
+
+    if (S_ISDIR(inode->i_mode)) {
+        ret = EISDIR;
+        goto end;
+    }
+
+    if ((flags & O_TRUNC) != 0) {
+        panic("unsupport O_TRUNC");
     }
 
 end:

@@ -59,6 +59,7 @@ void init_root_task() {
     root_task.reason = "root";
     root_task.priority = 7;
     root_task.ticks = root_task.priority;
+    root_task.vma_list = NULL;
     root_task.turn = 0;
     root_task.need_resched = 0;
     root_task.sched_cnt = 0;

@@ -23,8 +23,7 @@
     do {                                                                                                 \
         printk("Unsupport Now...[%s]\n", __FUNCTION__);                                                  \
         printk("EFLAGS:%08x CS:%02x EIP:%08x ERRCODE:%x", regs.eflags, regs.cs, regs.eip, regs.errcode); \
-        while (1)                                                                                        \
-            ;                                                                                            \
+        while (1);                                                                                       \
     } while (0);
 
 void doDivideError(pt_regs_t regs) { DIE_MSG(); }
@@ -44,7 +43,7 @@ void doGeneralProtection(pt_regs_t regs) { DIE_MSG(); }
 
 void do_no_page(void *);
 void do_wp_page(void *);
-void doPageFault(pt_regs_t regs) {
+void do_page_fault(pt_regs_t regs) {
 #if 0
 US RW  P - Description
 0  0  0 - Supervisory process tried to read a non-present page entry
@@ -56,6 +55,11 @@ US RW  P - Description
 1  1  0 - User process tried to write to a non-present page entry
 1  1  1 - User process tried to write a page and caused a protection fault
 #endif
+#if 0
+    bit 0: 0 non-present page entry; 1 protection fault
+    bit 1: 0 read; 1 write
+    bit 2: 0 supervisor mode; 1 user mode
+#endif
     // DIE_MSG();
     void *addr;
     u32 errcode = regs.errcode;
@@ -66,6 +70,7 @@ US RW  P - Description
 
     // assert(errcode != 2 && errcode != 6);
 
+    printk("errcode %x addr %x\n", errcode, addr);
     if ((errcode & PAGE_P) == 0) {
         do_no_page(addr);
     } else {
