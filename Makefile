@@ -1,48 +1,60 @@
 OS := $(shell uname -s)
-CPU_ARCH := $(shell uname -p)
+CPU_ARCH := $(shell uname -m)
 
 ifeq ($(OS), Darwin)
 	# MacOS下安装i686-elf-*的方法: brew install i686-elf-binutils
 	# Apple Silicon
-	ifeq ($(CPU_ARCH), arm)
-		CROSS_PREFIX = i686-elf-
+	ifeq ($(CPU_ARCH), arm64)
+		CROSS_PREFIX := i686-elf-
 	# Intel MacOS
 	else ifeq ($(CPU_ARCH), i386)
-		CROSS_PREFIX = i686-elf-
+		CROSS_PREFIX := i686-elf-
 	endif
 else ifeq ($(OS), Linux)
-	# Apple Silicon Docker Linux
-	ifeq ($(CPU_ARCH), aarch64)
-		CROSS_PREFIX = x86_64-linux-gnu-
+	ifeq ($(CPU_ARCH), x86_64)
+		CROSS_PREFIX :=
+	else ifeq ($(CPU_ARCH), i686)
+		CROSS_PREFIX :=
+	else ifeq ($(CPU_ARCH), aarch64)
+		# Apple Silicon Docker Linux
+		CROSS_PREFIX := x86_64-linux-gnu-
+	else
+		$(warning "检测到未知架构 $(CPU_ARCH) 请确保已安装32位x86工具链")
+		CROSS_PREFIX :=
 	endif
 endif
 
 
-CC          = $(CROSS_PREFIX)gcc
-LD          = $(CROSS_PREFIX)ld
+CC		:= $(CROSS_PREFIX)gcc
+LD		:= $(CROSS_PREFIX)ld
 
-CFLAGS      = -g -c -fno-builtin -m32 -DBUILDER='"$(shell whoami)"'
+ifeq (,$(shell which $(CC) 2>/dev/null))
+    $(error "编译器 $(CC) 未找到 请安装交叉编译工具链")
+endif
+
+CFLAGS	:= -g -c -fno-builtin -m32 -DBUILDER='"$(shell whoami)"'
 # 指示编译器禁止生成位置无关代码
-CFLAGS     += -fno-pic
+CFLAGS	+= -fno-pic
 # 指示编译器在生成目标文件时不省略函数调用栈帧指针: frame pointer
-CFLAGS     += -fno-omit-frame-pointer
+CFLAGS	+= -fno-omit-frame-pointer
 # 禁用控制流保护: Control-Flow Enforcement Technology (CET)
-CFLAGS     += -fcf-protection=none
-CFLAGS     += -DNR_TTYS=3
-CFLAGS     += -DFIXED_SYSENTER_ESP_MODE=1
-CFLAGS     += -DENABLE_BOOT_WAIT=0
-CFLAGS     += -DENABLE_CLOCK_IRQ_WAIT=0
+CFLAGS	+= -fcf-protection=none
+CFLAGS	+= -DNR_TTYS=3
+CFLAGS	+= -DFIXED_SYSENTER_ESP_MODE=1
+CFLAGS	+= -DENABLE_BOOT_WAIT=0
+CFLAGS	+= -DENABLE_CLOCK_IRQ_WAIT=0
 
-LDFLAGS     = -z noexecstack
-LDFLAGS    += -m elf_i386
-LDFLAGS    += -M
-LDFLAGS    += -T$(LINKSCRIPT)
-SYSTEMMAP   = System.map
-KERNELBIN   = KERNEL.ELF
-LINKSCRIPT  = scripts/link.ld
+SYSTEMMAP	:= System.map
+KERNELBIN	:= KERNEL.ELF
+LINKSCRIPT	:= scripts/link.ld
 
-SRC_DIRS = boot mm lib fs kernel drivers
-INC_DIRS = include drivers boot mm fs
+LDFLAGS	:= -z noexecstack
+LDFLAGS	+= -m elf_i386
+LDFLAGS += -M
+LDFLAGS += -T$(LINKSCRIPT)
+
+SRC_DIRS	:= boot mm lib fs kernel drivers
+INC_DIRS	:= include drivers boot mm fs
 
 CFLAGS += ${INC_DIRS:%=-I%}
 
