@@ -62,7 +62,7 @@ volatile void __wake_up(wait_queue_head_t *head, int nr) {
         p->task->state = TASK_READY;
         p->task->reason = "wake_up";
 
-        list_del(&p->entry);
+        list_del_init(&p->entry);
 
         --nr;
         if (nr == 0) {

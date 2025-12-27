@@ -24,13 +24,14 @@ endif
 
 
 
-CFLAGS = -g -c -fno-builtin -m32 -DBUILDER='"$(shell whoami)"' 
+CFLAGS := -g -c -fno-builtin -m32 -DBUILDER='"$(shell whoami)"'
+CFLAGS += -m32 -c -I../include -fno-builtin
+CFLAGS += -std=gnu11
 LDFLAG = -e _start
-CFLAGS = -m32 -c -I../include -fno-builtin
 LIBC_DIRS = ../lib
 LIBC_SRCS := $(foreach DIR, $(LIBC_DIRS), $(wildcard $(DIR)/*.[cS]))
 LIBC_OBJS := $(patsubst %,%.o,$(LIBC_SRCS))
-BINS := shell hello
+BINS := init
 
 all:$(BINS)
 

@@ -54,6 +54,12 @@ for i in "${!files[@]}"; do
     IFS=':' read -ra parts <<< "${file_line}"
     src_file="${parts[0]}"
     dst_file="${parts[1]}"
+
+    if [ ! -f "$src_file" ]; then
+        echo -e "\033[31merror: file $src_file not found\033[0m"
+        exit 1
+    fi
+
     src_file_md5=$($MD5 "$src_file" | awk '{ print $1 }')
 
     docker cp $src_file $CONTAINER_ID:$dst_file
