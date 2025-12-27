@@ -27,14 +27,30 @@ kernel_begin = kernel_virtual_addr_start + kernel_loaded_physic_addr;
 
 SECTIONS
 {
-    . = kernel_begin;
-    .text : AT(kernel_loaded_physic_addr) ALIGN(0x1000)
+    . = kernel_loaded_physic_addr;
+    .unpagged_text :
     {
-        code = .;
         *(.kernel_entry_text)
         *(.multiboot2_header)
-        /* 单独把 multiboot.S 的 .text 放在这个位置是为了便于调试，实际是可以不写这一句的 */
         boot/multiboot.S.o(.text)
+        *(.unpaged_text)
+    }
+    eunpagged_text = .;
+    . = ALIGN(0x1000);
+    .unpaged_data :
+    {
+        boot/multiboot.S.o(COMMON)
+       *(.unpaged_data)
+    }
+    eunpagged_data = .;
+
+    /* . = kernel_begin; */
+    . += kernel_virtual_addr_start;
+    . = ALIGN(0x1000);
+    .text : AT(ADDR(.text)-kernel_virtual_addr_start) ALIGN(0x1000)
+    {
+        code = .;
+        /* 单独把 multiboot.S 的 .text 放在这个位置是为了便于调试，实际是可以不写这一句的 */
         *(.text)
         *(.ring3.text);
         *(.sysexit) /* last */

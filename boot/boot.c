@@ -16,6 +16,8 @@
 #include <page.h>
 #include <string.h>
 #include <system.h>
+#include <msr.h>
+
 
 struct boot_params boot_params __attribute__((aligned(32)));
 
@@ -244,6 +246,42 @@ extern void *kernel_begin;
 extern void *kernel_end;
 extern void *bootmem_bitmap_begin;
 
+
+#include <cpuid.h>
+
+__attribute__((section(".unpaged_text")))
+void test_unpaged_break() {
+    // printk("test unpaged break\n");
+}
+
+
+void lapic_init() {
+    cpuid_regs_t r;
+    r = cpuid(1);
+    if(r.edx & (1 << 9)) {
+        printk("local apic supported\n");
+        if(r.ecx & (1 << 21)) {
+            printk("x2apic supported\n");
+        } else {
+            panic("x2apic not supported\n");
+        }
+    } else {
+        panic("local apic not supported\n");
+    }
+
+    uint64_t apic_base = read_msr(MSR_IA32_APIC_BASE);
+    printk("apic base: %016lx\n", apic_base);
+
+    // 开启2xapic
+    apic_base |= (1 << 10);
+    write_msr(MSR_IA32_APIC_BASE, apic_base);
+
+    apic_base = read_msr(MSR_IA32_APIC_BASE);
+    printk("after 2xapic enable apic base: %016lx\n", apic_base);
+
+    test_unpaged_break();
+}
+
 void init_system_info() {
     system.kernel_begin = &kernel_begin;
     system.kernel_end = &kernel_end;
@@ -257,4 +295,6 @@ void init_system_info() {
     printk("mem lower %uKB upper %uKB\n", boot_params.mem_lower >> 10, boot_params.mem_upper >> 10);
 
     boot_delay(DEFAULT_BOOT_DELAY_TICKS);
+
+    lapic_init();
 }

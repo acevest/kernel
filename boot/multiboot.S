@@ -45,7 +45,7 @@ main:
 .align 4
 real_kernel_entry:
     # Load GDT's Information To GDTR
-    lgdt    GDTR-KRNLADDR
+    lgdt    boot_gdtr
 
     movw    $0x10, %dx
     movw    %dx,%ds
@@ -54,11 +54,20 @@ real_kernel_entry:
     movw    %dx,%fs
     movw    %dx,%gs
 
-    movl    $(stack + MULTIBOOT_STACK_SIZE - KRNLADDR), %esp
+
+    nop
+    nop
+    nop
+    nop
+    movl    $(stack + MULTIBOOT_STACK_SIZE), %esp
+    #leal stack, %esp
+    #addl MULTIBOOT_STACK_SIZE, %esp
 
     # Reset EFLAGS
     pushl   $0
     popf
+
+    call test_unpaged_break
 
     # Save Multiboot Infomation...
     pushl   %eax
@@ -129,33 +138,38 @@ real_kernel_entry:
 
     jmp     4f
 4:
+    # 准备切保护模式
+    # 此时esp的地址还需要再调整一下
+    addl    $KRNLADDR, %esp
+    ljmp    $0x08,$Label+KRNLADDR
 
-    ljmp    $0x08,$Label
 Label:
-    call    check_kernel
-    addl    $8, %esp
+    leal    check_kernel, %eax
+    call    *%eax
 
     movl    $root_task + TASK_SIZE, %esp
-    call    init_system_info
+    leal    init_system_info, %eax
+    call    *%eax;
 
-    call    setup_kernel
+    leal    setup_kernel, %eax
+    call    *%eax
 
     subl    $128, %esp   // ss esp eip
-    movl    $root_task_entry, %eax
+    leal    root_task_entry, %eax
     jmpl    *%eax
 
-Die:
-    jmp     Die    # Should never come to here.
+die:
+    jmp     die    # Should never come to here.
 
 .align 32
-BootGDT:
+boot_gdt:
 EMPT: .long    0x00000000, 0x00000000
 Code: .long    0x0000FFFF, 0x00CF9B00
 Data: .long    0x0000FFFF, 0x00CF9300
-BootGDTEnd:
-GDTR:
-    GDTRLimit: .word BootGDTEnd-BootGDT
-    GDTRBase:  .long BootGDT-KRNLADDR
+boot_gdt_end:
+boot_gdtr:
+    boot_gdtr_limit: .word boot_gdt_end-boot_gdt
+    boot_gdtr_base:  .long boot_gdt
 
     .comm stack, MULTIBOOT_STACK_SIZE
 

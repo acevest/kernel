@@ -19,12 +19,20 @@
 
 #include <types.h>
 
+#define MSR_IA32_APIC_BASE 0x1B
+
+
+
 #define MSR_SYSENTER_CS 0x174
 #define MSR_SYSENTER_ESP 0x175
 #define MSR_SYSENTER_EIP 0x176
 
 #define MSR_IA32_PERF_STATUS 0x198
 #define MSR_IA32_PERF_CRTL 0x199
+
+
+// 本地APIC的版本寄存器
+#define MSR_IA32_LOCAL_APIC_VERSION 0x803
 
 #define rdmsr(msr, lowval, highval)                             \
     do {                                                        \

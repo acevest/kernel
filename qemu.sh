@@ -20,6 +20,8 @@ set -m
 qemu-system-i386 \
     -boot d \
     -m 128 \
+    -smp 2 \
+    -cpu qemu32,+x2apic \
     -serial tcp::6666,server,nowait \
     -drive file=hd.img,format=raw,index=0,media=disk \
     -drive file=kernel.iso,index=1,media=cdrom \
@@ -30,6 +32,10 @@ qemu-system-i386 \
     -s -S \
     &
 
+
+    # -cpu qemu32,+apic \
+    # -cpu qemu32,+x2apic \
+    #-cpu core2duo-v1,+apic \
     #-drive file=HDb.IMG,format=raw,index=2,media=disk \
     #-cpu qemu32,+apic \
     #-cpu core2duo-v1,+apic \
@@ -55,4 +61,3 @@ i386-elf-gdb KERNEL.ELF -x gdbscript
 
 kill -9 $pid
 echo "kill pid ${pid}"
-

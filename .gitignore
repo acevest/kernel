@@ -37,6 +37,7 @@ bochsout.txt
 *.lock
 *.DS_Store
 .vscode/settings.json
+.vscode/*
 *.iso
 **/serial_monitor/serial_monitor
 **/mkrootfs/mkrootfs
@@ -44,3 +45,4 @@ initrd
 initfs
 rootfs
 **/init
+
