@@ -25,55 +25,6 @@ irq_desc_t irq_desc[NR_IRQS];
 irq_bh_action_t *irq_bh_actions = NULL;
 irq_bh_action_t *irq_bh_actions_end = NULL;
 
-#if 0
-unsigned int irq_nr_stack[64] = {1, 2, 3, 4};
-uint32_t irq_nr_jiffies_stack[64] = {
-    0,
-};
-int irq_nr_stack_pos = 0;
-
-extern uint32_t jiffies;
-void push_irq_nr_stack(unsigned int irq) {
-    irq_nr_stack[irq_nr_stack_pos] = irq;
-    irq_nr_jiffies_stack[irq_nr_stack_pos] = jiffies;
-    irq_nr_stack_pos++;
-}
-
-unsigned int pop_irq_nr_stack() {
-    irq_nr_stack_pos--;
-    return irq_nr_stack[irq_nr_stack_pos];
-}
-
-
-int vsprintf(char *buf, const char *fmt, char *args);
-void dump_irq_nr_stack() {
-    if (irq_nr_stack_pos == 0) {
-        printl(MPL_TEST, "irq nr stack empty");
-        return;
-    }
-
-    printl(MPL_DEBUG, "irq nr stack pos %u", irq_nr_stack_pos);
-
-    char buf[128];
-
-    memset(buf, 0, 128);
-    strcpy(buf, "irq nr stack: ");
-    for (int i = 0; i < irq_nr_stack_pos; i++) {
-        char dbuf[64];
-        vsprintf(dbuf, "%02d:", irq_nr_stack + i);  // 这里vsprintf有坑，坑点在第三个参数不是标准参数
-        strcat(buf, dbuf);
-        vsprintf(dbuf, "%d ", irq_nr_jiffies_stack + i);
-        strcat(buf, dbuf);
-    }
-
-    printl(MPL_TEST, "                                                                               ");
-
-    printl(MPL_TEST, buf);
-    strcat(buf, "\n");
-    printk(buf);
-}
-#endif
-
 void irq_bh_handler();
 void schedule();
 
@@ -82,6 +33,7 @@ volatile int reenter_count = 0;
 volatile uint32_t clk_irq_cnt = 0;
 
 __attribute__((regparm(1))) void irq_handler(pt_regs_t *regs) {
+    assert(current->magic == TASK_MAGIC);
     unsigned int irq = regs->irq;
     if (irq >= NR_IRQS) {
         panic("invalid irq %d\n", irq);
@@ -99,29 +51,21 @@ __attribute__((regparm(1))) void irq_handler(pt_regs_t *regs) {
 
     // TODO 判断打断的是否是内核态代码
 
-    // 屏蔽当前中断
-    p->chip->disable(irq);
-
     // 发送EOI
     p->chip->ack(irq);
+
+    // 屏蔽当前中断
+    // p->chip->disable(irq);
 
 #if 0
     if (0x00 == irq) {
         if ((clk_irq_cnt++ & 0xFU) != 0) {
-            reenter--;
-            p->chip->enable(irq);
-            return;
+            unsigned long esp;
+            asm("movl %%esp, %%eax" : "=a"(esp));
+            printl(MPL_CURRENT, "current %08x %-6s cr3 %08x reenter %d:%u esp %08x ticks %u", current, current->name,
+                current->cr3, reenter, reenter_count, esp, current->ticks);
         }
     }
-#endif
-
-    assert(current->magic == TASK_MAGIC);
-
-#if 1
-    unsigned long esp;
-    asm("movl %%esp, %%eax" : "=a"(esp));
-    printl(MPL_CURRENT, "current %08x %-6s cr3 %08x reenter %d:%u esp %08x ticks %u", current, current->name,
-           current->cr3, reenter, reenter_count, esp, current->ticks);
 #endif
 
     while (action && action->handler) {
@@ -130,7 +74,7 @@ __attribute__((regparm(1))) void irq_handler(pt_regs_t *regs) {
     }
 
     // 解除屏蔽当前中断
-    p->chip->enable(irq);
+    // p->chip->enable(irq);
 
     // 代表当前中断程序打断了前一个中断程序的“开中断处理的底半部分逻辑”
     // 即前一个中断处理尚未完全完成
