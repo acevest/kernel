@@ -17,7 +17,8 @@
 #include <string.h>
 #include <system.h>
 #include <msr.h>
-
+#include <cpuid.h>
+#include <elf.h>
 
 struct boot_params boot_params __attribute__((aligned(32)));
 
@@ -57,6 +58,7 @@ void setup_gates();
 void set_tss();
 void setup_i8254(uint16_t);
 void setup_boot_irqs();
+
 
 void check_kernel(unsigned long addr, unsigned long magic) {
     init_serial();
@@ -98,6 +100,7 @@ void check_kernel(unsigned long addr, unsigned long magic) {
     struct multiboot_tag_mmap *mmap_tag = 0;
     struct multiboot_tag_vbe *vbe = 0;
     struct multiboot_tag_framebuffer *fb = 0;
+    struct multiboot_tag_elf_sections *elf = 0;
 
     boot_params.e820map.map_cnt = 0;
 
@@ -187,11 +190,52 @@ void check_kernel(unsigned long addr, unsigned long magic) {
         case MULTIBOOT_TAG_TYPE_FRAMEBUFFER:
             printk("frame buffer\n");
             break;
-        // case MULTIBOOT_TAG_TYPE_ELF_SECTIONS:
-        //     struct multiboot_tag_elf_sections *s = (struct multiboot_tag_elf_sections *)tag;
-        //     break;
+        case MULTIBOOT_TAG_TYPE_ELF_SECTIONS:
+            {
+                elf = (struct multiboot_tag_elf_sections *)tag;
+                Elf32_Shdr *sections = (Elf32_Shdr *)elf->sections;
+                int sections_cnt = elf->num;
+
+                const char *strtab = 0;
+                Elf32_Shdr *strtab_section = 0;
+
+                for(int i=0; i<sections_cnt; i++) {
+                    Elf32_Shdr *section = sections + i;
+                    if (section->sh_type == 3/*SHT_STRTAB*/) {
+                        if (i == elf->shndx) {
+                            strtab_section = section;
+                            strtab = (const char *)pa2va(section->sh_addr);
+                            break;
+                        }
+                    }
+                }
+
+                for (int i=0; i<sections_cnt; i++) {
+                    Elf32_Shdr *section = sections + i;
+
+                    const char *name = 0;
+                    if(strtab && section->sh_name < strtab_section->sh_size) {
+                        name = strtab + section->sh_name;
+                    }
+
+                    uint32_t addr = section->sh_addr;
+                    uint32_t size = section->sh_size;
+                    uint32_t type = section->sh_type;
+                    uint32_t flags = section->sh_flags;
+                    printk("%20s addr %08x size %08x type %08x flags %08x\n", name ? name : "(unnamed)", addr, size, type, flags);
+                }
+            }
+            break;
         case MULTIBOOT_TAG_TYPE_LOAD_BASE_ADDR:
             printk("load base addr %08x\n", ((struct multiboot_tag_load_base_addr *)tag)->load_base_addr);
+            break;
+        case MULTIBOOT_TAG_TYPE_ACPI_OLD:
+            extern void check_acpi(void *);
+            check_acpi(tag);
+            break;
+        case MULTIBOOT_TAG_TYPE_ACPI_NEW:
+            printk("ACPI new\n");
+            break;
         default:
             support = false;
             break;
@@ -242,6 +286,42 @@ void check_kernel(unsigned long addr, unsigned long magic) {
 #endif
 }
 
+
+void for_breakpoint() {
+
+}
+
+void lapic_init() {
+    cpuid_regs_t r;
+    r = cpuid(1);
+    if(r.edx & (1 << 9)) {
+        printk("local apic supported\n");
+        if(r.ecx & (1 << 21)) {
+            printk("x2apic supported\n");
+        } else {
+            panic("x2apic not supported\n");
+        }
+    } else {
+        panic("local apic not supported\n");
+    }
+
+    uint64_t apic_base = read_msr(MSR_IA32_APIC_BASE);
+    printk("apic base: %016lx\n", apic_base);
+
+    // 开启2xapic
+    apic_base |= (1 << 10);
+    write_msr(MSR_IA32_APIC_BASE, apic_base);
+
+    apic_base = read_msr(MSR_IA32_APIC_BASE);
+    printk("after 2xapic enable apic base: %016lx\n", apic_base);
+
+    uint64_t apic_version = read_msr(MSR_IA32_X2APIC_VERSION);
+    printk("apic version: %08lx\n", apic_version);
+
+    for_breakpoint();
+}
+
+
 extern void *kernel_begin;
 extern void *kernel_end;
 extern void *bootmem_bitmap_begin;
@@ -260,4 +340,6 @@ void init_system_info() {
 
     boot_delay(DEFAULT_BOOT_DELAY_TICKS);
 
+
+    lapic_init();
 }

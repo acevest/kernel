@@ -131,3 +131,32 @@ void do_wp_page(void *addr) {
 
     load_cr3(current);
 }
+
+
+void page_map(void *vaddr, void *paddr, uint32_t flags) {
+    int npde = get_npde(vaddr);
+    int npte = get_npte(vaddr);
+
+    // 获取页目录地址
+    uint32_t pgd_pyhs_addr;
+    asm("mov %%cr3, %0" : "=r"(pgd_pyhs_addr));
+    pde_t *pgd = (pde_t *) pa2va(pgd_pyhs_addr);
+
+    pte_t *pgt = 0;
+    pde_t pde = pgd[npde];
+    if(pde & PAGE_P) {
+        pgt = (pte_t *)pa2va(PAGE_ALIGN(pde));
+    } else {
+        // 分配页表
+        pgt = (pte_t *)page2va(alloc_one_page(0));
+
+        // 清空页表
+        memset(pgt, 0, PAGE_SIZE);
+
+        // 页目录指向页表
+        pgd[npde] = PAGE_ALIGN(va2pa(pgt)) | flags;
+    }
+
+    // 页表指向物理地址
+    pgt[npte] = PAGE_ALIGN(paddr) | flags;
+}

@@ -3,6 +3,8 @@ set confirm off
 
 set architecture i386
 
+b main
+#b boot_paging
 #b *0x100000
 
 #b *0x7c00

@@ -26,13 +26,15 @@ qemu-system-i386 \
     -drive file=hd.img,format=raw,index=0,media=disk \
     -drive file=kernel.iso,index=1,media=cdrom \
     -name kernel \
-    -device ich9-ahci,id=ahci \
     -vga std \
     -display cocoa \
+    -monitor unix:/tmp/qemu-monitor.sock,server,nowait \
     -s -S \
     &
 
+    # nc -U /tmp/qemu-monitor.sock
 
+    # -machine pc-q35-9.2  \
     # -cpu qemu32,+apic \
     # -cpu qemu32,+x2apic \
     #-cpu core2duo-v1,+apic \

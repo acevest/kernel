@@ -36,7 +36,7 @@ void boot_paging() {
 
     // 初始化页目录
     unsigned long kpde_base = get_npde((unsigned long)(&kernel_virtual_addr_start));
-    pde_t pd_entry = init_pgt_paddr | PAGE_US | PAGE_WR | PAGE_P;
+    pde_t pd_entry = init_pgt_paddr | PAGE_WR | PAGE_P;
     for(int i=0; i<BOOT_INIT_PAGETBL_CNT; i++) {
         dir[i] = pd_entry; // 设置低端线性地址空间的页表项
         dir[kpde_base+i] = pd_entry; // 设置内核线性地址空间的页表项
@@ -45,39 +45,12 @@ void boot_paging() {
 
 
     pte_t *table = (pte_t *)init_pgt_paddr;
-    pte_t pt_entry = PAGE_US | PAGE_WR | PAGE_P;
+    pte_t pt_entry = PAGE_WR | PAGE_P;
     for(int i=0; i<BOOT_INIT_PAGETBL_CNT*PTECNT_PER_PAGE; i++) {
         table[i] = pt_entry;
         pt_entry += PAGE_SIZE;
     }
 
-
     // 设置页目录
     asm volatile("mov %0, %%cr3"::"r"(init_pgd_paddr));
-}
-
-
-void lapic_init() {
-    // cpuid_regs_t r;
-    // r = cpuid(1);
-    // if(r.edx & (1 << 9)) {
-    //     printk("local apic supported\n");
-    //     if(r.ecx & (1 << 21)) {
-    //         printk("x2apic supported\n");
-    //     } else {
-    //         panic("x2apic not supported\n");
-    //     }
-    // } else {
-    //     panic("local apic not supported\n");
-    // }
-
-    uint64_t apic_base = read_msr(MSR_IA32_APIC_BASE);
-    // printk("apic base: %016lx\n", apic_base);
-
-    // 开启2xapic
-    apic_base |= (1 << 10);
-    write_msr(MSR_IA32_APIC_BASE, apic_base);
-
-    apic_base = read_msr(MSR_IA32_APIC_BASE);
-    // printk("after 2xapic enable apic base: %016lx\n", apic_base);
 }

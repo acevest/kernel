@@ -62,8 +62,6 @@ real_kernel_entry:
     addl    $KRNLADDR,%ebx
     pushl   %ebx
 
-    call lapic_init
-
     call boot_paging
 
     #movl    $init_pgd-KRNLADDR,%ebx

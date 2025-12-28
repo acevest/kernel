@@ -221,6 +221,9 @@ struct kmem_cache {
     list_head_t list;
 };
 
+
+void page_map(void *vaddr, void *paddr, uint32_t flags);
+
 #endif  // ASM
 
 #endif  //_PAGE_H

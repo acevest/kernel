@@ -174,6 +174,8 @@ typedef struct system {
     u16 x_resolution;
     u16 y_resolution;
 
+    void *rsdt_addr;
+
     dev_t root_dev;
 #define CMD_LINE_SIZE 128
     const char *cmdline;

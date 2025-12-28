@@ -76,6 +76,8 @@ void print_kernel_version() {
     printk(version);
 }
 
+void parse_rsdt(void *addr);
+
 void setup_kernel() {
     printk("sysenter esp mode: %s\n",
 #if FIXED_SYSENTER_ESP_MODE
@@ -88,6 +90,8 @@ void setup_kernel() {
     init_mm();
 
     init_buffer();
+
+    parse_rsdt(system.rsdt_addr);
 
     void init_mount();
     init_mount();
