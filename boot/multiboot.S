@@ -22,9 +22,6 @@
 .extern check_kernel
 .extern init_system_info
 .extern setup_kernel
-.extern init_pgd
-.extern init_pgt
-.extern kernel_virtual_addr_start
 .extern root_task
 .extern root_task_entry
 
@@ -54,82 +51,23 @@ real_kernel_entry:
     movw    %dx,%fs
     movw    %dx,%gs
 
-
-    nop
-    nop
-    nop
-    nop
     movl    $(stack + MULTIBOOT_STACK_SIZE), %esp
-    #leal stack, %esp
-    #addl MULTIBOOT_STACK_SIZE, %esp
 
     # Reset EFLAGS
     pushl   $0
     popf
-
-    call test_unpaged_break
 
     # Save Multiboot Infomation...
     pushl   %eax
     addl    $KRNLADDR,%ebx
     pushl   %ebx
 
-    # Setup Paging
-    # Clear Page Directory
-    movl    $init_pgd-KRNLADDR,%ebx
-    movl    %ebx,%edi
-    movl    $1024,%ecx
-    xorl    %eax,%eax
-    cld
-    rep
-    stosl
+    call lapic_init
 
+    call boot_paging
 
-    # Length = BOOT_INIT_PAGETBL_CNT*4M
-    # [0x00000000, 0x00000000 + Length)
-    # [0xC0000000, 0xC0000000 + Length)
-    # 这两个线性地址空间都映射到同一片物理内存空间: [0x00000000, 0x00000000 + Length)
-
-
-    # 初始化页目录
-    # 设置低端线性地址空间的页表项
-    movl    %ebx,%edi
-    movl    $init_pgt-KRNLADDR,%eax
-    addl    $3,%eax
-    movl    $BOOT_INIT_PAGETBL_CNT,%ecx
-1:
-    stosl
-    addl    $0x1000,%eax
-    loop    1b
-
-    # 设置内核线性地址空间的页表项
-    movl    $kernel_virtual_addr_start,%eax
-    shrl    $20,%eax
-    addl    %ebx,%eax
-    movl    %eax,%edi
-
-    movl    $init_pgt-KRNLADDR,%eax
-    addl    $3,%eax
-    movl    $BOOT_INIT_PAGETBL_CNT,%ecx
-2:
-    stosl
-    addl    $0x1000,%eax
-    loop    2b
-
-    # 初始化页表
-    # 直接线性映射BOOT_INIT_PAGETBL_CNT*4M物理内存
-    movl    $init_pgt-KRNLADDR,%ebx
-    movl    %ebx,%edi
-    movl    $(BOOT_INIT_PAGETBL_CNT*1024),%ecx
-    movl    $3,%eax
-    cld
-3:
-    stosl
-    addl    $0x1000,%eax
-    loop    3b
-
-    movl    $init_pgd-KRNLADDR,%ebx
-    movl    %ebx,%cr3
+    #movl    $init_pgd-KRNLADDR,%ebx
+    #movl    %ebx,%cr3
 
     # enable PG WP
     movl    %cr0,%eax

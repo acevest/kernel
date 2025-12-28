@@ -50,4 +50,6 @@ void tty_switch(tty_t *tty);
 
 void tty_switch_to_next();
 
+void tty_clear(tty_t *tty);
+
 extern tty_t *current_tty;

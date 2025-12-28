@@ -33,16 +33,23 @@ SECTIONS
         *(.kernel_entry_text)
         *(.multiboot2_header)
         boot/multiboot.S.o(.text)
-        *(.unpaged_text)
+        *unpaged_*.o(.text)
     }
     eunpagged_text = .;
+
     . = ALIGN(0x1000);
     .unpaged_data :
     {
-        boot/multiboot.S.o(COMMON)
-       *(.unpaged_data)
+       *unpaged_*.o(.data .rodata*)
     }
     eunpagged_data = .;
+    . = ALIGN(0x1000);
+    .unpaged_bss : ALIGN(0x1000)
+    {
+        boot/multiboot.S.o(.bss COMMON)
+        *unpaged_*.o(.bss COMMON)
+    }
+    eunpaged_rodata = .;
 
     /* . = kernel_begin; */
     . += kernel_virtual_addr_start;

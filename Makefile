@@ -27,6 +27,7 @@ endif
 
 CC		:= $(CROSS_PREFIX)gcc
 LD		:= $(CROSS_PREFIX)ld
+OBJCOPY	:= $(CROSS_PREFIX)objcopy
 
 ifeq (,$(shell which $(CC) 2>/dev/null))
     $(error "编译器 $(CC) 未找到 请安装交叉编译工具链")
@@ -39,6 +40,7 @@ CFLAGS	+= -fno-pic
 CFLAGS	+= -fno-omit-frame-pointer
 # 禁用控制流保护: Control-Flow Enforcement Technology (CET)
 CFLAGS	+= -fcf-protection=none
+CFLAGS	+= -nostdlib
 CFLAGS	+= -DNR_TTYS=3
 CFLAGS	+= -DFIXED_SYSENTER_ESP_MODE=1
 CFLAGS	+= -DENABLE_BOOT_WAIT=0

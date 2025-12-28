@@ -4,8 +4,6 @@ set confirm off
 set architecture i386
 
 #b *0x100000
-b multiboot.S:60
-b multiboot.S:136
 
 #b *0x7c00
 

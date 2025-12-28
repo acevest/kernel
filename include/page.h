@@ -62,7 +62,6 @@
 #define PDE_PWT 0x008
 #define PDE_PCD 0X010
 #define PDE_A 0x020
-// #define PDE_D 0x040
 #define PDE_PS 0x080
 #define PDE_G 0x100
 #define PDE_AVL 0xE00

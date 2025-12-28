@@ -52,7 +52,7 @@ int do_fork(pt_regs_t *regs, unsigned long flags) {
         unsigned long spde = (unsigned long)pde_src[i];
         unsigned long dpde = 0;
 
-        if (i >= 768) {
+        if (i >= get_npde(PAGE_OFFSET)) {
             pde_dst[i] = pde_src[i];
             continue;
         }
