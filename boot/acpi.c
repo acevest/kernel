@@ -131,12 +131,6 @@ void parse_rsdt(void *addr) {
         return;
     }
 
-    // unsigned long ddd = 0xFEC00000;
-    // while(ddd < 0xFF000000)  {
-    //     page_map((void*)ddd, (void*)ddd, PAGE_P);
-    //     ddd += 0x1000;
-    // }
-
     page_map(addr, addr, PAGE_P | PAGE_WR);
 
     rsdt_t *rsdt = (rsdt_t *)addr;

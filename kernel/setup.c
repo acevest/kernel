@@ -91,7 +91,12 @@ void setup_kernel() {
 
     init_buffer();
 
+    #if 1
     parse_rsdt(system.rsdt_addr);
+
+    void init_apic();
+    init_apic();
+    #endif
 
     void init_mount();
     init_mount();

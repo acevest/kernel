@@ -25,6 +25,9 @@ qemu-system-i386 \
     -serial tcp::6666,server,nowait \
     -drive file=hd.img,format=raw,index=0,media=disk \
     -drive file=kernel.iso,index=1,media=cdrom \
+    -drive file=sata.img,format=raw,if=none,id=sata-disk \
+    -device ahci,id=ahci0 \
+    -device ide-hd,drive=sata-disk,bus=ahci0.0 \
     -name kernel \
     -vga std \
     -display cocoa \
@@ -34,6 +37,8 @@ qemu-system-i386 \
 
     # nc -U /tmp/qemu-monitor.sock
 
+    # -d int,cpu_reset \
+
     # -machine pc-q35-9.2  \
     # -cpu qemu32,+apic \
     # -cpu qemu32,+x2apic \
@@ -41,6 +46,9 @@ qemu-system-i386 \
     #-drive file=HDb.IMG,format=raw,index=2,media=disk \
     #-cpu qemu32,+apic \
     #-cpu core2duo-v1,+apic \
+
+    # -serial file:serial_output.log \
+    # -serial tcp::6666,server,nowait \
 
 pid=$!
 echo "pid is ${pid}"

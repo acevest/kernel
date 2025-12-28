@@ -159,4 +159,15 @@ void page_map(void *vaddr, void *paddr, uint32_t flags) {
 
     // 页表指向物理地址
     pgt[npte] = PAGE_ALIGN(paddr) | flags;
+
+
+    asm volatile("invlpg (%0)" : : "r"(vaddr));
+
+    uint32_t cr3 = 0;
+    asm("mov %%cr3, %0" : "=r"(cr3));
+
+    asm("nop;nop;nop;");
+
+    asm("mov %0, %%cr3" : : "r"(cr3));
+    // asm volatile("mov %0, %%cr3" : : "r"(pgd_pyhs_addr));
 }
