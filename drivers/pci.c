@@ -249,6 +249,14 @@ void setup_pci() {
 
     dump_pci_dev();
 
+
+    {
+        int cmd = PCI_CMD(0, 31, 0, 0xF0);
+        uint32_t rcba = pci_read_config_long(cmd);
+        printk("IO-APIC RCBA: %08x\n", rcba); // 如果读到0xFFFFFFFF其实就代表机器太老了
+    }
+
+
     // while (1)
     //     ;
 }
