@@ -45,4 +45,4 @@ initrd
 initfs
 rootfs
 **/init
-
+*.log

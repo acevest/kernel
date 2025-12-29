@@ -130,27 +130,33 @@ multiboot2_header_bgn:
     # checksum
     .long   -(MULTIBOOT2_HEADER_MAGIC + MULTIBOOT_ARCHITECTURE_I386 + (multiboot2_header_end - multiboot2_header_bgn))
 
-    // .align 8
-    // .framebuffer_tag_bgn:
-    // .short MULTIBOOT_HEADER_TAG_FRAMEBUFFER
-    // .short MULTIBOOT_HEADER_TAG_OPTIONAL
-    // .long .framebuffer_tag_end - .framebuffer_tag_bgn
-    // # width
-    // # Contains the number of the columns. This is specified in pixels in a graphics mode,
-    // # and in characters in a text mode.
-    // # The value zero indicates that the OS image has no preference.
-    // .long 1024
-    // # height
-    // # Contains the number of the lines. This is specified in pixels in a graphics mode,
-    // # and in characters in a text mode.
-    // # The value zero indicates that the OS image has no preference.
-    // .long 768
-    // # depth
-    // # Contains the number of bits per pixel in a graphics mode, and zero in a text mode.
-    // # The value zero indicates that the OS image has no preference.
-    // .long 32
-    // .framebuffer_tag_end:
+#if 1
+    /* === Framebuffer Tag === */
+    .align 8
+    .framebuffer_tag_bgn:
+    .short MULTIBOOT_HEADER_TAG_FRAMEBUFFER
+    .short MULTIBOOT_HEADER_TAG_OPTIONAL
+    .long .framebuffer_tag_end - .framebuffer_tag_bgn
 
+    # width
+    # Contains the number of the columns. This is specified in pixels in a graphics mode,
+    # and in characters in a text mode.
+    # The value zero indicates that the OS image has no preference.
+    .long 0
+
+    # height
+    # Contains the number of the lines. This is specified in pixels in a graphics mode,
+    # and in characters in a text mode.
+    # The value zero indicates that the OS image has no preference.
+    .long 0
+
+    # depth
+    # Contains the number of bits per pixel in a graphics mode, and zero in a text mode.
+    # The value zero indicates that the OS image has no preference.
+    .long 0
+
+    .framebuffer_tag_end:
+#endif
     // // .align 2
     // .multiboot2_header_tag_module:
     // .short MULTIBOOT_HEADER_TAG_MODULE_ALIGN

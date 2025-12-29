@@ -57,6 +57,27 @@ void set_tss();
 void setup_i8254(uint16_t);
 void setup_boot_irqs();
 
+void parse_framebuffer(void *addr) {
+    struct multiboot_tag_framebuffer *fb = (struct multiboot_tag_framebuffer *)addr;
+    if(0 == fb) {
+        printk("no framebuffer info\n");
+    }
+
+    uint32_t type = fb->common.type;
+    uint32_t size = fb->common.size;
+    uint64_t fb_addr = fb->common.framebuffer_addr;
+    uint32_t fb_pitch = fb->common.framebuffer_pitch;
+    uint32_t fb_width = fb->common.framebuffer_width;
+    uint32_t fb_height = fb->common.framebuffer_height;
+    uint8_t fb_bpp = fb->common.framebuffer_bpp;
+    uint8_t fb_type = fb->common.framebuffer_type;
+
+    printk("type %u size %u addr %lx pitch %u width %u height %u bpp %u type %u\n",
+            type, size, fb_addr, fb_pitch, fb_width, fb_height, fb_bpp, fb_type);
+
+
+}
+
 
 void check_kernel(unsigned long addr, unsigned long magic) {
     init_serial();
@@ -187,6 +208,7 @@ void check_kernel(unsigned long addr, unsigned long magic) {
             break;
         case MULTIBOOT_TAG_TYPE_FRAMEBUFFER:
             printk("frame buffer\n");
+            parse_framebuffer(tag);
             break;
         case MULTIBOOT_TAG_TYPE_ELF_SECTIONS:
             {

@@ -68,7 +68,7 @@ for i in "${!files[@]}"; do
 done
 
 #docker exec -it $CONTAINER_ID /usr/bin/grub2-mkrescue -o /tmp/kernel.iso /tmp/iso/
-docker exec -it $CONTAINER_ID bash -c "cd /tmp && grub2-mkrescue -o kernel.iso /tmp/iso/"
+docker exec -it $CONTAINER_ID bash -c "cd /tmp && grub2-mkrescue -o kernel.iso --modules=\"video video_bochs video_cirrus vbe\" /tmp/iso/"
 
 
 docker cp $CONTAINER_ID:/tmp/kernel.iso .
