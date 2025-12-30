@@ -44,8 +44,8 @@ const multiboot2_bin_header_t multiboot2_elf_header = {
         .type = MULTIBOOT_HEADER_TAG_FRAMEBUFFER,
         .flags = MULTIBOOT_HEADER_TAG_OPTIONAL,
         .size = sizeof(struct multiboot_header_tag_framebuffer),
-        .width = 1280,
-        .height = 800,
+        .width = 1024,
+        .height = 768,
         .depth = 32,
     },
 #endif

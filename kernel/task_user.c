@@ -18,33 +18,6 @@
 #include <system.h>
 #include <types.h>
 
-#define RING3_ENTRY __attribute__((__section__(".ring3.entry")))
-void RING3_ENTRY __attribute__((__aligned__(PAGE_SIZE))) ring3_entry() {
-    while (1) {
-        int __sysc_ret__ = 0;
-
-        // EDI = 用户态返回地址
-        // EBP = 用户态栈
-        asm volatile(
-            "nop;"
-            "nop;"
-            "pusha;"
-            "call get_eip;"
-            "get_eip:"
-            "popl %%edi;" // 获得EIP的值，注意此时EIP的位置为这条pop指令的地址
-                          // 反汇编后计算了一下需要加8个字节才能跳到sysenter下一个指令
-            "addl $8, %%edi;"
-            "movl %%esp, %%ebp;"
-            "sysenter;"
-            "popa;"
-            "nop;"
-            "nop;"
-            :"=a"(__sysc_ret__)
-            :"a"(SYSC_WAIT)
-        );
-    }
-}
-
 void flush_tlb() {
     asm volatile("movl %%cr3, %%eax;"
                 "movl %%eax, %%cr3;"

@@ -109,7 +109,7 @@ void init_paging() {
     unsigned long vram_phys_addr = system.vbe_phys_addr;
     printk("vram_phys_addr: 0x%x\n", vram_phys_addr);
     for (int pde_inx = 0; pde_inx < get_npde(VRAM_VADDR_SIZE); pde_inx++) {
-        pgtb_addr = (unsigned long *)(alloc_from_bootmem(PAGE_SIZE, "vrampaging"));
+        unsigned long *pgtb_addr = (unsigned long *)(alloc_from_bootmem(PAGE_SIZE, "vrampaging"));
         if (0 == pgtb_addr) {
             panic("no pages for paging...");
         }

@@ -67,7 +67,6 @@ SECTIONS
     {
         code = .;
         *(.text)
-        *(.ring3.text);
         *(.sysexit) /* last */
     }
     etext = .;
