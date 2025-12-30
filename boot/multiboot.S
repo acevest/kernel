@@ -17,6 +17,7 @@
 #include "boot.h"
 #include "system.h"
 #include "task.h"
+
 .global kernel_entry
 .global main
 .extern check_kernel
@@ -77,9 +78,9 @@ real_kernel_entry:
     # 准备切保护模式
     # 此时esp的地址还需要再调整一下
     addl    $KRNLADDR, %esp
-    ljmp    $0x08,$Label+KRNLADDR
+    ljmp    $0x08,$p_label+KRNLADDR
 
-Label:
+p_label:
     leal    check_kernel, %eax
     call    *%eax
 
@@ -99,74 +100,12 @@ die:
 
 .align 32
 boot_gdt:
-EMPT: .long    0x00000000, 0x00000000
-Code: .long    0x0000FFFF, 0x00CF9B00
-Data: .long    0x0000FFFF, 0x00CF9300
+empty: .long    0x00000000, 0x00000000
+code_desc: .long    0x0000FFFF, 0x00CF9B00
+data_desc: .long    0x0000FFFF, 0x00CF9300
 boot_gdt_end:
 boot_gdtr:
     boot_gdtr_limit: .word boot_gdt_end-boot_gdt
     boot_gdtr_base:  .long boot_gdt
 
     .comm stack, MULTIBOOT_STACK_SIZE
-
-
-
-.section .multiboot2_header
-# An OS image must contain an additional header called Multiboot2 header,
-# besides the headers of the format used by the OS image.
-# The Multiboot2 header must be contained completely within the first 32768 bytes of the OS image,
-# and must be 64-bit aligned.
-# In general, it should come as early as possible,
-# and may be embedded in the beginning of the text segment after the real executable header.
-# 64-bit 对齐 就是 8 字节对齐
-.align 8
-multiboot2_header_bgn:
-    # magic
-    .long MULTIBOOT2_HEADER_MAGIC
-    # ISA: i386
-    .long MULTIBOOT_ARCHITECTURE_I386
-    # header length
-    .long multiboot2_header_end - multiboot2_header_bgn
-    # checksum
-    .long   -(MULTIBOOT2_HEADER_MAGIC + MULTIBOOT_ARCHITECTURE_I386 + (multiboot2_header_end - multiboot2_header_bgn))
-
-#if 1
-    /* === Framebuffer Tag === */
-    .align 8
-    .framebuffer_tag_bgn:
-    .short MULTIBOOT_HEADER_TAG_FRAMEBUFFER
-    .short MULTIBOOT_HEADER_TAG_OPTIONAL
-    .long .framebuffer_tag_end - .framebuffer_tag_bgn
-
-    # width
-    # Contains the number of the columns. This is specified in pixels in a graphics mode,
-    # and in characters in a text mode.
-    # The value zero indicates that the OS image has no preference.
-    .long 0
-
-    # height
-    # Contains the number of the lines. This is specified in pixels in a graphics mode,
-    # and in characters in a text mode.
-    # The value zero indicates that the OS image has no preference.
-    .long 0
-
-    # depth
-    # Contains the number of bits per pixel in a graphics mode, and zero in a text mode.
-    # The value zero indicates that the OS image has no preference.
-    .long 0
-
-    .framebuffer_tag_end:
-#endif
-    // // .align 2
-    // .multiboot2_header_tag_module:
-    // .short MULTIBOOT_HEADER_TAG_MODULE_ALIGN
-    // .short 0
-    // .long  8
-    // .long 0
-
-    .align 8
-    .multiboot2_tag_end:
-    .short MULTIBOOT_HEADER_TAG_END
-    .short 0
-    .long  8
-multiboot2_header_end:
