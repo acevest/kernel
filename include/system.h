@@ -80,6 +80,9 @@ extern char etext, edata, end;
 
 #define ALIGN(x, a) (((x) + (a) - 1) & ~((a) - 1))
 
+// 固定映射区划分出16MB的空间
+#define FIXED_MAP_VADDR_SIZE (16 << 20)
+
 // 定义最大显存为 16MB
 // 后续内核不映射显存了，以后可以提供映射到用户空间的功能，由用户态程序操作
 #define VRAM_VADDR_SIZE (16 << 20)
@@ -93,11 +96,15 @@ extern char etext, edata, end;
 
 // 把内核线性地址的最高部分留给显存
 // 余下的部分为支持映射其它物理内存的空间
-#define MAX_SUPT_PHYMM_SIZE (MAX_SUPT_VADDR_SIZE - VRAM_VADDR_SIZE)
+#define MAX_SUPT_PHYMM_SIZE (MAX_SUPT_VADDR_SIZE - VRAM_VADDR_SIZE - FIXED_MAP_VADDR_SIZE)
 
 // 算出显存的线性地址
 // 之后要将这个地址映射到显存的物理地址
 #define VRAM_VADDR_BASE (PAGE_OFFSET + MAX_SUPT_PHYMM_SIZE)
+
+
+// 算出固定映射区的线性地址
+#define FIXED_MAP_VADDR_BASE (VRAM_VADDR_BASE + VRAM_VADDR_SIZE)
 
 #define INT_STACK_SIZE PAGE_SIZE
 
