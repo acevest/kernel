@@ -294,11 +294,11 @@ find_next_block:
     }
 
     reserve_bootmem(bgn_pfn, end_pfn);
-    region = pfn2va(bgn_pfn);
+    region = pfn2pa(bgn_pfn);
 
     pbd->prepare_alloc_pfn = end_pfn;
 
-    printk("%s alloc bootmem size: %x pfn cnt: %d [%d, %d)\n", title, size, pfn_cnt, bgn_pfn, end_pfn);
+    printk("[bootmem][%s] alloc size: 0x%x pfn cnt: %d [%d, %d) %x\n", title, size, pfn_cnt, bgn_pfn, end_pfn, region);
 
     return region;
 }

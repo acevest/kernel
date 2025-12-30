@@ -57,7 +57,6 @@ SECTIONS
     .text : AT(ADDR(.text)-kernel_virtual_addr_start) ALIGN(0x1000)
     {
         code = .;
-        /* 单独把 multiboot.S 的 .text 放在这个位置是为了便于调试，实际是可以不写这一句的 */
         *(.text)
         *(.ring3.text);
         *(.sysexit) /* last */

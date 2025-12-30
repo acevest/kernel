@@ -39,41 +39,72 @@ void set_page_shared(void *x) {
     pte[get_npte(addr)] |= PAGE_US;
 }
 
+char *paging_page = "paging";
+
 void init_paging() {
     unsigned int i;
     unsigned long pfn = 0;
-    pte_t *pte = 0;
-    unsigned long *pgtb_addr = 0;
+    pte_t *pg_table = 0;
     void *alloc_from_bootmem(unsigned long size, char *title);
 
     // 在multiboot.S是已经初始化了BOOT_INIT_PAGETBL_CNT个页
     // 这里接着初始化剩余的页
     // 最大限制内存1G
     for (pfn = pa2pfn(BOOT_INIT_PAGETBL_CNT << 22); pfn < bootmem_data.max_pfn; ++pfn) {
-        unsigned long ti = pfn % PAGE_PTE_CNT;
+        unsigned long npte = pfn % PAGE_PTE_CNT;
         unsigned long page_addr = (unsigned long)pfn2pa(pfn);
-        if (ti == 0) {
-            pgtb_addr = (unsigned long *)alloc_from_bootmem(PAGE_SIZE, "paging");
-            if (0 == pgtb_addr) {
+        if (npte == 0) {
+            pg_table = (pte_t *)alloc_from_bootmem(PAGE_SIZE, paging_page);
+            if (0 == pg_table) {
                 panic("no pages for paging...");
             }
 
-            memset((void *)pgtb_addr, 0, PAGE_SIZE);
+            memset((void *)pg_table, 0, PAGE_SIZE);
 
-            init_pgd[get_npde(page_addr)] = (pde_t)((unsigned long)va2pa(pgtb_addr) | PAGE_P | PAGE_WR);
+            init_pgd[get_npde(page_addr)] = (pde_t)((unsigned long)(pg_table) | PAGE_P | PAGE_WR);
         }
 
-        pte = ((pte_t *)pgtb_addr) + ti;
-        *pte = (pte_t)(page_addr | PAGE_P | PAGE_WR);
+        pg_table[npte] = (pte_t)(page_addr | PAGE_P | PAGE_WR);
     }
 
     // paging for kernel space
-    unsigned long delta = get_npde(PAGE_OFFSET);
-    for (i = delta; i < PDECNT_PER_PAGE; ++i) {
-        init_pgd[i] = init_pgd[i - delta];
-        init_pgd[i - delta] = 0;
+    // 在此处让内核空间对[0, MAX_SUPT_PHYMM_SIZE]物理内存也作直接映射
+    int kernel_npde_base = get_npde(PAGE_OFFSET);
+    for (i = kernel_npde_base; i < PDECNT_PER_PAGE; ++i) {
+        init_pgd[i] = init_pgd[i - kernel_npde_base];
     }
 
+    // 接下来还有部分内核空间需要处理，例如 VRAM_VADDR FIXED_MAP_VADDR 等
+    // 这部分空间也需要给他们分配固定的页表
+    // 这部分页表在pgd里的pde就不再允许修改了
+    // 这样，无论内核空间映射如何变化，这部分空间所有进程都能共享到变化
+    for (i = kernel_npde_base; i < PDECNT_PER_PAGE; ++i) {
+        if(0 != init_pgd[i]) {
+            continue;
+        }
+
+        // 分配一个页表
+        pte_t *pg_table = (pte_t *)alloc_from_bootmem(PAGE_SIZE, paging_page);
+        if(0 == pg_table) {
+            panic("no pages for paging...");
+        }
+
+        // 清空页表
+        memset((void *)pg_table, 0xAC, PAGE_SIZE);
+
+        // 把页表地址填入pgd
+        init_pgd[i] = (pde_t)((unsigned long)(pg_table) | PAGE_P | PAGE_WR);
+    }
+
+
+    // 建立完内核空间的页映射，需要清空用户空间的映射
+    for (i = 0; i < kernel_npde_base; ++i) {
+        init_pgd[i] = 0;
+    }
+
+
+
+#if 0
     // 接下来为显存建立页映射
     unsigned long vram_phys_addr = system.vbe_phys_addr;
     printk("vram_phys_addr: 0x%x\n", vram_phys_addr);
@@ -84,7 +115,7 @@ void init_paging() {
         }
         // 后续要初始化，所以此处不用memset
         // memset((void *)pgtb_addr, 0, PAGE_SIZE);
-        init_pgd[get_npde(VRAM_VADDR_BASE) + pde_inx] = (pde_t)((unsigned long)va2pa(pgtb_addr) | PAGE_P | PAGE_WR);
+        init_pgd[get_npde(VRAM_VADDR_BASE) + pde_inx] = (pde_t)((unsigned long)(pgtb_addr) | PAGE_P | PAGE_WR);
 
         for (int pte_inx = 0; pte_inx < PTECNT_PER_PAGE; pte_inx++) {
             pgtb_addr[pte_inx] = vram_phys_addr | PAGE_P | PAGE_WR;
@@ -105,6 +136,7 @@ void init_paging() {
         // 在内存中 [B, G, R, A] 因为x86是小端序 所以实际是 ARGB 顺序
         vram[i] = 0x000000FF;
     }
+#endif
 
 #if 0
     bool flag = false;
