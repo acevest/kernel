@@ -171,7 +171,7 @@ void parse_rsdt(void *addr) {
 }
 
 
-void check_acpi(void *tag) {
+void parse_acpi(void *tag) {
     printk("ACPI[old].RSDP ");
     struct multiboot_tag_old_acpi *acpi_tag = (struct multiboot_tag_old_acpi *)tag;
     uint8_t *rsdp = (uint8_t *)acpi_tag->rsdp;

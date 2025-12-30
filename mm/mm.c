@@ -76,6 +76,7 @@ void init_paging() {
 
     // 接下来为显存建立页映射
     unsigned long vram_phys_addr = system.vbe_phys_addr;
+    printk("vram_phys_addr: 0x%x\n", vram_phys_addr);
     for (int pde_inx = 0; pde_inx < get_npde(VRAM_VADDR_SIZE); pde_inx++) {
         pgtb_addr = (unsigned long *)(alloc_from_bootmem(PAGE_SIZE, "vrampaging"));
         if (0 == pgtb_addr) {
@@ -97,27 +98,46 @@ void init_paging() {
 
     LoadCR3(va2pa(init_pgd));
 
-    // // 测试显存
-    // for (int i = 0; i < system.x_resolution * (system.y_resolution - 32); i++) {
-    //     unsigned long *vram = (unsigned long *)VRAM_VADDR_BASE;
-    //     vram[i] = 0x000000FF;
-    // }
+    // 测试显存
+    for (int i = 0; i < system.x_resolution * (system.y_resolution - 32); i++) {
+        unsigned long *vram = (unsigned long *)VRAM_VADDR_BASE;
+        // 仅为32bit色深
+        // 在内存中 [B, G, R, A] 因为x86是小端序 所以实际是 ARGB 顺序
+        vram[i] = 0x000000FF;
+    }
 
-    // while (1) {
-    //     u16 lineH = 32;
-    //     unsigned long *vram = (unsigned long *)VRAM_VADDR_BASE;
-    //     int sep = system.x_resolution * (system.y_resolution - lineH);
-    //     for (int i = 0; i < sep; i++) {
-    //         vram[i] = vram[i + system.x_resolution * lineH];
-    //     }
+#if 0
+    bool flag = false;
+    while (1) {
+        u16 lineH = 32;
+        unsigned long *vram = (unsigned long *)VRAM_VADDR_BASE;
+        int sep = system.x_resolution * (system.y_resolution - lineH);
+        for (int i = 0; i < sep; i++) {
+            vram[i] = vram[i + system.x_resolution * lineH] | 0x00FF0000;
+        }
 
-    //     unsigned int long color = 0x0000FF;
-    //     color = (vram[0] == 0x0000FF ? 0x00FF00 : 0x0000FF);
+        unsigned int long color = 0x0000FF;
+        color = (vram[0] == 0x0000FF ? 0x00FF00 : 0x0000FF);
 
-    //     for (int i = sep; i < sep + system.x_resolution * lineH; i++) {
-    //         vram[i] = color;
-    //     }
-    // }
+        for (int i = sep; i < sep + system.x_resolution * lineH; i++) {
+            vram[i] = color;
+        }
+
+        for(int i=0; i<32; i++) {
+            for(int j=0; j<64; j++) {
+                unsigned int long c = vram[j*system.x_resolution+i];
+                c = flag ? 0x00FFFFFF : 0x000000FF;
+                // c &= 0x00FFFFFF;
+                vram[j*system.x_resolution+i] = c;
+            }
+        }
+        flag = !flag;
+
+        for(int i=0; i<10*1000*10000; i++) {
+            asm("nop");
+        }
+    }
+#endif
 }
 
 extern void init_ttys();

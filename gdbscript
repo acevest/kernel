@@ -3,6 +3,7 @@ set confirm off
 
 set architecture i386
 
+#b slub.c:62 if cache->name[0] != 'b'
 #b acpi.c:144
 #b main
 #b boot_paging

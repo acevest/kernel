@@ -81,6 +81,7 @@ extern char etext, edata, end;
 #define ALIGN(x, a) (((x) + (a) - 1) & ~((a) - 1))
 
 // 定义最大显存为 16MB
+// 后续内核不映射显存了，以后可以提供映射到用户空间的功能，由用户态程序操作
 #define VRAM_VADDR_SIZE (16 << 20)
 
 // 最大支持的线性地址空间为1G

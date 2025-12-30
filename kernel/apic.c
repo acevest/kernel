@@ -65,5 +65,7 @@
 
 
 void init_apic() {
+#if 0
     lapic_init();
+#endif
 }

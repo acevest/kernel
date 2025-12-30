@@ -9,25 +9,30 @@
 
 
 
- #include <multiboot2.h>
+#include <multiboot2.h>
 
 
- #define ENABLE_FB 0
+// 启用FB这个功能，需要修改grub.cfg，添加如下内容
+// load_video
+// set gfxmode=auto
+// set gfxpayload=keep
+// terminal_output gfxterm
+#define ENABLE_FB 0
 
- #define ALIGN8 __attribute__((aligned(8)))
+#define ALIGN8 __attribute__((aligned(8)))
 
- typedef struct ALIGN8 multiboot2_elf_header {
+typedef struct ALIGN8 multiboot2_elf_header {
     ALIGN8 struct multiboot_header header;
 #if ENABLE_FB
     ALIGN8 struct multiboot_header_tag_framebuffer fb;
 #endif
     ALIGN8 struct multiboot_header_tag end;
- } multiboot2_bin_header_t;
+} multiboot2_bin_header_t;
 
 
 
- __attribute__((section(".multiboot2_header"), used))
- const multiboot2_bin_header_t multiboot2_elf_header = {
+__attribute__((section(".multiboot2_header"), used))
+const multiboot2_bin_header_t multiboot2_elf_header = {
     .header = {
         .magic = MULTIBOOT2_HEADER_MAGIC,
         .architecture = MULTIBOOT_ARCHITECTURE_I386,
@@ -39,9 +44,9 @@
         .type = MULTIBOOT_HEADER_TAG_FRAMEBUFFER,
         .flags = MULTIBOOT_HEADER_TAG_OPTIONAL,
         .size = sizeof(struct multiboot_header_tag_framebuffer),
-        .width = 0,
-        .height = 0,
-        .depth = 0,
+        .width = 1280,
+        .height = 800,
+        .depth = 32,
     },
 #endif
     .end = {
@@ -52,4 +57,4 @@
         .flags = 0,
         .size = sizeof(struct multiboot_header_tag),
     },
- };
+};
