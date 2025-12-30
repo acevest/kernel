@@ -127,7 +127,7 @@ void init_paging() {
     extern void sysexit();
     set_page_shared(sysexit);
 
-    LoadCR3(va2pa(init_pgd));
+    set_cr3(va2pa(init_pgd));
 
     // 测试显存
     for (int i = 0; i < system.x_resolution * (system.y_resolution - 32); i++) {

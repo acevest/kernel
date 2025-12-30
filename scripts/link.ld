@@ -51,6 +51,15 @@ SECTIONS
     }
     eunpaged_rodata = .;
 
+    . = ALIGN(0x1000);
+    ring3_page_addr = .;
+    .ring3 :
+    {
+        *(.ring3.entry)
+    }
+    . = ALIGN(0x1000);
+    ring3_page_end = .;
+
     /* . = kernel_begin; */
     . += kernel_virtual_addr_start;
     . = ALIGN(0x1000);

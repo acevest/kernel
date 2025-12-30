@@ -121,7 +121,16 @@ typedef unsigned long pte_t;
 
 #define MAX_ORDER (11)
 
-#define LoadCR3(cr3) asm volatile("movl %%edx, %%cr3" ::"d"(cr3))
+#define set_cr3(cr3) asm volatile("movl %0, %%cr3" ::"r"(cr3))
+static inline unsigned long get_cr3() {
+    unsigned long cr3;
+    asm volatile("movl %%cr3, %0" : "=r"(cr3));
+    return cr3;
+}
+
+static inline pde_t *get_pgd() {
+    return (pde_t *)(get_cr3() & PAGE_MASK);
+}
 
 typedef unsigned int gfp_t;
 

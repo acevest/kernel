@@ -24,15 +24,15 @@ int atoi(const char *s) {
     return i;
 }
 
-void reboot() { syscall1(SYSC_REBOOT, 0); }
+// void reboot() { syscall1(SYSC_REBOOT, 0); }
 
-void poweroff() { syscall1(SYSC_REBOOT, 1); }
+// void poweroff() { syscall1(SYSC_REBOOT, 1); }
 
-int systest() { return syscall0(SYSC_TEST); }
+// int systest() { return syscall0(SYSC_TEST); }
 
-int sysdebug(unsigned int v) { return syscall1(SYSC_DEBUG, v); }
+// int sysdebug(unsigned int v) { return syscall1(SYSC_DEBUG, v); }
 
-int pause(unsigned long tick) { return syscall1(SYSC_PAUSE, tick); }
+// int pause(unsigned long tick) { return syscall1(SYSC_PAUSE, tick); }
 
 int vsprintf(char *buf, const char *fmt, char *args);
 int sprintf(char *str, const char *fmtstr, ...) {

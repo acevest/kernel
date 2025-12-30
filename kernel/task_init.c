@@ -194,7 +194,7 @@ void init_task_entry() {
 
 #if 1
     kernel_task("ide/1", disk_task_entry, (void *)1);
-    // kernel_task("user", user_task_entry, NULL);
+    kernel_task("user", user_task_entry, NULL);
     kernel_task("tskA", taskA_entry, NULL);
     kernel_task("tskB", taskB_entry, NULL);
     kernel_task("tskC", taskC_entry, NULL);
@@ -222,7 +222,7 @@ void init_task_entry() {
 
     printk("RING3 ENTRY %x page %x pgd inx %u pt inx %u\n", mod_start, text_at, pgd_index, pt_index);
 
-    LoadCR3(current->cr3);
+    set_cr3(current->cr3);
 
     asm("sysexit;" ::"d"(mod_start), "c"(mod_start + PAGE_SIZE - 4));
 #endif

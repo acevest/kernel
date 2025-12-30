@@ -40,7 +40,7 @@ pid_t get_next_pid() {
     return pid;
 }
 
-void load_cr3(task_t *tsk) { LoadCR3(tsk->cr3); }
+void load_cr3(task_t *tsk) { set_cr3(tsk->cr3); }
 
 extern pde_t __initdata init_pgd[PDECNT_PER_PAGE] __attribute__((__aligned__(PAGE_SIZE)));
 
@@ -112,7 +112,7 @@ task_t *alloc_task_t() {
 }
 
 void switch_to() {
-    LoadCR3(current->cr3);
+    set_cr3(current->cr3);
     tss.esp0 = current->esp0;
 #if FIXED_SYSENTER_ESP_MODE
     // do nothing

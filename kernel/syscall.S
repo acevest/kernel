@@ -77,11 +77,13 @@ syscall_entry:
 
     RESTORE_REGS
 
+    // TODO 应该要检查一下这两个返回参数
+
     // 返回用户态的eip
     // sysexit指令从edx中恢复用户态eip
-    leal    sysexit, %edx
+    movl %edi, %edx
 
-    // 在系统调用前，用户态的esp保存在ebp中
+    // 在系统调用前,用户态的esp保存在ebp中
     // sysexit指令从ecx中恢复用户态esp
     xchgl   %ebp, %ecx
 
