@@ -7,6 +7,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -17,7 +18,7 @@ var clearMode bool
 func main() {
 	flag.StringVar(&addr, "a", ":6666", "")
 	flag.StringVar(&logFile, "f", "last.log", "")
-	flag.BoolVar(&clearMode, "c", true, "clear log file every time")
+	flag.BoolVar(&clearMode, "c", true, "clear log file and screen every time")
 	flag.Parse()
 
 	// 创建一个可写的文本文件
@@ -28,17 +29,7 @@ func main() {
 	defer f.Close()
 
 	for {
-		var modeStr string
-		if clearMode {
-			modeStr = "clear log file every time"
-		} else {
-			modeStr = "do not clear log file"
-		}
-		log.Printf("listen addr %v log file %v %v", addr, logFile, modeStr)
-
 		monitor(f)
-
-
 	}
 }
 
@@ -47,6 +38,15 @@ func monitor(f *os.File) {
 	var err error
 
 	start := time.Now()
+
+
+	var modeStr string
+	if clearMode {
+		modeStr = "clear log file every time"
+	} else {
+		modeStr = "do not clear log file"
+	}
+	log.Printf("lissten addr %v log file %v %v", addr, logFile, modeStr)
 
 
 	// 不断尝试连接串行控制台
@@ -64,8 +64,6 @@ func monitor(f *os.File) {
 	defer conn.Close()
 
 
-
-	// 每次连接成功，就清空这个文件，从头开始写数据
 	if clearMode {
 		err = f.Truncate(0)
 		if err != nil {
@@ -73,6 +71,16 @@ func monitor(f *os.File) {
 		}
 
 		f.Seek(0, 0)
+
+		// 组合转义码：清屏 + 清除滚动缓冲区
+		// \033[H  光标移到左上角
+		// \033[2J 清空屏幕
+		// \033[3J  清除滚动缓冲区（部分终端支持）
+		fmt.Print("\033[H\033[2J\033[3J")
+
+		//
+		var divideLine = strings.Repeat("-", 80)
+		fmt.Printf("\n%v\n\nSCREEN CLEARED AT %v\n\n%v\n\n", divideLine, time.Now().Format("2006-01-02 15:04:05.000"), divideLine)
 	}
 
 	// 写入当前时间
