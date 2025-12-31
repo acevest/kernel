@@ -133,14 +133,16 @@ void do_wp_page(void *addr) {
 }
 
 
-void page_map(void *vaddr, void *paddr, uint32_t flags) {
+void page_map(vaddr_t vaddr, paddr_t paddr, uint32_t flags) {
+    assert(PAGE_ALIGN(vaddr) == vaddr);
+    assert(PAGE_ALIGN(paddr) == paddr);
+    assert(PAGE_FLAGS(flags) == flags);
+
     int npde = get_npde(vaddr);
     int npte = get_npte(vaddr);
 
     // 获取页目录地址
-    uint32_t pgd_pyhs_addr;
-    asm("mov %%cr3, %0" : "=r"(pgd_pyhs_addr));
-    pde_t *pgd = (pde_t *) pa2va(pgd_pyhs_addr);
+    pde_t *pgd = (pde_t *) pa2va(get_pgd());
 
     pte_t *pgt = 0;
     pde_t pde = pgd[npde];
@@ -162,12 +164,4 @@ void page_map(void *vaddr, void *paddr, uint32_t flags) {
 
 
     asm volatile("invlpg (%0)" : : "r"(vaddr));
-
-    uint32_t cr3 = 0;
-    asm("mov %%cr3, %0" : "=r"(cr3));
-
-    asm("nop;nop;nop;");
-
-    asm("mov %0, %%cr3" : : "r"(cr3));
-    // asm volatile("mov %0, %%cr3" : : "r"(pgd_pyhs_addr));
 }

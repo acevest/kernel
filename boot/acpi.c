@@ -48,7 +48,7 @@ typedef struct {
 } __attribute__((packed)) madt_t;
 
 
-void parse_madt(void *addr) {
+void parse_madt(paddr_t addr) {
     if(0 == addr) {
         printk("MADT addr is null\n");
         return;
@@ -125,7 +125,7 @@ void parse_madt(void *addr) {
     }
 }
 
-void parse_rsdt(void *addr) {
+void parse_rsdt(paddr_t addr) {
     if(0 == addr) {
         printk("RSDT addr is null\n");
         return;
@@ -149,7 +149,7 @@ void parse_rsdt(void *addr) {
 
     for(int i=0; i<table_count; i++) {
         uint32_t table_phys_addr = rsdt->table_ptrs[i];
-        page_map((void *)table_phys_addr, (void *)table_phys_addr, PAGE_P | PAGE_WR);
+        page_map((vaddr_t)table_phys_addr, (paddr_t)table_phys_addr, PAGE_P | PAGE_WR);
 
         acpi_sdt_header_t *table = (acpi_sdt_header_t *)table_phys_addr;
         if(table == 0) {
@@ -164,7 +164,7 @@ void parse_rsdt(void *addr) {
         }
         printk("ACPI table %u signature %s addr %08x len %u\n", i, sig, table_phys_addr, table->length);
         if(memcmp(sig, "APIC", 4) == 0) {
-            parse_madt(table);
+            parse_madt((paddr_t)table);
         }
     }
 

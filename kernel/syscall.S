@@ -85,7 +85,7 @@ syscall_entry:
 
     // 在系统调用前,用户态的esp保存在ebp中
     // sysexit指令从ecx中恢复用户态esp
-    xchgl   %ebp, %ecx
+    movl    %ebp, %ecx
 
     sysexit
 

@@ -43,8 +43,8 @@
     printk("apic version: %08lx\n", apic_version);
 
 
-    unsigned long apic_phys_base_addr = apic_base & 0xFFFFF000;
-    unsigned long apic_virt_base_addr = apic_phys_base_addr;
+    paddr_t apic_phys_base_addr = apic_base & 0xFFFFF000;
+    vaddr_t apic_virt_base_addr = apic_phys_base_addr;
     #if 0
     unsigned long ddd = 0xFEC00000;
     while(ddd < 0xFF000000)  {
@@ -52,7 +52,7 @@
         ddd += 0x1000;
     }
     #endif
-    page_map((void*)apic_virt_base_addr, (void*)apic_phys_base_addr, PAGE_P);
+    page_map((vaddr_t)apic_virt_base_addr, (paddr_t)apic_phys_base_addr, PAGE_P);
 
     {
         volatile uint32_t *base = (volatile uint32_t *)apic_virt_base_addr;

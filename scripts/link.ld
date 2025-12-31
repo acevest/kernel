@@ -52,7 +52,7 @@ SECTIONS
     eunpaged_rodata = .;
 
     . = ALIGN(0x1000);
-    ring3_page_addr = .;
+    ring3_page_begin = .;
     .ring3 :
     {
         *(.ring3.entry)
