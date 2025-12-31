@@ -177,7 +177,7 @@ void ide_pci_init(pci_device_t *pci) {
            pci->vendor, pci->classcode);
 
     for (int i = 0; i < 6; i++) {
-        printd("ide pci BAR%u value 0x%08X\n", i, pci->bars[i]);
+        printd("  ide pci BAR%u value 0x%08X\n", i, pci->bars[i]);
         if (pci->bars[i] != 0) {
             assert((pci->bars[i] & 0x1) == 0x1);
         }
@@ -202,7 +202,7 @@ void ide_pci_init(pci_device_t *pci) {
         atomic_set(&ide_pci_controller[i].consumed_cnt, 0);
 
         iobase += i * 8;  // secondary channel 需要加8
-        printd("ide pci Base IO Address Register %08x\n", iobase);
+        printd("  ide pci Base IO Address Register %08x\n", iobase);
         ide_pci_controller[i].bus_iobase = iobase;
         ide_pci_controller[i].bus_cmd = iobase + PCI_IDE_CMD;
         ide_pci_controller[i].bus_status = iobase + PCI_IDE_STATUS;

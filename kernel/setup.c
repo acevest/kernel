@@ -140,4 +140,7 @@ void setup_kernel() {
 
     void ide_init();
     ide_init();
+
+    void init_sata();
+    init_sata();
 }
