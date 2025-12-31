@@ -56,6 +56,8 @@ SECTIONS
     .ring3 :
     {
         *(.ring3.entry)
+        . = ALIGN(0x100);
+        ring3_text_end = .;
     }
     . = ALIGN(0x1000);
     ring3_page_end = .;

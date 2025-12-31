@@ -27,40 +27,62 @@ ring3_entry:
     nop
     nop
 
-    movl    $SYSC_RAND, %eax
+    pushl   $0                  # 模拟一个内核不需要的参数1
+    pushl   $SYSC_RAND          # 系统调用号
     call    ring3_syscall
+    addl    $8, %esp
 
 
     movl    %eax, %ecx
     andl    $0x000000FF, %ecx
-    movl    $SYSC_WAIT, %eax
+    pushl   %ecx                # 参数1
+    pushl   $SYSC_WAIT          # 系统调用号
     call    ring3_syscall
+    addl    $8, %esp
+
+
+    # 纯消耗CPU时间
+    movl    $0x0F0F0F0F, %ecx
+1:
+    loop    1b
+
 
     nop
     nop
     jmp ring3_entry
 
-# eax 系统调用号
-# ecx 参数1
+# 传入: 系统调用号, 参数1
 ring3_syscall:
     pushl   %ebp
+    movl    %esp, %ebp
 
-    pushl   %ebx
-    pushl   %edi
+    pushl   %ebx # 用于保存参数1
+    pushl   %edi # 用于保存sysexit后返回用户态的地址
+                 # ebp用于保存sysexit后的用户态栈，不过已经保存了，这里不用再保存
 
-    movl    %ecx, %ebx
+    movl    0x08(%ebp), %eax # 系统调用号
+    movl    0x0C(%ebp), %ebx # 参数1
+
+    # 获取call get_eip后的地址
     call    get_eip
 get_eip:
     # 这里popl取得的就是上一个call指令自动压入栈中的地址
     # 这个地址就是当前指令的地址
     popl    %edi
-    addl    $8,%edi
-    movl    %esp, %ebp;
+
+    # 算出sysenter后的地地址
+    addl    $8, %edi
+
+    # 设置sysexit返回用户态后的栈位置
+    movl    %esp, %ebp
 
     sysenter
 
+    # 从栈中恢复保存的易失寄存器
     popl    %edi
     popl    %ebx
+
+    #
     popl    %ebp
 
     ret
