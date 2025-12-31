@@ -18,16 +18,18 @@
 
 volatile uint64_t jiffies = 0;  // TODO uint64: undefined reference to `__umoddi3'
 
-unsigned int sys_clock() { return jiffies; }
+unsigned int sys_clock() {
+    return jiffies;
+}
 
 void debug_print_all_tasks();
 
 void dump_irq_nr_stack();
-void clk_bh_handler(void *arg);
+void clk_bh_handler(void* arg);
 
 extern volatile bool enable_clock_irq_delay;
 
-void clk_handler(unsigned int irq, pt_regs_t *regs, void *dev_id) {
+void clk_handler(unsigned int irq, pt_regs_t* regs, void* dev_id) {
     // if (jiffies % 100 == 0) {
     // printl(MPL_CLOCK, "clock irq: %d", jiffies);
     printlxy(MPL_IRQ, MPO_CLOCK, "CLK irq: %d", jiffies);
@@ -73,12 +75,11 @@ void clk_handler(unsigned int irq, pt_regs_t *regs, void *dev_id) {
 
 // 开中断执行这个函数
 // 后续放到一个内核任务中去做，需要先把禁止内核抢占做了
-const char *task_state(unsigned int state);
-void clk_bh_handler(void *arg) {
-
-    task_t *p = 0;
-    list_head_t *t = 0;
-    list_head_t *pos = 0;
+const char* task_state(unsigned int state);
+void clk_bh_handler(void* arg) {
+    task_t* p = 0;
+    list_head_t* t = 0;
+    list_head_t* pos = 0;
     list_for_each_safe(pos, t, &delay_tasks) {
         p = list_entry(pos, task_t, pend);
         // printk("%s state: %s\n", p->name, task_state(p->state));
@@ -123,10 +124,10 @@ void setup_i8254(uint16_t hz) {
     // 8254的最低频率为18.2Hz(1193180/65536，最大计数值是65536是因为往计数器里写0就从65536开始计数)
     assert(hz >= 19);
 
-    const uint8_t counter_no = 0;  // 第0个计数器
+    const uint8_t counter_no = 0;        // 第0个计数器
     const uint8_t read_write_latch = 3;  // 0 锁存数据供CPU读；1只读写低字节；2只读写高字节；3先读写低字节，后读写高字节
-    const uint8_t mode = 2;  //
-    const uint8_t BCD = 0;   // 0 二进制；1 BCD码
+    const uint8_t mode = 2;              //
+    const uint8_t BCD = 0;               // 0 二进制；1 BCD码
 
     const uint8_t cmd =
         ((counter_no & 0x03) << 6) | ((read_write_latch & 0x03) << 4) | ((mode & 0x07) << 1) | ((BCD & 0x01) << 0);

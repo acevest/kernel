@@ -14,7 +14,7 @@
 #include <sched.h>
 #include <stat.h>
 #include <types.h>
-int sysc_stat(int fd, struct stat *stat) {
+int sysc_stat(int fd, struct stat* stat) {
 #if 0
     if(fd<0 || fd>=NR_OPENS)
         return -EBADF;

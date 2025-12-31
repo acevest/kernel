@@ -15,7 +15,7 @@
 
 typedef struct pci_member {
     uint16_t vendor_id;
-    char *name;
+    char* name;
 } pci_member_t;
 
 pci_member_t pci_members[] = {

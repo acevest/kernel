@@ -29,23 +29,23 @@ extern char etext, edata, end;
 pde_t __initdata init_pgd[PDECNT_PER_PAGE] __attribute__((__aligned__(PAGE_SIZE)));
 pte_t __initdata init_pgt[PTECNT_PER_PAGE * BOOT_INIT_PAGETBL_CNT] __attribute__((__aligned__(PAGE_SIZE)));
 
-void set_page_shared(void *x) {
+void set_page_shared(void* x) {
     unsigned long addr = (unsigned long)x;
     addr = PAGE_ALIGN(addr);
     unsigned int npd = get_npde(addr);
     init_pgd[npd] |= PAGE_US;
 
-    pte_t *pte = pa2va(init_pgd[npd] & PAGE_MASK);
+    pte_t* pte = pa2va(init_pgd[npd] & PAGE_MASK);
     pte[get_npte(addr)] |= PAGE_US;
 }
 
-char *paging_page = "paging";
+char* paging_page = "paging";
 
 void init_paging() {
     unsigned int i;
     unsigned long pfn = 0;
-    pte_t *pg_table = 0;
-    void *alloc_from_bootmem(unsigned long size, char *title);
+    pte_t* pg_table = 0;
+    void* alloc_from_bootmem(unsigned long size, char* title);
 
     // 在multiboot.S是已经初始化了BOOT_INIT_PAGETBL_CNT个页
     // 这里接着初始化剩余的页
@@ -54,12 +54,12 @@ void init_paging() {
         unsigned long npte = pfn % PAGE_PTE_CNT;
         unsigned long page_addr = (unsigned long)pfn2pa(pfn);
         if (npte == 0) {
-            pg_table = (pte_t *)alloc_from_bootmem(PAGE_SIZE, paging_page);
+            pg_table = (pte_t*)alloc_from_bootmem(PAGE_SIZE, paging_page);
             if (0 == pg_table) {
                 panic("no pages for paging...");
             }
 
-            memset((void *)pg_table, 0, PAGE_SIZE);
+            memset((void*)pg_table, 0, PAGE_SIZE);
 
             init_pgd[get_npde(page_addr)] = (pde_t)((unsigned long)(pg_table) | PAGE_P | PAGE_WR);
         }
@@ -79,30 +79,27 @@ void init_paging() {
     // 这部分页表在pgd里的pde就不再允许修改了
     // 这样，无论内核空间映射如何变化，这部分空间所有进程都能共享到变化
     for (i = kernel_npde_base; i < PDECNT_PER_PAGE; ++i) {
-        if(0 != init_pgd[i]) {
+        if (0 != init_pgd[i]) {
             continue;
         }
 
         // 分配一个页表
-        pte_t *pg_table = (pte_t *)alloc_from_bootmem(PAGE_SIZE, paging_page);
-        if(0 == pg_table) {
+        pte_t* pg_table = (pte_t*)alloc_from_bootmem(PAGE_SIZE, paging_page);
+        if (0 == pg_table) {
             panic("no pages for paging...");
         }
 
         // 清空页表
-        memset((void *)pg_table, 0xAC, PAGE_SIZE);
+        memset((void*)pg_table, 0xAC, PAGE_SIZE);
 
         // 把页表地址填入pgd
         init_pgd[i] = (pde_t)((unsigned long)(pg_table) | PAGE_P | PAGE_WR);
     }
 
-
     // 建立完内核空间的页映射，需要清空用户空间的映射
     for (i = 0; i < kernel_npde_base; ++i) {
         init_pgd[i] = 0;
     }
-
-
 
 #if 0
     // 接下来为显存建立页映射
@@ -174,7 +171,7 @@ void init_paging() {
 
 extern void init_ttys();
 
-kmem_cache_t *g_vma_kmem_cache = NULL;
+kmem_cache_t* g_vma_kmem_cache = NULL;
 
 void init_mm() {
     printk("init bootmem alloc...\n");
@@ -200,8 +197,8 @@ void init_mm() {
     assert(g_vma_kmem_cache != NULL);
 }
 
-vm_area_t *vma_alloc() {
-    vm_area_t *vma = kmem_cache_alloc(g_vma_kmem_cache, 0);
+vm_area_t* vma_alloc() {
+    vm_area_t* vma = kmem_cache_alloc(g_vma_kmem_cache, 0);
     vma->vm_bgn = 0;
     vma->vm_end = 0;
     vma->vm_flags = 0;
@@ -209,12 +206,12 @@ vm_area_t *vma_alloc() {
     return vma;
 }
 
-void vma_insert(task_t *tsk, vm_area_t *vma_new) {
+void vma_insert(task_t* tsk, vm_area_t* vma_new) {
     //
-    vm_area_t **p = &tsk->vma_list;
+    vm_area_t** p = &tsk->vma_list;
 
     while (*p != NULL) {
-        vm_area_t *v = *p;
+        vm_area_t* v = *p;
 
         assert(v->vm_bgn < v->vm_end);
         assert(vma_new->vm_bgn < vma_new->vm_end);
@@ -232,10 +229,10 @@ void vma_insert(task_t *tsk, vm_area_t *vma_new) {
     *p = vma_new;
 }
 
-vm_area_t *vma_find(task_t *tsk, vm_area_t *vma, uint32_t addr) {
-    vm_area_t **p = &tsk->vma_list;
+vm_area_t* vma_find(task_t* tsk, vm_area_t* vma, uint32_t addr) {
+    vm_area_t** p = &tsk->vma_list;
     while (*p != NULL) {
-        vm_area_t *v = *p;
+        vm_area_t* v = *p;
 
         if (addr <= v->vm_end) {
             break;

@@ -15,7 +15,8 @@
         panic("BUG!");                                        \
     } while (0)
 
-#define BUG_ON(condition)                      \
-    do {                                       \
-        if (unlikely((condition) != 0)) BUG(); \
+#define BUG_ON(condition)               \
+    do {                                \
+        if (unlikely((condition) != 0)) \
+            BUG();                      \
     } while (0)

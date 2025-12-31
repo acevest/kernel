@@ -265,10 +265,12 @@ typedef union pci_device
 #define PCI_VENDORID_NVIDIA 0x10DE
 #define PCI_VENDORID_REALTEK 0x10EC
 
-pci_device_t *pci_find_device(unsigned int vendor, unsigned int device);
-pci_device_t *pci_find_device_by_classcode(unsigned int classcode);
+pci_device_t* pci_find_device(unsigned int vendor, unsigned int device);
+pci_device_t* pci_find_device_by_classcode(unsigned int classcode);
 
-static inline u32 pci_cmd(pci_device_t *pci, unsigned int reg) { return PCI_CMD(pci->bus, pci->dev, pci->devfn, reg); }
+static inline u32 pci_cmd(pci_device_t* pci, unsigned int reg) {
+    return PCI_CMD(pci->bus, pci->dev, pci->devfn, reg);
+}
 
 int pci_read_config_byte(int cmd);
 int pci_read_config_word(int cmd);

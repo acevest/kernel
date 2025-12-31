@@ -6,8 +6,7 @@ typedef struct list_head {
     struct list_head *prev, *next;
 } list_head_t;
 
-#define LIST_HEAD_INIT(name) \
-    { &(name), &(name) }
+#define LIST_HEAD_INIT(name) {&(name), &(name)}
 #define LIST_HEAD(name) list_head_t name = LIST_HEAD_INIT(name)
 
 #define INIT_LIST_HEAD(ptr)  \
@@ -16,7 +15,7 @@ typedef struct list_head {
         (ptr)->prev = (ptr); \
     } while (0)
 
-#define list_entry(ptr, type, member) ((type *)((char *)(ptr) - (unsigned long)(&((type *)0)->member)))
+#define list_entry(ptr, type, member) ((type*)((char*)(ptr) - (unsigned long)(&((type*)0)->member)))
 
 #define list_first_entry(ptr, type, member) list_entry((ptr)->next, type, member)
 
@@ -30,34 +29,40 @@ typedef struct list_head {
         tmp = list_entry(pos->member.next, typeof(*pos), member); \
          &pos->member != (head); pos = tmp, tmp = list_entry(tmp->member.next, typeof(*tmp), member))
 
-static inline void _list_add(list_head_t *pnew, list_head_t *prev, list_head_t *next) {
+static inline void _list_add(list_head_t* pnew, list_head_t* prev, list_head_t* next) {
     next->prev = pnew;
     pnew->next = next;
     pnew->prev = prev;
     prev->next = pnew;
 }
 
-static inline void list_add(list_head_t *pnew, list_head_t *head) { _list_add(pnew, head, head->next); }
+static inline void list_add(list_head_t* pnew, list_head_t* head) {
+    _list_add(pnew, head, head->next);
+}
 
-static inline void list_add_tail(list_head_t *pnew, list_head_t *head) { _list_add(pnew, head->prev, head); }
+static inline void list_add_tail(list_head_t* pnew, list_head_t* head) {
+    _list_add(pnew, head->prev, head);
+}
 
-static inline void _list_del(list_head_t *prev, list_head_t *next) {
+static inline void _list_del(list_head_t* prev, list_head_t* next) {
     next->prev = prev;
     prev->next = next;
 }
 
-static inline void list_del(list_head_t *entry) {
+static inline void list_del(list_head_t* entry) {
     _list_del(entry->prev, entry->next);
     entry->prev = NULL;
     entry->next = NULL;
 }
 
-static inline void list_del_init(list_head_t *entry) {
+static inline void list_del_init(list_head_t* entry) {
     _list_del(entry->prev, entry->next);
     INIT_LIST_HEAD(entry);
 }
 
-static inline int list_empty(list_head_t *head) { return head->next == head; }
+static inline int list_empty(list_head_t* head) {
+    return head->next == head;
+}
 
 typedef struct node {
     int id;
@@ -73,7 +78,7 @@ int main() {
     INIT_LIST_HEAD(&pendH);
 
     for (int i = 0; i < 10; i++) {
-        node_t *n = (node_t *)malloc(sizeof(node_t));
+        node_t* n = (node_t*)malloc(sizeof(node_t));
         n->id = i;
         list_add(&n->list, &allH);
         if (n->id % 3 == 0) {
@@ -81,8 +86,8 @@ int main() {
         }
     }
 
-    list_head_t *pos;
-    list_head_t *tmp;
+    list_head_t* pos;
+    list_head_t* tmp;
     node_t *p, *p1;
     list_for_each_safe(pos, tmp, &allH) {
         p = list_entry(pos, node_t, list);

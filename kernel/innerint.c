@@ -23,26 +23,55 @@
     do {                                                                                                 \
         printk("Unsupport Now...[%s]\n", __FUNCTION__);                                                  \
         printk("EFLAGS:%08x CS:%02x EIP:%08x ERRCODE:%x", regs.eflags, regs.cs, regs.eip, regs.errcode); \
-        while (1);                                                                                       \
+        while (1)                                                                                        \
+            ;                                                                                            \
     } while (0);
 
-void doDivideError(pt_regs_t regs) { DIE_MSG(); }
-void doDebug(pt_regs_t regs) { DIE_MSG(); }
-void doNMI(pt_regs_t regs) { DIE_MSG(); }
-void doBreakPoint(pt_regs_t regs) { DIE_MSG(); }
-void doOverFlow(pt_regs_t regs) { DIE_MSG(); }
-void doBoundsCheck(pt_regs_t regs) { DIE_MSG(); }
-void doInvalidOpcode(pt_regs_t regs) { DIE_MSG(); }
-void doDeviceNotAvailable(pt_regs_t regs) { DIE_MSG(); }
-void doDoubleFault(pt_regs_t regs) { DIE_MSG(); }
-void doCoprocSegOverRun(pt_regs_t regs) { DIE_MSG(); }
-void doInvalidTss(pt_regs_t regs) { DIE_MSG(); }
-void doSegNotPresent(pt_regs_t regs) { DIE_MSG(); }
-void doStackFault(pt_regs_t regs) { DIE_MSG(); }
-void doGeneralProtection(pt_regs_t regs) { DIE_MSG(); }
+void doDivideError(pt_regs_t regs) {
+    DIE_MSG();
+}
+void doDebug(pt_regs_t regs) {
+    DIE_MSG();
+}
+void doNMI(pt_regs_t regs) {
+    DIE_MSG();
+}
+void doBreakPoint(pt_regs_t regs) {
+    DIE_MSG();
+}
+void doOverFlow(pt_regs_t regs) {
+    DIE_MSG();
+}
+void doBoundsCheck(pt_regs_t regs) {
+    DIE_MSG();
+}
+void doInvalidOpcode(pt_regs_t regs) {
+    DIE_MSG();
+}
+void doDeviceNotAvailable(pt_regs_t regs) {
+    DIE_MSG();
+}
+void doDoubleFault(pt_regs_t regs) {
+    DIE_MSG();
+}
+void doCoprocSegOverRun(pt_regs_t regs) {
+    DIE_MSG();
+}
+void doInvalidTss(pt_regs_t regs) {
+    DIE_MSG();
+}
+void doSegNotPresent(pt_regs_t regs) {
+    DIE_MSG();
+}
+void doStackFault(pt_regs_t regs) {
+    DIE_MSG();
+}
+void doGeneralProtection(pt_regs_t regs) {
+    DIE_MSG();
+}
 
-void do_no_page(void *);
-void do_wp_page(void *);
+void do_no_page(void*);
+void do_wp_page(void*);
 void do_page_fault(pt_regs_t regs) {
 #if 0
 US RW  P - Description
@@ -61,7 +90,7 @@ US RW  P - Description
     bit 2: 0 supervisor mode; 1 user mode
 #endif
     // DIE_MSG();
-    void *addr;
+    void* addr;
     u32 errcode = regs.errcode;
 
     asm("movl %%cr2,%%eax" : "=a"(addr));
@@ -78,4 +107,6 @@ US RW  P - Description
     }
 }
 
-void doCoprocError(pt_regs_t regs) { DIE_MSG(); }
+void doCoprocError(pt_regs_t regs) {
+    DIE_MSG();
+}

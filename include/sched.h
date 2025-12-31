@@ -27,7 +27,7 @@ void schedule();
 
 extern task_t root_task;
 
-extern void load_cr3(task_t *tsk);
+extern void load_cr3(task_t* tsk);
 
 extern list_head_t all_tasks;
 extern list_head_t delay_tasks;

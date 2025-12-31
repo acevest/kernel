@@ -21,15 +21,15 @@
 #include <system.h>
 #include <types.h>
 
-int do_fork(pt_regs_t *regs, unsigned long flags);
+int do_fork(pt_regs_t* regs, unsigned long flags);
 int sysc_wait(int ticks);
 
 #define get_eflags(x) __asm__ __volatile__("pushfl; popl %0;" : "=g"(x)::"memory")
 
-void kernel_task(char *name, void *entry, void *arg) {
+void kernel_task(char* name, void* entry, void* arg) {
     pt_regs_t regs;
 
-    memset((void *)&regs, 0, sizeof(regs));
+    memset((void*)&regs, 0, sizeof(regs));
 
     // 内核任务入口
     regs.edx = (unsigned long)entry;

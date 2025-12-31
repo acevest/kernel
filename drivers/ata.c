@@ -19,10 +19,10 @@ ide_drive_t ide_drives[MAX_IDE_DRIVE_CNT];
 
 #define ATA_TIMEOUT 10  // 10次时钟中断
 
-void ata_dma_read_ext(int drv, uint64_t pos, uint16_t count, void *dest);
-int ata_pio_read_ext(int drv, uint64_t pos, uint16_t count, int timeout, void *dest);
+void ata_dma_read_ext(int drv, uint64_t pos, uint16_t count, void* dest);
+int ata_pio_read_ext(int drv, uint64_t pos, uint16_t count, int timeout, void* dest);
 
-void *mbr_buf;
+void* mbr_buf;
 void ata_test(uint64_t nr) {
     memset(mbr_buf, 0xAA, SECT_SIZE);
     ata_dma_read_ext(0, nr, 1, mbr_buf);
@@ -43,9 +43,10 @@ void ata_test(uint64_t nr) {
 //  2. 等到status的BSY位清除
 //  3. 等到status的DRQ位或ERR位设置
 u16 identify[256];
-void ata_send_read_identify_cmd(int drv) {}
+void ata_send_read_identify_cmd(int drv) {
+}
 
-void ata_pio_read_data(int drv, int sect_cnt, void *dst) {
+void ata_pio_read_data(int drv, int sect_cnt, void* dst) {
     insl(REG_DATA(drv), dst, (512 * sect_cnt) / sizeof(uint32_t));
 }
 
@@ -56,7 +57,7 @@ void ata_io_wait() {
 }
 
 // 这里所用的drv是逻辑编号 ATA0、ATA1下的Master、Salve的drv分别为0,1,2,3
-bool ata_read_identify(int drv, int disable_intr, uint8_t *status, u16 *identify) {
+bool ata_read_identify(int drv, int disable_intr, uint8_t* status, u16* identify) {
     memset(identify, 0, SECT_SIZE);
 
     uint8_t ctlv = 0x00;
@@ -95,7 +96,7 @@ bool ata_read_identify(int drv, int disable_intr, uint8_t *status, u16 *identify
     return true;
 }
 
-bool ata_read_identify_packet(int drv, int disable_intr, uint8_t *status, u16 *identify) {
+bool ata_read_identify_packet(int drv, int disable_intr, uint8_t* status, u16* identify) {
     memset(identify, 0, SECT_SIZE);
 
     uint8_t ctlv = 0x00;
@@ -134,8 +135,8 @@ bool ata_read_identify_packet(int drv, int disable_intr, uint8_t *status, u16 *i
     return true;
 }
 
-void ata_read_identity_string(const uint16_t *identify, int bgn, int end, char *buf) {
-    const char *p = (const char *)(identify + bgn);
+void ata_read_identity_string(const uint16_t* identify, int bgn, int end, char* buf) {
+    const char* p = (const char*)(identify + bgn);
     int i = 0;
     for (; i <= (end - bgn); i++) {
         buf[2 * i + 1] = p[0];
@@ -159,7 +160,7 @@ void ide_ata_init() {
         int channel = drvid >> 1;
         memset(ide_drives + i, 0, sizeof(ide_drive_t));
 
-        ide_drive_t *drv = ide_drives + drvid;
+        ide_drive_t* drv = ide_drives + drvid;
         drv->drvid = drvid;
         drv->channel = channel;
         drv->ide_pci_controller = ide_pci_controller + channel;
@@ -196,7 +197,7 @@ void ide_ata_init() {
         //  2. 等到status的BSY位清除
         //  3. 等到status的DRQ位或ERR位设置
         uint8_t status = 0;
-        const char *ide_drive_type = "NONE";
+        const char* ide_drive_type = "NONE";
         if (ata_read_identify(drvid, 1, &status, identify)) {
             drv->present = 1;
             drv->type = IDE_DRIVE_TYPE_ATA;
@@ -256,7 +257,7 @@ void ide_ata_init() {
 
         if ((identify[83] & (1 << 10)) != 0) {
             drv->lba48 = 1;
-            max_lba = *(uint64_t *)(identify + 100);
+            max_lba = *(uint64_t*)(identify + 100);
         } else {
             // panic("your ide disk drive do not support LBA48");
             max_lba = (identify[61] << 16) | identify[60];
@@ -326,7 +327,7 @@ void ide_ata_init() {
 
     for (int i = 0; i < MAX_IDE_DRIVE_CNT; i++) {
         int drvid = i;
-        ide_drive_t *drv = ide_drives + drvid;
+        ide_drive_t* drv = ide_drives + drvid;
         if (drv->present) {
             assert(drv->dma == 1);
             // assert(drv->lba48 == 1);
@@ -335,7 +336,7 @@ void ide_ata_init() {
     }
 }
 
-void ide_disk_read(dev_t dev, uint32_t sect_nr, uint32_t count, bbuffer_t *b) {
+void ide_disk_read(dev_t dev, uint32_t sect_nr, uint32_t count, bbuffer_t* b) {
     disk_request_t r;
     r.dev = dev;
     r.command = DISK_REQ_READ;
@@ -346,7 +347,7 @@ void ide_disk_read(dev_t dev, uint32_t sect_nr, uint32_t count, bbuffer_t *b) {
     send_disk_request(&r);
 }
 
-void tmp_ide_disk_read(dev_t dev, uint32_t sect_nr, uint32_t count, char *buf) {
+void tmp_ide_disk_read(dev_t dev, uint32_t sect_nr, uint32_t count, char* buf) {
     int ret = 0;
     int retry = 3;
     while (retry--) {
@@ -370,9 +371,9 @@ void tmp_ide_disk_read(dev_t dev, uint32_t sect_nr, uint32_t count, char *buf) {
 
 // mbr_ext_offset: 在MBR中的扩展分区记录里的偏移地址
 // lba_partition_table: 扩展分区的真实偏移地址
-void read_partition_table(ide_drive_t *drv, uint32_t mbr_ext_offset, uint64_t lba_partition_table, int depth) {
+void read_partition_table(ide_drive_t* drv, uint32_t mbr_ext_offset, uint64_t lba_partition_table, int depth) {
     // disk_request_t r;
-    char *sect = kmalloc(SECT_SIZE, 0);
+    char* sect = kmalloc(SECT_SIZE, 0);
     memset(sect, 0xAA, SECT_SIZE);
 #if 1
     // partid == 0 代表整块硬盘
@@ -388,12 +389,12 @@ void read_partition_table(ide_drive_t *drv, uint32_t mbr_ext_offset, uint64_t lb
     send_disk_request(&r);
 #endif
 
-    ide_part_t *part = 0;
+    ide_part_t* part = 0;
     uint32_t part_id = 0;
 
     // 用来计算保存下一个扩展分区的起始位置
     uint64_t lba_extended_partition = 0;
-    const char *pe = sect + PARTITION_TABLE_OFFSET;
+    const char* pe = sect + PARTITION_TABLE_OFFSET;
     for (int i = 0; i < 4; i++) {
         if (part_id >= MAX_DISK_PARTIONS) {
             break;
@@ -410,8 +411,8 @@ void read_partition_table(ide_drive_t *drv, uint32_t mbr_ext_offset, uint64_t lb
         ide_part_t pt;
         pt.flags = (uint8_t)pe[0];
         pt.type = (uint8_t)pe[4];
-        pt.lba_start = *((uint32_t *)(pe + 8));
-        pt.lba_end = *((uint32_t *)(pe + 12));
+        pt.lba_start = *((uint32_t*)(pe + 8));
+        pt.lba_end = *((uint32_t*)(pe + 12));
 
         if (0x00 == pt.type) {
             continue;
@@ -452,7 +453,7 @@ void read_partition_table(ide_drive_t *drv, uint32_t mbr_ext_offset, uint64_t lb
 
 void ide_read_partions() {
     for (int i = 0; i < MAX_IDE_DRIVE_CNT; i++) {
-        ide_drive_t *drv = ide_drives + i;
+        ide_drive_t* drv = ide_drives + i;
         int channel = i >> 1;
 
         if (0 == drv->present) {
@@ -466,7 +467,7 @@ void ide_read_partions() {
 }
 
 // ATA_CMD_READ_DMA_EXT
-void ata_dma_read_ext(int drvid, uint64_t pos, uint16_t count, void *dest) {
+void ata_dma_read_ext(int drvid, uint64_t pos, uint16_t count, void* dest) {
     // Intel®
     //  82801CA (ICH3), 82801BA
     // (ICH2), 82801AA (ICH), and 82801AB
@@ -487,8 +488,8 @@ void ata_dma_read_ext(int drvid, uint64_t pos, uint16_t count, void *dest) {
 
     int channel = (drvid >> 1) & 0x01;
     assert(channel == 0 || channel == 1);
-    ide_pci_controller_t *ide_ctrl = ide_pci_controller + channel;
-    ide_drive_t *drv = ide_drives + drvid;
+    ide_pci_controller_t* ide_ctrl = ide_pci_controller + channel;
+    ide_drive_t* drv = ide_drives + drvid;
 
     // 停止DMA
     outb(PCI_IDE_CMD_STOP, ide_ctrl->bus_cmd);
@@ -578,7 +579,7 @@ void ata_dma_read_ext(int drvid, uint64_t pos, uint16_t count, void *dest) {
 
 // TODO
 int ata_dma_stop(int channel) {
-    ide_pci_controller_t *ide_ctrl = ide_pci_controller + channel;
+    ide_pci_controller_t* ide_ctrl = ide_pci_controller + channel;
 
     uint8_t x = inb(ide_ctrl->bus_cmd);
     x &= ~PCI_IDE_CMD_START;
@@ -596,8 +597,8 @@ int ata_dma_stop(int channel) {
 }
 
 // ATA_CMD_READ_PIO_EXT
-int ata_pio_read_ext(int drvid, uint64_t pos, uint16_t count, int timeout, void *dest) {
-    ide_drive_t *drv = ide_drives + drvid;
+int ata_pio_read_ext(int drvid, uint64_t pos, uint16_t count, int timeout, void* dest) {
+    ide_drive_t* drv = ide_drives + drvid;
 
     // PIO读，禁用中断
     outb(ATA_CTL_NIEN, REG_CTL(drvid));

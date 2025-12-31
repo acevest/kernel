@@ -1,16 +1,16 @@
 /*
  *--------------------------------------------------------------------------
  *   File Name: reboot.S
- * 
+ *
  * Description: none
- * 
- * 
+ *
+ *
  *      Author: Zhao Yanbai [zhaoyanbai@126.com]
- * 
+ *
  *     Version:    1.0
  * Create Date: Sat Jul 11 19:16:42 2009
  * Last Update: Sat Jul 11 19:16:42 2009
- * 
+ *
  *--------------------------------------------------------------------------
  */
 #define ASM
@@ -60,7 +60,7 @@ _do_reboot:
     outb    %al,%dx
 
 
-    # Prepare Paging For Reboot 
+    # Prepare Paging For Reboot
     movl    $256,%ecx
     movl    $0x100C00,%esi
     movl    $0x100000,%edi

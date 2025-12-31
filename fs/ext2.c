@@ -22,41 +22,51 @@ fs_type_t ext2_fs_type = {
     .next = 0,
 };
 
-void ext2_setup() { vfs_register_filesystem(&ext2_fs_type); }
+void ext2_setup() {
+    vfs_register_filesystem(&ext2_fs_type);
+}
 
 //--------------------------------------------------------------------------
 struct {
     ext2_sb_t ext2_sb;
-    ext2_gd_t *ext2_gd;
+    ext2_gd_t* ext2_gd;
 } ext2_fs;
 
-extern void blk_rw(dev_t dev, u64_t offset, u32_t scnt, char *buf);
-extern void kmem_cache_free(kmem_cache_t *cache, void *addr);
+extern void blk_rw(dev_t dev, u64_t offset, u32_t scnt, char* buf);
+extern void kmem_cache_free(kmem_cache_t* cache, void* addr);
 
 #define BLKRW(blkid, blkcnt, buf)                                                                   \
     do {                                                                                            \
         blk_rw(system.root_dev, 1ULL * (blkid) * EXT2_BLOCK_SIZE, (blkcnt) * EXT2_BLOCK_SIZE, buf); \
     } while (0)
 
-kmem_cache_t *ext2_block_cache;
-kmem_cache_t *ext2_inode_cache;
+kmem_cache_t* ext2_block_cache;
+kmem_cache_t* ext2_inode_cache;
 
 ext2_inode_t ext2_root_inode;
 
 static ext2_inode_t boot_inode;
 static ext2_inode_t krnl_inode;
 
-unsigned long ext2_block_size() { return (EXT2_MIN_BLOCK_SIZE << (EXT2_SB)->s_log_block_size); }
+unsigned long ext2_block_size() {
+    return (EXT2_MIN_BLOCK_SIZE << (EXT2_SB)->s_log_block_size);
+}
 
-void *ext2_alloc_block() { return (void *)kmem_cache_alloc(ext2_block_cache, 0); }
+void* ext2_alloc_block() {
+    return (void*)kmem_cache_alloc(ext2_block_cache, 0);
+}
 
-void *ext2_free_block(void *blk) { kmem_cache_free(ext2_block_cache, blk); }
+void* ext2_free_block(void* blk) {
+    kmem_cache_free(ext2_block_cache, blk);
+}
 
-void *ext2_alloc_inode() { return (void *)kmem_cache_alloc(ext2_inode_cache, 0); }
+void* ext2_alloc_inode() {
+    return (void*)kmem_cache_alloc(ext2_inode_cache, 0);
+}
 
-#define ext2_gd(n) ((ext2_gd_t *)(EXT2_GD) + (n))
-void ext2_read_inode(unsigned int ino, ext2_inode_t *inode) {
-    void *blk = ext2_alloc_block();
+#define ext2_gd(n) ((ext2_gd_t*)(EXT2_GD) + (n))
+void ext2_read_inode(unsigned int ino, ext2_inode_t* inode) {
+    void* blk = ext2_alloc_block();
     assert(blk != 0);
 
     printd("read_inode %u\n", ino);
@@ -85,7 +95,7 @@ void ext2_read_inode(unsigned int ino, ext2_inode_t *inode) {
     ext2_free_block(blk);
 }
 
-void ext2_read_file(const ext2_inode_t *inode, char *buf) {
+void ext2_read_file(const ext2_inode_t* inode, char* buf) {
     assert(inode != 0);
     assert(buf != 0);
     assert(inode->i_size > 0 && inode->i_size <= MAX_SUPT_FILE_SIZE);
@@ -101,7 +111,7 @@ void ext2_read_file(const ext2_inode_t *inode, char *buf) {
     if (left) {
         printd("read left %u bytes\n", left);
 
-        void *blk = ext2_alloc_block();
+        void* blk = ext2_alloc_block();
 
         memcpy(buf + i * EXT2_BLOCK_SIZE, blk, left);
 
@@ -110,7 +120,7 @@ void ext2_read_file(const ext2_inode_t *inode, char *buf) {
     printd("read file done\n");
 }
 
-void ext2_read_data(const ext2_inode_t *inode, unsigned int offset, size_t size, char *buf) {
+void ext2_read_data(const ext2_inode_t* inode, unsigned int offset, size_t size, char* buf) {
     assert(inode != 0);
     assert(buf != 0);
     assert(inode->i_size > 0 && inode->i_size <= MAX_SUPT_FILE_SIZE);
@@ -125,16 +135,16 @@ void ext2_read_data(const ext2_inode_t *inode, unsigned int offset, size_t size,
     BLKRW(inode->i_block[blkid], blkcnt, buf);
 }
 
-unsigned int ext2_search_indir(const char *name, const ext2_inode_t *inode, unsigned int *file_type) {
+unsigned int ext2_search_indir(const char* name, const ext2_inode_t* inode, unsigned int* file_type) {
     unsigned int ino = 0;
     *file_type = EXT2_FT_UNKNOWN;
 
-    void *blk = ext2_alloc_block();
+    void* blk = ext2_alloc_block();
     assert(blk != 0);
 
     BLKRW(inode->i_block[0], 1, blk);  // only support the first direct blocks
 
-    ext2_dirent_t *dirent = (ext2_dirent_t *)blk;
+    ext2_dirent_t* dirent = (ext2_dirent_t*)blk;
     char tmp[64];
     while (dirent->name_len != 0) {
         memcpy(tmp, dirent->name, dirent->name_len);
@@ -148,7 +158,7 @@ unsigned int ext2_search_indir(const char *name, const ext2_inode_t *inode, unsi
             break;
         }
 
-        dirent = (ext2_dirent_t *)(((unsigned int)dirent) + dirent->rec_len);
+        dirent = (ext2_dirent_t*)(((unsigned int)dirent) + dirent->rec_len);
 
         if (((unsigned long)dirent - (unsigned long)blk) >= EXT2_BLOCK_SIZE) {
             ino = 0;
@@ -161,26 +171,29 @@ unsigned int ext2_search_indir(const char *name, const ext2_inode_t *inode, unsi
     return ino;
 }
 
-static int get_filename_from_path(const char *path, char *file) {
+static int get_filename_from_path(const char* path, char* file) {
     int i = 0;
 
-    while (*path == '/' && *path != '\0') path++;
+    while (*path == '/' && *path != '\0')
+        path++;
 
-    while (*path != '/' && *path != '\0') file[i++] = *path++;
+    while (*path != '/' && *path != '\0')
+        file[i++] = *path++;
 
     file[i] = 0;
 
     return i;
 }
 
-unsigned int ext2_search_inpath(const char *path) {
-    if (path == 0 || strlen(path) == 0 || path[0] != '/') return 0;
+unsigned int ext2_search_inpath(const char* path) {
+    if (path == 0 || strlen(path) == 0 || path[0] != '/')
+        return 0;
 
     assert(path != 0);
     assert(strlen(path) > 0);
     assert(path[0] == '/');
 
-    ext2_inode_t *inode = kmalloc(sizeof(ext2_inode_t), 0);
+    ext2_inode_t* inode = kmalloc(sizeof(ext2_inode_t), 0);
     assert(inode != 0);
     memcpy(inode, &ext2_root_inode, sizeof(ext2_inode_t));
 
@@ -193,7 +206,8 @@ unsigned int ext2_search_inpath(const char *path) {
     unsigned int file_type = EXT2_FT_UNKNOWN;
     while ((len = get_filename_from_path(path, file)) != 0) {
         ino = ext2_search_indir(file, inode, &file_type);
-        if (ino == 0) return 0;
+        if (ino == 0)
+            return 0;
         // assert(ino != 0);
 
         path += len;
@@ -207,7 +221,8 @@ unsigned int ext2_search_inpath(const char *path) {
         }
     }
 
-    if (file_type != EXT2_FT_REG_FILE) return 0;
+    if (file_type != EXT2_FT_REG_FILE)
+        return 0;
 
     return ino;
 }
@@ -215,7 +230,7 @@ unsigned int ext2_search_inpath(const char *path) {
 void ext2_setup_fs() {
     memset(&ext2_fs, 0, sizeof(ext2_fs));
 
-    char *buf = kmalloc(EXT2_BLOCK_SIZE, 0);
+    char* buf = kmalloc(EXT2_BLOCK_SIZE, 0);
     if (buf == 0) {
         panic("out of memory");
     }
@@ -237,15 +252,17 @@ void ext2_setup_fs() {
     printk(" blocks per group %u inodes per group %u\n", EXT2_SB->s_blocks_per_group, EXT2_SB->s_inodes_per_group);
 
     ext2_block_cache = kmem_cache_create("ext2_block_cache", EXT2_BLOCK_SIZE, EXT2_BLOCK_SIZE);
-    if (0 == ext2_block_cache) panic("setup ext2 block cache failed. out of memory");
+    if (0 == ext2_block_cache)
+        panic("setup ext2 block cache failed. out of memory");
 
     ext2_inode_cache = kmem_cache_create("ext2_inode_cache", EXT2_INODE_SIZE, EXT2_INODE_SIZE);
-    if (0 == ext2_inode_cache) panic("setup ext2 inode cache failed. out of memory");
+    if (0 == ext2_inode_cache)
+        panic("setup ext2 inode cache failed. out of memory");
 
     ext2_fs.ext2_gd = ext2_alloc_block();
     assert(ext2_fs.ext2_gd != 0);
 
-    BLKRW(EXT2_SB->s_first_data_block + 1, 1, (char *)ext2_fs.ext2_gd);
+    BLKRW(EXT2_SB->s_first_data_block + 1, 1, (char*)ext2_fs.ext2_gd);
 
     unsigned int gps = EXT2_SB->s_blocks_count / EXT2_SB->s_blocks_per_group;
     gps += (EXT2_SB->s_blocks_count % EXT2_SB->s_blocks_per_group) ? 1 : 0;

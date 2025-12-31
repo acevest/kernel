@@ -63,8 +63,10 @@ int sysc_wait(int ticks) {
     return 0;
 }
 
-int sysc_test() {}
-int sysc_pause() {}
+int sysc_test() {
+}
+int sysc_pause() {
+}
 
 int sysc_debug(unsigned int v) {
     static unsigned int cnt = 0;
@@ -79,7 +81,8 @@ int sysc_rand() {
 
 void init_sysc_handler_table() {
     int i;
-    for (i = 0; i < SYSC_NUM; i++) sysc_handler_table[i] = (unsigned long)sysc_none;
+    for (i = 0; i < SYSC_NUM; i++)
+        sysc_handler_table[i] = (unsigned long)sysc_none;
 
 #define _sysc_(nr, sym)                              \
     do {                                             \

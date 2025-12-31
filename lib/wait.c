@@ -8,4 +8,6 @@
  */
 
 #include <syscall.h>
-int wait(unsigned long pid) { syscall1(SYSC_WAIT, pid); }
+int wait(unsigned long pid) {
+    syscall1(SYSC_WAIT, pid);
+}

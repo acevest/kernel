@@ -16,7 +16,7 @@ _start:
     nop;
     movl %esp,%ebp;
     nop;
-    movl $123,%ebx 
+    movl $123,%ebx
     movl $5,%eax # SYSC_WAIT
     sysenter;
 1:

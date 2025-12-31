@@ -21,7 +21,7 @@
 
 LIST_HEAD(pci_devs);
 
-const char *pci_get_info(unsigned int classcode, unsigned int progif);
+const char* pci_get_info(unsigned int classcode, unsigned int progif);
 
 int pci_read_config_byte(int cmd) {
     outl(PCI_CONFIG_CMD(cmd), PCI_ADDR);
@@ -68,7 +68,7 @@ void scan_pci_bus(int bus) {
                 continue;
             }
 
-            pci_device_t *pci = kmalloc(sizeof(pci_device_t), 0);
+            pci_device_t* pci = kmalloc(sizeof(pci_device_t), 0);
             if (0 == pci) {
                 printk("no space to alloc for pci_device_t\n");
                 continue;
@@ -115,10 +115,10 @@ void scan_pci_bus(int bus) {
     }
 }
 
-pci_device_t *pci_find_device(unsigned int vendor, unsigned int device) {
+pci_device_t* pci_find_device(unsigned int vendor, unsigned int device) {
     int i;
-    list_head_t *p;
-    pci_device_t *pci = 0;
+    list_head_t* p;
+    pci_device_t* pci = 0;
 
     list_for_each(p, &pci_devs) {
         pci = list_entry(p, pci_device_t, list);
@@ -131,21 +131,22 @@ pci_device_t *pci_find_device(unsigned int vendor, unsigned int device) {
     return 0;
 }
 
-pci_device_t *pci_find_device_by_classcode(unsigned int classcode) {
+pci_device_t* pci_find_device_by_classcode(unsigned int classcode) {
     int i;
-    list_head_t *p;
-    pci_device_t *pci = 0;
+    list_head_t* p;
+    pci_device_t* pci = 0;
 
     list_for_each(p, &pci_devs) {
         pci = list_entry(p, pci_device_t, list);
 
-        if (pci->classcode == classcode) return pci;
+        if (pci->classcode == classcode)
+            return pci;
     }
 
     return 0;
 }
 
-const char *pci_intr_pin(int pin) {
+const char* pci_intr_pin(int pin) {
     switch (pin) {
     case 0:
         return "NONE#";
@@ -163,11 +164,11 @@ const char *pci_intr_pin(int pin) {
 }
 
 void dump_pci_dev() {
-    list_head_t *p;
+    list_head_t* p;
     int i;
 
     list_for_each(p, &pci_devs) {
-        pci_device_t *pci = list_entry(p, pci_device_t, list);
+        pci_device_t* pci = list_entry(p, pci_device_t, list);
         // printk("vendor %04x device %04x class %04x:%02x bus %d intr %3d ", pci->vendor, pci->device, pci->classcode,
         //        pci->progif, pci->bus, pci->intr_line);
         // printk("%s\n", pci_get_info(pci->classcode, pci->progif));
@@ -256,8 +257,8 @@ void setup_pci() {
 typedef struct pci_info {
     unsigned long code;
     unsigned int flag;
-    const char *info;
-    const char *detail;
+    const char* info;
+    const char* detail;
 } pci_info_t;
 
 pci_info_t pci_info[] = {
@@ -420,9 +421,9 @@ pci_info_t pci_info[] = {
     {0x118000, 0, "Acquisition/Signal Processing Controller", "Other Data Acquisition/Signal Processing Controller"},
     {0x000000, 0, 0}};
 
-const char *pci_get_info(unsigned int classcode, unsigned int progif) {
-    pci_info_t *p = pci_info;
-    const char *s = 0;
+const char* pci_get_info(unsigned int classcode, unsigned int progif) {
+    pci_info_t* p = pci_info;
+    const char* s = 0;
 
     while (p->code != 0 || p->flag != 0 || p->info != 0) {
         unsigned long code = classcode;

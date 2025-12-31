@@ -40,7 +40,9 @@ pid_t get_next_pid() {
     return pid;
 }
 
-void load_cr3(task_t *tsk) { set_cr3(tsk->cr3); }
+void load_cr3(task_t* tsk) {
+    set_cr3(tsk->cr3);
+}
 
 extern pde_t __initdata init_pgd[PDECNT_PER_PAGE] __attribute__((__aligned__(PAGE_SIZE)));
 
@@ -91,7 +93,7 @@ void init_root_task() {
     printk("init_root_task tss.esp0 %08x\n", tss.esp0);
 }
 
-kmem_cache_t *task_t_cache;
+kmem_cache_t* task_t_cache;
 
 void setup_tasks() {
     INIT_LIST_HEAD(&all_tasks);
@@ -105,9 +107,9 @@ void setup_tasks() {
     }
 }
 
-task_t *alloc_task_t() {
-    task_t *task;
-    task = (task_t *)kmem_cache_alloc(task_t_cache, 0);
+task_t* alloc_task_t() {
+    task_t* task;
+    task = (task_t*)kmem_cache_alloc(task_t_cache, 0);
     return task;
 }
 
@@ -121,7 +123,7 @@ void switch_to() {
 #endif
 }
 
-void context_switch(task_t *prev, task_t *next) {
+void context_switch(task_t* prev, task_t* next) {
     unsigned long eax, ebx, ecx, edx, esi, edi;
     asm volatile(
         "pushfl;"
@@ -140,8 +142,8 @@ void context_switch(task_t *prev, task_t *next) {
         : "memory");
 }
 
-task_t *find_task(pid_t pid) {
-    task_t *p = 0;
+task_t* find_task(pid_t pid) {
+    task_t* p = 0;
     list_head_t *pos = 0, *tmp = 0;
 
     unsigned long iflags;
@@ -157,7 +159,7 @@ task_t *find_task(pid_t pid) {
     return p;
 }
 
-const char *task_state(unsigned int state) {
+const char* task_state(unsigned int state) {
     static const char s[][8] = {
         " ERROR", "\x10\x07RUN\x07", " READY", " WAIT ", " INIT ", " EXIT ",
     };
@@ -170,9 +172,9 @@ const char *task_state(unsigned int state) {
 }
 
 void debug_print_all_tasks() {
-    task_t *p = 0;
+    task_t* p = 0;
     list_head_t *pos = 0, *t = 0;
-    printl(MPL_TASK_TITLE, "         NAME      STATE TK/PI REASON     TICKS  SCHED     KEEP      TURN");
+    printl(MPL_TASK_TITLE, "         NAME      STATE TK/PI REASON     SCHED     KEEP      TURN");
     list_for_each_safe(pos, t, &all_tasks) {
         p = list_entry(pos, task_t, list);
         printl(MPL_TASK_0 + p->pid, "%08x %-6s:%u %s %02u/%02u %-10s %-9u %-9u %-9u", p, p->name, p->pid,
@@ -181,9 +183,9 @@ void debug_print_all_tasks() {
 }
 
 void schedule() {
-    task_t *root = &root_task;
-    task_t *sel = 0;
-    task_t *p = 0;
+    task_t* root = &root_task;
+    task_t* sel = 0;
+    task_t* p = 0;
     list_head_t *pos = 0, *t = 0;
 
     assert(current->ticks >= 0);
@@ -245,8 +247,8 @@ void schedule() {
 #endif
     }
 
-    task_t *prev = current;
-    task_t *next = sel != 0 ? sel : root;
+    task_t* prev = current;
+    task_t* next = sel != 0 ? sel : root;
 
     prev->need_resched = 0;
 
@@ -269,6 +271,6 @@ void schedule() {
 }
 
 void debug_sched() {
-    task_t *p = list_entry(current->list.next, task_t, list);
+    task_t* p = list_entry(current->list.next, task_t, list);
     p->state = (p->state == TASK_READY) ? TASK_WAIT : TASK_READY;
 }

@@ -15,7 +15,7 @@
 #include <vfs.h>
 #define DENTRY_HASH_TABLE_SIZE 233
 
-static kmem_cache_t *g_dentry_kmem_cache = NULL;
+static kmem_cache_t* g_dentry_kmem_cache = NULL;
 typedef struct {
     list_head_t list;
     mutex_t mutex;
@@ -45,8 +45,8 @@ uint32_t mod64(uint64_t x, uint32_t y) {
 #endif
 }
 
-dentry_t *dentry_alloc(dentry_t *parent, const qstr_t *s) {
-    dentry_t *dentry = NULL;
+dentry_t* dentry_alloc(dentry_t* parent, const qstr_t* s) {
+    dentry_t* dentry = NULL;
 
     assert(s != NULL);
     assert(s->len > 0);
@@ -87,8 +87,8 @@ dentry_t *dentry_alloc(dentry_t *parent, const qstr_t *s) {
     return dentry;
 }
 
-dentry_t *dentry_alloc_root(inode_t *root_inode) {
-    dentry_t *dentry;
+dentry_t* dentry_alloc_root(inode_t* root_inode) {
+    dentry_t* dentry;
 
     assert(root_inode != NULL);
 
@@ -105,11 +105,11 @@ dentry_t *dentry_alloc_root(inode_t *root_inode) {
     return dentry;
 }
 
-dentry_hash_entry_t *dentry_hash(dentry_t *parent, uint64_t hash) {
+dentry_hash_entry_t* dentry_hash(dentry_t* parent, uint64_t hash) {
     int index = mod64(hash, DENTRY_HASH_TABLE_SIZE);
     assert(index < DENTRY_HASH_TABLE_SIZE);
 
-    dentry_hash_entry_t *dhe = dentry_hash_table + index;
+    dentry_hash_entry_t* dhe = dentry_hash_table + index;
 
     assert(dhe != NULL);
     assert(dhe >= dentry_hash_table);
@@ -118,15 +118,15 @@ dentry_hash_entry_t *dentry_hash(dentry_t *parent, uint64_t hash) {
     return dhe;
 }
 
-void dentry_attach_inode(dentry_t *dentry, inode_t *inode) {
+void dentry_attach_inode(dentry_t* dentry, inode_t* inode) {
     assert(dentry != NULL);
     // assert(inode != NULL);
 
     dentry->d_inode = inode;
 }
 
-void dentry_rehash(dentry_t *dentry) {
-    dentry_hash_entry_t *dhe = dentry_hash(dentry->d_parent, dentry->d_name.hash);
+void dentry_rehash(dentry_t* dentry) {
+    dentry_hash_entry_t* dhe = dentry_hash(dentry->d_parent, dentry->d_name.hash);
 
     mutex_lock(&dhe->mutex);
 
@@ -135,19 +135,19 @@ void dentry_rehash(dentry_t *dentry) {
     mutex_unlock(&dhe->mutex);
 }
 
-void dentry_add(dentry_t *dentry, inode_t *inode) {
+void dentry_add(dentry_t* dentry, inode_t* inode) {
     dentry_attach_inode(dentry, inode);
     dentry_rehash(dentry);
 }
 
-int dentry_cached_lookup(dentry_t *parent, qstr_t *s, dentry_t **dentry) {
-    dentry_hash_entry_t *dhe = dentry_hash(parent, s->hash);
+int dentry_cached_lookup(dentry_t* parent, qstr_t* s, dentry_t** dentry) {
+    dentry_hash_entry_t* dhe = dentry_hash(parent, s->hash);
 
     *dentry = NULL;
 
     mutex_lock(&dhe->mutex);
 
-    list_head_t *p;
+    list_head_t* p;
     list_for_each(p, &dhe->list) {
         *dentry = list_entry(p, dentry_t, d_hash);
         assert(*dentry != NULL);
@@ -179,12 +179,12 @@ int dentry_cached_lookup(dentry_t *parent, qstr_t *s, dentry_t **dentry) {
     return 0;
 }
 
-int dentry_real_lookup(dentry_t *parent, qstr_t *s, dentry_t **dentry) {
+int dentry_real_lookup(dentry_t* parent, qstr_t* s, dentry_t** dentry) {
     *dentry = NULL;
     int ret = 0;
 
     assert(parent->d_inode != NULL);
-    inode_t *dir = parent->d_inode;
+    inode_t* dir = parent->d_inode;
 
     down(&dir->i_sem);
 
@@ -198,7 +198,7 @@ int dentry_real_lookup(dentry_t *parent, qstr_t *s, dentry_t **dentry) {
         return ret;
     }
 
-    dentry_t *new_dentry = dentry_alloc(parent, s);
+    dentry_t* new_dentry = dentry_alloc(parent, s);
     if (new_dentry == NULL) {
         ret = -ENOMEM;
     } else {
@@ -232,23 +232,23 @@ void dentry_cache_init() {
     }
 
     for (int i = 0; i < DENTRY_HASH_TABLE_SIZE; i++) {
-        dentry_hash_entry_t *dhe = dentry_hash_table + i;
+        dentry_hash_entry_t* dhe = dentry_hash_table + i;
         list_init(&dhe->list);
         mutex_init(&dhe->mutex);
     }
 }
 
-dentry_t *dentry_get(dentry_t *dentry) {
+dentry_t* dentry_get(dentry_t* dentry) {
     assert(dentry != NULL);
     atomic_inc(&dentry->d_count);
     return dentry;
 }
 
-void dentry_get_locked(dentry_t *dentry) {
+void dentry_get_locked(dentry_t* dentry) {
     //
 }
 
-void dentry_put(dentry_t *dentry) {
+void dentry_put(dentry_t* dentry) {
     //
 }
 

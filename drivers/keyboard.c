@@ -52,7 +52,7 @@ char kbd_char_tbl[] = {
 
 // TODO 改造成环形缓冲区
 uint8_t scan_code;
-void kbd_bh_handler(void *arg) {
+void kbd_bh_handler(void* arg) {
     kbd_debug(scan_code);
     if (0x80 & scan_code) {  // break code
         return;
@@ -62,14 +62,14 @@ void kbd_bh_handler(void *arg) {
     cnsl_kbd_write(ch);
 }
 
-void kbd_handler(unsigned int irq, pt_regs_t *regs, void *dev_id) {
+void kbd_handler(unsigned int irq, pt_regs_t* regs, void* dev_id) {
     scan_code = inb(0x60);
     add_irq_bh_handler(kbd_bh_handler, NULL);
 }
 
-extern tty_t *const default_tty;
-extern tty_t *const monitor_tty;
-extern tty_t *const debug_tty;
+extern tty_t* const default_tty;
+extern tty_t* const monitor_tty;
+extern tty_t* const debug_tty;
 extern void tty_switch_to_next();
 
 void kbd_debug(uint8_t scan_code) {

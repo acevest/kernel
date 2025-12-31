@@ -102,7 +102,9 @@ extern Desc gdt[NGDT];
 #define TRAP_GATE 0x0F  // Keep  'IF' bit.
 #define TSS_DESC 0x09
 
-static inline void _init_desc(pDesc desc) { memset((char *)desc, 0, sizeof(Desc)); }
+static inline void _init_desc(pDesc desc) {
+    memset((char*)desc, 0, sizeof(Desc));
+}
 
 static inline Desc _create_seg(u8 type, u8 DPL) {
     Desc d;
@@ -136,7 +138,9 @@ static inline Desc _create_gate(u32 handler, u8 type, u8 DPL) {
 
     return d;
 }
-static inline void set_idt_gate(u32 vec, u32 handler, u8 type, u8 DPL) { idt[vec] = _create_gate(handler, type, DPL); }
+static inline void set_idt_gate(u32 vec, u32 handler, u8 type, u8 DPL) {
+    idt[vec] = _create_gate(handler, type, DPL);
+}
 
 #define set_sys_int(vect, type, DPL, handler)        \
     do {                                             \

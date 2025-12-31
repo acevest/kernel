@@ -28,12 +28,14 @@
 
 extern chrdev_t cnsl_chrdev;
 
-chrdev_t *chrdev[CHRDEV_SIZE] = {&cnsl_chrdev};
+chrdev_t* chrdev[CHRDEV_SIZE] = {&cnsl_chrdev};
 
 // void ext2_setup_fs();
-unsigned int ext2_search_inpath(const char *path);
+unsigned int ext2_search_inpath(const char* path);
 
-unsigned int namei(const char *path) { return ext2_search_inpath(path); }
+unsigned int namei(const char* path) {
+    return ext2_search_inpath(path);
+}
 
 vfsmount_t rootfs_vfsmount;
 

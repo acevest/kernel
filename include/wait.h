@@ -21,36 +21,34 @@ typedef struct wait_queue_head {
 } wait_queue_head_t;
 
 typedef struct {
-    task_t *task;
+    task_t* task;
     list_head_t entry;
 } wait_queue_entry_t;
 
-#define WAIT_QUEUE_HEAD_INITIALIZER(name) \
-    { .task_list = LIST_HEAD_INIT((name).task_list) }
+#define WAIT_QUEUE_HEAD_INITIALIZER(name) {.task_list = LIST_HEAD_INIT((name).task_list)}
 
 #define DECLARE_WAIT_QUEUE_HEAD(name) wait_queue_head_t name = WAIT_QUEUE_HEAD_INITIALIZER(name)
 
-#define WAIT_QUEUE_ENTRY_INITIALIZER(name, tsk) \
-    { .task = tsk, .entry = LIST_HEAD_INIT((name).entry) }
+#define WAIT_QUEUE_ENTRY_INITIALIZER(name, tsk) {.task = tsk, .entry = LIST_HEAD_INIT((name).entry)}
 
 #define DECLARE_WAIT_QUEUE_ENTRY(name, tsk) wait_queue_entry_t name = WAIT_QUEUE_ENTRY_INITIALIZER(name, tsk)
 
-void init_wait_queue_head(wait_queue_head_t *wqh);
-void add_wait_queue(wait_queue_head_t *head, wait_queue_entry_t *wq);
-void del_wait_queue(wait_queue_head_t *head, wait_queue_entry_t *wq);
+void init_wait_queue_head(wait_queue_head_t* wqh);
+void add_wait_queue(wait_queue_head_t* head, wait_queue_entry_t* wq);
+void del_wait_queue(wait_queue_head_t* head, wait_queue_entry_t* wq);
 
 // prepare_to_wait 不会调用schedule
-void prepare_to_wait(wait_queue_head_t *head, wait_queue_entry_t *wq, unsigned int state);
+void prepare_to_wait(wait_queue_head_t* head, wait_queue_entry_t* wq, unsigned int state);
 
-void __end_wait(wait_queue_entry_t *wq);
+void __end_wait(wait_queue_entry_t* wq);
 
 // 使用这个函数的时候需要注意
 // 设置condition为真的语句和wake_up原子地执行
 // wake_up只唤醒不立即重新调度
-void wake_up(wait_queue_head_t *head);
+void wake_up(wait_queue_head_t* head);
 
 // nr == 0 代表唤醒所有
-void __wake_up(wait_queue_head_t *head, int nr);
+void __wake_up(wait_queue_head_t* head, int nr);
 
 // 以下wait_event被定义成宏，而不是函数是因为condition
 // condition可能是一个表达式，如果定义成函数，往下传递就直接变成了一个值

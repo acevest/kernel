@@ -16,7 +16,7 @@
 
 #include <syscall.h>
 
-int write(int fd, const char *buf, unsigned long size) {
+int write(int fd, const char* buf, unsigned long size) {
     // asm(""::"c"(size),"d"(buf),"b"(fd));
     // sysenter(0);
     // syscall3(0, fd, buf, size);

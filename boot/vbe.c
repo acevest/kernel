@@ -114,21 +114,23 @@ typedef struct vbe_mode_info {
 
 // pte_t vbe_pte[PTECNT_PER_PAGE] __attribute__((__aligned__(PAGE_SIZE)));
 
-uint32_t segoff_to_addr(segoff_t sg) { return 0xC0000000 + (sg.segment << 4) + sg.offset; }
+uint32_t segoff_to_addr(segoff_t sg) {
+    return 0xC0000000 + (sg.segment << 4) + sg.offset;
+}
 
-vbe_mode_info_t *get_vbe_mode_info(uint16_t) {
+vbe_mode_info_t* get_vbe_mode_info(uint16_t) {
     // 设置并执行实模式代码以调用 VBE 函数 0x4F01
     // 返回指向 VBE 模式信息的指针
     return NULL;
 }
 // extern pde_t init_pgd[];
-void init_vbe(void *vciptr, void *vmiptr) {
+void init_vbe(void* vciptr, void* vmiptr) {
     // VBE是传统BIOS接口，在现代系统上可能没有被正确初始化
     // 也无法在保护模式下调用VBE BIOS功能
     // 因此这里只是打印VBE信息
     // 更可靠的数据是 MULTIBOOT_TAG_TYPE_FRAMEBUFFER 的数据
-    vbe_controller_info_t *vci = vciptr;
-    vbe_mode_info_t *vmi = (vbe_mode_info_t *)vmiptr;
+    vbe_controller_info_t* vci = vciptr;
+    vbe_mode_info_t* vmi = (vbe_mode_info_t*)vmiptr;
 
     printk("VBE[deprecated]:\n");
     printk("Signature %c%c%c%c\n", vci->signature[0], vci->signature[1], vci->signature[2], vci->signature[3]);
@@ -140,11 +142,11 @@ void init_vbe(void *vciptr, void *vmiptr) {
     printk("OEM product rev: %s\n", segoff_to_addr(vci->oem_product_rev_ptr));
 
     printk("SEG %04X OFFSET %04X\n", vci->video_mode_ptr.segment, vci->video_mode_ptr.offset);
-    uint16_t *modes = (uint16_t *)segoff_to_addr(vci->video_mode_ptr);
+    uint16_t* modes = (uint16_t*)segoff_to_addr(vci->video_mode_ptr);
     printk("vbe modes:");
     while (*modes != VBE_MODE_END) {
         printk(" %04x", *modes);
-        vbe_mode_info_t *mi = get_vbe_mode_info(*modes);
+        vbe_mode_info_t* mi = get_vbe_mode_info(*modes);
 
         // 目前以下判断不会生效
         if ((mi != 0) && (mi->mode_attributes & 0x01)) {
@@ -155,7 +157,8 @@ void init_vbe(void *vciptr, void *vmiptr) {
     }
     printk("\n");
 
-    printk("vbe[deprecated] phys addr %08x resolution %u x %u\n", vmi->phys_base_ptr, vmi->x_resolution, vmi->y_resolution);
+    printk("vbe[deprecated] phys addr %08x resolution %u x %u\n", vmi->phys_base_ptr, vmi->x_resolution,
+           vmi->y_resolution);
 #if 0
     system.vbe_phys_addr = vmi->phys_base_ptr;
     system.x_resolution = vmi->x_resolution;

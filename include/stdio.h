@@ -18,11 +18,11 @@
 #define _STDIO_H
 #include <string.h>
 #include <syscall.h>
-extern int write(int fd, const char *buf, unsigned long size);
-extern int vsprintf(char *buf, const char *fmt, char *args);
-static inline int printf(const char *fmt, ...) {
+extern int write(int fd, const char* buf, unsigned long size);
+extern int vsprintf(char* buf, const char* fmt, char* args);
+static inline int printf(const char* fmt, ...) {
     char ptfbuf[512];
-    char *args = (char *)(((char *)&fmt) + 4);
+    char* args = (char*)(((char*)&fmt) + 4);
     vsprintf(ptfbuf, fmt, args);
     return write(0, ptfbuf, strlen(ptfbuf));
 }

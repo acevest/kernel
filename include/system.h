@@ -54,9 +54,9 @@
         1;                             \
     })
 
-void *kmalloc(size_t size, gfp_t gfpflags);
-void *kzalloc(size_t size, gfp_t gfpflags);
-void kfree(void *addr);
+void* kmalloc(size_t size, gfp_t gfpflags);
+void* kzalloc(size_t size, gfp_t gfpflags);
+void kfree(void* addr);
 
 #define panic(msg, ...)                                                                                         \
     do {                                                                                                        \
@@ -101,7 +101,6 @@ extern char etext, edata, end;
 // 算出显存的线性地址
 // 之后要将这个地址映射到显存的物理地址
 #define VRAM_VADDR_BASE (PAGE_OFFSET + MAX_SUPT_PHYMM_SIZE)
-
 
 // 算出固定映射区的线性地址
 #define FIXED_MAP_VADDR_BASE (VRAM_VADDR_BASE + VRAM_VADDR_SIZE)
@@ -162,13 +161,13 @@ typedef struct system {
 
     u32 page_bitmap;
 
-    u32 *page_dir;
-    u32 *pte_start;
-    u32 *pte_end;
+    u32* page_dir;
+    u32* pte_start;
+    u32* pte_end;
 
-    void *kernel_begin;
-    void *kernel_end;
-    void *bootmem_bitmap_begin;
+    void* kernel_begin;
+    void* kernel_end;
+    void* bootmem_bitmap_begin;
 
     // +-------+-------+-------+-------+
     // | drive | part1 | part2 | part3 |
@@ -182,11 +181,11 @@ typedef struct system {
     u16 x_resolution;
     u16 y_resolution;
 
-    void *rsdt_addr;
+    void* rsdt_addr;
 
     dev_t root_dev;
 #define CMD_LINE_SIZE 128
-    const char *cmdline;
+    const char* cmdline;
 
     u32 debug;
 

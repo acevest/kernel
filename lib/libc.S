@@ -30,4 +30,4 @@ _start:
     nop
     nop
 die:
-    jmp die 
+    jmp die

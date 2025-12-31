@@ -17,12 +17,20 @@ typedef struct atomic {
     volatile int counter;
 } atomic_t;
 
-static inline void atomic_inc(atomic_t *v) { __sync_add_and_fetch(&(v->counter), 1); }
-static inline void atomic_dec(atomic_t *v) { __sync_sub_and_fetch(&(v->counter), 1); }
+static inline void atomic_inc(atomic_t* v) {
+    __sync_add_and_fetch(&(v->counter), 1);
+}
+static inline void atomic_dec(atomic_t* v) {
+    __sync_sub_and_fetch(&(v->counter), 1);
+}
 
-static inline int atomic_read(atomic_t *v) { return *((int *)(&(v->counter))); }
+static inline int atomic_read(atomic_t* v) {
+    return *((int*)(&(v->counter)));
+}
 
-static inline void atomic_set(atomic_t *v, int i) { __sync_lock_test_and_set(&(v->counter), i); }
+static inline void atomic_set(atomic_t* v, int i) {
+    __sync_lock_test_and_set(&(v->counter), i);
+}
 
 #else
 

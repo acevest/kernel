@@ -24,8 +24,8 @@ typedef struct disk_request {
     dev_t dev;
     uint64_t pos;    // 扇区号
     uint16_t count;  // 扇区数
-    void *buf;       // 到的缓冲区
-    bbuffer_t *bb;
+    void* buf;       // 到的缓冲区
+    bbuffer_t* bb;
     disk_request_cmd_t command;  // 命令
     list_head_t list;
     semaphore_t sem;
@@ -41,4 +41,4 @@ typedef struct {
     semaphore_t sem;
 } disk_request_queue_t;
 
-int send_disk_request(disk_request_t *r);
+int send_disk_request(disk_request_t* r);

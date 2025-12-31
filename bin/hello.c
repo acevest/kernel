@@ -13,10 +13,10 @@
 #include <unistd.h>
 
 int main() {
-    while(1) {
+    while (1) {
         asm("nop;");
     }
-    //printf("hello world\n");
+    // printf("hello world\n");
 
     return 0;
 }

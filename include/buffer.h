@@ -17,16 +17,16 @@
 #include <system.h>
 typedef struct bbuffer {
     uint32_t block;  // block number
-    void *data;      //
+    void* data;      //
     atomic_t ref_count;
     dev_t dev;
-    page_t *page;
+    page_t* page;
     list_head_t node;
     completion_t io_done;
     uint16_t block_size;  // block size
     uint16_t uptodate : 1;
 } bbuffer_t;
 
-bbuffer_t *bread(dev_t dev, uint64_t block, uint32_t size);
+bbuffer_t* bread(dev_t dev, uint64_t block, uint32_t size);
 
-void brelse(bbuffer_t *b);
+void brelse(bbuffer_t* b);

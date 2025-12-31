@@ -39,16 +39,14 @@ extern void reboot();
 extern void cnsl_init();
 
 #define VERSION "0.3.1"
-const char *version = "KERNEL v" VERSION " @" BUILDER
-                      " ["__DATE__
-                      " " __TIME__
+const char* version = "KERNEL v" VERSION " @" BUILDER " [" __DATE__ " " __TIME__
                       "]"
                       "\n\n";
 
 void print_kernel_version() {
     //
-    extern tty_t *const default_tty;
-    tty_t *const tty = default_tty;
+    extern tty_t* const default_tty;
+    tty_t* const tty = default_tty;
 
     int len = strlen(version);
 
@@ -65,7 +63,7 @@ void print_kernel_version() {
         bg_color = TTY_CYAN;
 
         //
-        char *dst = (char *)tty->base_addr;
+        char* dst = (char*)tty->base_addr;
 
         //
         dst[i * 2 + 0] = c;
@@ -76,7 +74,7 @@ void print_kernel_version() {
     printk(version);
 }
 
-void parse_rsdt(void *addr);
+void parse_rsdt(void* addr);
 
 void setup_kernel() {
     printk("sysenter esp mode: %s\n",
@@ -91,12 +89,12 @@ void setup_kernel() {
 
     init_buffer();
 
-    #if 0
+#if 0
     parse_rsdt(system.rsdt_addr);
 
     void init_apic();
     init_apic();
-    #endif
+#endif
 
     void init_mount();
     init_mount();
@@ -110,7 +108,7 @@ void setup_kernel() {
     cnsl_init();
     boot_delay(DEFAULT_BOOT_DELAY_TICKS);
 
-    const char *title = "KERNEL MONITOR";
+    const char* title = "KERNEL MONITOR";
     printlxy(MPL_TITLE, (80 - strlen(title)) / 2, title);
 
     setup_fs();
@@ -130,7 +128,7 @@ void setup_kernel() {
     print_kernel_version();
     boot_delay(DEFAULT_BOOT_DELAY_TICKS);
 
-    extern tty_t *const monitor_tty;
+    extern tty_t* const monitor_tty;
     // tty_switch(monitor_tty);
 
     boot_delay(DEFAULT_BOOT_DELAY_TICKS);

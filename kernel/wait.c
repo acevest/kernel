@@ -12,9 +12,11 @@
 #include <sched.h>
 #include <wait.h>
 
-volatile void init_wait_queue_head(wait_queue_head_t *wqh) { INIT_LIST_HEAD(&(wqh->task_list)); }
+volatile void init_wait_queue_head(wait_queue_head_t* wqh) {
+    INIT_LIST_HEAD(&(wqh->task_list));
+}
 
-volatile void prepare_to_wait(wait_queue_head_t *head, wait_queue_entry_t *wqe, unsigned int state) {
+volatile void prepare_to_wait(wait_queue_head_t* head, wait_queue_entry_t* wqe, unsigned int state) {
     unsigned long flags;
     irq_save(flags);
     // 进程可能等待一个condition满足后被唤醒
@@ -29,7 +31,7 @@ volatile void prepare_to_wait(wait_queue_head_t *head, wait_queue_entry_t *wqe, 
     irq_restore(flags);
 }
 
-volatile void __end_wait(wait_queue_entry_t *wqe) {
+volatile void __end_wait(wait_queue_entry_t* wqe) {
     set_current_state(TASK_READY);
     current->reason = "e_wait";
     unsigned long flags;
@@ -38,21 +40,21 @@ volatile void __end_wait(wait_queue_entry_t *wqe) {
     irq_restore(flags);
 }
 
-volatile void add_wait_queue(wait_queue_head_t *head, wait_queue_entry_t *wqe) {
+volatile void add_wait_queue(wait_queue_head_t* head, wait_queue_entry_t* wqe) {
     unsigned long flags;
     irq_save(flags);
     list_add_tail(&wqe->entry, &head->task_list);
     irq_restore(flags);
 }
 
-volatile void del_wait_queue(wait_queue_head_t *head, wait_queue_entry_t *wqe) {
+volatile void del_wait_queue(wait_queue_head_t* head, wait_queue_entry_t* wqe) {
     unsigned long flags;
     irq_save(flags);
     list_del(&wqe->entry);
     irq_restore(flags);
 }
 
-volatile void __wake_up(wait_queue_head_t *head, int nr) {
+volatile void __wake_up(wait_queue_head_t* head, int nr) {
     unsigned long flags;
     wait_queue_entry_t *p, *tmp;
     irq_save(flags);
@@ -74,7 +76,7 @@ volatile void __wake_up(wait_queue_head_t *head, int nr) {
     // no schedule() here.
 }
 
-volatile void wake_up(wait_queue_head_t *head) {
+volatile void wake_up(wait_queue_head_t* head) {
     //
     __wake_up(head, 0);  // wake up all
 }

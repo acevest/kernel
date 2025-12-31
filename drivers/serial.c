@@ -37,7 +37,7 @@ void serial_putc(char c) {
     outb(c, SERIAL_PORT);
 }
 
-void serial_write(const char *buf, size_t size) {
+void serial_write(const char* buf, size_t size) {
     // return 0;
     for (size_t i = 0; i < size; i++) {
         serial_putc(buf[i]);

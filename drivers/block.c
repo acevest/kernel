@@ -12,8 +12,8 @@
 #include <fs.h>
 #include <ide.h>
 
-void ide_disk_read(dev_t dev, uint32_t sect_nr, uint32_t count, bbuffer_t *b);
-void block_read(bbuffer_t *b) {
+void ide_disk_read(dev_t dev, uint32_t sect_nr, uint32_t count, bbuffer_t* b);
+void block_read(bbuffer_t* b) {
     assert(b != NULL);
     assert(b->data != NULL);
     assert(b->page != NULL);
@@ -33,9 +33,9 @@ void ata_read_ext2_sb() {
     const int block = 0;
     const int offset = 1024;
     const int size = 4096;
-    bbuffer_t *bb = bread(system.root_dev, block, size);
+    bbuffer_t* bb = bread(system.root_dev, block, size);
 
-    ext2_sb_t *p = (ext2_sb_t *)(bb->data + offset);
+    ext2_sb_t* p = (ext2_sb_t*)(bb->data + offset);
     printk("inodes count %u inodes per group %u free %u\n", p->s_inodes_count, p->s_inodes_per_group,
            p->s_free_inodes_count);
     printk("blocks count %u blocks per group %u free %u magic %04x\n", p->s_blocks_count, p->s_blocks_per_group,

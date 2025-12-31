@@ -15,19 +15,21 @@
 #include <string.h>
 #include <system.h>
 
-static void get_value(const char *name, char *value) {
-    const char *p;
+static void get_value(const char* name, char* value) {
+    const char* p;
     if (0 != (p = strstr(system.cmdline, name))) {
         if (0 != (p = strstr(p, "="))) {
             p++;
-            while (*p != ' ' && *p != 0) *value++ = *p++;
+            while (*p != ' ' && *p != 0) {
+                *value++ = *p++;
+            }
         }
     }
 
     *value = 0;
 }
 
-void parse_cmdline(const char *cmdline) {
+void parse_cmdline(const char* cmdline) {
     char value[128];
     system.cmdline = cmdline;
     printk("cmdline: %s\n", system.cmdline);

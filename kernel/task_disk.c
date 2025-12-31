@@ -13,15 +13,15 @@
 #include <sched.h>
 
 void ata_read_identify(int drv, int disable_intr);
-void ata_pio_read_data(int drvid, int sect_cnt, void *dst);
-void ata_dma_read_ext(int drv, uint64_t pos, uint16_t count, void *dest);
+void ata_pio_read_data(int drvid, int sect_cnt, void* dst);
+void ata_dma_read_ext(int drv, uint64_t pos, uint16_t count, void* dest);
 
-int send_disk_request(disk_request_t *r) {
+int send_disk_request(disk_request_t* r) {
     if (NULL == r) {
         panic("null disk request");
     }
 
-    ide_drive_t *drv = ide_get_drive(r->dev);
+    ide_drive_t* drv = ide_get_drive(r->dev);
 
     assert(drv->present == 1);
 
@@ -63,11 +63,11 @@ int send_disk_request(disk_request_t *r) {
     return r->ret;
 }
 
-void disk_task_entry(void *arg) {
+void disk_task_entry(void* arg) {
     int r_cnt = 0;
     while (1) {
         int channel = (int)arg;
-        ide_pci_controller_t *ide_ctrl = ide_pci_controller + channel;
+        ide_pci_controller_t* ide_ctrl = ide_pci_controller + channel;
 
 #if 1
         // 为了在DEBUG时看到RUN
@@ -82,7 +82,7 @@ void disk_task_entry(void *arg) {
         // printk("hard disk channel %d\n", channel);
 
         mutex_lock(&ide_ctrl->request_mutex);
-        disk_request_t *r;
+        disk_request_t* r;
         r = list_first_entry(&ide_ctrl->request_queue.list, disk_request_t, list);
         if (NULL == r) {
             panic("no disk request");
@@ -92,7 +92,7 @@ void disk_task_entry(void *arg) {
         atomic_inc(&ide_ctrl->consumed_cnt);
         mutex_unlock(&ide_ctrl->request_mutex);
 
-        ide_drive_t *drv = ide_get_drive(r->dev);
+        ide_drive_t* drv = ide_get_drive(r->dev);
         int drvid = drv->drvid;
         if (drv->present == 0) {
             panic("disk not present");
@@ -126,7 +126,7 @@ void disk_task_entry(void *arg) {
             assert(r->buf != NULL || r->bb->data != NULL);
             // printk("DISK READ drvid %u pos %u count %u bb %x\n", drvid, (uint32_t)pos, r->count, r->bb);
             if (pio_mode) {
-                int ata_pio_read_ext(int drvid, uint64_t pos, uint16_t count, int timeout, void *dest);
+                int ata_pio_read_ext(int drvid, uint64_t pos, uint16_t count, int timeout, void* dest);
                 if (r->bb != 0) {
                     ata_pio_read_ext(drvid, pos, r->count, 100, r->bb->data);
                 } else {

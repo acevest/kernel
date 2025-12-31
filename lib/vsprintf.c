@@ -9,18 +9,19 @@
 
 #include "string.h"
 
-char *itoa(char *s, int n);
-char *itou(char *s, unsigned int n);
-char *itoo(char *s, unsigned int n);
-char *itox(char *s, unsigned int n, int upper);
-char *i64tou(char *s, uint64_t n);
-char *i64too(char *s, uint64_t n);
-char *i64tox(char *s, uint64_t n, int upper);
+char* itoa(char* s, int n);
+char* itou(char* s, unsigned int n);
+char* itoo(char* s, unsigned int n);
+char* itox(char* s, unsigned int n, int upper);
+char* i64tou(char* s, uint64_t n);
+char* i64too(char* s, uint64_t n);
+char* i64tox(char* s, uint64_t n, int upper);
 
 enum { ALIGN_RIGHT, ALIGN_LEFT };
 
-int write_buf(char *buf, const char *str, char fillch, int charcnt, int align) {
-    if (str == 0) return 0;
+int write_buf(char* buf, const char* str, char fillch, int charcnt, int align) {
+    if (str == 0)
+        return 0;
 
     int len = strlen(str);
     int delta_char_cnt = charcnt - len;
@@ -43,8 +44,8 @@ int write_buf(char *buf, const char *str, char fillch, int charcnt, int align) {
     return charcnt > len ? charcnt : len;
 }
 
-int vsprintf(char *buf, const char *fmt, char *args) {
-    char *p = buf;
+int vsprintf(char* buf, const char* fmt, char* args) {
+    char* p = buf;
     int char_cnt;
     char tmp[64];
 
@@ -81,41 +82,41 @@ int vsprintf(char *buf, const char *fmt, char *args) {
             *p++ = *args;
             break;
         case 'd':
-            itoa(tmp, *((int *)args));
+            itoa(tmp, *((int*)args));
             p += write_buf(p, tmp, char_fill, char_cnt, align);
             break;
         case 'l':
             fmt++;
             if (*fmt == 'u' || *fmt == 'd') {  // d u都当成u来处理
-                i64tou(tmp, *((int64_t *)args));
+                i64tou(tmp, *((int64_t*)args));
                 p += write_buf(p, tmp, char_fill, char_cnt, align);
                 args += 4;
             } else if (*fmt == 'o') {
-                i64too(tmp, *((uint64_t *)args));
+                i64too(tmp, *((uint64_t*)args));
                 p += write_buf(p, tmp, char_fill, char_cnt, align);
                 args += 4;
             } else if (*fmt == 'x' || *fmt == 'X') {
                 // i64tox(tmp, *((uint64_t *)args), *fmt == 'X' ? 1 : 0);
-                i64tox(tmp, *((uint64_t *)args), 1);  // x X都强制为大写
+                i64tox(tmp, *((uint64_t*)args), 1);  // x X都强制为大写
                 p += write_buf(p, tmp, char_fill, char_cnt, align);
                 args += 4;
             }
             break;
         case 's':
-            p += write_buf(p, (const char *)*((unsigned int *)args), char_fill, char_cnt, align);
+            p += write_buf(p, (const char*)*((unsigned int*)args), char_fill, char_cnt, align);
             break;
         case 'u':
-            itou(tmp, *((unsigned int *)args));
+            itou(tmp, *((unsigned int*)args));
             p += write_buf(p, tmp, char_fill, char_cnt, align);
             break;
         case 'x':
         case 'X':
             // itox(tmp, *((unsigned int *)args), *fmt == 'X' ? 1 : 0);
-            itox(tmp, *((unsigned int *)args), 1);  // x X都强制为大写
+            itox(tmp, *((unsigned int*)args), 1);  // x X都强制为大写
             p += write_buf(p, tmp, char_fill, char_cnt, align);
             break;
         case 'o':
-            itoo(tmp, *((unsigned *)args));
+            itoo(tmp, *((unsigned*)args));
             p += write_buf(p, tmp, char_fill, char_cnt, align);
             break;
         default:
@@ -129,16 +130,16 @@ int vsprintf(char *buf, const char *fmt, char *args) {
     return p - buf;
 }
 
-void swap_char(char *a, char *b) {
+void swap_char(char* a, char* b) {
     char c;
     c = *a;
     *a = *b;
     *b = c;
 }
 
-char *itoa(char *s, int n) {
+char* itoa(char* s, int n) {
     int i = 0;
-    char *p = 0;
+    char* p = 0;
 
     if (n & 0x80000000) {
         n = ~n + 1;
@@ -161,7 +162,7 @@ char *itoa(char *s, int n) {
     }
 }
 
-char *i64tou(char *s, uint64_t n) {
+char* i64tou(char* s, uint64_t n) {
     itou(s, n >> 32);
     int i = 0;
     if ((n >> 32) > 0) {
@@ -170,9 +171,9 @@ char *i64tou(char *s, uint64_t n) {
     itou(s + i, n & 0xFFFFFFFF);
 }
 
-char *itou(char *s, unsigned int n) {
+char* itou(char* s, unsigned int n) {
     char c;
-    char *p = s;
+    char* p = s;
 
     do {
         *p++ = (n % 10) + '0';
@@ -188,8 +189,8 @@ char *itou(char *s, unsigned int n) {
     }
 }
 
-char *_itoo(char *s, uint64_t n, int bgn) {
-    char *p = s;
+char* _itoo(char* s, uint64_t n, int bgn) {
+    char* p = s;
     char ch;
     int i;
     bool flag = false;
@@ -217,18 +218,18 @@ char *_itoo(char *s, uint64_t n, int bgn) {
     return s;
 }
 
-char *itoo(char *s, unsigned int n) {
+char* itoo(char* s, unsigned int n) {
     //
     return _itoo(s, n, 30);
 }
 
-char *i64too(char *s, uint64_t n) {
+char* i64too(char* s, uint64_t n) {
     //
     return _itoo(s, n, 63);
 }
 
-char *_itox(char *s, uint64_t n, int upper, int bgn) {
-    char *p = s;
+char* _itox(char* s, uint64_t n, int upper, int bgn) {
+    char* p = s;
     char ch;
     int i;
     bool flag = false;
@@ -261,12 +262,12 @@ char *_itox(char *s, uint64_t n, int upper, int bgn) {
     return s;
 }
 
-char *itox(char *s, unsigned int n, int upper) {
+char* itox(char* s, unsigned int n, int upper) {
     //
     return _itox(s, n, upper, 28);
 }
 
-char *i64tox(char *s, uint64_t n, int upper) {
+char* i64tox(char* s, uint64_t n, int upper) {
     //
     return _itox(s, n, upper, 60);
 }

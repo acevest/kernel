@@ -25,11 +25,11 @@
 // 所谓“安装“就是从一个存储设备上读入超级块，在内存中建立起一个superblock结构。进而将此设备上的根目录
 // 与文件系统中已经存在的一个空白目录挂上钩。
 // 系统初始化时整个文件系统只有一个空白目录"/"，所以根设备的根目录就安装到这个节点上。
-dentry_t *root_entry = 0;
+dentry_t* root_entry = 0;
 
 fs_type_t file_systems = {"filesystems", 0, 0};
 
-int vfs_register_filesystem(fs_type_t *fs) {
+int vfs_register_filesystem(fs_type_t* fs) {
     int ret = 0;
 
     assert(fs != NULL);
@@ -39,11 +39,11 @@ int vfs_register_filesystem(fs_type_t *fs) {
 
     INIT_LIST_HEAD(&fs->sbs);
 
-    fs_type_t *add = &file_systems;
+    fs_type_t* add = &file_systems;
 
     // TODO: 加锁、解锁保护
 
-    for (fs_type_t *fst = &file_systems; fst != 0; fst = fst->next) {
+    for (fs_type_t* fst = &file_systems; fst != 0; fst = fst->next) {
         if (strcmp(fst->name, fs->name) == 0) {
             return -EBUSY;
         }
@@ -55,8 +55,8 @@ int vfs_register_filesystem(fs_type_t *fs) {
     return 0;
 }
 
-fs_type_t *vfs_find_filesystem(const char *name) {
-    for (fs_type_t *fs = &file_systems; fs != 0; fs = fs->next) {
+fs_type_t* vfs_find_filesystem(const char* name) {
+    for (fs_type_t* fs = &file_systems; fs != 0; fs = fs->next) {
         if (strcmp(fs->name, name) == 0) {
             return fs;
         }
@@ -77,16 +77,16 @@ fs_type_t *vfs_find_filesystem(const char *name) {
 // }
 
 /////////
-vfsmount_t *vfsmnt_get(vfsmount_t *m) {
+vfsmount_t* vfsmnt_get(vfsmount_t* m) {
     panic("todo");
     return NULL;
 }
-void vfsmnt_put(vfsmount_t *m) {
+void vfsmnt_put(vfsmount_t* m) {
     //
     panic("todo");
 }
 
-int vfs_create(inode_t *dir, dentry_t *dentry, int mode, namei_t *ni) {
+int vfs_create(inode_t* dir, dentry_t* dentry, int mode, namei_t* ni) {
     int ret = 0;
 
     assert(dir->i_ops != NULL);
@@ -97,7 +97,7 @@ int vfs_create(inode_t *dir, dentry_t *dentry, int mode, namei_t *ni) {
     return ret;
 }
 
-int vfs_mkdir(inode_t *dir, dentry_t *dentry, int mode) {
+int vfs_mkdir(inode_t* dir, dentry_t* dentry, int mode) {
     int ret = 0;
 
     // TODO REMOVE

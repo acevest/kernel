@@ -15,7 +15,7 @@
 #include <types.h>
 #include <vfs.h>
 
-bool path_init(const char *path, unsigned int flags, namei_t *ni) {
+bool path_init(const char* path, unsigned int flags, namei_t* ni) {
     ni->flags = flags;
     ni->last_type = LAST_ROOT;
 
@@ -37,13 +37,13 @@ bool path_init(const char *path, unsigned int flags, namei_t *ni) {
     return true;
 }
 
-void follow_dotdot(namei_t *ni) {
+void follow_dotdot(namei_t* ni) {
 #if 1
     panic("not supported");
 #else
     while (1) {
-        dentry_t *dentry = NULL;
-        vfsmount_t *parent = NULL;
+        dentry_t* dentry = NULL;
+        vfsmount_t* parent = NULL;
 
         // 如果当前目录已经是根目录
         if (ni->dentry == current->dentry_root) {
@@ -103,7 +103,7 @@ void follow_dotdot(namei_t *ni) {
 #endif
 }
 
-uint64_t compute_qstr_hash(qstr_t *q) {
+uint64_t compute_qstr_hash(qstr_t* q) {
     q->hash = 0;
     for (int i = 0; i < q->len; i++) {
         uint64_t c = (uint64_t)(q->name[i]);
@@ -117,7 +117,7 @@ uint64_t compute_qstr_hash(qstr_t *q) {
     return q->hash;
 }
 
-int follow_down(dentry_t **dentry, vfsmount_t **vfsmnt) {
+int follow_down(dentry_t** dentry, vfsmount_t** vfsmnt) {
     // assert(*dentry != NULL);
     // assert(*vfsmnt != NULL);
 
@@ -134,8 +134,8 @@ int follow_down(dentry_t **dentry, vfsmount_t **vfsmnt) {
     // }
 }
 
-int path_walk(const char *path, namei_t *ni) {
-    dentry_t *dentry = NULL;
+int path_walk(const char* path, namei_t* ni) {
+    dentry_t* dentry = NULL;
     int ret = 0;
     if (path == NULL) {
         return -EINVAL;
@@ -152,7 +152,7 @@ int path_walk(const char *path, namei_t *ni) {
     }
 
     // 拿到当前目录的 inode
-    inode_t *inode = ni->path.dentry->d_inode;
+    inode_t* inode = ni->path.dentry->d_inode;
 
     uint32_t path_lookup_flags = ni->flags;
 
@@ -330,9 +330,9 @@ end:
     return ret;
 }
 
-int path_lookup_hash(dentry_t *base, qstr_t *name, dentry_t **dentry) {
+int path_lookup_hash(dentry_t* base, qstr_t* name, dentry_t** dentry) {
     int ret = 0;
-    inode_t *inode = base->d_inode;
+    inode_t* inode = base->d_inode;
 
     ret = dentry_cached_lookup(base, name, dentry);
     assert(0 == ret);
@@ -340,7 +340,7 @@ int path_lookup_hash(dentry_t *base, qstr_t *name, dentry_t **dentry) {
         return 0;
     }
 
-    dentry_t *dentry_new = dentry_alloc(base, name);
+    dentry_t* dentry_new = dentry_alloc(base, name);
     if (dentry_new == NULL) {
         return ENOMEM;
     }
@@ -356,7 +356,7 @@ int path_lookup_hash(dentry_t *base, qstr_t *name, dentry_t **dentry) {
     return ret;
 }
 
-int path_lookup_create(namei_t *ni, dentry_t **dentry) {
+int path_lookup_create(namei_t* ni, dentry_t** dentry) {
     int err = 0;
 
     // 在调用完path_lookup_create后调用 up 操作
@@ -375,11 +375,11 @@ int path_lookup_create(namei_t *ni, dentry_t **dentry) {
     return err;
 }
 
-int path_open_namei(const char *path, int flags, int mode, namei_t *ni) {
+int path_open_namei(const char* path, int flags, int mode, namei_t* ni) {
     int ret = 0;
-    dentry_t *dentry = NULL;
-    dentry_t *dir = NULL;
-    inode_t *inode = NULL;
+    dentry_t* dentry = NULL;
+    dentry_t* dir = NULL;
+    inode_t* inode = NULL;
 
     if ((flags & O_CREAT) == 0) {
         path_init(path, flags, ni);

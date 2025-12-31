@@ -10,13 +10,13 @@
 #include <pci.h>
 #include <system.h>
 
-
 void init_sata() {
-    pci_device_t *pci = pci_find_device_by_classcode(0x0106);
+    pci_device_t* pci = pci_find_device_by_classcode(0x0106);
     if (pci == NULL) {
         printk("can not find pci classcode: %08x", 0x0106);
         panic("can not find sata controller");
     }
+
     // progif
     // 0x01 AHCI
     //
@@ -28,12 +28,12 @@ void init_sata() {
         printk("AHCI mode not supported\n");
     }
 
-    printk("found sata pci progif %02x %03d:%02d.%d #%02d %04X:%04X\n", pci->progif, pci->bus, pci->dev, pci->devfn, pci->intr_line, pci->vendor, pci->device);
+    printk("found sata pci progif %02x %03d:%02d.%d #%02d %04X:%04X\n", pci->progif, pci->bus, pci->dev, pci->devfn,
+           pci->intr_line, pci->vendor, pci->device);
     for (int i = 0; i < 6; i++) {
         printk("  sata pci BAR%u value 0x%08X\n", i, pci->bars[i]);
         // if (pci->bars[i] != 0) {
         //     assert((pci->bars[i] & 0x1) == 0x1);
         // }
     }
-
 }

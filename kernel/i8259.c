@@ -137,9 +137,10 @@ irq_chip_t i8259_chip = {
     .ack = ack_i8259_irq,
 };
 
-void do_i8259_IRQ(pt_regs_t *regs, unsigned int irq) {}
+void do_i8259_IRQ(pt_regs_t* regs, unsigned int irq) {
+}
 
-__attribute__((regparm(1))) void boot_irq_handler(pt_regs_t *regs) {
+__attribute__((regparm(1))) void boot_irq_handler(pt_regs_t* regs) {
     unsigned int irq = regs->irq;
     if (irq != 0 && irq != 1) {
         panic("invalid irq %d\n", irq);

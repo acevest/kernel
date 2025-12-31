@@ -12,7 +12,7 @@
 
 #include <printk.h>
 
-void assert_fail(char *exp, char *file, unsigned int line, const char *func) {
+void assert_fail(char* exp, char* file, unsigned int line, const char* func) {
     asm("cli");
     printl(MPL_DEBUG, "%s:%d: %s: Assertion \'%s\' failed.\n", file, line, func, exp);
     printk("%s:%d: %s: Assertion \'%s\' failed.\n", file, line, func, exp);

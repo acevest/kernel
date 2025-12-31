@@ -31,12 +31,12 @@ tty_t ttys[NR_TTYS];
 #define BYTES_PER_LINE (CHARS_PER_LINE * 2)
 #define TAB_SPACE 4
 
-tty_t *const default_tty = ttys + 0;
-tty_t *const monitor_tty = ttys + 1;
-tty_t *const debug_tty = ttys + 2;
+tty_t* const default_tty = ttys + 0;
+tty_t* const monitor_tty = ttys + 1;
+tty_t* const debug_tty = ttys + 2;
 
-void tty_clear(tty_t *tty) {
-    char *dst = (char *)tty->base_addr;
+void tty_clear(tty_t* tty) {
+    char* dst = (char*)tty->base_addr;
     for (int src = 0; src < (MAX_Y * BYTES_PER_LINE); src += 2) {
         *dst++ = 0;
         *dst++ = (tty->bg_color << 4) | tty->fg_color;
@@ -49,7 +49,7 @@ void tty_clear(tty_t *tty) {
 // 而如果输出字符颜色与光标所处位置已经设置的颜色不一致的话
 // 就需要将输出的这个字符的后一个位置的颜色设置成与之一致
 // 这样光标颜色才与输出字符一致
-void __tty_set_next_pos_color(tty_t *tty, char color) {
+void __tty_set_next_pos_color(tty_t* tty, char color) {
     unsigned int xpos = tty->xpos;
     unsigned int ypos = tty->ypos;
 
@@ -59,13 +59,13 @@ void __tty_set_next_pos_color(tty_t *tty, char color) {
     xpos %= CHARS_PER_LINE;
 
     if (ypos < MAX_Y) {
-        char *dst = (char *)(tty->base_addr + ypos * BYTES_PER_LINE + 2 * xpos);
+        char* dst = (char*)(tty->base_addr + ypos * BYTES_PER_LINE + 2 * xpos);
         dst[0] = 0;
         dst[1] = color;
     }
 }
 
-void init_tty(tty_t *tty, const char *name, unsigned long base) {
+void init_tty(tty_t* tty, const char* name, unsigned long base) {
     assert(0 != tty);
     assert(NR_TTYS >= 1);
     assert(NR_TTYS <= MAX_NR_TTYS);
@@ -81,7 +81,7 @@ void init_tty(tty_t *tty, const char *name, unsigned long base) {
     tty->base_addr = base;
 
     for (int i = 0; i < TTY_VRAM_SIZE; i += 2) {
-        uint8_t *p = (uint8_t *)base;
+        uint8_t* p = (uint8_t*)base;
         p[i + 0] = ' ';
         p[i + 1] = (tty->bg_color << 4) | tty->fg_color;
     }
@@ -91,7 +91,7 @@ void init_ttys() {
     assert(irq_disabled());
 
     for (int i = 0; i < NR_TTYS; i++) {
-        tty_t *tty = ttys + i;
+        tty_t* tty = ttys + i;
         char name[sizeof(tty->name)];
         sprintf(name, "tty.%u", i);
         init_tty(tty, name, VADDR + i * TTY_VRAM_SIZE);
@@ -115,13 +115,13 @@ void init_ttys() {
     debug_tty->bg_color = TTY_BLACK;  // TTY_CYAN;
 
     for (int i = 0; i < NR_TTYS; i++) {
-        tty_t *tty = ttys + i;
+        tty_t* tty = ttys + i;
         tty_clear(tty);
     }
     current_tty = default_tty;
 }
 
-void tty_do_scroll_up(tty_t *tty) {
+void tty_do_scroll_up(tty_t* tty) {
     // 没越过最后一行不需要上卷
     if (tty->ypos < MAX_Y - 1) {
         return;
@@ -135,13 +135,13 @@ void tty_do_scroll_up(tty_t *tty) {
     // 如果是default_tty则保留用来显示内核版本及编译时间信息
     const int keep = tty != default_tty ? 0 : BYTES_PER_LINE;
 
-    char *dst = (char *)tty->base_addr + keep;
+    char* dst = (char*)tty->base_addr + keep;
     for (int src = BYTES_PER_LINE + keep; src < (MAX_Y * BYTES_PER_LINE); src++) {
-        *dst++ = *(char *)(tty->base_addr + src);
+        *dst++ = *(char*)(tty->base_addr + src);
     }
 
     // 清空最后一行
-    dst = (char *)(tty->base_addr + ((MAX_Y - 1) * BYTES_PER_LINE));
+    dst = (char*)(tty->base_addr + ((MAX_Y - 1) * BYTES_PER_LINE));
     for (int i = 0; i < BYTES_PER_LINE; i += 2) {
         *dst++ = 0;
         *dst++ = (tty->bg_color << 4) | tty->fg_color;
@@ -151,7 +151,7 @@ void tty_do_scroll_up(tty_t *tty) {
     tty->ypos = MAX_Y - 1;
 }
 
-void tty_color_putc(tty_t *tty, char c, unsigned int fg_color, unsigned bg_color) {
+void tty_color_putc(tty_t* tty, char c, unsigned int fg_color, unsigned bg_color) {
     bool display = false;
     bool move_to_next_pos = true;
     switch (c) {
@@ -193,7 +193,7 @@ void tty_color_putc(tty_t *tty, char c, unsigned int fg_color, unsigned bg_color
     // 显示
     if (display) {
         unsigned int pos = tty->ypos * BYTES_PER_LINE + tty->xpos * 2;
-        char *va = (char *)(tty->base_addr + pos);
+        char* va = (char*)(tty->base_addr + pos);
         va[0] = c;
         va[1] = (bg_color << 4) | fg_color;
 
@@ -209,9 +209,11 @@ void tty_color_putc(tty_t *tty, char c, unsigned int fg_color, unsigned bg_color
     tty_set_cursor(tty);
 }
 
-void tty_putc(tty_t *tty, char c) { tty_color_putc(tty, c, tty->fg_color, tty->bg_color); }
+void tty_putc(tty_t* tty, char c) {
+    tty_color_putc(tty, c, tty->fg_color, tty->bg_color);
+}
 
-void tty_write(tty_t *tty, const char *buf, size_t size) {
+void tty_write(tty_t* tty, const char* buf, size_t size) {
     assert(0 != tty);
     if (0 == buf) {
         return;
@@ -222,7 +224,7 @@ void tty_write(tty_t *tty, const char *buf, size_t size) {
     }
 }
 
-void tty_write_at(tty_t *tty, int xpos, int ypos, const char *buf, size_t size) {
+void tty_write_at(tty_t* tty, int xpos, int ypos, const char* buf, size_t size) {
     assert(0 != tty);
     assert(xpos < BYTES_PER_LINE);
     assert(ypos < MAX_Y);
@@ -238,7 +240,7 @@ void tty_write_at(tty_t *tty, int xpos, int ypos, const char *buf, size_t size) 
 #define VGA_CRTC_CURSOR_H 0xE
 #define VGA_CRTC_CURSOR_L 0xF
 
-void tty_set_cursor(tty_t *tty) {
+void tty_set_cursor(tty_t* tty) {
     if (tty != current_tty) {
         return;
     }
@@ -253,7 +255,7 @@ void tty_set_cursor(tty_t *tty) {
     irq_restore(flags);
 }
 
-void tty_switch(tty_t *tty) {
+void tty_switch(tty_t* tty) {
     if (0 == tty) {
         return;
     }
@@ -274,8 +276,8 @@ void tty_switch(tty_t *tty) {
 }
 
 void tty_switch_to_next() {
-    tty_t *tty = ttys + ((current_tty - ttys + 1) % NR_TTYS);
+    tty_t* tty = ttys + ((current_tty - ttys + 1) % NR_TTYS);
     tty_switch(tty);
 }
 
-tty_t *current_tty;
+tty_t* current_tty;

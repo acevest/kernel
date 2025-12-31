@@ -12,8 +12,8 @@
 #include <string.h>
 #include <system.h>
 
-static void get_e820_size(uint32_t size, char *buf) {
-    const char *fmt = "%3u %s";
+static void get_e820_size(uint32_t size, char* buf) {
+    const char* fmt = "%3u %s";
     if (size < (1 << 10)) {
         sprintf(buf, fmt, size, "B");
     } else if (size < (1 << 20)) {
@@ -48,7 +48,7 @@ static void get_e820_size(uint32_t size, char *buf) {
 //     }
 // }
 
-static void get_e820_type(uint32_t type, char *buf) {
+static void get_e820_type(uint32_t type, char* buf) {
     switch (type) {
     case E820_RAM:
         sprintf(buf, "%s", "RAM");
@@ -73,7 +73,7 @@ static void get_e820_type(uint32_t type, char *buf) {
 
 // op: 0 clear bit, 1 set bit
 void fast_init_bootmem_bitmap(unsigned long bgn_pfn, unsigned long end_pfn, int op) {
-    int (*bit_func)(unsigned int, volatile unsigned long *);
+    int (*bit_func)(unsigned int, volatile unsigned long*);
 
     bit_func = op == 0 ? test_and_clear_bit : test_and_set_bit;
 
@@ -89,7 +89,7 @@ void fast_init_bootmem_bitmap(unsigned long bgn_pfn, unsigned long end_pfn, int 
     unsigned int bytes = (end_pfn - i) / 8;
 
     // 直接清零或设置
-    memset((char *)(bootmem_data.bitmap) + (i / 8), data, bytes);
+    memset((char*)(bootmem_data.bitmap) + (i / 8), data, bytes);
 
     // 最后设置尾部不是整字节的比特
     for (i += bytes * 8; i < end_pfn; i++) {
@@ -100,7 +100,7 @@ void fast_init_bootmem_bitmap(unsigned long bgn_pfn, unsigned long end_pfn, int 
 void e820_print_map() {
     unsigned int i = 0;
     for (i = 0; i < boot_params.e820map.map_cnt; ++i) {
-        struct e820_entry *p = boot_params.e820map.map + i;
+        struct e820_entry* p = boot_params.e820map.map + i;
 
         // printk(" [%02d] 0x%010lX - 0x%010lX size %- 10u %8dKB %5dMB ", i, p->addr, (p->addr + p->size - 1),
         //        (uint32_t)p->size, (uint32_t)(p->size >> 10), (uint32_t)(p->size >> 20));
@@ -114,9 +114,13 @@ void e820_print_map() {
 
 bootmem_data_t bootmem_data;
 
-unsigned long bootmem_max_pfn() { return bootmem_data.max_pfn; }
+unsigned long bootmem_max_pfn() {
+    return bootmem_data.max_pfn;
+}
 
-unsigned long bootmem_page_state(unsigned long pfn) { return constant_test_bit(pfn, bootmem_data.bitmap); }
+unsigned long bootmem_page_state(unsigned long pfn) {
+    return constant_test_bit(pfn, bootmem_data.bitmap);
+}
 
 void e820_init_bootmem_data() {
     unsigned int i = 0;
@@ -126,7 +130,7 @@ void e820_init_bootmem_data() {
     bootmem_data.max_pfn = 0;
 
     for (i = 0; i < boot_params.e820map.map_cnt; ++i) {
-        struct e820_entry *p = boot_params.e820map.map + i;
+        struct e820_entry* p = boot_params.e820map.map + i;
 
         if (p->type != E820_RAM) {
             continue;
@@ -167,7 +171,7 @@ void e820_init_bootmem_data() {
 
 void register_bootmem_pages() {
     for (unsigned int i = 0; i < boot_params.e820map.map_cnt; ++i) {
-        struct e820_entry *p = boot_params.e820map.map + i;
+        struct e820_entry* p = boot_params.e820map.map + i;
 
         if (p->type != E820_RAM) {
             continue;
@@ -203,7 +207,9 @@ void reserve_bootmem(unsigned long bgn_pfn, unsigned long end_pfn) {
 #endif
 }
 
-void reserve_kernel_pages() { reserve_bootmem(PFN_DW(va2pa(system.kernel_begin)), PFN_UP(va2pa(system.kernel_end))); }
+void reserve_kernel_pages() {
+    reserve_bootmem(PFN_DW(va2pa(system.kernel_begin)), PFN_UP(va2pa(system.kernel_end)));
+}
 
 void reserve_bootmem_bitmap() {
     unsigned long bgn_pfn = PFN_DW(va2pa(bootmem_data.bitmap));
@@ -254,11 +260,11 @@ void init_bootmem() {
 
 // 由于只有在构建buddy system的时候才会用到
 // 所以这里就简单实现
-void *alloc_from_bootmem(unsigned long size, char *title) {
-    void *region = NULL;
+void* alloc_from_bootmem(unsigned long size, char* title) {
+    void* region = NULL;
     unsigned long pfn_cnt = PFN_UP(size);
 
-    bootmem_data_t *pbd = &bootmem_data;
+    bootmem_data_t* pbd = &bootmem_data;
 
     // 从该处开始查找空闲区间
     unsigned long search_bgn_pfn = pbd->prepare_alloc_pfn;

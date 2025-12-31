@@ -11,4 +11,4 @@
 
 #include "vfs.h"
 
-vfsmount_t *vfs_kernel_mount(fs_type_t *type, int flags, const char *name, void *data);
+vfsmount_t* vfs_kernel_mount(fs_type_t* type, int flags, const char* name, void* data);

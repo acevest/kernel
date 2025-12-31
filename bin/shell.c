@@ -25,7 +25,9 @@ int main() {
         read(0, cmd, 256);
 
         int len = strlen(cmd);
-        if (len > 0) cmd[len - 1] = 0;
+        if (len > 0) {
+            cmd[len - 1] = 0;
+        }
 
         int pid = fork();
         if (pid > 0) {

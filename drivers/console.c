@@ -18,18 +18,22 @@ void vga_putc(unsigned int nr, unsigned char c, const unsigned char color);
 
 cnsl_t cnsl;
 
-static bool empty(const cnsl_queue_t *q) { return q->head == q->tail; }
+static bool empty(const cnsl_queue_t* q) {
+    return q->head == q->tail;
+}
 
-static bool full(const cnsl_queue_t *q) { return (q->head + 1) % CNSL_QUEUE_SIZE == q->tail; }
+static bool full(const cnsl_queue_t* q) {
+    return (q->head + 1) % CNSL_QUEUE_SIZE == q->tail;
+}
 
-static void put(cnsl_queue_t *q, char c) {
+static void put(cnsl_queue_t* q, char c) {
     if (!full(q)) {
         q->data[q->head] = c;
         q->head = (q->head + 1) % CNSL_QUEUE_SIZE;
     }
 }
 
-static bool get(cnsl_queue_t *q, char *c) {
+static bool get(cnsl_queue_t* q, char* c) {
     if (!empty(q)) {
         *c = q->data[q->tail];
         q->tail = (q->tail + 1) % CNSL_QUEUE_SIZE;
@@ -39,10 +43,13 @@ static bool get(cnsl_queue_t *q, char *c) {
     return false;
 }
 
-static void clear(cnsl_queue_t *q) { q->head = q->tail = 0; }
+static void clear(cnsl_queue_t* q) {
+    q->head = q->tail = 0;
+}
 
-static void erase(cnsl_queue_t *q) {
-    if (empty(q)) return;
+static void erase(cnsl_queue_t* q) {
+    if (empty(q))
+        return;
 
     if (q->head == 0)
         q->head = CNSL_QUEUE_SIZE - 1;
@@ -50,8 +57,8 @@ static void erase(cnsl_queue_t *q) {
         q->head--;
 }
 
-static void cnsl_queue_init(cnsl_queue_t *cq) {
-    memset((void *)cq, 0, sizeof(*cq));
+static void cnsl_queue_init(cnsl_queue_t* cq) {
+    memset((void*)cq, 0, sizeof(*cq));
     cq->head = 0;
     cq->tail = 0;
     init_wait_queue_head(&cq->wait);
@@ -71,7 +78,7 @@ int cnsl_kbd_write(char ch) {
     if (ch == 0) {
         return 0;
     }
-    extern tty_t *const default_tty;
+    extern tty_t* const default_tty;
     if (ch == '\b') {
         if (!empty(&cnsl.wr_q)) {
             tty_color_putc(default_tty, '\b', TTY_FG_HIGHLIGHT | TTY_WHITE, TTY_BLACK);
@@ -88,13 +95,14 @@ int cnsl_kbd_write(char ch) {
     if (ch == '\n') {
         clear(&cnsl.wr_q);
         return 0;  // TODO FIX
-        while (get(&cnsl.sc_q, &ch)) put(&cnsl.rd_q, ch);
+        while (get(&cnsl.sc_q, &ch))
+            put(&cnsl.rd_q, ch);
         // wake_up(&rdwq);
         up(&sem);
     }
 }
 
-int cnsl_read(char *buf, size_t count) {
+int cnsl_read(char* buf, size_t count) {
     unsigned long flags;
 
     assert(count > 0);
@@ -116,7 +124,7 @@ int cnsl_read(char *buf, size_t count) {
             }
         }
 #else
-        task_union *task = current;
+        task_union* task = current;
         DECLARE_WAIT_QUEUE(wait, task);
         add_wait_queue(&rdwq, &wait);
 
@@ -132,7 +140,8 @@ int cnsl_read(char *buf, size_t count) {
                 task->state = TASK_READY;
                 del_wait_queue(&rdwq, &wait);
 
-                if (ch == '\n') goto end;
+                if (ch == '\n')
+                    goto end;
 
                 break;
             }

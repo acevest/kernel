@@ -17,7 +17,9 @@
 
 uint32_t days_in_month[] = {0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 
-int is_leap_year(uint32_t year) { return (year % 4 == 0 && (year % 100 != 0 || year % 400 == 0)); }
+int is_leap_year(uint32_t year) {
+    return (year % 4 == 0 && (year % 100 != 0 || year % 400 == 0));
+}
 
 void timestamp_to_date(uint32_t timestamp) {
     // 将时间戳转换为东8区时间

@@ -16,9 +16,9 @@
 
 #pragma once
 
-int printk(const char *fmtstr, ...);
-int printd(const char *fmtstr, ...);
-int printlo(unsigned int line, unsigned int offset, const char *fmtstr, ...);
+int printk(const char* fmtstr, ...);
+int printd(const char* fmtstr, ...);
+int printlo(unsigned int line, unsigned int offset, const char* fmtstr, ...);
 
 #define printl(line, fmt, args...) printlo(1, line, fmt, ##args)
 #define printll(line, fmt, args...) printlo(0, line, fmt, ##args)
@@ -54,4 +54,4 @@ enum {
     MPO_IDE = 1,
 };
 
-int sprintf(char *str, const char *fmtstr, ...);
+int sprintf(char* str, const char* fmtstr, ...);

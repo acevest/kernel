@@ -44,28 +44,28 @@
 #define NR_FILES (1)
 #define NR_OPENS (1)
 
-unsigned int namei(const char *path);
+unsigned int namei(const char* path);
 
 #define MAX_SUPT_FILE_SIZE (EXT2_IND_BLOCK * EXT2_BLOCK_SIZE)
 
 typedef struct chrdev {
-    int (*read)(char *buf, size_t count);
+    int (*read)(char* buf, size_t count);
 } chrdev_t;
 
 enum { CHRDEV_CNSL, CHRDEV_SIZE };
 
-extern chrdev_t *chrdev[];
+extern chrdev_t* chrdev[];
 
-typedef int (*fill_super_cb_t)(superblock_t *sb, void *data);
-int read_super_for_nodev(fs_type_t *type, int flags, void *data, fill_super_cb_t fill_super, vfsmount_t *mnt);
+typedef int (*fill_super_cb_t)(superblock_t* sb, void* data);
+int read_super_for_nodev(fs_type_t* type, int flags, void* data, fill_super_cb_t fill_super, vfsmount_t* mnt);
 
-int sget(fs_type_t *type,                      //
-         int (*test)(superblock_t *, void *),  //
-         int (*set)(superblock_t *, void *),   //
-         void *data,                           //
-         superblock_t **s                      // OUT
+int sget(fs_type_t* type,                    //
+         int (*test)(superblock_t*, void*),  //
+         int (*set)(superblock_t*, void*),   //
+         void* data,                         //
+         superblock_t** s                    // OUT
 );
 
-file_t *get_file(int fd);
+file_t* get_file(int fd);
 
 #endif  //_FS_H

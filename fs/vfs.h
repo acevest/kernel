@@ -16,7 +16,7 @@
 #include <types.h>
 
 typedef struct qstr {
-    const char *name;
+    const char* name;
     unsigned int len;
     uint64_t hash;
 } qstr_t;
@@ -34,8 +34,8 @@ typedef struct address_space_operations address_space_operations_t;
 typedef struct address_space address_space_t;
 
 struct path {
-    dentry_t *dentry;
-    vfsmount_t *mnt;
+    dentry_t* dentry;
+    vfsmount_t* mnt;
 };
 
 #define PATH_LOOKUP_PARENT /*    */ 0x00000001
@@ -60,16 +60,16 @@ typedef struct namei {
 typedef struct file file_t;
 
 typedef struct file_operations {
-    int (*open)(inode_t *, file_t *);
-    int (*release)(inode_t *, file_t *);
-    ssize_t (*read)(file_t *, char *, size_t, loff_t *);
-    ssize_t (*write)(file_t *, const char *, size_t, loff_t *);
+    int (*open)(inode_t*, file_t*);
+    int (*release)(inode_t*, file_t*);
+    ssize_t (*read)(file_t*, char*, size_t, loff_t*);
+    ssize_t (*write)(file_t*, const char*, size_t, loff_t*);
 } file_operations_t;
 
 struct file {
     // 多个打开的文件可能是同一个文件
-    dentry_t *f_dentry;
-    const file_operations_t *f_ops;
+    dentry_t* f_dentry;
+    const file_operations_t* f_ops;
 
     loff_t f_pos;
     uint32_t f_flags;
@@ -80,14 +80,14 @@ struct file {
 // super block
 typedef struct superblock {
     // 该超级起的根目录的 dentry
-    dentry_t *sb_root;
+    dentry_t* sb_root;
 
     int sb_flags;
 
     //
-    void *sb_private;
+    void* sb_private;
     //
-    sb_operations_t *sb_ops;
+    sb_operations_t* sb_ops;
 
     list_head_t sb_list;
     list_head_t sb_instance;
@@ -96,17 +96,17 @@ typedef struct superblock {
 } superblock_t;
 
 struct address_space_operations {
-    int (*write_page)(page_t *);
-    int (*read_page)(file_t *file, page_t *);
-    int (*write_begin)(file_t *file, page_t *, loff_t pos, int len);
-    int (*write_end)(file_t *file, page_t *, loff_t pos, int len);
+    int (*write_page)(page_t*);
+    int (*read_page)(file_t* file, page_t*);
+    int (*write_begin)(file_t* file, page_t*, loff_t pos, int len);
+    int (*write_end)(file_t* file, page_t*, loff_t pos, int len);
 };
 
 struct address_space {
     list_head_t pages;
     uint32_t total_pages;
-    inode_t *a_inode;
-    const address_space_operations_t *a_ops;
+    inode_t* a_inode;
+    const address_space_operations_t* a_ops;
 };
 
 // dentry和inode为什么不合二为一？
@@ -118,17 +118,17 @@ struct address_space {
 // 而inode结构代表的是物理意义上的文件
 // 它们之间的关系是多对一的关系
 struct inode {
-    superblock_t *i_sb;
+    superblock_t* i_sb;
 
-    void *i_private;
+    void* i_private;
 
     semaphore_t i_sem;
 
     // fops - file ops 的副本
-    const file_operations_t *i_fops;
+    const file_operations_t* i_fops;
 
     // ops - inode ops
-    const inode_operations_t *i_ops;
+    const inode_operations_t* i_ops;
 
     // 缓存的pages
     list_head_t i_pages;
@@ -140,7 +140,7 @@ struct inode {
 
     umode_t i_mode;  // FILE DIR CHR BLK FIFO SOCK
 
-    address_space_t *i_mapping;
+    address_space_t* i_mapping;
     address_space_t i_as;
 };
 
@@ -159,7 +159,7 @@ struct dentry {
     atomic_t d_count;
 
     //
-    dentry_t *d_parent;
+    dentry_t* d_parent;
 
     // 同一目录里所有结点通过d_child链接在一起
     // 并连到它们父目录的d_subdirs队列中
@@ -169,11 +169,11 @@ struct dentry {
     list_head_t d_hash;
 
     //
-    superblock_t *d_sb;
+    superblock_t* d_sb;
 
     // 每一个dentry指向一个inode
     // 但多个dentry可以指向同一个inode(不实现)
-    inode_t *d_inode;
+    inode_t* d_inode;
 
     // 需要一个标记自己已经成为挂载点的标志？
     // uint32_t d_flags;
@@ -182,15 +182,15 @@ struct dentry {
     list_head_t d_vfsmnt;  // 所有挂载到这个目录的挂载点
 
     //
-    dentry_operations_t *d_ops;
+    dentry_operations_t* d_ops;
 
     //
-    void *d_private;
+    void* d_private;
 };
 
 struct sb_operations {
     // alloc inode
-    inode_t *(*alloc_inode)(superblock_t *sb);
+    inode_t* (*alloc_inode)(superblock_t* sb);
     // read_inode
 };
 
@@ -205,13 +205,13 @@ struct sb_operations {
 // };
 struct inode_operations {
     // 用于在inode下找一个dentry->d_small_name的目录项
-    dentry_t *(*lookup)(inode_t *, dentry_t *);
+    dentry_t* (*lookup)(inode_t*, dentry_t*);
 
     // 在inode下创建一个dentry->d_small_name的文件
-    int (*create)(inode_t *, dentry_t *, umode_t, namei_t *);
+    int (*create)(inode_t*, dentry_t*, umode_t, namei_t*);
 
     // 创建文件夹
-    int (*mkdir)(inode_t *, dentry_t *, umode_t);
+    int (*mkdir)(inode_t*, dentry_t*, umode_t);
 
     // link
     // unlink
@@ -244,15 +244,15 @@ struct dentry_operations {
 // 将vfsmount与被安装设备的根目录dentry关联
 #define MAX_VFSMNT_NAME_LEN 32
 struct vfsmount {
-    dentry_t *mnt_point;   // 挂载点 dentry
-    dentry_t *mnt_root;    // 设备根目录 dentry
-    superblock_t *mnt_sb;  // 被安装的设备的superblock
-    struct vfsmount *mnt_parent;  // 如果多个设备挂载到同一个目录，则每个vfsmount的parent都指向同一个vfsmount
+    dentry_t* mnt_point;          // 挂载点 dentry
+    dentry_t* mnt_root;           // 设备根目录 dentry
+    superblock_t* mnt_sb;         // 被安装的设备的superblock
+    struct vfsmount* mnt_parent;  // 如果多个设备挂载到同一个目录，则每个vfsmount的parent都指向同一个vfsmount
     // sb->sb_ops->read_inode得到被安装设备根目录的inode
 
     list_head_t mnt_list;  // vfsmount 链表
 
-    vfsmount_t *hash_next;
+    vfsmount_t* hash_next;
 
     char mnt_devname[MAX_VFSMNT_NAME_LEN];
 
@@ -266,65 +266,65 @@ struct vfsmount {
 
 typedef struct fs_type fs_type_t;
 struct fs_type {
-    const char *name;
+    const char* name;
     // superblock_t *(*read_super)(superblock_t *, void *);
-    int (*read_super)(fs_type_t *type, int flags, const char *name, void *data, vfsmount_t *mnt);
+    int (*read_super)(fs_type_t* type, int flags, const char* name, void* data, vfsmount_t* mnt);
     int flags;  // FS_REQUIRES_DEV or NODEV
-    struct fs_type *next;
+    struct fs_type* next;
     // 同属于这个文件系统的所有超级块链表
     // 因为同名文件系统可能有多个实例，所有的该文件系统的实例的superblock,都通过sbs这个链到一起
     list_head_t sbs;
 };
 
-extern superblock_t *root_sb;
+extern superblock_t* root_sb;
 
-int vfs_register_filesystem(fs_type_t *fs);
-fs_type_t *vfs_find_filesystem(const char *name);
+int vfs_register_filesystem(fs_type_t* fs);
+fs_type_t* vfs_find_filesystem(const char* name);
 /////
 
-int vfs_create(inode_t *dir, dentry_t *dentry, int mode, namei_t *ni);
-int vfs_mkdir(inode_t *dir, dentry_t *dentry, int mode);
+int vfs_create(inode_t* dir, dentry_t* dentry, int mode, namei_t* ni);
+int vfs_mkdir(inode_t* dir, dentry_t* dentry, int mode);
 ////
 
-inode_t *alloc_inode(superblock_t *sb);
-void init_special_inode(inode_t *inode, umode_t mode, dev_t rdev);
+inode_t* alloc_inode(superblock_t* sb);
+void init_special_inode(inode_t* inode, umode_t mode, dev_t rdev);
 ////
 
-int dentry_cached_lookup(dentry_t *parent,  //
-                         qstr_t *s,         //
-                         dentry_t **dentry  // OUT
+int dentry_cached_lookup(dentry_t* parent,  //
+                         qstr_t* s,         //
+                         dentry_t** dentry  // OUT
 );
 
-int dentry_real_lookup(dentry_t *parent,  //
-                       qstr_t *s,         //
-                       dentry_t **dentry  // OUT
+int dentry_real_lookup(dentry_t* parent,  //
+                       qstr_t* s,         //
+                       dentry_t** dentry  // OUT
 );
 
-dentry_t *dentry_alloc_root(inode_t *root_inode);
-dentry_t *dentry_alloc(dentry_t *parent, const qstr_t *s);
-void dentry_add(dentry_t *dentry, inode_t *inode);
-void dentry_attach_inode(dentry_t *dentry, inode_t *inode);
+dentry_t* dentry_alloc_root(inode_t* root_inode);
+dentry_t* dentry_alloc(dentry_t* parent, const qstr_t* s);
+void dentry_add(dentry_t* dentry, inode_t* inode);
+void dentry_attach_inode(dentry_t* dentry, inode_t* inode);
 
-vfsmount_t *vfsmnt_get(vfsmount_t *m);
-void vfsmnt_put(vfsmount_t *m);
+vfsmount_t* vfsmnt_get(vfsmount_t* m);
+void vfsmnt_put(vfsmount_t* m);
 
-dentry_t *dentry_get(dentry_t *dentry);
-void dentry_get_locked(dentry_t *dentry);
+dentry_t* dentry_get(dentry_t* dentry);
+void dentry_get_locked(dentry_t* dentry);
 
-void dentry_put(dentry_t *dentry);
+void dentry_put(dentry_t* dentry);
 
 //
-bool path_init(const char *path, unsigned int flags, namei_t *ni);
-int path_walk(const char *path, namei_t *ni);
-int path_lookup_create(namei_t *ni,       //
-                       dentry_t **dentry  // OUT
+bool path_init(const char* path, unsigned int flags, namei_t* ni);
+int path_walk(const char* path, namei_t* ni);
+int path_lookup_create(namei_t* ni,       //
+                       dentry_t** dentry  // OUT
 );
 
-int path_open_namei(const char *path, int flags, int mode, namei_t *ni);
+int path_open_namei(const char* path, int flags, int mode, namei_t* ni);
 
 //
-ssize_t vfs_generic_file_read(file_t *file, char *buf, size_t size, loff_t *p_pos);
-ssize_t vfs_generic_file_write(file_t *file, const char *buf, size_t size, loff_t *p_pos);
+ssize_t vfs_generic_file_read(file_t* file, char* buf, size_t size, loff_t* p_pos);
+ssize_t vfs_generic_file_write(file_t* file, const char* buf, size_t size, loff_t* p_pos);
 
 // file
-file_t *get_empty_filp();
+file_t* get_empty_filp();

@@ -55,7 +55,7 @@
     })
 
 #define BUILDIO(bwl, type)                                                     \
-    static inline void ins##bwl(int port, void *buf, unsigned long count) {    \
+    static inline void ins##bwl(int port, void* buf, unsigned long count) {    \
         asm volatile("cld;rep;ins" #bwl : "+c"(count), "+D"(buf) : "d"(port)); \
     }
 

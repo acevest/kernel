@@ -12,9 +12,11 @@
 #include <syscall.h>
 #include <system.h>
 
-int isdigit(char c) { return ('0' <= c && c <= '9'); }
+int isdigit(char c) {
+    return ('0' <= c && c <= '9');
+}
 
-int atoi(const char *s) {
+int atoi(const char* s) {
     int i = 0;
     while (isdigit(*s)) {
         i *= 10;
@@ -34,9 +36,9 @@ int atoi(const char *s) {
 
 // int pause(unsigned long tick) { return syscall1(SYSC_PAUSE, tick); }
 
-int vsprintf(char *buf, const char *fmt, char *args);
-int sprintf(char *str, const char *fmtstr, ...) {
-    char *args = (char *)(((char *)&fmtstr) + 4);
+int vsprintf(char* buf, const char* fmt, char* args);
+int sprintf(char* str, const char* fmtstr, ...) {
+    char* args = (char*)(((char*)&fmtstr) + 4);
 
     vsprintf(str, fmtstr, args);
 

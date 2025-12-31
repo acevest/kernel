@@ -171,14 +171,14 @@ typedef struct prdte {
     uint32_t eot : 1;
 } prdte_t;
 typedef struct _ide_pci_controller {
-    pci_device_t *pci;
+    pci_device_t* pci;
 
     unsigned int bus_iobase;
     unsigned int bus_cmd;
     unsigned int bus_status;
     unsigned int bus_prdt;
 
-    prdte_t *prdt;
+    prdte_t* prdt;
 
     //
     uint8_t status;
@@ -219,7 +219,7 @@ typedef struct _ide_drive {
     int lba48;  // 是否支持LBA48
     uint64_t max_lba;
 
-    ide_pci_controller_t *ide_pci_controller;
+    ide_pci_controller_t* ide_pci_controller;
 
     ide_part_t partions[MAX_DISK_PARTIONS];
 } ide_drive_t;
@@ -227,5 +227,5 @@ typedef struct _ide_drive {
 #define MAX_IDE_DRIVE_CNT 4
 extern ide_drive_t ide_drives[MAX_IDE_DRIVE_CNT];
 
-ide_drive_t *ide_get_drive(dev_t dev);
-void ide_stat_print(ide_pci_controller_t *ide_ctrl);
+ide_drive_t* ide_get_drive(dev_t dev);
+void ide_stat_print(ide_pci_controller_t* ide_ctrl);

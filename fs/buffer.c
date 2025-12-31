@@ -18,7 +18,9 @@ list_head_t block_buffer_hash_table[BLOCK_BUFFER_HASH_TABLE_SIZE] = {
     0,
 };
 
-int hashfn(dev_t dev, uint32_t block) { return ((dev) ^ block) % BLOCK_BUFFER_HASH_TABLE_SIZE; }
+int hashfn(dev_t dev, uint32_t block) {
+    return ((dev) ^ block) % BLOCK_BUFFER_HASH_TABLE_SIZE;
+}
 
 typedef struct bbuffer_store {
     int blocksize;
@@ -30,12 +32,12 @@ typedef struct bbuffer_store {
 // 1024, 2048, 4096
 bbuffer_store_t store[3] = {0};
 
-kmem_cache_t *bbufer_kmem_cache = 0;
+kmem_cache_t* bbufer_kmem_cache = 0;
 
-bbuffer_store_t *getstore(uint32_t size) {
+bbuffer_store_t* getstore(uint32_t size) {
     assert(size == 1024 || size == 2048 || size == 4096);
 
-    bbuffer_store_t *s = 0;
+    bbuffer_store_t* s = 0;
 
     if (1024 == size) {
         s = store + 0;
@@ -50,14 +52,14 @@ bbuffer_store_t *getstore(uint32_t size) {
     return s;
 }
 
-bbuffer_t *get_from_hash_table(dev_t dev, uint64_t block, uint32_t size) {
-    list_head_t *p = 0;
-    bbuffer_t *b = 0;
+bbuffer_t* get_from_hash_table(dev_t dev, uint64_t block, uint32_t size) {
+    list_head_t* p = 0;
+    bbuffer_t* b = 0;
 
     uint32_t hash = hashfn(dev, block);
     assert(hash < BLOCK_BUFFER_HASH_TABLE_SIZE);
     list_for_each(p, block_buffer_hash_table + hash) {
-        bbuffer_t *t = list_entry(p, bbuffer_t, node);
+        bbuffer_t* t = list_entry(p, bbuffer_t, node);
         if (t->dev != dev) {
             continue;
         }
@@ -87,7 +89,7 @@ bbuffer_t *get_from_hash_table(dev_t dev, uint64_t block, uint32_t size) {
     return NULL;
 }
 
-bbuffer_t *getblk(dev_t dev, uint64_t block, uint32_t size) {
+bbuffer_t* getblk(dev_t dev, uint64_t block, uint32_t size) {
     assert(size == 1024 || size == 2048 || size == 4096);
 
     // 暂时先只支持hard disk
@@ -99,16 +101,16 @@ again:
     irq_save(iflags);
 
     // 先尝试从hash里分配
-    bbuffer_t *b = get_from_hash_table(dev, block, size);
+    bbuffer_t* b = get_from_hash_table(dev, block, size);
     if (NULL != b) {
         return b;
     }
 
     // 如果没找到，则从store的free_list里尝试找到第一个ref_count == 0 且未上锁的
-    bbuffer_store_t *s = getstore(size);
-    list_head_t *p = 0;
+    bbuffer_store_t* s = getstore(size);
+    list_head_t* p = 0;
     list_for_each(p, &s->free_list) {
-        bbuffer_t *t = list_entry(p, bbuffer_t, node);
+        bbuffer_t* t = list_entry(p, bbuffer_t, node);
         assert(NULL != t);
         assert(t->block_size == size);
 
@@ -136,7 +138,6 @@ again:
     // FIXME
     irq_restore(iflags);
 
-
     // 虽然此时该bbuffer_t上的ref_count为0但其可能还有I/O操作没有完成
     // 因为可能有的进程调用了write、read后再直接调用brelse
     // 所以需要在此等待其结束
@@ -149,17 +150,16 @@ again:
     atomic_set(&(b->ref_count), 1);
     b->uptodate = 0;
 
-
     return b;
 }
 
-void brelse(bbuffer_t *b) {
+void brelse(bbuffer_t* b) {
     assert(b != NULL);
     assert(atomic_read(&(b->ref_count)) > 0);
 
     wait_completion(&b->io_done);
 
-    bbuffer_store_t *s = getstore(b->block_size);
+    bbuffer_store_t* s = getstore(b->block_size);
     assert(s != NULL);
     assert(s - store < 3);
 
@@ -168,8 +168,8 @@ void brelse(bbuffer_t *b) {
     // wake_up(&s->waitq);
 }
 
-bbuffer_t *bread(dev_t dev, uint64_t block, uint32_t size) {
-    bbuffer_t *b = getblk(dev, block, size);
+bbuffer_t* bread(dev_t dev, uint64_t block, uint32_t size) {
+    bbuffer_t* b = getblk(dev, block, size);
 
     assert(b != NULL);
 
@@ -214,15 +214,15 @@ void init_buffer() {
         init_wait_queue_head(&store[i].waitq);
 
         int page_left_space = 0;
-        void *data = NULL;
-        page_t *page = NULL;
+        void* data = NULL;
+        page_t* page = NULL;
         for (int j = 0; j < MAX_BBUFFER_CNT; j++) {
             if (page_left_space < blocksize) {
-                data = (void *)page2va(alloc_one_page(0));
+                data = (void*)page2va(alloc_one_page(0));
                 page = va2page(data);
             }
 
-            bbuffer_t *b = kmem_cache_alloc(bbufer_kmem_cache, 0);
+            bbuffer_t* b = kmem_cache_alloc(bbufer_kmem_cache, 0);
             assert(NULL != b);
 
             b->block = 0;

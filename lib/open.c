@@ -10,7 +10,7 @@
  *--------------------------------------------------------------------------
  */
 #include <syscall.h>
-int open(const char *path, int flags, ...) {
+int open(const char* path, int flags, ...) {
     // 不支持第三个参数
     return syscall3(SYSC_OPEN, path, flags, 0);
 }

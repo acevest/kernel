@@ -22,8 +22,8 @@
 #include <task.h>
 
 irq_desc_t irq_desc[NR_IRQS];
-irq_bh_action_t *irq_bh_actions = NULL;
-irq_bh_action_t *irq_bh_actions_end = NULL;
+irq_bh_action_t* irq_bh_actions = NULL;
+irq_bh_action_t* irq_bh_actions_end = NULL;
 
 void irq_bh_handler();
 void schedule();
@@ -32,15 +32,15 @@ volatile int reenter_count = 0;
 
 volatile uint32_t clk_irq_cnt = 0;
 
-__attribute__((regparm(1))) void irq_handler(pt_regs_t *regs) {
+__attribute__((regparm(1))) void irq_handler(pt_regs_t* regs) {
     assert(current->magic == TASK_MAGIC);
     unsigned int irq = regs->irq;
     if (irq >= NR_IRQS) {
         panic("invalid irq %d\n", irq);
     }
 
-    irq_desc_t *p = irq_desc + irq;
-    irq_action_t *action = p->action;
+    irq_desc_t* p = irq_desc + irq;
+    irq_action_t* action = p->action;
 
     // 在qemu启动后如果gdb有加断点，就很会一直触发中断重入
     reenter++;
@@ -133,7 +133,7 @@ void irq_bh_handler() {
 #endif
     {
         while (true) {
-            irq_bh_action_t *action = NULL;
+            irq_bh_action_t* action = NULL;
 
 #if 1
             disable_irq();
@@ -166,7 +166,7 @@ void irq_bh_handler() {
 
             while (action != NULL) {
                 action->handler(action->arg);
-                irq_bh_action_t *p = action;
+                irq_bh_action_t* p = action;
                 action = action->next;
                 kfree(p);
             }
@@ -201,9 +201,8 @@ void irq_bh_handler() {
     // 而是会延迟到这次中断返回后下一次的中断的下半部分处理逻辑
 }
 
-int request_irq(unsigned int irq, void (*handler)(unsigned int, pt_regs_t *, void *), const char *devname,
-                void *dev_id) {
-    irq_action_t *p;
+int request_irq(unsigned int irq, void (*handler)(unsigned int, pt_regs_t*, void*), const char* devname, void* dev_id) {
+    irq_action_t* p;
 
     if (irq >= NR_IRQS) {
         return -EINVAL;
@@ -221,7 +220,7 @@ int request_irq(unsigned int irq, void (*handler)(unsigned int, pt_regs_t *, voi
         p = p->next;
     }
 
-    p = (irq_action_t *)kmalloc(sizeof(irq_action_t), 0);
+    p = (irq_action_t*)kmalloc(sizeof(irq_action_t), 0);
     if (p == NULL) {
         return -ENOMEM;
     }
@@ -239,15 +238,15 @@ int request_irq(unsigned int irq, void (*handler)(unsigned int, pt_regs_t *, voi
     return 0;
 }
 
-void add_irq_bh_handler(void (*handler)(), void *arg) {
+void add_irq_bh_handler(void (*handler)(), void* arg) {
     // 只能在中断处理函数中调用
     assert(irq_disabled());
     assert(reenter >= 0);
 
     // 本函数不用考虑临界问题
 
-    irq_bh_action_t *p;
-    p = (irq_bh_action_t *)kmalloc(sizeof(irq_bh_action_t), 0);
+    irq_bh_action_t* p;
+    p = (irq_bh_action_t*)kmalloc(sizeof(irq_bh_action_t), 0);
     assert(p != NULL);
 
     p->handler = handler;
@@ -265,9 +264,13 @@ void add_irq_bh_handler(void (*handler)(), void *arg) {
     p->next = NULL;
 }
 
-int open_irq(unsigned int irq) { return irq_desc[irq].chip->enable(irq); }
+int open_irq(unsigned int irq) {
+    return irq_desc[irq].chip->enable(irq);
+}
 
-int close_irq(unsigned int irq) { return irq_desc[irq].chip->disable(irq); }
+int close_irq(unsigned int irq) {
+    return irq_desc[irq].chip->disable(irq);
+}
 
 bool irq_enabled() {
     uint32_t flags;
@@ -280,10 +283,16 @@ bool irq_enabled() {
     return false;
 }
 
-bool irq_disabled() { return !irq_enabled(); }
+bool irq_disabled() {
+    return !irq_enabled();
+}
 
-int enable_no_irq_chip(unsigned int irq) { return 0; }
-int disable_no_irq_chip(unsigned int irq) { return 0; }
+int enable_no_irq_chip(unsigned int irq) {
+    return 0;
+}
+int disable_no_irq_chip(unsigned int irq) {
+    return 0;
+}
 
 irq_chip_t no_irq_chip = {.name = "none", .enable = enable_no_irq_chip, .disable = disable_no_irq_chip};
 irq_desc_t no_irq_desc = {.chip = &no_irq_chip, .action = NULL, .status = 0, .depth = 0};
@@ -293,5 +302,9 @@ irq_desc_t no_irq_desc = {.chip = &no_irq_chip, .action = NULL, .status = 0, .de
 // __critical_zone_eflags的值会被统一设置为最里层时的eflags
 // 意味着如果IF置位了的话，必定会丢失这个信息
 static volatile uint32_t __critical_zone_eflags;
-void enter_critical_zone() { irq_save(__critical_zone_eflags); }
-void exit_critical_zone() { irq_restore(__critical_zone_eflags); }
+void enter_critical_zone() {
+    irq_save(__critical_zone_eflags);
+}
+void exit_critical_zone() {
+    irq_restore(__critical_zone_eflags);
+}

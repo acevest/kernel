@@ -13,6 +13,6 @@
 #ifndef _STDLIB_H
 #define _STDLIB_H
 
-extern int atoi(const char *s);
+extern int atoi(const char* s);
 
 #endif  //_STDLIB_H

@@ -48,13 +48,21 @@ static int __volatile__ __syscall4(int nr, unsigned long a, unsigned long b, uns
     return __sysc_ret__;
 }
 
-int _syscall0(int nr) { return __syscall0(nr); }
+int _syscall0(int nr) {
+    return __syscall0(nr);
+}
 
-int _syscall1(int nr, unsigned long a) { return __syscall1(nr, a); }
+int _syscall1(int nr, unsigned long a) {
+    return __syscall1(nr, a);
+}
 
-int _syscall2(int nr, unsigned long a, unsigned long b) { return __syscall2(nr, a, b); }
+int _syscall2(int nr, unsigned long a, unsigned long b) {
+    return __syscall2(nr, a, b);
+}
 
-int _syscall3(int nr, unsigned long a, unsigned long b, unsigned long c) { return __syscall3(nr, a, b, c); }
+int _syscall3(int nr, unsigned long a, unsigned long b, unsigned long c) {
+    return __syscall3(nr, a, b, c);
+}
 
 int _syscall4(int nr, unsigned long a, unsigned long b, unsigned long c, unsigned long d) {
     return __syscall4(nr, a, b, c, d);

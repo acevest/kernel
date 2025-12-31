@@ -1,10 +1,51 @@
----
+# 指定格式化语言为C
+Language: C
+
+# 基于Google的代码风格规范
 BasedOnStyle: Google
+
+# 每行最大字符数为120，超过会自动换行
 ColumnLimit: 120
+
+# 缩进宽度为4个空格
 IndentWidth: 4
+
+# Tab键宽度为4个空格
 TabWidth: 4
 
+# 不使用Tab键，全部用空格
+UseTab: Never
+
+# 左大括号不换行，保持与上一行在同一行
+BreakBeforeBraces: Attach
+
+# 预处理指令整体与代码块一起缩进
+# IndentPPDirectives: BeforeHash
+IndentPPDirectives: None
+
+# 不自动排序头文件，保持原有顺序
+SortIncludes: false
+
+# case标签不额外缩进（相对于switch语句）
 IndentCaseLabels: false
 
-# 行注释 "//" 前增加两个空格
+# 行尾注释前添加2个空格
 SpacesBeforeTrailingComments: 2
+
+# 不自动断行
+AllowAllParametersOfDeclarationOnNextLine: false
+
+# 禁止短代码块放在一行
+AllowShortBlocksOnASingleLine: false
+
+# 禁止短case标签放在一行
+AllowShortCaseLabelsOnASingleLine: false
+
+# 禁止短函数放在一行
+AllowShortFunctionsOnASingleLine: false
+
+# 禁止短if语句放在一行
+AllowShortIfStatementsOnASingleLine: false
+
+# 禁止短循环放在一行
+AllowShortLoopsOnASingleLine: false

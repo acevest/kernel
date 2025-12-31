@@ -7,7 +7,7 @@
 # Description: none
 # ------------------------------------------------------------------------
 import re
-import requests 
+import requests
 from bs4 import BeautifulSoup
 
 members = {}
@@ -35,7 +35,7 @@ for page in range(0, 10) :
         ids = int(ids)
 
         members[ids] = name
-        
+
 
 for ids in sorted(members.keys()) :
     print("""{{0x{0:X}, "{1}"}},""".format(ids, members[ids]))

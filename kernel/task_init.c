@@ -12,7 +12,7 @@
 #include <system.h>
 #include <types.h>
 int sysc_wait(int ticks);
-void kernel_task(char *name, void *entry, void *arg);
+void kernel_task(char* name, void* entry, void* arg);
 
 // 测试用的代码
 // 这里存的是下标对应的每个扇区的最后2个字节
@@ -39,7 +39,7 @@ uint64_t get_next_deubug_sect_nr() {
     return debug_sect_nr;
 }
 
-void verify_hd_data(uint64_t sect_nr, uint16_t *buf, const char *name) {
+void verify_hd_data(uint64_t sect_nr, uint16_t* buf, const char* name) {
     uint16_t vfp = hd_sect_data_fingerprint[sect_nr];
 
     uint16_t fp = buf[255];
@@ -139,13 +139,13 @@ void init_task_entry() {
 #endif
 
 #if 1
-    extern __attribute__((regparm(0))) long sysc_mkdir(const char *path, int mode);
+    extern __attribute__((regparm(0))) long sysc_mkdir(const char* path, int mode);
     sysc_mkdir("/root", 0777);
     sysc_mkdir("/root/sbin/", 0777);
 
     {
         namei_t ni;
-        const char *path = "/root/sbin/init.elf";
+        const char* path = "/root/sbin/init.elf";
         // path_init(path, PATH_LOOKUP_PARENT, &ni);
         // path_walk(path, &ni);
 
@@ -175,7 +175,7 @@ void init_task_entry() {
     init_rootfs();
 
 #if 1
-    kernel_task("ide/0", disk_task_entry, (void *)0);
+    kernel_task("ide/0", disk_task_entry, (void*)0);
 
     void ide_read_partions();
     ide_read_partions();
@@ -193,7 +193,7 @@ void init_task_entry() {
 #endif
 
 #if 1
-    kernel_task("ide/1", disk_task_entry, (void *)1);
+    kernel_task("ide/1", disk_task_entry, (void*)1);
     kernel_task("user", user_task_entry, NULL);
     kernel_task("tskA", taskA_entry, NULL);
     kernel_task("tskB", taskB_entry, NULL);
@@ -256,13 +256,13 @@ void init_task_entry() {
 
 void init_rootfs() {
 #if 1
-    void *mod_start = pa2va(boot_params.boot_module_begin);
+    void* mod_start = pa2va(boot_params.boot_module_begin);
 
-    const uint32_t mod_magic = *(uint32_t *)(mod_start + 0);
-    const uint32_t mod_head_size = *(uint32_t *)(mod_start + 4);
-    const uint32_t mod_timestamp = *(uint32_t *)(mod_start + 8);
-    const uint32_t mod_file_entry_cnt = *(uint32_t *)(mod_start + 12);
-    const char *mod_name = (const char *)mod_start + 16;
+    const uint32_t mod_magic = *(uint32_t*)(mod_start + 0);
+    const uint32_t mod_head_size = *(uint32_t*)(mod_start + 4);
+    const uint32_t mod_timestamp = *(uint32_t*)(mod_start + 8);
+    const uint32_t mod_file_entry_cnt = *(uint32_t*)(mod_start + 12);
+    const char* mod_name = (const char*)mod_start + 16;
 
     printk("%x %x\n", boot_params.boot_module_begin, boot_params.boot_module_end);
     printk("module magic %08x header size %u timestamp %u file entry cnt %u name %s \n", mod_magic, mod_head_size,
@@ -270,22 +270,22 @@ void init_rootfs() {
 
     int file_entry_offset = mod_head_size;
     for (int i = 0; i < mod_file_entry_cnt; i++) {
-        void *fe = mod_start + file_entry_offset;
+        void* fe = mod_start + file_entry_offset;
 
-        const uint32_t fe_size = *(uint32_t *)(fe + 0);
-        const uint32_t fe_type = *(uint32_t *)(fe + 4);
-        const uint32_t fe_filesz = *(uint32_t *)(fe + 8);
-        const uint32_t fe_offset = *(uint32_t *)(fe + 12);
-        const char *fe_name = (const char *)(fe + 16);
+        const uint32_t fe_size = *(uint32_t*)(fe + 0);
+        const uint32_t fe_type = *(uint32_t*)(fe + 4);
+        const uint32_t fe_filesz = *(uint32_t*)(fe + 8);
+        const uint32_t fe_offset = *(uint32_t*)(fe + 12);
+        const char* fe_name = (const char*)(fe + 16);
 
         file_entry_offset += fe_size;
 
-        void *fc = mod_start + fe_offset;
+        void* fc = mod_start + fe_offset;
 
         printk(">[fe:%u:%u] file size %u type %u name %s\n", i, fe_size, fe_filesz, fe_type, fe_name);
 
         for (int k = 0; k < 16; k++) {
-            uint8_t c = *(uint8_t *)(fc + k);
+            uint8_t c = *(uint8_t*)(fc + k);
             printk("%02X ", c);
         }
         printk("\n");
@@ -294,19 +294,19 @@ void init_rootfs() {
             // TODO支持带多层目录的fe_name
 
             namei_t ni;
-            const char *path = fe_name;
+            const char* path = fe_name;
             const int flags = O_CREAT | O_APPEND;
 #define bufsz 5223
             static char buf[bufsz] = {'b', 'u', 'f'};
 #if 1
-            int sysc_open(const char *path, int flags, int mode);
+            int sysc_open(const char* path, int flags, int mode);
             int fd = sysc_open(path, flags, 0700);
             assert(fd >= 0);
 
-            ssize_t sysc_write(int fd, const char *buf, size_t size);
+            ssize_t sysc_write(int fd, const char* buf, size_t size);
             sysc_write(fd, fc, fe_filesz);
 
-            ssize_t sysc_read(int fd, void *buf, size_t count);
+            ssize_t sysc_read(int fd, void* buf, size_t count);
             sysc_read(fd, buf, bufsz);
 #else
             path_open_namei(path, flags, S_IFREG, &ni);

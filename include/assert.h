@@ -16,7 +16,7 @@
 #include <global.h>
 
 #ifndef ASM
-void assert_fail(char *exp, char *file, unsigned int line, const char *func);
+void assert_fail(char* exp, char* file, unsigned int line, const char* func);
 #define assert(exp) ((exp) ? (void)(0) : assert_fail(__STRING(exp), __FILE__, __LINE__, __PRETTY_FUNCTION__))
 #endif
 

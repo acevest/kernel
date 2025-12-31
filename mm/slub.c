@@ -13,13 +13,14 @@
 #include <string.h>
 #include <system.h>
 
-page_t *get_partial(kmem_cache_t *cache, gfp_t gfpflags) {
-    if (list_empty(&cache->partial)) return 0;
+page_t* get_partial(kmem_cache_t* cache, gfp_t gfpflags) {
+    if (list_empty(&cache->partial))
+        return 0;
 
-    list_head_t *p = cache->partial.next;
+    list_head_t* p = cache->partial.next;
     list_del(p);
 
-    page_t *page = 0;
+    page_t* page = 0;
 
     page = list_entry(p, page_t, lru);
 
@@ -27,8 +28,8 @@ page_t *get_partial(kmem_cache_t *cache, gfp_t gfpflags) {
 }
 
 // 从伙伴系统批发页，并将之初始化成一个链表
-page_t *new_slub(kmem_cache_t *cache, gfp_t gfpflags) {
-    page_t *page = alloc_pages(gfpflags, cache->order);
+page_t* new_slub(kmem_cache_t* cache, gfp_t gfpflags) {
+    page_t* page = alloc_pages(gfpflags, cache->order);
     if (0 == page) {
         return 0;
     }
@@ -42,23 +43,23 @@ page_t *new_slub(kmem_cache_t *cache, gfp_t gfpflags) {
     // 第一遍会将 bgn[0]的地址赋值给bgn[0]，也就是 bgn[0] = bgn + 0
     // 第二遍开始就是 bgn[n-1] = bgn + n
     for (addr = bgn; addr < end; addr += cache->size) {
-        *((void **)last) = (void *)addr;
+        *((void**)last) = (void*)addr;
         last = addr;
     }
 
     // 最后一个赋值为0
-    *((void **)last) = 0;
+    *((void**)last) = 0;
 
-    page->freelist = (void **)bgn;
+    page->freelist = (void**)bgn;
     page->inuse = 0;
     page->cache = cache;
 
     return page;
 }
 
-void *__slub_alloc(kmem_cache_t *cache, gfp_t gfpflags) {
-    void **object = 0;
-    page_t *page = 0;
+void* __slub_alloc(kmem_cache_t* cache, gfp_t gfpflags) {
+    void** object = 0;
+    page_t* page = 0;
 
     if (cache->page == 0) {
         page = get_partial(cache, gfpflags);
@@ -86,8 +87,8 @@ void *__slub_alloc(kmem_cache_t *cache, gfp_t gfpflags) {
     return object;
 }
 
-void *slub_alloc(kmem_cache_t *cache, gfp_t gfpflags) {
-    void **object = 0;
+void* slub_alloc(kmem_cache_t* cache, gfp_t gfpflags) {
+    void** object = 0;
 
     if (cache == 0) {
         return 0;
@@ -114,9 +115,9 @@ void *slub_alloc(kmem_cache_t *cache, gfp_t gfpflags) {
     return object;
 }
 
-void __slub_free(kmem_cache_t *cache, page_t *page, void *addr) {
-    void *prior;
-    void **object = addr;
+void __slub_free(kmem_cache_t* cache, page_t* page, void* addr) {
+    void* prior;
+    void** object = addr;
 
     prior = object[0] = page->freelist;
     page->freelist = object;
@@ -131,11 +132,11 @@ void __slub_free(kmem_cache_t *cache, page_t *page, void *addr) {
     }
 }
 
-void slub_free(kmem_cache_t *cache, page_t *page, void *addr) {
+void slub_free(kmem_cache_t* cache, page_t* page, void* addr) {
     unsigned long flags;
     irq_save(flags);
 
-    void **object = addr;
+    void** object = addr;
 
     page->inuse--;
 

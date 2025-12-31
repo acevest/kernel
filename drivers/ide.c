@@ -107,7 +107,7 @@ ide_pci_controller_t ide_pci_controller[NR_IDE_CONTROLLER];
 
 void ata_dma_stop(int channel);
 
-void ide_stat_print(ide_pci_controller_t *ide_ctrl) {
+void ide_stat_print(ide_pci_controller_t* ide_ctrl) {
     int r = atomic_read(&(ide_ctrl->request_cnt));
     int i = atomic_read(&(ide_ctrl->irq_cnt));
     int c = atomic_read(&(ide_ctrl->consumed_cnt));
@@ -115,13 +115,13 @@ void ide_stat_print(ide_pci_controller_t *ide_ctrl) {
     printlxy(MPL_IDE0 + channel, MPO_IDE, "IDE%d req %u irq %u consumed %u", channel, r, i, c);
 }
 
-void ide_irq_bh_handler(void *arg) {
+void ide_irq_bh_handler(void* arg) {
     int channel = (int)arg;
 
     assert(channel <= 1);
     assert(channel >= 0);
 
-    ide_pci_controller_t *ide_ctrl = ide_pci_controller + channel;
+    ide_pci_controller_t* ide_ctrl = ide_pci_controller + channel;
 
     // 读相关status寄存器
     const int drvid = (channel << 1);  // 虚拟一个drvid
@@ -142,13 +142,13 @@ void ide_irq_bh_handler(void *arg) {
     complete(&ide_ctrl->intr_complete);
 }
 
-void ide_irq_handler(unsigned int irq, pt_regs_t *regs, void *devid) {
+void ide_irq_handler(unsigned int irq, pt_regs_t* regs, void* devid) {
     // printk("ide irq %d handler pci status: 0x%02x\n", irq, ata_pci_bus_status());
     int channel = irq == ide_pci_controller[0].irq_line ? 0 : 1;
 
     ata_dma_stop(channel);
 
-    add_irq_bh_handler(ide_irq_bh_handler, (void *)channel);
+    add_irq_bh_handler(ide_irq_bh_handler, (void*)channel);
 }
 
 unsigned int IDE_CHL0_CMD_BASE = 0x1F0;
@@ -159,7 +159,7 @@ unsigned int IDE_CHL1_CTL_BASE = 0x376;
 
 // 《PCI IDE Controller Specification》
 // 《Programming Interface for Bus Master IDE Controller》
-void ide_pci_init(pci_device_t *pci) {
+void ide_pci_init(pci_device_t* pci) {
 #if 0
     uint32_t v;
     uint32_t cmd;
@@ -207,7 +207,7 @@ void ide_pci_init(pci_device_t *pci) {
         ide_pci_controller[i].bus_cmd = iobase + PCI_IDE_CMD;
         ide_pci_controller[i].bus_status = iobase + PCI_IDE_STATUS;
         ide_pci_controller[i].bus_prdt = iobase + PCI_IDE_PRDT;
-        ide_pci_controller[i].prdt = (prdte_t *)page2va(alloc_one_page(0));
+        ide_pci_controller[i].prdt = (prdte_t*)page2va(alloc_one_page(0));
 
         ide_pci_controller[i].status = 0;
         ide_pci_controller[i].pci_status = 0;
@@ -259,9 +259,9 @@ void ide_pci_init(pci_device_t *pci) {
 
 //     kfree(buf);
 // }
-const char *pci_get_info(unsigned int classcode, unsigned int progif);
+const char* pci_get_info(unsigned int classcode, unsigned int progif);
 void init_pci_controller(unsigned int classcode) {
-    pci_device_t *pci = pci_find_device_by_classcode(classcode);
+    pci_device_t* pci = pci_find_device_by_classcode(classcode);
     if (pci == NULL) {
         printk("can not find pci classcode: %08x", classcode);
         panic("can not find ide controller");
@@ -280,7 +280,7 @@ void init_pci_controller(unsigned int classcode) {
     }
 }
 
-extern void *mbr_buf;
+extern void* mbr_buf;
 
 uint8_t ata_pci_bus_status();
 
@@ -295,7 +295,7 @@ void ide_init() {
     ide_ata_init();
 }
 
-ide_drive_t *ide_get_drive(dev_t dev) {
+ide_drive_t* ide_get_drive(dev_t dev) {
     int major = DEV_MAJOR(dev);
     int minor = DEV_MINOR(dev);
 
@@ -305,7 +305,7 @@ ide_drive_t *ide_get_drive(dev_t dev) {
     assert(minor >= 0);
     assert(drvid < MAX_IDE_DRIVE_CNT);
 
-    ide_drive_t *drv = ide_drives + drvid;
+    ide_drive_t* drv = ide_drives + drvid;
 
     return drv;
 }

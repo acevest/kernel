@@ -50,7 +50,6 @@ typedef long int32_t;
 typedef unsigned long long uint64_t;
 typedef long long int64_t;
 
-
 typedef uint32_t uintptr_t;
 typedef uint32_t paddr_t;
 typedef uint32_t vaddr_t;
@@ -63,7 +62,7 @@ typedef uint32_t umode_t;
 typedef unsigned long pid_t;
 typedef unsigned long mode_t;
 
-#define NULL ((void *)0)
+#define NULL ((void*)0)
 
 typedef enum { false, true } bool;
 

@@ -15,13 +15,13 @@
 #include <sched.h>
 #include <types.h>
 
-ssize_t vfs_generic_file_read(file_t *file, char *buf, size_t size, loff_t *p_pos) {
+ssize_t vfs_generic_file_read(file_t* file, char* buf, size_t size, loff_t* p_pos) {
     ssize_t ret = 0;
 
     loff_t pos = *p_pos;
 
-    inode_t *inode = file->f_dentry->d_inode;
-    address_space_t *mapping = inode->i_mapping;
+    inode_t* inode = file->f_dentry->d_inode;
+    address_space_t* mapping = inode->i_mapping;
 
     assert(S_ISREG(inode->i_mode));
 
@@ -30,7 +30,7 @@ ssize_t vfs_generic_file_read(file_t *file, char *buf, size_t size, loff_t *p_po
     size_t left = size;
 
     while (left > 0) {
-        page_t *page = NULL;
+        page_t* page = NULL;
         uint32_t end_index = inode->i_size >> PAGE_SHIFT;
         if (index > end_index) {
             break;
@@ -47,7 +47,7 @@ ssize_t vfs_generic_file_read(file_t *file, char *buf, size_t size, loff_t *p_po
         bytes = bytes - offset;
 
         // 在hash里找page
-        page_t *find_hash_page(address_space_t * mapping, uint32_t index);
+        page_t* find_hash_page(address_space_t * mapping, uint32_t index);
         page = find_hash_page(mapping, index);
         if (NULL == page) {
             goto no_cached_page_in_hash;
@@ -58,7 +58,7 @@ ssize_t vfs_generic_file_read(file_t *file, char *buf, size_t size, loff_t *p_po
 
         // copy data
         bytes = bytes < left ? bytes : left;
-        void *addr = page2va(page);
+        void* addr = page2va(page);
         // printk("memcpy bytes %u index %u\n", bytes, index);
         // printk("read addr %x bytes %u index %u offset %u\n", addr, bytes, index, offset);
         memcpy(buf, addr + offset, bytes);
@@ -102,15 +102,15 @@ ssize_t vfs_generic_file_read(file_t *file, char *buf, size_t size, loff_t *p_po
     return ret;
 }
 
-ssize_t sysc_read(int fd, void *buf, size_t count) {
+ssize_t sysc_read(int fd, void* buf, size_t count) {
     ssize_t ret = 0;
 
-    file_t *file = get_file(fd);
+    file_t* file = get_file(fd);
     if (NULL == file) {
         return EBADF;
     }
 
-    inode_t *inode = file->f_dentry->d_inode;
+    inode_t* inode = file->f_dentry->d_inode;
 
     assert(file->f_ops != 0);
     assert(file->f_ops->read != 0);
@@ -118,7 +118,7 @@ ssize_t sysc_read(int fd, void *buf, size_t count) {
     assert(inode->i_fops->read != 0);
     assert(file->f_ops->read == inode->i_fops->read);
 
-    ssize_t (*read)(file_t *, char *, size_t, loff_t *);
+    ssize_t (*read)(file_t*, char*, size_t, loff_t*);
     read = file->f_ops->read;
 
     loff_t pos = file->f_pos;

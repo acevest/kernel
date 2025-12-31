@@ -44,9 +44,9 @@ void setup_gdt() {
     asm volatile("sgdt gdtr");
 
     // 复制旧的GDT
-    memcpy(gdt, (void *)pa2va(*((uint32_t *)(gdtr + 2))), *((uint16_t *)(gdtr + 0)));
-    *((unsigned short *)gdtr) = NGDT * sizeof(Desc);
-    *((unsigned long *)(gdtr + 2)) = (unsigned long)gdt;
+    memcpy(gdt, (void*)pa2va(*((uint32_t*)(gdtr + 2))), *((uint16_t*)(gdtr + 0)));
+    *((unsigned short*)gdtr) = NGDT * sizeof(Desc);
+    *((unsigned long*)(gdtr + 2)) = (unsigned long)gdt;
 
     asm volatile("lgdt gdtr");
 
@@ -62,8 +62,8 @@ void setup_gdt() {
 // 通过中断门进入中断服务程序CPU会自动将中断关闭，也就是将EFLAGS的IF位清0
 // 通过陷阱门进入服务程序时则维持IF标志位不变
 void setup_idt() {
-    *((unsigned short *)idtr) = NIDT * sizeof(Gate);
-    *((unsigned long *)(idtr + 2)) = (unsigned long)idt;
+    *((unsigned short*)idtr) = NIDT * sizeof(Gate);
+    *((unsigned long*)(idtr + 2)) = (unsigned long)idt;
     asm volatile("lidt idtr");
 }
 
@@ -96,7 +96,9 @@ void setup_gates() {
 
 void ide_irq();
 
-void default_irq_handler(unsigned int irq, pt_regs_t *regs, void *dev_id) { printk("default irq handler %d \n", irq); }
+void default_irq_handler(unsigned int irq, pt_regs_t* regs, void* dev_id) {
+    printk("default irq handler %d \n", irq);
+}
 
 void init_i8259();
 
@@ -126,8 +128,8 @@ void setup_irqs() {
         }
     }
 
-    void kbd_handler(unsigned int irq, pt_regs_t *regs, void *dev_id);
-    void clk_handler(unsigned int irq, pt_regs_t *regs, void *dev_id);
+    void kbd_handler(unsigned int irq, pt_regs_t* regs, void* dev_id);
+    void clk_handler(unsigned int irq, pt_regs_t* regs, void* dev_id);
     void clk_bh_handler();
 
     request_irq(0x00, clk_handler, "Intel 8254", "Clock Chip");
@@ -188,8 +190,8 @@ void set_tss_gate(u32 vec, u32 addr, u32 limit) {
 }
 
 void set_tss() {
-    TSS_t *p = &tss;
-    memset((void *)p, sizeof(TSS_t), 0);
+    TSS_t* p = &tss;
+    memset((void*)p, sizeof(TSS_t), 0);
     p->esp0 = 0;  // delay to init root_task
     p->ss0 = SELECTOR_KRNL_DS;
     p->ss = SELECTOR_KRNL_DS;

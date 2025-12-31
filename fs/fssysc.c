@@ -13,7 +13,7 @@
 
 //////
 
-__attribute__((regparm(0))) long sysc_mkdir(const char *path, int mode) {
+__attribute__((regparm(0))) long sysc_mkdir(const char* path, int mode) {
     int ret = 0;
 
     // TODO 检查参数
@@ -26,7 +26,7 @@ __attribute__((regparm(0))) long sysc_mkdir(const char *path, int mode) {
         }
     }
 
-    dentry_t *dentry = NULL;
+    dentry_t* dentry = NULL;
     ret = path_lookup_create(&ni, &dentry);
     if (0 == ret && dentry != NULL) {
         assert(dentry != NULL);

@@ -116,7 +116,7 @@ unsigned int _parse_kbd(int ScanCode)
 
     if(ScanCode & 0x80)    // Make Or Break Code ?
         goto    BreakCode;
-#if 0    
+#if 0
     // Ctrl    + Alt + Del
     if( IS_L_CTRL_DOWN(key) && IS_L_ALT_DOWN(key))
     {
@@ -152,7 +152,7 @@ unsigned int _parse_kbd(int ScanCode)
         E0Flag?SET_R_ALT_DOWN(key):SET_L_ALT_DOWN(key);
         goto End;
     }
-        
+
     goto    End;
 
 BreakCode:

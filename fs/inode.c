@@ -13,10 +13,10 @@
 #include "printk.h"
 #include "system.h"
 
-static kmem_cache_t *g_inode_kmem_cache = NULL;
+static kmem_cache_t* g_inode_kmem_cache = NULL;
 
-inode_t *alloc_inode(superblock_t *sb) {
-    inode_t *inode = 0;
+inode_t* alloc_inode(superblock_t* sb) {
+    inode_t* inode = 0;
 
     assert(NULL != sb->sb_ops);
     // assert(NULL != sb->sb_ops->alloc_inode);
@@ -46,7 +46,7 @@ inode_t *alloc_inode(superblock_t *sb) {
     return inode;
 }
 
-void init_special_inode(inode_t *inode, umode_t mode, dev_t rdev) {
+void init_special_inode(inode_t* inode, umode_t mode, dev_t rdev) {
     inode->i_mode = mode;
     if (S_ISCHR(mode)) {
         panic("todo");

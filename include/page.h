@@ -105,11 +105,11 @@ typedef unsigned long pte_t;
 #define PAGE_FLAGS(addr) ((addr) - PAGE_ALIGN(addr))
 
 #define va2pa(x) (((unsigned long)(x)) - PAGE_OFFSET)
-#define pa2va(x) ((void *)(((unsigned long)(x)) + PAGE_OFFSET))
+#define pa2va(x) ((void*)(((unsigned long)(x)) + PAGE_OFFSET))
 
 // pfn: page frame number
 #define pa2pfn(addr) ((addr) >> PAGE_SHIFT)
-#define pfn2pa(pfn) ((void *)((pfn) << PAGE_SHIFT))
+#define pfn2pa(pfn) ((void*)((pfn) << PAGE_SHIFT))
 
 #define va2pfn(addr) pa2pfn(va2pa(addr))
 #define pfn2va(pfn) pa2va(pfn2pa(pfn))
@@ -128,8 +128,8 @@ static inline unsigned long get_cr3() {
     return cr3;
 }
 
-static inline pde_t *get_pgd() {
-    return (pde_t *)(get_cr3() & PAGE_MASK);
+static inline pde_t* get_pgd() {
+    return (pde_t*)(get_cr3() & PAGE_MASK);
 }
 
 typedef unsigned int gfp_t;
@@ -152,41 +152,49 @@ typedef struct page {
 
     list_head_t list;
 
-    struct page *head_page;  // buddy system
+    struct page* head_page;  // buddy system
     unsigned int order;
 
-    void **freelist;  // for slub
+    void** freelist;  // for slub
 
     unsigned long index;
-    struct page *hash_next;
-    struct address_space *mapping;
+    struct page* hash_next;
+    struct address_space* mapping;
 
-    kmem_cache_t *cache;
+    kmem_cache_t* cache;
 
     unsigned long inuse;
 
     //
-    struct blk_buffer *buffers;
+    struct blk_buffer* buffers;
 } page_t;
 
-void *page2va(page_t *page);
-void *page2pa(page_t *page);
-page_t *_va2page(unsigned long addr);
-page_t *_pa2page(unsigned long addr);
+void* page2va(page_t* page);
+void* page2pa(page_t* page);
+page_t* _va2page(unsigned long addr);
+page_t* _pa2page(unsigned long addr);
 
 #define va2page(addr) _va2page(PAGE_ALIGN(addr))
 #define pa2page(addr) _pa2page(PAGE_ALIGN(addr))
 
-static inline page_t *get_head_page(page_t *page) { return page->head_page; }
+static inline page_t* get_head_page(page_t* page) {
+    return page->head_page;
+}
 
-#define __GETPAGEFLAG(name) \
-    static inline int Page##name(page_t *page) { return constant_test_bit(PG_##name, &page->flags); }
+#define __GETPAGEFLAG(name)                                \
+    static inline int Page##name(page_t* page) {           \
+        return constant_test_bit(PG_##name, &page->flags); \
+    }
 
-#define __SETPAGEFLAG(name) \
-    static inline int SetPage##name(page_t *page) { return test_and_set_bit(PG_##name, &page->flags); }
+#define __SETPAGEFLAG(name)                               \
+    static inline int SetPage##name(page_t* page) {       \
+        return test_and_set_bit(PG_##name, &page->flags); \
+    }
 
-#define __CLEARPAGEFLAG(name) \
-    static inline int ClearPage##name(page_t *page) { return test_and_clear_bit(PG_##name, &page->flags); }
+#define __CLEARPAGEFLAG(name)                               \
+    static inline int ClearPage##name(page_t* page) {       \
+        return test_and_clear_bit(PG_##name, &page->flags); \
+    }
 
 __GETPAGEFLAG(Private)
 __SETPAGEFLAG(Private)
@@ -197,13 +205,13 @@ typedef struct free_area {
     list_head_t free_list;
 } free_area_t;
 
-page_t *alloc_pages(unsigned int gfp_mask, unsigned int order);
+page_t* alloc_pages(unsigned int gfp_mask, unsigned int order);
 void free_pages(unsigned long addr);
 
 #define alloc_one_page(gfp_mask) alloc_pages(gfp_mask, 0)
 
 struct kmem_cache {
-    const char *name;
+    const char* name;
 
     // 预期分配的大小
     unsigned long objsize;
@@ -225,11 +233,10 @@ struct kmem_cache {
     list_head_t partial;
 
     // 正在分配的页
-    page_t *page;
+    page_t* page;
 
     list_head_t list;
 };
-
 
 void page_map(vaddr_t vaddr, paddr_t paddr, uint32_t flags);
 

@@ -18,9 +18,10 @@
 #include <string.h>
 #include <cpuid.h>
 
-#define TEST_FEATURE(val, bit, fea)                  \
-    do {                                             \
-        if (ISSET_BIT(val, bit)) printk(" %s", fea); \
+#define TEST_FEATURE(val, bit, fea) \
+    do {                            \
+        if (ISSET_BIT(val, bit))    \
+            printk(" %s", fea);     \
     } while (0);
 
 cpuid_regs_t cpuid(unsigned long op) {
@@ -70,7 +71,7 @@ void detect_cpu() {
     r = cpuid(1);
     pn = ((r.ebx & 0x00FF0000) >> 16);
     printk(" x %d Cores\n", pn);
-    if(((r.ecx >> 21) & 0x01) == 1) {
+    if (((r.ecx >> 21) & 0x01) == 1) {
         printk("x2APIC\n");
     }
     printk("ECX %x\n", r.ecx);

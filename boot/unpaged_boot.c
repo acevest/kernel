@@ -7,13 +7,11 @@
  * ------------------------------------------------------------------------
  */
 
-#include <types.h>
+#include <boot.h>
+#include <linkage.h>
 #include <msr.h>
 #include <page.h>
-#include <linkage.h>
-#include <boot.h>
-
-
+#include <types.h>
 
 extern unsigned long kernel_virtual_addr_start;
 extern pde_t __initdata init_pgd[PDECNT_PER_PAGE] __attribute__((__aligned__(PAGE_SIZE)));
@@ -29,28 +27,27 @@ void boot_paging() {
     unsigned long init_pgt_paddr = va2pa(init_pgt);
 
     // 清空页目录
-    pde_t *dir =(pde_t *)init_pgd_paddr;
-    for(int i=0; i<PDECNT_PER_PAGE; i++) {
+    pde_t* dir = (pde_t*)init_pgd_paddr;
+    for (int i = 0; i < PDECNT_PER_PAGE; i++) {
         dir[i] = 0;
     }
 
     // 初始化页目录
     unsigned long kpde_base = get_npde((unsigned long)(&kernel_virtual_addr_start));
     pde_t pd_entry = init_pgt_paddr | PAGE_WR | PAGE_P;
-    for(int i=0; i<BOOT_INIT_PAGETBL_CNT; i++) {
-        dir[i] = pd_entry; // 设置低端线性地址空间的页表项
-        dir[kpde_base+i] = pd_entry; // 设置内核线性地址空间的页表项
+    for (int i = 0; i < BOOT_INIT_PAGETBL_CNT; i++) {
+        dir[i] = pd_entry;              // 设置低端线性地址空间的页表项
+        dir[kpde_base + i] = pd_entry;  // 设置内核线性地址空间的页表项
         pd_entry += PAGE_SIZE;
     }
 
-
-    pte_t *table = (pte_t *)init_pgt_paddr;
+    pte_t* table = (pte_t*)init_pgt_paddr;
     pte_t pt_entry = PAGE_WR | PAGE_P;
-    for(int i=0; i<BOOT_INIT_PAGETBL_CNT*PTECNT_PER_PAGE; i++) {
+    for (int i = 0; i < BOOT_INIT_PAGETBL_CNT * PTECNT_PER_PAGE; i++) {
         table[i] = pt_entry;
         pt_entry += PAGE_SIZE;
     }
 
     // 设置页目录
-    asm volatile("mov %0, %%cr3"::"r"(init_pgd_paddr));
+    asm volatile("mov %0, %%cr3" ::"r"(init_pgd_paddr));
 }

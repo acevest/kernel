@@ -10,12 +10,12 @@
 #include <completion.h>
 #include <sched.h>
 
-void wait_completion(completion_t *x) {
+void wait_completion(completion_t* x) {
     wait_event(&x->wait, (x->done != 0));
     x->done--;
 }
 
-void complete(completion_t *x) {
+void complete(completion_t* x) {
     uint32_t iflags;
     irq_save(iflags);
     x->done++;
@@ -23,7 +23,7 @@ void complete(completion_t *x) {
     irq_restore(iflags);
 }
 
-void init_completion(completion_t *x) {
+void init_completion(completion_t* x) {
     x->done = 0;
     init_wait_queue_head(&x->wait);
 

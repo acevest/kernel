@@ -20,8 +20,8 @@
 
 struct boot_params boot_params __attribute__((aligned(32)));
 
-void parse_cmdline(const char *cmdline);
-void init_vbe(void *, void *);
+void parse_cmdline(const char* cmdline);
+void init_vbe(void*, void*);
 
 // ticks < 0 代表永远等待
 void boot_delay(int ticks) {
@@ -57,9 +57,9 @@ void set_tss();
 void setup_i8254(uint16_t);
 void setup_boot_irqs();
 
-void parse_framebuffer(void *addr) {
-    struct multiboot_tag_framebuffer *fb = (struct multiboot_tag_framebuffer *)addr;
-    if(0 == fb) {
+void parse_framebuffer(void* addr) {
+    struct multiboot_tag_framebuffer* fb = (struct multiboot_tag_framebuffer*)addr;
+    if (0 == fb) {
         printk("no framebuffer info\n");
     }
 
@@ -94,18 +94,16 @@ void parse_framebuffer(void *addr) {
     uint8_t fb_bpp = fb->common.framebuffer_bpp;
     uint8_t fb_type = fb->common.framebuffer_type;
 
-
     system.vbe_phys_addr = fb_addr;
     system.x_resolution = fb_width;
     system.y_resolution = fb_height;
 
-    printk("type %u size %u addr %lx pitch %u width %u height %u bpp %u type %u\n",
-            type, size, fb_addr, fb_pitch, fb_width, fb_height, fb_bpp, fb_type);
+    printk("type %u size %u addr %lx pitch %u width %u height %u bpp %u type %u\n", type, size, fb_addr, fb_pitch,
+           fb_width, fb_height, fb_bpp, fb_type);
 
     // 直接就不打算支持32位以外的色深
     // assert(fb_bpp == 32);
 }
-
 
 void check_kernel(unsigned long addr, unsigned long magic) {
     init_serial();
@@ -137,17 +135,17 @@ void check_kernel(unsigned long addr, unsigned long magic) {
         printk("Your boot loader does not support multiboot.\n");
         boot_delay(-1);
     }
-    unsigned long total_size = *((unsigned long *)addr);
-    struct multiboot_tag *tag = (struct multiboot_tag *)(addr + 8);  // 跳过中间的 reserved 字段
+    unsigned long total_size = *((unsigned long*)addr);
+    struct multiboot_tag* tag = (struct multiboot_tag*)(addr + 8);  // 跳过中间的 reserved 字段
 
     printk("total size: %d tags: %x\n", total_size, tag);
     boot_delay(DEFAULT_BOOT_DELAY_TICKS);
-    struct multiboot_tag_basic_meminfo *mminfo = 0;
-    struct multiboot_tag_bootdev *bootdev = 0;
-    struct multiboot_tag_mmap *mmap_tag = 0;
-    struct multiboot_tag_vbe *vbe = 0;
-    struct multiboot_tag_framebuffer *fb = 0;
-    struct multiboot_tag_elf_sections *elf = 0;
+    struct multiboot_tag_basic_meminfo* mminfo = 0;
+    struct multiboot_tag_bootdev* bootdev = 0;
+    struct multiboot_tag_mmap* mmap_tag = 0;
+    struct multiboot_tag_vbe* vbe = 0;
+    struct multiboot_tag_framebuffer* fb = 0;
+    struct multiboot_tag_elf_sections* elf = 0;
 
     boot_params.e820map.map_cnt = 0;
 
@@ -155,25 +153,25 @@ void check_kernel(unsigned long addr, unsigned long magic) {
         bool support = true;
         switch (tag->type) {
         case MULTIBOOT_TAG_TYPE_CMDLINE:
-            strlcpy(boot_params.cmdline, ((struct multiboot_tag_string *)tag)->string, sizeof(boot_params.cmdline));
+            strlcpy(boot_params.cmdline, ((struct multiboot_tag_string*)tag)->string, sizeof(boot_params.cmdline));
             parse_cmdline(boot_params.cmdline);
             break;
         case MULTIBOOT_TAG_TYPE_BOOT_LOADER_NAME:
-            strlcpy(boot_params.bootloader, ((struct multiboot_tag_string *)tag)->string,
+            strlcpy(boot_params.bootloader, ((struct multiboot_tag_string*)tag)->string,
                     sizeof(boot_params.bootloader));
             break;
         case MULTIBOOT_TAG_TYPE_MODULE:
-            struct multiboot_tag_module *m = (struct multiboot_tag_module *)tag;
-            void *mod_start = (void *)m->mod_start;
+            struct multiboot_tag_module* m = (struct multiboot_tag_module*)tag;
+            void* mod_start = (void*)m->mod_start;
             printk("module 0x%08x - 0x%08x size %u cmdline %s\n", m->mod_start, m->mod_end, m->size, m->cmdline);
-            boot_params.boot_module_begin = (void *)m->mod_start;
-            boot_params.boot_module_end = (void *)m->mod_end;
+            boot_params.boot_module_begin = (void*)m->mod_start;
+            boot_params.boot_module_end = (void*)m->mod_end;
 #if 1
-            const uint32_t mod_magic = *(uint32_t *)(mod_start + 0);
-            const uint32_t mod_head_size = *(uint32_t *)(mod_start + 4);
-            const uint32_t mod_timestamp = *(uint32_t *)(mod_start + 8);
-            const uint32_t mod_file_entry_cnt = *(uint32_t *)(mod_start + 12);
-            const char *mod_name = (const char *)mod_start + 16;
+            const uint32_t mod_magic = *(uint32_t*)(mod_start + 0);
+            const uint32_t mod_head_size = *(uint32_t*)(mod_start + 4);
+            const uint32_t mod_timestamp = *(uint32_t*)(mod_start + 8);
+            const uint32_t mod_file_entry_cnt = *(uint32_t*)(mod_start + 12);
+            const char* mod_name = (const char*)mod_start + 16;
             printk("module magic %08x header size %u timestamp %u file entry cnt %u name %s \n", mod_magic,
                    mod_head_size, mod_timestamp, mod_file_entry_cnt, mod_name);
             void timestamp_to_date(uint32_t ts);
@@ -181,22 +179,22 @@ void check_kernel(unsigned long addr, unsigned long magic) {
 
             int file_entry_offset = mod_head_size;
             for (int i = 0; i < mod_file_entry_cnt; i++) {
-                void *fe = mod_start + file_entry_offset;
+                void* fe = mod_start + file_entry_offset;
 
-                const uint32_t fe_size = *(uint32_t *)(fe + 0);
-                const uint32_t fe_type = *(uint32_t *)(fe + 4);
-                const uint32_t fe_filesz = *(uint32_t *)(fe + 8);
-                const uint32_t fe_offset = *(uint32_t *)(fe + 12);
-                const char *fe_name = (const char *)(fe + 16);
+                const uint32_t fe_size = *(uint32_t*)(fe + 0);
+                const uint32_t fe_type = *(uint32_t*)(fe + 4);
+                const uint32_t fe_filesz = *(uint32_t*)(fe + 8);
+                const uint32_t fe_offset = *(uint32_t*)(fe + 12);
+                const char* fe_name = (const char*)(fe + 16);
 
                 file_entry_offset += fe_size;
 
-                void *fc = mod_start + fe_offset;
+                void* fc = mod_start + fe_offset;
 
                 printk("[fe:%u:%u] file size %u type %u name %s\n", i, fe_size, fe_filesz, fe_type, fe_name);
 
                 for (int k = 0; k < 16; k++) {
-                    uint8_t c = *(uint8_t *)(fc + k);
+                    uint8_t c = *(uint8_t*)(fc + k);
                     printk("%02X ", c);
                 }
                 printk("\n");
@@ -204,33 +202,33 @@ void check_kernel(unsigned long addr, unsigned long magic) {
 #endif
             break;
         case MULTIBOOT_TAG_TYPE_BASIC_MEMINFO:
-            mminfo = (struct multiboot_tag_basic_meminfo *)tag;
+            mminfo = (struct multiboot_tag_basic_meminfo*)tag;
             // KB to Bytes
             // no need to concern about 64bit
             boot_params.mem_lower = mminfo->mem_lower << 10;
             boot_params.mem_upper = mminfo->mem_upper << 10;
             break;
         case MULTIBOOT_TAG_TYPE_BOOTDEV:
-            bootdev = (struct multiboot_tag_bootdev *)tag;
+            bootdev = (struct multiboot_tag_bootdev*)tag;
             boot_params.biosdev = bootdev->biosdev;
             boot_params.partition = bootdev->slice;
             boot_params.sub_partition = bootdev->part;
             break;
         case MULTIBOOT_TAG_TYPE_MMAP:
-            mmap_tag = (struct multiboot_tag_mmap *)tag;
-            multiboot_memory_map_t *mmap = mmap_tag->entries;
+            mmap_tag = (struct multiboot_tag_mmap*)tag;
+            multiboot_memory_map_t* mmap = mmap_tag->entries;
             while (((multiboot_uint32_t)mmap) < (((multiboot_uint32_t)mmap_tag) + mmap_tag->size)) {
                 boot_params.e820map.map[boot_params.e820map.map_cnt].addr = mmap->addr;
                 boot_params.e820map.map[boot_params.e820map.map_cnt].size = mmap->len;
                 boot_params.e820map.map[boot_params.e820map.map_cnt].type = mmap->type;
                 boot_params.e820map.map_cnt++;
-                mmap = (multiboot_memory_map_t *)(((unsigned long)mmap) + mmap_tag->entry_size);
+                mmap = (multiboot_memory_map_t*)(((unsigned long)mmap) + mmap_tag->entry_size);
             }
             break;
         case MULTIBOOT_TAG_TYPE_VBE:
-            vbe = (struct multiboot_tag_vbe *)tag;
-            void *vci = (void *)vbe->vbe_control_info.external_specification;
-            void *vmi = (void *)vbe->vbe_mode_info.external_specification;
+            vbe = (struct multiboot_tag_vbe*)tag;
+            void* vci = (void*)vbe->vbe_control_info.external_specification;
+            void* vmi = (void*)vbe->vbe_mode_info.external_specification;
             printk("VBE[deprecated] mode %04x\n", vbe->vbe_mode);
             init_vbe(vci, vmi);
             break;
@@ -238,47 +236,46 @@ void check_kernel(unsigned long addr, unsigned long magic) {
             printk("frame buffer\n");
             parse_framebuffer(tag);
             break;
-        case MULTIBOOT_TAG_TYPE_ELF_SECTIONS:
-            {
-                elf = (struct multiboot_tag_elf_sections *)tag;
-                Elf32_Shdr *sections = (Elf32_Shdr *)elf->sections;
-                int sections_cnt = elf->num;
+        case MULTIBOOT_TAG_TYPE_ELF_SECTIONS: {
+            elf = (struct multiboot_tag_elf_sections*)tag;
+            Elf32_Shdr* sections = (Elf32_Shdr*)elf->sections;
+            int sections_cnt = elf->num;
 
-                const char *strtab = 0;
-                Elf32_Shdr *strtab_section = 0;
+            const char* strtab = 0;
+            Elf32_Shdr* strtab_section = 0;
 
-                for(int i=0; i<sections_cnt; i++) {
-                    Elf32_Shdr *section = sections + i;
-                    if (section->sh_type == 3/*SHT_STRTAB*/) {
-                        if (i == elf->shndx) {
-                            strtab_section = section;
-                            strtab = (const char *)pa2va(section->sh_addr);
-                            break;
-                        }
+            for (int i = 0; i < sections_cnt; i++) {
+                Elf32_Shdr* section = sections + i;
+                if (section->sh_type == 3 /*SHT_STRTAB*/) {
+                    if (i == elf->shndx) {
+                        strtab_section = section;
+                        strtab = (const char*)pa2va(section->sh_addr);
+                        break;
                     }
-                }
-
-                for (int i=0; i<sections_cnt; i++) {
-                    Elf32_Shdr *section = sections + i;
-
-                    const char *name = 0;
-                    if(strtab && section->sh_name < strtab_section->sh_size) {
-                        name = strtab + section->sh_name;
-                    }
-
-                    uint32_t addr = section->sh_addr;
-                    uint32_t size = section->sh_size;
-                    uint32_t type = section->sh_type;
-                    uint32_t flags = section->sh_flags;
-                    printk("%20s addr %08x size %08x type %08x flags %08x\n", name ? name : "(unnamed)", addr, size, type, flags);
                 }
             }
-            break;
+
+            for (int i = 0; i < sections_cnt; i++) {
+                Elf32_Shdr* section = sections + i;
+
+                const char* name = 0;
+                if (strtab && section->sh_name < strtab_section->sh_size) {
+                    name = strtab + section->sh_name;
+                }
+
+                uint32_t addr = section->sh_addr;
+                uint32_t size = section->sh_size;
+                uint32_t type = section->sh_type;
+                uint32_t flags = section->sh_flags;
+                printk("%20s addr %08x size %08x type %08x flags %08x\n", name ? name : "(unnamed)", addr, size, type,
+                       flags);
+            }
+        } break;
         case MULTIBOOT_TAG_TYPE_LOAD_BASE_ADDR:
-            printk("load base addr %08x\n", ((struct multiboot_tag_load_base_addr *)tag)->load_base_addr);
+            printk("load base addr %08x\n", ((struct multiboot_tag_load_base_addr*)tag)->load_base_addr);
             break;
         case MULTIBOOT_TAG_TYPE_ACPI_OLD:
-            extern void parse_acpi(void *);
+            extern void parse_acpi(void*);
             parse_acpi(tag);
             break;
         case MULTIBOOT_TAG_TYPE_ACPI_NEW:
@@ -291,7 +288,7 @@ void check_kernel(unsigned long addr, unsigned long magic) {
         printk("tag %x size %x\t[%ssupport]\n", tag->type, tag->size, support ? "" : "un");
         // next tag
         unsigned long size = (tag->size + 7) & (~7UL);
-        tag = (struct multiboot_tag *)(((unsigned long)tag) + size);
+        tag = (struct multiboot_tag*)(((unsigned long)tag) + size);
     }
 
     boot_delay(DEFAULT_BOOT_DELAY_TICKS);
@@ -334,9 +331,9 @@ void check_kernel(unsigned long addr, unsigned long magic) {
 #endif
 }
 
-extern void *kernel_begin;
-extern void *kernel_end;
-extern void *bootmem_bitmap_begin;
+extern void* kernel_begin;
+extern void* kernel_end;
+extern void* bootmem_bitmap_begin;
 
 void init_system_info() {
     system.kernel_begin = &kernel_begin;

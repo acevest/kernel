@@ -13,7 +13,7 @@
 
 typedef struct semaphore_waiter {
     list_head_t list;
-    task_t *task;
+    task_t* task;
 
     // 在Linux内核中这个结构体有一个up字段，这个字段的作用是防止进程被错误地唤醒
     // 例如
@@ -23,12 +23,12 @@ typedef struct semaphore_waiter {
 
 } semaphore_waiter_t;
 
-void semaphore_init(semaphore_t *s, unsigned int v) {
+void semaphore_init(semaphore_t* s, unsigned int v) {
     s->cnt = v;
     INIT_LIST_HEAD(&(s->wait_list));
 }
 
-volatile void down(semaphore_t *s) {
+volatile void down(semaphore_t* s) {
     unsigned long iflags;
     irq_save(iflags);
 
@@ -36,7 +36,7 @@ volatile void down(semaphore_t *s) {
         s->cnt--;
         irq_restore(iflags);
     } else {
-        task_t *task = current;
+        task_t* task = current;
         semaphore_waiter_t waiter;
         waiter.task = task;
         INIT_LIST_HEAD(&waiter.list);
@@ -51,7 +51,7 @@ volatile void down(semaphore_t *s) {
     }
 }
 
-volatile void up(semaphore_t *s) {
+volatile void up(semaphore_t* s) {
     unsigned long iflags;
     irq_save(iflags);
 
@@ -59,10 +59,10 @@ volatile void up(semaphore_t *s) {
         s->cnt++;
         irq_restore(iflags);
     } else {
-        semaphore_waiter_t *waiter = list_first_entry(&s->wait_list, semaphore_waiter_t, list);
+        semaphore_waiter_t* waiter = list_first_entry(&s->wait_list, semaphore_waiter_t, list);
         assert(waiter != 0);
         list_del(&waiter->list);
-        task_t *task = waiter->task;
+        task_t* task = waiter->task;
 
         task->state = TASK_READY;
         task->reason = "up";
@@ -78,6 +78,12 @@ volatile void up(semaphore_t *s) {
     }
 }
 
-void mutex_init(mutex_t *s) { INIT_MUTEX(s); }
-void mutex_lock(semaphore_t *s) { down(s); }
-void mutex_unlock(semaphore_t *s) { up(s); }
+void mutex_init(mutex_t* s) {
+    INIT_MUTEX(s);
+}
+void mutex_lock(semaphore_t* s) {
+    down(s);
+}
+void mutex_unlock(semaphore_t* s) {
+    up(s);
+}

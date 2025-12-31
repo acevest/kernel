@@ -29,9 +29,9 @@ typedef struct ramfs_inode {
     inode_t vfs_inode;
 } ramfs_inode_t;
 
-static kmem_cache_t *g_ramfs_inode_cache = 0;
+static kmem_cache_t* g_ramfs_inode_cache = 0;
 
-inode_t *ramfs_get_inode(superblock_t *sb, umode_t mode, dev_t dev);
+inode_t* ramfs_get_inode(superblock_t* sb, umode_t mode, dev_t dev);
 
 // static inode_t *ramfs_alloc_inode(superblock_t *sb) {
 //     ramfs_inode_t *inode = kmem_cache_alloc(g_ramfs_inode_cache, 0);
@@ -60,10 +60,10 @@ static const address_space_operations_t ramfs_address_space_operations = {
     .write_end = NULL,
 };
 
-static int ramfs_mknod(inode_t *dir, dentry_t *dentry, umode_t mode) {
+static int ramfs_mknod(inode_t* dir, dentry_t* dentry, umode_t mode) {
     int ret = 0;
 
-    inode_t *inode = NULL;
+    inode_t* inode = NULL;
 
     inode = ramfs_get_inode(dir->i_sb, mode, 0);
     if (inode == NULL) {
@@ -79,15 +79,15 @@ static int ramfs_mknod(inode_t *dir, dentry_t *dentry, umode_t mode) {
     return ret;
 }
 
-static int ramfs_create(inode_t *dir, dentry_t *dentry, umode_t mode, namei_t *ni) {
+static int ramfs_create(inode_t* dir, dentry_t* dentry, umode_t mode, namei_t* ni) {
     return ramfs_mknod(dir, dentry, mode | S_IFREG);
 }
 
-static int ramfs_mkdir(inode_t *dir, dentry_t *dentry, umode_t mode) {
+static int ramfs_mkdir(inode_t* dir, dentry_t* dentry, umode_t mode) {
     return ramfs_mknod(dir, dentry, mode | S_IFDIR);
 }
 
-static dentry_t *ramfs_lookup(inode_t *dir, dentry_t *dentry) {
+static dentry_t* ramfs_lookup(inode_t* dir, dentry_t* dentry) {
     // 不用上dir去找了，直接用dentry就可以了
 
     // dentry对应的inode在ramfs_mkdir等里去分配的
@@ -102,13 +102,13 @@ static const inode_operations_t ramfs_dir_inode_operations = {
     .mkdir = ramfs_mkdir,
 };
 
-void ramfs_debug_set_f_ops(file_t *filp) {
+void ramfs_debug_set_f_ops(file_t* filp) {
     //
     filp->f_ops = &ramfs_file_operations;
 }
 
-inode_t *ramfs_get_inode(superblock_t *sb, umode_t mode, dev_t dev) {
-    inode_t *inode = alloc_inode(sb);
+inode_t* ramfs_get_inode(superblock_t* sb, umode_t mode, dev_t dev) {
+    inode_t* inode = alloc_inode(sb);
 
     if (NULL == inode) {
         return inode;
@@ -144,14 +144,14 @@ static sb_operations_t ramfs_ops = {
     // .alloc_inode = ramfs_alloc_inode,
 };
 
-int ramfs_fill_super_cb(superblock_t *sb, void *data) {
+int ramfs_fill_super_cb(superblock_t* sb, void* data) {
     int err = 0;
 
     // assert(sb->sb_ops != NULL);
-    inode_t *fs_root_inode = ramfs_get_inode(sb, S_IFDIR, 0);
+    inode_t* fs_root_inode = ramfs_get_inode(sb, S_IFDIR, 0);
     assert(fs_root_inode != NULL);
 
-    dentry_t *fs_root_dentry = 0;
+    dentry_t* fs_root_dentry = 0;
     fs_root_dentry = dentry_alloc_root(fs_root_inode);
     assert(fs_root_dentry != NULL);
 
@@ -160,7 +160,7 @@ int ramfs_fill_super_cb(superblock_t *sb, void *data) {
     return err;
 }
 
-int ramfs_read_super(fs_type_t *type, int flags, const char *name, void *data, vfsmount_t *mnt) {
+int ramfs_read_super(fs_type_t* type, int flags, const char* name, void* data, vfsmount_t* mnt) {
     int ret = 0;
 
     ret = read_super_for_nodev(type, flags, data, ramfs_fill_super_cb, mnt);

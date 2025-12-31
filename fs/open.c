@@ -20,7 +20,7 @@
 
 int get_unused_fd() {
     int fd;
-    task_files_t *files = &(current->files);
+    task_files_t* files = &(current->files);
 
     for (int i = 0; i < NR_TASK_OPEN_CNT; i++) {
         if (files->fds[i] == 0) {
@@ -32,7 +32,7 @@ int get_unused_fd() {
     return -EMFILE;
 }
 
-int filp_open(const char *path, int flags, int mode, file_t **fp) {
+int filp_open(const char* path, int flags, int mode, file_t** fp) {
     int ret = 0;
 
     assert(path != NULL);
@@ -58,7 +58,7 @@ int filp_open(const char *path, int flags, int mode, file_t **fp) {
     return ret;
 }
 
-int sysc_open(const char *path, int flags, int mode) {
+int sysc_open(const char* path, int flags, int mode) {
     int fd = 0;
 
     fd = get_unused_fd();
@@ -67,7 +67,7 @@ int sysc_open(const char *path, int flags, int mode) {
         return fd;
     }
 
-    file_t *fp;
+    file_t* fp;
 
     int ret = filp_open(path, flags, mode, &fp);
     if (ret != 0) {

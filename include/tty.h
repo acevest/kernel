@@ -41,15 +41,15 @@ typedef struct tty {
 
 void init_ttys();
 
-void tty_write(tty_t *tty, const char *buf, size_t size);
-void tty_write_at(tty_t *tty, int xpos, int ypos, const char *buf, size_t size);
-void tty_color_putc(tty_t *tty, char c, unsigned int fg_color, unsigned bg_color);
+void tty_write(tty_t* tty, const char* buf, size_t size);
+void tty_write_at(tty_t* tty, int xpos, int ypos, const char* buf, size_t size);
+void tty_color_putc(tty_t* tty, char c, unsigned int fg_color, unsigned bg_color);
 
-void tty_set_cursor(tty_t *tty);
-void tty_switch(tty_t *tty);
+void tty_set_cursor(tty_t* tty);
+void tty_switch(tty_t* tty);
 
 void tty_switch_to_next();
 
-void tty_clear(tty_t *tty);
+void tty_clear(tty_t* tty);
 
-extern tty_t *current_tty;
+extern tty_t* current_tty;

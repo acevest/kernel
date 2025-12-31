@@ -15,5 +15,5 @@
 #define KMALLOC_MIN_SIZE (1UL << (SLUB_MIN_SHIFT))
 #define KMALLOC_MIN_ALIGN (1UL << (SLUB_MIN_SHIFT))
 
-void *slub_alloc(kmem_cache_t *cache, gfp_t gfpflags);
-void slub_free(kmem_cache_t *cache, page_t *page, void *addr);
+void* slub_alloc(kmem_cache_t* cache, gfp_t gfpflags);
+void slub_free(kmem_cache_t* cache, page_t* page, void* addr);

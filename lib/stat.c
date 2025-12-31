@@ -13,5 +13,9 @@
 #include <syscall.h>
 #include <types.h>
 
-int _stat(int fd, struct stat *stat) { return syscall2(SYSC_STAT, fd, stat); }
-int fstat(int fd, struct stat *buf) { return _stat(fd, buf); }
+int _stat(int fd, struct stat* stat) {
+    return syscall2(SYSC_STAT, fd, stat);
+}
+int fstat(int fd, struct stat* buf) {
+    return _stat(fd, buf);
+}

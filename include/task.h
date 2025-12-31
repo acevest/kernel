@@ -45,7 +45,7 @@ enum {
 #define NR_TASK_OPEN_CNT 32
 typedef struct task_files {
     // 暂时先不用bitmap，直接线性搜索
-    file_t *fds[NR_TASK_OPEN_CNT];
+    file_t* fds[NR_TASK_OPEN_CNT];
 } task_files_t;
 
 typedef union task_union {
@@ -67,7 +67,7 @@ typedef union task_union {
         pid_t ppid;
 
         volatile unsigned int state;
-        const char *reason;
+        const char* reason;
 
         long exit_code;
         uint32_t cr3;
@@ -81,7 +81,7 @@ typedef union task_union {
         path_t root;
         path_t pwd;
 
-        vm_area_t *vma_list;
+        vm_area_t* vma_list;
 
         list_head_t list;  // 所有进程串成一个链表
 
@@ -100,19 +100,21 @@ typedef union task_union {
     unsigned char stack[TASK_SIZE];
 } task_t;
 
-task_t *alloc_task_t();
+task_t* alloc_task_t();
 
-static inline task_t *get_current() {
-    task_t *tsk;
+static inline task_t* get_current() {
+    task_t* tsk;
     asm("andl %%esp, %0;" : "=r"(tsk) : "0"(~(TASK_SIZE - 1)));
     return tsk;
 }
 
 #define current get_current()
 
-static inline pid_t sysc_getpid() { return current->pid; }
+static inline pid_t sysc_getpid() {
+    return current->pid;
+}
 
-task_t *find_task(pid_t pid);
+task_t* find_task(pid_t pid);
 
 #define ROOT_TSK_PID (0)
 

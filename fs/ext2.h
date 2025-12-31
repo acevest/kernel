@@ -208,8 +208,8 @@ typedef struct ext2_dir_ent {
 #define EXT2_DIR_REC_LEN(name_len) (((name_len) + 8 + EXT2_DIR_ROUND) & ~EXT2_DIR_ROUND)
 #define EXT2_MAX_REC_LEN ((1 << 16) - 1)
 
-void ext2_read_inode(unsigned int ino, ext2_inode_t *inode);
-void ext2_read_file(const ext2_inode_t *inode, char *buf);
-void ext2_read_data(const ext2_inode_t *inode, unsigned int offset, size_t size, char *buf);
+void ext2_read_inode(unsigned int ino, ext2_inode_t* inode);
+void ext2_read_file(const ext2_inode_t* inode, char* buf);
+void ext2_read_data(const ext2_inode_t* inode, unsigned int offset, size_t size, char* buf);
 
 #endif  //_EXT2_H

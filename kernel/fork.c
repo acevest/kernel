@@ -18,8 +18,8 @@ extern void ret_from_fork_krnl();
 extern pid_t get_next_pid();
 extern list_head_t all_tasks;
 
-int do_fork(pt_regs_t *regs, unsigned long flags) {
-    task_t *tsk;
+int do_fork(pt_regs_t* regs, unsigned long flags) {
+    task_t* tsk;
     tsk = alloc_task_t();
 
     printd("fork task %08x flags %08x\n", tsk, flags);
@@ -43,10 +43,10 @@ int do_fork(pt_regs_t *regs, unsigned long flags) {
     assert(tsk->cr3 != 0);
 
     unsigned int i, j;
-    pde_t *pde_src = (pde_t *)pa2va(current->cr3);
-    pde_t *pde_dst = (pde_t *)pa2va(tsk->cr3);
+    pde_t* pde_src = (pde_t*)pa2va(current->cr3);
+    pde_t* pde_dst = (pde_t*)pa2va(tsk->cr3);
 
-    memcpy((void *)pa2va(tsk->cr3), (void *)pa2va(current->cr3), PAGE_SIZE);
+    memcpy((void*)pa2va(tsk->cr3), (void*)pa2va(current->cr3), PAGE_SIZE);
 
     for (i = 0; i < PAGE_PDE_CNT; ++i) {
         unsigned long spde = (unsigned long)pde_src[i];
@@ -69,7 +69,7 @@ int do_fork(pt_regs_t *regs, unsigned long flags) {
         if (PAGE_ALIGN(spde) != 0) {
             dpde = page2va(alloc_one_page(0));
             assert(dpde != 0);
-            memset((void *)dpde, 0, PAGE_SIZE);
+            memset((void*)dpde, 0, PAGE_SIZE);
             dpde = PAGE_FLAGS(spde) | (unsigned long)va2pa(dpde);
         } else {
             pde_dst[i] = 0;
@@ -77,8 +77,8 @@ int do_fork(pt_regs_t *regs, unsigned long flags) {
         }
         pde_dst[i] = dpde;
 
-        pte_t *pte_src = pa2va(PAGE_ALIGN(spde));
-        pte_t *pte_dst = pa2va(PAGE_ALIGN(dpde));
+        pte_t* pte_src = pa2va(PAGE_ALIGN(spde));
+        pte_t* pte_dst = pa2va(PAGE_ALIGN(dpde));
         for (j = 0; j < PAGE_PTE_CNT; ++j) {
             pte_src[j] &= ~PAGE_WR;
             pte_dst[j] = pte_src[j];
@@ -87,13 +87,13 @@ int do_fork(pt_regs_t *regs, unsigned long flags) {
                 continue;
             }
             printk("----pde[%u] pte_src[%u] %08x\n", i, j, pte_src[j]);
-            page_t *page = pa2page(pte_src[j]);
+            page_t* page = pa2page(pte_src[j]);
             page->count++;
         }
 #endif
     }
 
-    pt_regs_t *child_regs = ((pt_regs_t *)(TASK_SIZE + (unsigned long)tsk)) - 1;
+    pt_regs_t* child_regs = ((pt_regs_t*)(TASK_SIZE + (unsigned long)tsk)) - 1;
 
     // printd("child regs: %x %x\n", child_regs, regs);
     memcpy(child_regs, regs, sizeof(*regs));
@@ -101,10 +101,10 @@ int do_fork(pt_regs_t *regs, unsigned long flags) {
     // child_regs->eflags |= 0x200;
 
     if (flags & FORK_KRNL) {
-        strcpy(tsk->name, (char *)(child_regs->eax));
+        strcpy(tsk->name, (char*)(child_regs->eax));
         child_regs->eax = 0;
     } else {
-        child_regs->eip = *((unsigned long *) && fork_child);
+        child_regs->eip = *((unsigned long*) && fork_child);
     }
     printk("%s fork %s EFLAGS %08x\n", current->name, tsk->name, regs->eflags);
 
@@ -135,4 +135,6 @@ fork_child:
     return 0;
 }
 
-int sysc_fork(pt_regs_t regs) { return do_fork(&regs, 0); }
+int sysc_fork(pt_regs_t regs) {
+    return do_fork(&regs, 0);
+}
