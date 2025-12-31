@@ -51,6 +51,7 @@ int _syscall4(int nr, unsigned long a, unsigned long b, unsigned long c, unsigne
 #define SYSC_PAUSE (10)
 #define SYSC_TEST (11)
 #define SYSC_DEBUG (12)
+#define SYSC_RAND (13)
 #define SYSC_BAD_NR (SYSC_NUM - 1)
 
 #endif  //_SYSCALL_H

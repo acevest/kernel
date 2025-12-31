@@ -72,6 +72,11 @@ int sysc_debug(unsigned int v) {
     return 0;
 }
 
+int sysc_rand() {
+    uint32_t rand = jiffies;
+    return (int)rand;
+}
+
 void init_sysc_handler_table() {
     int i;
     for (i = 0; i < SYSC_NUM; i++) sysc_handler_table[i] = (unsigned long)sysc_none;
@@ -94,7 +99,8 @@ void init_sysc_handler_table() {
     _sysc_(SYSC_PAUSE, sysc_pause);
     _sysc_(SYSC_TEST, sysc_test);
     _sysc_(SYSC_DEBUG, sysc_debug);
-    _sysc_(SYSC_BAD_NR, sysc_bad_nr)
+    _sysc_(SYSC_RAND, sysc_rand);
+    _sysc_(SYSC_BAD_NR, sysc_bad_nr);
 }
 
 int sysc_bad_nr() {

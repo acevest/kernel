@@ -27,10 +27,28 @@ ring3_entry:
     nop
     nop
 
-    pushal
+    movl    $SYSC_RAND, %eax
+    call    ring3_syscall
 
-    movl    $7, %ebx
+
+    movl    %eax, %ecx
+    andl    $0x000000FF, %ecx
     movl    $SYSC_WAIT, %eax
+    call    ring3_syscall
+
+    nop
+    nop
+    jmp ring3_entry
+
+# eax 系统调用号
+# ecx 参数1
+ring3_syscall:
+    pushl   %ebp
+
+    pushl   %ebx
+    pushl   %edi
+
+    movl    %ecx, %ebx
     call    get_eip
 get_eip:
     # 这里popl取得的就是上一个call指令自动压入栈中的地址
@@ -41,8 +59,8 @@ get_eip:
 
     sysenter
 
-    popal
+    popl    %edi
+    popl    %ebx
+    popl    %ebp
 
-    nop
-    nop
-    jmp ring3_entry
+    ret
