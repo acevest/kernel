@@ -34,6 +34,7 @@ SECTIONS
         *(.multiboot2_header)
         boot/multiboot.S.o(.text)
         *unpaged_*.o(.text)
+        p_entry_vaddr = p_entry + kernel_virtual_addr_start;
     }
     eunpagged_text = .;
 

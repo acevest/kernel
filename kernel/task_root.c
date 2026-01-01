@@ -85,3 +85,7 @@ void root_task_entry() {
         asm("hlt;");
     }
 }
+
+uint32_t get_root_task_stack_top() {
+    return (uint32_t)((uint8_t*)&root_task + TASK_SIZE);
+}

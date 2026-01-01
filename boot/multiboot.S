@@ -13,21 +13,17 @@
  *
  *--------------------------------------------------------------------------
  */
-#define ASM
-
-#include "boot.h"
-#include "task.h"
 
 .global kernel_entry
 .global main
 .extern check_kernel
 .extern init_system_info
 .extern setup_kernel
-.extern root_task
 .extern root_task_entry
+.extern get_root_task_stack_top
 .extern kernel_virtual_addr_start
 
-#define MULTIBOOT_STACK_SIZE 0x4000
+#define MULTIBOOT_STACK_SIZE 0x200
 
 .section .kernel_entry_text
 kernel_entry:
@@ -74,21 +70,22 @@ real_kernel_entry:
     jmp     4f
 4:
     # 准备切保护模式
-
     # 此时esp的地址还需要再调整一下
     addl    $kernel_virtual_addr_start, %esp
-
-
     .extern p_entry_vaddr
     ljmp    $0x08, $p_entry_vaddr
 
 .align 4
 .global p_entry # 为了让链接器计算出 p_entry_vaddr
+                # 因为编译器不支持 ljmp $0x08, $p_entry + kernel_virtual_addr_start 这种写法
 p_entry:
     leal    check_kernel, %eax
     call    *%eax
 
-    movl    $root_task + TASK_SIZE, %esp
+    leal    get_root_task_stack_top, %eax
+    call    *%eax
+    movl    %eax, %esp
+
     leal    init_system_info, %eax
     call    *%eax;
 

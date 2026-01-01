@@ -9,12 +9,10 @@
 
 #pragma once
 
-#include "multiboot2.h"
+#include <multiboot2.h>
+#include <types.h>
 
 #define BOOT_INIT_PAGETBL_CNT 2  // 8MB
-
-#ifndef ASM
-#include <types.h>
 
 #define E820_RAM 1
 #define E820_RESERVED 2
@@ -67,5 +65,3 @@ typedef struct bootmem_data {
 
 extern struct boot_params boot_params;
 extern bootmem_data_t bootmem_data;
-
-#endif

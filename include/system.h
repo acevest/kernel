@@ -58,15 +58,12 @@ void* kmalloc(size_t size, gfp_t gfpflags);
 void* kzalloc(size_t size, gfp_t gfpflags);
 void kfree(void* addr);
 
-#define panic(msg, ...)                                                                                         \
-    do {                                                                                                        \
-        asm("cli;");                                                                                            \
-        printl(MPL_DEBUG, "PANIC:" msg " file:%s function:%s line:%d\n", ##__VA_ARGS__, __FILE__, __FUNCTION__, \
-               __LINE__);                                                                                       \
-        printk("PANIC:" msg " file:%s function:%s line:%d\n", ##__VA_ARGS__, __FILE__, __FUNCTION__, __LINE__); \
-        while (1) {                                                                                             \
-            asm("hlt");                                                                                         \
-        }                                                                                                       \
+#define panic(msg, ...)                                                                                 \
+    do {                                                                                                \
+        asm("cli;");                                                                                    \
+        printl(MPL_DEBUG, "PANIC:" msg " %s %s %d\n", ##__VA_ARGS__, __FILE__, __FUNCTION__, __LINE__); \
+        printk("PANIC:" msg " %s %s %d\n", ##__VA_ARGS__, __FILE__, __FUNCTION__, __LINE__);            \
+        asm("hlt");                                                                                     \
     } while (0);
 
 extern char etext, edata, end;
