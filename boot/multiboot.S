@@ -14,8 +14,8 @@
  *--------------------------------------------------------------------------
  */
 #define ASM
+
 #include "boot.h"
-#include "system.h"
 #include "task.h"
 
 .global kernel_entry
@@ -25,6 +25,7 @@
 .extern setup_kernel
 .extern root_task
 .extern root_task_entry
+.extern kernel_virtual_addr_start
 
 #define MULTIBOOT_STACK_SIZE 0x4000
 
@@ -60,13 +61,10 @@ real_kernel_entry:
 
     # Save Multiboot Infomation...
     pushl   %eax
-    addl    $KRNLADDR,%ebx
+    addl    $kernel_virtual_addr_start,%ebx
     pushl   %ebx
 
     call boot_paging
-
-    #movl    $init_pgd-KRNLADDR,%ebx
-    #movl    %ebx,%cr3
 
     # enable PG WP
     movl    %cr0,%eax
@@ -76,9 +74,19 @@ real_kernel_entry:
     jmp     4f
 4:
     # 准备切保护模式
+
     # 此时esp的地址还需要再调整一下
-    addl    $KRNLADDR, %esp
-    ljmp    $0x08,$p_label+KRNLADDR
+    addl    $kernel_virtual_addr_start, %esp
+
+
+    # 由于编译器不支持下面这种写法
+    # ljmp    $0x08, $p_label + kernel_virtual_addr_start
+
+    # 所以采用下面的方法跳转
+    leal    p_label,%eax
+    addl    $kernel_virtual_addr_start, %eax
+    movl    %eax, p_label_far_ptr
+    ljmp    *p_label_far_ptr
 
 p_label:
     leal    check_kernel, %eax
@@ -98,6 +106,12 @@ p_label:
 die:
     jmp     die    # Should never come to here.
 
+
+.align 4
+p_label_far_ptr:
+    .long   0x00
+    .word   0x08, 0x00
+
 .align 32
 boot_gdt:
 empty: .long    0x00000000, 0x00000000
@@ -108,4 +122,4 @@ boot_gdtr:
     boot_gdtr_limit: .word boot_gdt_end-boot_gdt
     boot_gdtr_base:  .long boot_gdt
 
-    .comm stack, MULTIBOOT_STACK_SIZE
+.comm stack, MULTIBOOT_STACK_SIZE
