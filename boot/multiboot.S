@@ -79,16 +79,12 @@ real_kernel_entry:
     addl    $kernel_virtual_addr_start, %esp
 
 
-    # 由于编译器不支持下面这种写法
-    # ljmp    $0x08, $p_label + kernel_virtual_addr_start
+    .extern p_entry_vaddr
+    ljmp    $0x08, $p_entry_vaddr
 
-    # 所以采用下面的方法跳转
-    leal    p_label,%eax
-    addl    $kernel_virtual_addr_start, %eax
-    movl    %eax, p_label_far_ptr
-    ljmp    *p_label_far_ptr
-
-p_label:
+.align 4
+.global p_entry # 为了让链接器计算出 p_entry_vaddr
+p_entry:
     leal    check_kernel, %eax
     call    *%eax
 
