@@ -10,16 +10,20 @@
 #include <msr.h>
 #include <cpuid.h>
 #include <system.h>
+#include <fixmap.h>
 
 void lapic_init() {
+    system.x2apic = false;
+
     cpuid_regs_t r;
     r = cpuid(1);
     if (r.edx & (1 << 9)) {
         printk("local apic supported\n");
         if (r.ecx & (1 << 21)) {
             printk("x2apic supported\n");
+            system.x2apic = true;
         } else {
-            panic("x2apic not supported\n");
+            printk("x2apic not supported\n");
         }
     } else {
         panic("local apic not supported\n");
@@ -28,7 +32,7 @@ void lapic_init() {
     uint64_t apic_base = read_msr(MSR_IA32_APIC_BASE);
     printk("apic base: %016lx\n", apic_base);
 
-    // apic 必然已经开启
+    // apic 必然已经开启q
     assert((apic_base & (1 << 11)) != 0);
 
     // 开启2xapic
@@ -41,16 +45,12 @@ void lapic_init() {
     uint64_t apic_version = read_msr(MSR_IA32_X2APIC_VERSION);
     printk("apic version: %08lx\n", apic_version);
 
-    paddr_t apic_phys_base_addr = apic_base & 0xFFFFF000;
-    vaddr_t apic_virt_base_addr = apic_phys_base_addr;
-#if 0
-    unsigned long ddd = 0xFEC00000;
-    while(ddd < 0xFF000000)  {
-        page_map((void*)ddd, (void*)ddd, PAGE_P);
-        ddd += 0x1000;
-    }
-#endif
-    page_map((vaddr_t)apic_virt_base_addr, (paddr_t)apic_phys_base_addr, PAGE_P);
+    uint32_t apic_phys_base_addr = (uint32_t)apic_base & PAGE_MASK;
+    set_fixmap(FIX_LAPIC_BASE, apic_phys_base_addr);
+
+    vaddr_t apic_virt_base_addr = fixid_to_vaddr(FIX_LAPIC_BASE);
+
+    printk("LAPIC base %08x mapped to %08x\n", apic_phys_base_addr, apic_virt_base_addr);
 
     {
         volatile uint32_t* base = (volatile uint32_t*)apic_virt_base_addr;
@@ -61,7 +61,5 @@ void lapic_init() {
 }
 
 void init_apic() {
-#if 0
     lapic_init();
-#endif
 }

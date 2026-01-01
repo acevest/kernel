@@ -88,10 +88,10 @@ void setup_kernel() {
     init_mm();
 
     init_buffer();
-
 #if 0
     parse_rsdt(system.rsdt_addr);
-
+#endif
+#if 1
     void init_apic();
     init_apic();
 #endif
@@ -141,4 +141,7 @@ void setup_kernel() {
 
     void init_sata();
     init_sata();
+
+    void dump_fixmap();
+    dump_fixmap();
 }

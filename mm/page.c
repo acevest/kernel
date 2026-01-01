@@ -141,7 +141,7 @@ void page_map(vaddr_t vaddr, paddr_t paddr, uint32_t flags) {
     int npte = get_npte(vaddr);
 
     // 获取页目录地址
-    pde_t* pgd = (pde_t*)pa2va(get_pgd());
+    pde_t* pgd = (pde_t*)get_pgd();
 
     pte_t* pgt = 0;
     pde_t pde = pgd[npde];
@@ -162,4 +162,35 @@ void page_map(vaddr_t vaddr, paddr_t paddr, uint32_t flags) {
     pgt[npte] = PAGE_ALIGN(paddr) | flags;
 
     asm volatile("invlpg (%0)" : : "r"(vaddr));
+}
+
+typedef uint32_t pfn_t;
+
+void set_pte_pfn(vaddr_t vaddr, pfn_t pfn, uint32_t flags) {
+    assert(PAGE_ALIGN(vaddr) == vaddr);
+    assert(PAGE_FLAGS(flags) == flags);
+    assert(pfn >= 0);
+    assert(pfn < (1 << (32 - PAGE_SHIFT)));  // 最大4G空间
+
+    int npde = get_npde(vaddr);
+    int npte = get_npte(vaddr);
+
+    pde_t* pgd = (pde_t*)get_pgd();
+    assert(pgd != 0);
+
+    pde_t pde = pgd[npde];
+    assert(pde & PAGE_P == PAGE_P);
+
+    pte_t* pgt = (pte_t*)pa2va(PAGE_ALIGN(pde));
+    pte_t pte = pgt[npte];
+    assert(pte == 0);
+
+    pgt[npte] = (pfn << PAGE_SHIFT) | flags;
+}
+
+void set_pte_paddr(vaddr_t vaddr, paddr_t paddr, uint32_t flags) {
+    assert(PAGE_ALIGN(vaddr) == vaddr);
+    assert(PAGE_ALIGN(paddr) == paddr);
+    assert(PAGE_FLAGS(flags) == flags);
+    set_pte_pfn(vaddr, paddr >> PAGE_SHIFT, flags);
 }

@@ -111,13 +111,13 @@ int sysc_exec(const char* path, char* const argv[]) {
     regs->es = SELECTOR_USER_DS;
     regs->fs = SELECTOR_USER_DS;
     regs->gs = SELECTOR_USER_DS;
-    regs->esp = (KRNLADDR - 4 * sizeof(unsigned long));
+    regs->esp = (KERNEL_VADDR_BASE - 4 * sizeof(unsigned long));
     regs->eflags = 0x200;
     regs->cs = SELECTOR_USER_CS;
 #endif
     regs->eip = (unsigned long)ehdr->e_entry;
     regs->edx = regs->eip;
-    regs->ecx = KRNLADDR;  //(0xC0000000 - 16);
+    regs->ecx = KERNEL_VADDR_BASE;  //(0xC0000000 - 16);
 
     // kfree(buf);
 

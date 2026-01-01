@@ -90,7 +90,7 @@ void init_paging() {
         }
 
         // 清空页表
-        memset((void*)pg_table, 0xAC, PAGE_SIZE);
+        memset((void*)pg_table, 0x00, PAGE_SIZE);
 
         // 把页表地址填入pgd
         init_pgd[i] = (pde_t)((unsigned long)(pg_table) | PAGE_P | PAGE_WR);

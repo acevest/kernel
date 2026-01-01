@@ -17,6 +17,8 @@
 #ifndef _PAGE_H
 #define _PAGE_H
 
+#include <kdef.h>
+
 /*
 
 | CR0的PG | CR4的PAE | CR4的PSE | PDE的PS | 页面规模 | 物理地址规模 |
@@ -38,7 +40,7 @@
 #define PAGE_SIZE (1UL << PAGE_SHIFT)
 #define PAGE_FLAG_MASK ((1UL << PAGE_SHIFT) - 1)
 #define PAGE_MASK (~PAGE_FLAG_MASK)
-#define PAGE_OFFSET (0xC0000000)
+#define PAGE_OFFSET (KERNEL_VADDR_BASE)
 #define PAGE_PDE_CNT 1024
 #define PAGE_PTE_CNT 1024
 
@@ -129,7 +131,7 @@ static inline unsigned long get_cr3() {
 }
 
 static inline pde_t* get_pgd() {
-    return (pde_t*)(get_cr3() & PAGE_MASK);
+    return (pde_t*)pa2va((get_cr3() & PAGE_MASK));
 }
 
 typedef unsigned int gfp_t;
@@ -239,6 +241,7 @@ struct kmem_cache {
 };
 
 void page_map(vaddr_t vaddr, paddr_t paddr, uint32_t flags);
+void set_pte_paddr(vaddr_t vaddr, paddr_t paddr, uint32_t flags);
 
 #endif  // ASM
 
