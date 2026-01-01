@@ -32,16 +32,6 @@
 #define MSR_IA32_PERF_STATUS 0x198
 #define MSR_IA32_PERF_CRTL 0x199
 
-// APIC的ID寄存器
-#define MSR_IA32_X2APIC_APICID 0x802
-// APIC的版本寄存器
-// bit[7:0][VERSION] APIC版本
-//   - 0x0x Intel 82489DX (外部APIC芯片)
-//   - 0x1x Integrated APIC (内部APIC芯片)
-// bit[23:16][MAXLVT] 最大本地向量表
-// bit[24][EOI] 禁止广播EOI消息标志位
-#define MSR_IA32_X2APIC_VERSION 0x803
-
 #define rdmsr(msr, lowval, highval)                             \
     do {                                                        \
         asm("rdmsr;" : "=a"(lowval), "=d"(highval) : "c"(msr)); \
@@ -61,11 +51,24 @@ static inline uint64_t read_msr(uint32_t msr) {
     return ((uint64_t)highval << 32) | lowval;
 }
 
+static inline uint32_t read_msr32(uint32_t msr) {
+    uint32_t lowval = 0;
+    uint32_t highval = 0;
+
+    rdmsr(msr, lowval, highval);
+
+    return lowval;
+}
+
 static inline void write_msr(uint32_t msr, uint64_t value) {
     uint32_t lowval = value & 0xFFFFFFFF;
     uint32_t highval = value >> 32;
 
     wrmsr(msr, lowval, highval);
+}
+
+static inline void write_msr32(uint32_t msr, uint32_t value) {
+    wrmsr(msr, value, 0);
 }
 
 #endif  //_MSR_H
