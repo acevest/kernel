@@ -32,6 +32,9 @@ volatile int reenter_count = 0;
 
 volatile uint32_t clk_irq_cnt = 0;
 
+#include <io.h>
+#include <msr.h>
+#include <fixmap.h>
 __attribute__((regparm(1))) void irq_handler(pt_regs_t* regs) {
     assert(current->magic == TASK_MAGIC);
     unsigned int irq = regs->irq;
@@ -39,6 +42,34 @@ __attribute__((regparm(1))) void irq_handler(pt_regs_t* regs) {
         panic("invalid irq %d\n", irq);
     }
 
+    assert(1 == irq);
+    uint8_t b = inb(0x60);
+    printk("irq %d b %02x\n", irq, b);
+    // write_msr32(0x80b, 0);
+    system.lapic->write(0xB0, 0);
+    // vaddr_t apic_virt_base_addr = fixid_to_vaddr(FIX_LAPIC_BASE);
+    // apic_virt_base_addr += 0xB0;
+    // *((volatile uint32_t*)apic_virt_base_addr) = 0x0;
+
+#if 1
+    // 检查IMCR
+    outb(0x22, 0x70);
+    uint8_t imcr = inb(0x23);
+    printk("IMCR: 0x%02x (bit0=%s, bit1=%s)\n", imcr, (imcr & 0x01) ? "APIC" : "PIC",
+           (imcr & 0x02) ? "PIC masked" : "PIC active");
+
+    // 检查8259A状态
+    uint8_t pic1_imr = inb(0x21);
+    uint8_t pic2_imr = inb(0xA1);
+    printk("8259A IMR: Master=0x%02x, Slave=0x%02x\n", pic1_imr, pic2_imr);
+
+    // 检查IOAPIC是否响应
+    volatile uint32_t* ioapic = (volatile uint32_t*)system.ioapic_map->io_reg_sel;
+    ioapic[0] = 0x01;  // 选择版本寄存器
+    uint32_t version = ioapic[4];
+    printk("IOAPIC version: 0x%08x\n", version);
+#endif
+#if 1
     irq_desc_t* p = irq_desc + irq;
     irq_action_t* action = p->action;
 
@@ -50,9 +81,6 @@ __attribute__((regparm(1))) void irq_handler(pt_regs_t* regs) {
     assert(reenter <= 1);
 
     // TODO 判断打断的是否是内核态代码
-
-    // 发送EOI
-    p->chip->ack(irq);
 
     // 屏蔽当前中断
     // p->chip->disable(irq);
@@ -79,6 +107,10 @@ __attribute__((regparm(1))) void irq_handler(pt_regs_t* regs) {
     // 代表当前中断程序打断了前一个中断程序的“开中断处理的底半部分逻辑”
     // 即前一个中断处理尚未完全完成
     assert(irq_disabled());
+
+    // 发送EOI
+    p->chip->ack(irq);
+
     if (reenter != 0) {
         reenter--;
         return;
@@ -113,6 +145,7 @@ __attribute__((regparm(1))) void irq_handler(pt_regs_t* regs) {
 
     // 如果需要调度程序
     schedule();
+#endif
 }
 
 extern uint32_t jiffies;

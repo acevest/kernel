@@ -225,3 +225,7 @@ int sysc_reboot(int mode) {
 
     return 0;
 }
+
+void io_mfence() {
+    asm volatile("mfence" ::: "memory");
+}

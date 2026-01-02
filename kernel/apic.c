@@ -14,6 +14,8 @@
 #include <apic.h>
 #include <pci.h>
 #include <ioremap.h>
+#include <io.h>
+#include <i8259.h>
 
 static inline uint32_t apic_offset_to_msr(uint32_t offset) {
     return 0x800 + (offset >> 4);
@@ -73,7 +75,7 @@ void lapic_lvt_detect() {
         uint32_t offset;
         char* name;
     } lvt[] = {
-        {LAPIC_LVT_CMCI, "CMCI"},        //
+        // {LAPIC_LVT_CMCI, "CMCI"},        //
         {LAPIC_LVT_TIMER, "TIMER"},      //
         {LAPIC_LVT_THERMAL, "THERMAL"},  //
         {LAPIC_LVT_PERF, "PERF"},        //
@@ -95,6 +97,7 @@ void lapic_init() {
     if (r.edx & (1 << 9)) {
         printk("local apic supported\n");
         if (r.ecx & (1 << 21)) {
+            x2apic = true;
             printk("x2apic supported\n");
         } else {
             panic("x2apic not supported\n");
@@ -119,11 +122,13 @@ void lapic_init() {
     if (x2apic) {
         // 开启2xapic
         apic_base |= (1 << 10);
+        printk("after 2xapic enable apic base: %08x\n", apic_base);
         write_msr(MSR_IA32_APIC_BASE, apic_base);
+        printk("after 2xapic enable apic base: %08x\n", apic_base);
 
         apic_base = read_msr32(MSR_IA32_APIC_BASE);
         assert((apic_base & (1 << 10)) != 0);
-        printk("after 2xapic enable apic base: %016lx\n", apic_base);
+        printk("after 2xapic enable apic base: %08x\n", apic_base);
 
         system.lapic = &x2apic_lapic;
     } else {
@@ -191,6 +196,39 @@ void lapic_init() {
     uint32_t PPR = lapic->read(LAPIC_PPR);
 }
 
+static ioapic_map_t ioapic_map;
+
+uint64_t ioapic_rte_read(uint32_t index) {
+    uint64_t v = 0;
+    *(volatile uint32_t*)ioapic_map.io_reg_sel = index + 1;
+    io_mfence();
+    v = *(volatile uint32_t*)ioapic_map.io_win;
+    io_mfence();
+
+    v <<= 32;
+
+    *(volatile uint32_t*)ioapic_map.io_reg_sel = index + 0;
+    io_mfence();
+    v |= *(volatile uint32_t*)ioapic_map.io_win;
+    io_mfence();
+
+    return v;
+}
+
+void ioapic_rte_write(uint32_t index, uint64_t v) {
+    *(volatile uint32_t*)ioapic_map.io_reg_sel = index + 0;
+    io_mfence();
+    *(volatile uint32_t*)ioapic_map.io_win = v & 0xFFFFFFFF;
+    io_mfence();
+
+    v >>= 32;
+
+    *(volatile uint32_t*)ioapic_map.io_reg_sel = index + 1;
+    io_mfence();
+    *(volatile uint32_t*)ioapic_map.io_win = v & 0xFFFFFFFF;
+    io_mfence();
+}
+
 void ioapic_init() {
     // 先找到RCBA: Root Complex Base Address寄存器
     uint32_t cmd = PCI_CMD(0, 31, 0, 0xF0);
@@ -199,6 +237,39 @@ void ioapic_init() {
 
     if ((RCBA & 1) == 0) {
         panic("RCBA not enabled\n");
+    }
+
+    // 把IO APIC映射进地址空间
+    ioapic_map.phys_base = system.ioapic_addr;
+    ioapic_map.io_reg_sel = (vaddr_t)ioremap(ioapic_map.phys_base, PAGE_SIZE);
+    ioapic_map.io_win = ioapic_map.io_reg_sel + 0x10;
+    ioapic_map.eoi = ioapic_map.io_reg_sel + 0x40;
+    assert(ioapic_map.phys_base != 0);
+    assert(ioapic_map.io_reg_sel != 0);
+    printk("IO-APIC mapped %08x to %08x\n", ioapic_map.phys_base, ioapic_map.io_reg_sel);
+    printk("IO-APIC io_win %08x eoi %08x\n", ioapic_map.io_win, ioapic_map.eoi);
+
+    system.ioapic_map = &ioapic_map;
+
+    // IO APIC ID
+    *(volatile uint32_t*)ioapic_map.io_reg_sel = IOAPIC_ID;
+    io_mfence();
+    uint32_t ioapic_id = *(volatile uint32_t*)ioapic_map.io_win;
+    io_mfence();
+
+    // IO APIC VERSION
+    *(volatile uint32_t*)ioapic_map.io_reg_sel = IOAPIC_VERSION;
+    io_mfence();
+    uint32_t ioapic_version = *(volatile uint32_t*)ioapic_map.io_win;
+    io_mfence();
+
+    int rte_cnt = ((ioapic_version >> 16) & 0xFF) + 1;
+    printk("IO-APIC id %08x version %08x RTE cnt %d\n", ioapic_id, ioapic_version, rte_cnt);
+
+    // 屏蔽所有中断
+    for (int i = 0; i < rte_cnt; i++) {
+        uint32_t irq = 0x20 + i;
+        ioapic_rte_write(IOAPIC_RTE(i), IOAPIC_RTE_MASK | irq);
     }
 
     // RCBA
@@ -228,9 +299,63 @@ void ioapic_init() {
     printk("OIC: %04x\n", *pOIC);
     *pOIC = *pOIC | (1 << 8);
     printk("OIC: %04x\n", *pOIC);
+    // TODO
+    // iounmap(rcba_virt_base);
+
+    // 打开键盘中断
+    ioapic_rte_write(IOAPIC_RTE(1), 0x21);
 }
 
+void disable_i8259();
 void init_apic() {
+    // mask_i8259();
+    disable_i8259();
+    // imcr_init();
     lapic_init();
     ioapic_init();
 }
+
+// ## 中断路由路径配置矩阵
+
+// | 路径 | IMCR bit0 | 8259A | LAPIC | IOAPIC | 中断引脚连接 |
+// |------|-----------|-------|-------|--------|------------|
+// | **路径A** | 0 (PIC) | 启用 | 禁用 | 禁用/忽略 | INTR直接到CPU |
+// | **路径B** | 1 (APIC) | 启用 | 启用 | 禁用 | INTR到LINT0 |
+// | **路径C** | 1 (APIC) | 启用 | 启用 | 启用 | 8259A到IOAPIC |
+// | **路径D** | 1 (APIC) | 禁用/掩码 | 启用 | 启用 | 直连IOAPIC |
+
+// ### 说明：
+// - **IMCR bit0**: 0 = PIC模式, 1 = APIC模式
+// - **路径A**: 传统PIC模式，用于实模式/早期保护模式
+// - **路径B**: 过渡模式，8259A中断通过LAPIC的LINT0引脚
+// - **路径C**: 兼容模式，现代系统启动时常用
+// - **路径D**: 现代标准模式，性能最优
+
+// A. 8259直接到CPU
+//  实模式/早期保护模式
+//  中断向量表直接指向ISR
+//  8259A通过INTR引脚直接触发CPU中断
+
+// B. 8259 → LAPIC → CPU
+//  本地APIC启用，但IOAPIC未启用
+//  8259A中断通过LAPIC的LINTO引脚
+//  需要配置LAPIC的LVT LINT0/1寄存器
+
+// C. 8259 → IOAPIC → LAPIC → CPU
+//  现代系统兼容模式
+//  8259A中断连接到IOAPIC的IRQ0-15
+//  IOAPIC重定向到LAPIC
+//  需要IMCR寄存器配置
+
+// D. IOAPIC → LAPIC → CPU
+//  纯APIC模式
+//  设备中断直接连接到IOAPIC
+//  IOAPIC重定向到LAPIC
+//  8259A被禁用或掩码
+
+// irq_chip_t apic_chip = {
+//     .name = "APIC",
+//     .enable = enable_apic_irq,
+//     .disable = disable_apic_irq,
+//     .ack = ack_apic_irq,
+// };

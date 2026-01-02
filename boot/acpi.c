@@ -153,7 +153,7 @@ void parse_rsdt(paddr_t addr) {
     for (int i = 0; i < table_count; i++) {
         uint32_t table_phys_addr = rsdt->table_ptrs[i];
         // TODO unioremap
-        printk("ACPI table %u addr %08x\n", i, table_phys_addr);
+        // printk("ACPI table %u addr %08x\n", i, table_phys_addr);
         acpi_sdt_header_t* table = (acpi_sdt_header_t*)(ioremap(PAGE_ALIGN(table_phys_addr), PAGE_SIZE) +
                                                         (table_phys_addr - PAGE_ALIGN(table_phys_addr)));
         if (table == 0) {
@@ -176,6 +176,7 @@ void parse_rsdt(paddr_t addr) {
 
 void init_acpi() {
     parse_rsdt((paddr_t)system.rsdt_addr);
+    // asm("cli;hlt;");
 }
 
 void parse_acpi(void* tag) {

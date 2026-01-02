@@ -174,6 +174,7 @@ void init_task_entry() {
     void init_rootfs();
     init_rootfs();
 
+#if !DISABLE_IDE
 #if 1
     kernel_task("ide/0", disk_task_entry, (void*)0);
 
@@ -182,6 +183,7 @@ void init_task_entry() {
 
     void ata_read_ext2_sb();
     ata_read_ext2_sb();
+#endif
 #endif
 
 #if 0
@@ -193,7 +195,9 @@ void init_task_entry() {
 #endif
 
 #if 1
+#if !DISABLE_IDE
     kernel_task("ide/1", disk_task_entry, (void*)1);
+#endif
     kernel_task("user", user_task_entry, NULL);
     kernel_task("tskA", taskA_entry, NULL);
     kernel_task("tskB", taskB_entry, NULL);

@@ -135,9 +135,10 @@ void setup_kernel() {
     setup_i8254(100);
     setup_irqs();
 
+#if !DISABLE_IDE
     void ide_init();
     ide_init();
-
+#endif
     void init_sata();
     init_sata();
 
