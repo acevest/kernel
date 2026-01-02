@@ -158,8 +158,12 @@ typedef struct system {
 
     dev_t root_dev;
 
-    // 按理这个信息应该按CPU存储，简化实现
+    // 按理这些信息应该按CPU存储，简化实现
     lapic_t* lapic;
+    paddr_t lapic_addr;
+
+    //
+    paddr_t ioapic_addr;
 
 #define CMD_LINE_SIZE 128
     const char* cmdline;

@@ -12,6 +12,8 @@
 #include <system.h>
 #include <fixmap.h>
 #include <apic.h>
+#include <pci.h>
+#include <ioremap.h>
 
 static inline uint32_t apic_offset_to_msr(uint32_t offset) {
     return 0x800 + (offset >> 4);
@@ -189,6 +191,46 @@ void lapic_init() {
     uint32_t PPR = lapic->read(LAPIC_PPR);
 }
 
+void ioapic_init() {
+    // 先找到RCBA: Root Complex Base Address寄存器
+    uint32_t cmd = PCI_CMD(0, 31, 0, 0xF0);
+    printk("CMD: %08x\n", cmd);
+    uint32_t RCBA = pci_read_config_long(cmd);
+
+    if ((RCBA & 1) == 0) {
+        panic("RCBA not enabled\n");
+    }
+
+    // RCBA
+    // bit[0]: 使能位
+    // bit[13:1]: 保留
+    // bit[31:14]: RCBA物理基地址
+    // 0x3FFF == (1 << 14) - 1
+    uint32_t rcba_phys_base = RCBA & (~0x3FFF);
+
+    printk("RCBA: %08x %08x\n", RCBA, rcba_phys_base);
+
+    // 把RCBA物理基地址映射到内核空间
+    vaddr_t rcba_virt_base = (vaddr_t)ioremap(rcba_phys_base, 4 * PAGE_SIZE);
+    // set_fixmap(FIX_RCBA_BASE, rcba_phys_base);
+    // uint32_t rcba_virt_base = fixid_to_vaddr(FIX_RCBA_BASE);
+    printk("RCBA base %08x mapped to %08x\n", rcba_phys_base, rcba_virt_base);
+
+    // OIC
+    // 位于RCBA 的 0x31FE 偏移处，是一个16位寄存器
+    // bit[7:0]: APIC映射区。决定了IO APIC的间接访问寄存器的地址区间。只有在禁用IO APIC的情况下才能修。
+    // bit[8]: IO APIC使能标志位。 置位使能 复位禁用
+    // bit[9] 协处理器错误使能标志位
+    // bit[15:10]: 保留
+    //
+    // 上面得搞成ioremap映射, 因为0x31FE这个超过一页也就是4K了。
+    uint16_t* pOIC = (uint16_t*)((uint8_t*)rcba_virt_base + 0x31FE);
+    printk("OIC: %04x\n", *pOIC);
+    *pOIC = *pOIC | (1 << 8);
+    printk("OIC: %04x\n", *pOIC);
+}
+
 void init_apic() {
+    lapic_init();
     ioapic_init();
 }

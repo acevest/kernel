@@ -11,6 +11,7 @@
 #include <string.h>
 #include <system.h>
 #include <page.h>
+#include <ioremap.h>
 
 typedef struct {
     char signature[8];   // "RSD PTR "
@@ -46,16 +47,18 @@ typedef struct {
     // 后面跟着可变长度的结构
 } __attribute__((packed)) madt_t;
 
-void parse_madt(paddr_t addr) {
+void parse_madt(vaddr_t addr) {
     if (0 == addr) {
         printk("MADT addr is null\n");
         return;
     }
 
-    page_map(addr, addr, PAGE_P | PAGE_WR);
-
+    printk("MADT vaddr %08x\n", addr);
     madt_t* madt = (madt_t*)addr;
     printk("MADT LAPIC addr %08x flags %08x\n", madt->lapic_addr, madt->flags);
+    printk("MADT header size %u total length %u\n", sizeof(madt_t), madt->header.length);
+
+    system.lapic_addr = madt->lapic_addr;
 
     uint8_t* ptr = (uint8_t*)(madt + 1);  // 跳过表头
     uint8_t* end = (uint8_t*)madt + madt->header.length;
@@ -90,6 +93,12 @@ void parse_madt(paddr_t addr) {
             uint32_t ioapic_addr = *(uint32_t*)(ptr + 4);
             uint32_t global_irq_base = *(uint32_t*)(ptr + 8);
             ioapic_cnt++;
+            if (ioapic_cnt == 1) {
+                system.ioapic_addr = ioapic_addr;
+            } else {
+                // 多个IO-APIC，就不支持了
+                panic("multiple IO-APIC not supported\n");
+            }
             printk("IOAPIC id %u addr %08x global_irq_base %u\n", ioapic_id, ioapic_addr, global_irq_base);
         } break;
         case 2: {  // IO APIC 中断源重映射
@@ -124,9 +133,10 @@ void parse_rsdt(paddr_t addr) {
         return;
     }
 
-    page_map(addr, addr, PAGE_P | PAGE_WR);
+    printk("parse rsdt\n");
+    rsdt_t* rsdt = (rsdt_t*)(ioremap(PAGE_ALIGN(addr), PAGE_SIZE) + (addr - PAGE_ALIGN(addr)));
+    assert(rsdt != NULL);
 
-    rsdt_t* rsdt = (rsdt_t*)addr;
     // 验证签名
     if (memcmp(rsdt->header.signature, "RSDT", 4) != 0) {
         panic("ACPI RSDT invalid\n");
@@ -142,9 +152,10 @@ void parse_rsdt(paddr_t addr) {
 
     for (int i = 0; i < table_count; i++) {
         uint32_t table_phys_addr = rsdt->table_ptrs[i];
-        page_map((vaddr_t)table_phys_addr, (paddr_t)table_phys_addr, PAGE_P | PAGE_WR);
-
-        acpi_sdt_header_t* table = (acpi_sdt_header_t*)table_phys_addr;
+        // TODO unioremap
+        printk("ACPI table %u addr %08x\n", i, table_phys_addr);
+        acpi_sdt_header_t* table = (acpi_sdt_header_t*)(ioremap(PAGE_ALIGN(table_phys_addr), PAGE_SIZE) +
+                                                        (table_phys_addr - PAGE_ALIGN(table_phys_addr)));
         if (table == 0) {
             printk("ACPI table %u:%x is null\n", i, table_phys_addr);
             continue;
@@ -157,9 +168,14 @@ void parse_rsdt(paddr_t addr) {
         }
         printk("ACPI table %u signature %s addr %08x len %u\n", i, sig, table_phys_addr, table->length);
         if (memcmp(sig, "APIC", 4) == 0) {
-            parse_madt((paddr_t)table);
+            printk("found MADT table, length %u\n", table->length);
+            parse_madt((vaddr_t)table);
         }
     }
+}
+
+void init_acpi() {
+    parse_rsdt((paddr_t)system.rsdt_addr);
 }
 
 void parse_acpi(void* tag) {

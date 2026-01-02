@@ -18,6 +18,9 @@
 // 后续内核不映射显存了，以后可以提供映射到用户空间的功能，由用户态程序操作
 #define VRAM_VADDR_SIZE (16 << 20)
 
+// VMALLOC区 128MB
+#define VMALLOC_VADDR_SIZE (128 << 20)
+
 // 最大支持的线性地址空间为1G
 // 这里这样实现是为了简单，与Linux内核实现有显著不同
 // Linux内核还把内存大致分为了 DMA(<16MB), NORMAL(<896MB), HIGHMEM(896~4G)的内存分区(zone)
@@ -27,11 +30,15 @@
 
 // 把内核线性地址的最高部分留给显存
 // 余下的部分为支持映射其它物理内存的空间
-#define MAX_SUPT_PHYMM_SIZE (MAX_SUPT_VADDR_SIZE - VRAM_VADDR_SIZE - FIX_MAP_VADDR_SIZE)
+#define MAX_SUPT_PHYMM_SIZE (MAX_SUPT_VADDR_SIZE - VMALLOC_VADDR_SIZE - VRAM_VADDR_SIZE - FIX_MAP_VADDR_SIZE)
+
+// 算出VMALLOC区的线性地址
+#define VMALLOC_VADDR_BASE (KERNEL_VADDR_BASE + MAX_SUPT_PHYMM_SIZE)
+#define VMALLOC_VADDR_END (VMALLOC_VADDR_BASE + VMALLOC_VADDR_SIZE)
 
 // 算出显存的线性地址
 // 之后要将这个地址映射到显存的物理地址
-#define VRAM_VADDR_BASE (PAGE_OFFSET + MAX_SUPT_PHYMM_SIZE)
+#define VRAM_VADDR_BASE (VMALLOC_VADDR_END)
 #define VRAM_VADDR_END (VRAM_VADDR_BASE + VRAM_VADDR_SIZE)
 
 // 算出固定映射区的线性地址
