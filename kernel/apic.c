@@ -302,9 +302,13 @@ void ioapic_init() {
     // TODO
     // iounmap(rcba_virt_base);
 
-    // 打开键盘中断
-    ioapic_rte_write(IOAPIC_RTE(1), 0x21);
     extern irq_chip_t ioapic_chip;
+    // 把8253的中断通过IOAPIC转发到CPU0的0号中断
+    // 8253/8254连在i8259的0号引脚，但连在IO APIC的2号引脚上
+    ioapic_rte_write(IOAPIC_RTE(2), 0x20 + 0);
+    // 把键盘中断通过IOAPIC转发到CPU0的1号中断
+    ioapic_rte_write(IOAPIC_RTE(1), 0x20 + 1);
+    irq_set_chip(0x00, &ioapic_chip);
     irq_set_chip(0x01, &ioapic_chip);
 }
 
