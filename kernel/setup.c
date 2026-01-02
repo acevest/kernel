@@ -86,14 +86,6 @@ void setup_kernel() {
     init_mm();
 
     init_buffer();
-#if 1
-    void init_acpi();
-    init_acpi();
-#endif
-#if 1
-    void init_apic();
-    init_apic();
-#endif
 
     void init_mount();
     init_mount();
@@ -134,6 +126,15 @@ void setup_kernel() {
 
     setup_i8254(100);
     setup_irqs();
+
+#if 1
+    void init_acpi();
+    init_acpi();
+#endif
+#if 1
+    void init_apic();
+    init_apic();
+#endif
 
 #if !DISABLE_IDE
     void ide_init();

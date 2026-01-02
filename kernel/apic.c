@@ -15,7 +15,7 @@
 #include <pci.h>
 #include <ioremap.h>
 #include <io.h>
-#include <i8259.h>
+#include <irq.h>
 
 static inline uint32_t apic_offset_to_msr(uint32_t offset) {
     return 0x800 + (offset >> 4);
@@ -304,6 +304,8 @@ void ioapic_init() {
 
     // 打开键盘中断
     ioapic_rte_write(IOAPIC_RTE(1), 0x21);
+    extern irq_chip_t ioapic_chip;
+    irq_set_chip(0x01, &ioapic_chip);
 }
 
 void disable_i8259();
@@ -353,9 +355,27 @@ void init_apic() {
 //  IOAPIC重定向到LAPIC
 //  8259A被禁用或掩码
 
-// irq_chip_t apic_chip = {
-//     .name = "APIC",
-//     .enable = enable_apic_irq,
-//     .disable = disable_apic_irq,
-//     .ack = ack_apic_irq,
-// };
+int enable_ioapic_irq(unsigned int irq) {
+    uint64_t rte = ioapic_rte_read(irq);
+    rte &= ~IOAPIC_RTE_MASK;
+    ioapic_rte_write(irq, rte);
+    return 0;
+}
+
+int disable_ioapic_irq(unsigned int irq) {
+    uint64_t rte = ioapic_rte_read(irq);
+    rte |= IOAPIC_RTE_MASK;
+    ioapic_rte_write(irq, rte);
+    return 0;
+}
+
+void ack_ioapic_irq(unsigned int irq) {
+    system.lapic->write(LAPIC_EOI, 0);
+}
+
+irq_chip_t ioapic_chip = {
+    .name = "IO-APIC",
+    .enable = enable_ioapic_irq,
+    .disable = disable_ioapic_irq,
+    .ack = ack_ioapic_irq,
+};

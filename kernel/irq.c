@@ -42,6 +42,7 @@ __attribute__((regparm(1))) void irq_handler(pt_regs_t* regs) {
         panic("invalid irq %d\n", irq);
     }
 
+#if 0
     assert(1 == irq);
     uint8_t b = inb(0x60);
     printk("irq %d b %02x\n", irq, b);
@@ -50,8 +51,8 @@ __attribute__((regparm(1))) void irq_handler(pt_regs_t* regs) {
     // vaddr_t apic_virt_base_addr = fixid_to_vaddr(FIX_LAPIC_BASE);
     // apic_virt_base_addr += 0xB0;
     // *((volatile uint32_t*)apic_virt_base_addr) = 0x0;
-
-#if 1
+#endif
+#if 0
     // 检查IMCR
     outb(0x22, 0x70);
     uint8_t imcr = inb(0x23);
@@ -81,10 +82,6 @@ __attribute__((regparm(1))) void irq_handler(pt_regs_t* regs) {
     assert(reenter <= 1);
 
     // TODO 判断打断的是否是内核态代码
-
-    // 屏蔽当前中断
-    // p->chip->disable(irq);
-
 #if 0
     if (0x00 == irq) {
         if ((clk_irq_cnt++ & 0xFU) != 0) {
@@ -101,14 +98,10 @@ __attribute__((regparm(1))) void irq_handler(pt_regs_t* regs) {
         action = action->next;
     }
 
-    // 解除屏蔽当前中断
-    // p->chip->enable(irq);
-
     // 代表当前中断程序打断了前一个中断程序的“开中断处理的底半部分逻辑”
     // 即前一个中断处理尚未完全完成
     assert(irq_disabled());
 
-    // 发送EOI
     p->chip->ack(irq);
 
     if (reenter != 0) {
@@ -340,4 +333,10 @@ void enter_critical_zone() {
 }
 void exit_critical_zone() {
     irq_restore(__critical_zone_eflags);
+}
+
+void irq_set_chip(unsigned int irq, irq_chip_t* chip) {
+    assert(irq < NR_IRQS);
+    assert(chip != NULL);
+    irq_desc[irq].chip = chip;
 }
