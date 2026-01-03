@@ -28,6 +28,9 @@
 #define LAPIC_PPR 0xA0
 #define LAPIC_EOI 0xB0
 #define LAPIC_LDR 0xD0
+
+// Destination Format Register
+// x2APIC模式下，不再支持平坦模式，仅剩集群模式，以至于x2APIC模式废除了DFR寄存器
 #define LAPIC_DFR 0xE0
 
 // 伪中断向量寄存器

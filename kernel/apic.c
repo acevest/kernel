@@ -310,6 +310,35 @@ void ioapic_init() {
     ioapic_rte_write(IOAPIC_RTE(1), 0x20 + 1);
     irq_set_chip(0x00, &ioapic_chip);
     irq_set_chip(0x01, &ioapic_chip);
+
+    // HPTC: High Precision Timer Control Register
+    // bit[1:0] 地址映射范围选择域
+    //       取值      地址映射范围
+    //        00: 0xFED00000 - 0xFED003FF
+    //        01: 0xFED01000 - 0xFED013FF
+    //        10: 0xFED02000 - 0xFED023FF
+    //        11: 0xFED03000 - 0xFED033FF
+    // bit[7] 地址映射使能标志位，用于控制HPET设备访问地址的开启与否
+    //        只有它置位时芯片组才会将HPET配置寄存器映射到内存空间
+    uint32_t* pHPTC = (uint32_t*)((uint8_t*)rcba_virt_base + 0x3404);
+    printk("HPTC: %08x\n", *pHPTC);
+    *pHPTC = (1 << 7) | (0x00);
+    printk("HPTC: %08x\n", *pHPTC);
+
+    vaddr_t hpet_base = (vaddr_t)ioremap(0xFED00000, 0x3FF);
+    printk("HPET base %08x mapped to %08x\n", 0xFED00000, hpet_base);
+
+    uint64_t GCAP_ID = 0;
+    GCAP_ID = *(volatile uint32_t*)(hpet_base + 4);
+    GCAP_ID <<= 32;
+    GCAP_ID |= *(volatile uint32_t*)(hpet_base + 0);
+    printk("GCAP_ID: %016x\n", GCAP_ID);
+
+    uint64_t iddd = *(volatile uint64_t*)(hpet_base + 0);
+    printk("GCAP_ID: %016x\n", iddd);
+    // asm("cli;hlt;");
+    // TODO
+    // iounmap(hpet_base);
 }
 
 void disable_i8259();
