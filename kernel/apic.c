@@ -18,19 +18,26 @@
 #include <irq.h>
 
 static inline uint32_t apic_offset_to_msr(uint32_t offset) {
-    return 0x800 + (offset >> 4);
+    uint32_t n = LAPIC_MSR_BASE + (offset >> 4);
+    return n;
 }
 
 uint32_t apic_read_lapic(uint32_t offset) {
     assert(offset < PAGE_SIZE);
     uint8_t* base = (uint8_t*)fixid_to_vaddr(FIX_LAPIC_BASE);
-    return *(uint32_t*)(base + offset);
+    return *(volatile uint32_t*)(base + offset);
 }
 
 void apic_write_lapic(uint32_t offset, uint32_t value) {
     assert(offset < PAGE_SIZE);
     uint8_t* base = (uint8_t*)fixid_to_vaddr(FIX_LAPIC_BASE);
-    *(uint32_t*)(base + offset) = value;
+    *(volatile uint32_t*)(base + offset) = value;
+}
+
+void apic_write64_lapic(uint32_t offset, uint64_t value) {
+    assert(offset < PAGE_SIZE);
+    uint8_t* base = (uint8_t*)fixid_to_vaddr(FIX_LAPIC_BASE);
+    *(volatile uint64_t*)(base + offset) = value;
 }
 
 uint32_t apic_get_lapic_id() {
@@ -40,8 +47,10 @@ uint32_t apic_get_lapic_id() {
 
 static lapic_t apic_lapic = {
     .name = "apic - lapic",
+    .x2apic = false,
     .read = apic_read_lapic,
     .write = apic_write_lapic,
+    .write64 = apic_write64_lapic,
     .get_lapic_id = apic_get_lapic_id,
 };
 
@@ -57,6 +66,12 @@ void x2apic_write_lapic(uint32_t offset, uint32_t value) {
     write_msr32(msr, value);
 }
 
+void x2apic_write64_lapic(uint32_t offset, uint64_t value) {
+    assert(offset < PAGE_SIZE);
+    uint32_t msr = apic_offset_to_msr(offset);
+    write_msr(msr, value);
+}
+
 uint32_t x2apic_get_lapic_id() {
     uint32_t msr = apic_offset_to_msr(LAPIC_ID);
     return read_msr32(msr);
@@ -64,8 +79,10 @@ uint32_t x2apic_get_lapic_id() {
 
 static lapic_t x2apic_lapic = {
     .name = "x2apic - lapic",
+    .x2apic = true,
     .read = x2apic_read_lapic,
     .write = x2apic_write_lapic,
+    .write64 = x2apic_write64_lapic,
     .get_lapic_id = x2apic_get_lapic_id,
 };
 
@@ -100,7 +117,7 @@ void lapic_init() {
             x2apic = true;
             printk("x2apic supported\n");
         } else {
-            panic("x2apic not supported\n");
+            // panic("x2apic not supported\n");
         }
     } else {
         panic("local apic not supported\n");
@@ -131,6 +148,7 @@ void lapic_init() {
         printk("after 2xapic enable apic base: %08x\n", apic_base);
 
         system.lapic = &x2apic_lapic;
+        // system.lapic = &apic_lapic;
     } else {
         system.lapic = &apic_lapic;
     }
@@ -302,6 +320,7 @@ void ioapic_init() {
     // TODO
     // iounmap(rcba_virt_base);
 
+#if 1
     extern irq_chip_t ioapic_chip;
     // 把8253的中断通过IOAPIC转发到CPU0的0号中断
     // 8253/8254连在i8259的0号引脚，但连在IO APIC的2号引脚上
@@ -310,7 +329,7 @@ void ioapic_init() {
     ioapic_rte_write(IOAPIC_RTE(1), 0x20 + 1);
     irq_set_chip(0x00, &ioapic_chip);
     irq_set_chip(0x01, &ioapic_chip);
-
+#endif
     // HPTC: High Precision Timer Control Register
     // bit[1:0] 地址映射范围选择域
     //       取值      地址映射范围
@@ -336,9 +355,84 @@ void ioapic_init() {
 
     uint64_t iddd = *(volatile uint64_t*)(hpet_base + 0);
     printk("GCAP_ID: %016x\n", iddd);
-    // asm("cli;hlt;");
     // TODO
     // iounmap(hpet_base);
+}
+
+void prepare_ap_code(paddr_t paddr) {
+    // 注意: 最开始时AP是运行在实模式
+    paddr += KERNEL_VADDR_BASE;
+    *(volatile uint8_t*)(paddr + 0) = 0x90;
+    *(volatile uint8_t*)(paddr + 1) = 0x90;
+    *(volatile uint8_t*)(paddr + 2) = 0x90;
+    *(volatile uint8_t*)(paddr + 3) = 0xEA;     // jmp
+    *(volatile uint16_t*)(paddr + 4) = 0x0000;  // offset: 0000
+    *(volatile uint16_t*)(paddr + 6) = 0x0100;  // cs:0100
+}
+
+void wakeup_ap(paddr_t paddr) {
+    assert(PAGE_DOWN(paddr) == paddr);
+
+    uint32_t pfn = PFN_DW(paddr);
+    assert(pfn <= 0xFF);
+
+    // 这里使用apic_lapic是因为ICR是一个64位寄存器
+    // 如果用MSR读写的话，只能用0x830这个地址，是没有也不能用LAPIC_ICR_HIGH转换成的0x831的地址的
+    // 而x2apic_lapic的write操作里的自动将偏移转换成MSR的逻辑目前是不支持屏蔽0x831的
+    // lapic_t* lapic = &apic_lapic;
+    lapic_t* lapic = system.lapic;
+
+    uint64_t id = 0;
+    id <<= 32;
+    id <<= lapic->x2apic ? 0 : 24;  // 如果只是apic的话id需要左移56位
+
+    // 在32位系统下ICR寄存器要先写高32位，再写低32位
+    // 如果低32位数据写入那么处理器会立即发送IPI消息
+    //
+    // 这里为什么要单独写个write64?
+    // 因为ICR是一个64位寄存器，对于apic的内存映射的方式没有问题，只要保证先写高32位再写低32位就可以了
+    // 但是对于x2apic的MSR的情况就不一样了，因为ICR的MSR地址只有0x830，是没有也不能访问0x831的
+    // 在lapic->write函数里只实现了按32位写数据
+    // 所以如果尝试写LAPIC_ICR_HIGH的话，就会在x2apic_write_lapic里通过apic_offset_to_msr得到0x831的MSR地址
+    // 所以就干脆写个写64位数据的函数
+
+    // INIT IPI
+    uint64_t init_ipi = id;
+    init_ipi |= ((0b11) << 18);  // 向所有处理器发送消息(不包括自身)
+    init_ipi |= ((0b0) << 15);   // 0=边沿触发  1=电平触发
+    init_ipi |= ((0b1) << 14);   // 信号驱动电平: 0=无效 1=有效
+    init_ipi |= ((0b0) << 12);   // 投递状态: 0=空闲 1=发送挂起
+    init_ipi |= ((0b0) << 11);   // 目标模式: 0=物理模式 1=逻辑模式
+    init_ipi |= ((0b101) << 8);  // 投递模式: 101=INIT, 110=START UP
+    init_ipi |= ((0x00) << 0);   // 中断向量，在STARTUP IPI中代表地址0xMM00:0000 -> 0xMM00*16+0x0000=0xMM000
+    lapic->write64(LAPIC_ICR, init_ipi);
+    printk("INIT IPI %016x\n", init_ipi);
+
+    for (int i = 0; i < 1000 * 10000; i++) {
+        asm("nop");
+    }
+
+    // STARTUP IPI
+    uint64_t startup_ipi = id;
+    startup_ipi |= ((0b11) << 18);  // 向所有处理器发送消息(不包括自身)
+    startup_ipi |= ((0b0) << 15);   // 0=边沿触发  1=电平触发
+    startup_ipi |= ((0b1) << 14);   // 信号驱动电平: 0=无效 1=有效
+    startup_ipi |= ((0b0) << 12);   // 投递状态: 0=空闲 1=发送挂起
+    startup_ipi |= ((0b0) << 11);   // 目标模式: 0=物理模式 1=逻辑模式
+    startup_ipi |= ((0b110) << 8);  // 投递模式: 101=INIT, 110=START UP
+    startup_ipi |= ((pfn) << 0);    // 中断向量，在STARTUP IPI中代表地址0xMM00:0000 -> 0xMM00*16+0x0000=0xMM000
+    lapic->write64(LAPIC_ICR, startup_ipi);
+    printk("STARTUP[0] IPI %016x\n", startup_ipi);
+
+    for (int i = 0; i < 1000 * 10000; i++) {
+        asm("nop");
+    }
+
+    // intel 要求至少发两次
+    lapic->write64(LAPIC_ICR, startup_ipi);
+    printk("STARTUP[1] IPI %016x\n", startup_ipi);
+
+    printk("wakeup ap\n");
 }
 
 void disable_i8259();
@@ -348,6 +442,10 @@ void init_apic() {
     // imcr_init();
     lapic_init();
     ioapic_init();
+
+    paddr_t ap_code_addr = 0x1000;
+    prepare_ap_code(ap_code_addr);
+    wakeup_ap(ap_code_addr);
 }
 
 // ## 中断路由路径配置矩阵

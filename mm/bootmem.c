@@ -250,6 +250,8 @@ void init_bootmem_allocator() {
     // 强制保留最开始的一页
     // 免得alloc的时候分不清是失败，还是分配的第0页
     reserve_bootmem(0, 1);
+
+    reserve_bootmem(1, 2);
 }
 
 void init_bootmem() {

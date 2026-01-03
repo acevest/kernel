@@ -9,6 +9,8 @@
 
 #pragma once
 
+#define LAPIC_MSR_BASE 0x800
+
 // APIC的ID寄存器
 // 在x2apic上，LAPIC_ID是32位
 // 在Pentium 4和Xeon上，LAPIC_ID是8位，位置在[31:24]
@@ -58,8 +60,9 @@
 
 #define LAPIC_ESR 0x280
 #define LAPIC_LVT_CMCI 0x2F0
-#define LAPIC_ICR_LOW 0x300
-#define LAPIC_ICR_HIGH 0x310
+#define LAPIC_ICR 0x300
+#define LAPIC_ICR_LOW (LAPIC_ICR + 0x00)
+#define LAPIC_ICR_HIGH (LAPIC_ICR + 0x10)
 #define LAPIC_LVT_TIMER 0x320
 #define LAPIC_LVT_THERMAL 0x330
 #define LAPIC_LVT_PERF 0x340
@@ -73,8 +76,11 @@
 typedef struct lapic {
     const char* name;
 
+    bool x2apic;
+
     uint32_t (*read)(uint32_t reg_offset);
     void (*write)(uint32_t reg_offset, uint32_t value);
+    void (*write64)(uint32_t reg_offset, uint64_t value);
 
     uint32_t (*get_lapic_id)();
 } lapic_t;
