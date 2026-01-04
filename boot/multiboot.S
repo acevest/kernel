@@ -21,7 +21,6 @@
 .extern setup_kernel
 .extern root_task_entry
 .extern get_root_task_stack_top
-.extern kernel_virtual_addr_start
 
 #define MULTIBOOT_STACK_SIZE 0x200
 
