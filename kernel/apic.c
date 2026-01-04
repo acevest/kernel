@@ -362,12 +362,20 @@ void ioapic_init() {
 void prepare_ap_code(paddr_t paddr) {
     // 注意: 最开始时AP是运行在实模式
     paddr += KERNEL_VADDR_BASE;
-    *(volatile uint8_t*)(paddr + 0) = 0x90;
-    *(volatile uint8_t*)(paddr + 1) = 0x90;
-    *(volatile uint8_t*)(paddr + 2) = 0x90;
-    *(volatile uint8_t*)(paddr + 3) = 0xEA;     // jmp
-    *(volatile uint16_t*)(paddr + 4) = 0x0000;  // offset: 0000
-    *(volatile uint16_t*)(paddr + 6) = 0x0100;  // cs:0100
+    // *(volatile uint8_t*)(paddr + 0) = 0x90;
+    // *(volatile uint8_t*)(paddr + 1) = 0x90;
+    // *(volatile uint8_t*)(paddr + 2) = 0x90;
+    // *(volatile uint8_t*)(paddr + 3) = 0xEA;     // jmp
+    // *(volatile uint16_t*)(paddr + 4) = 0x0000;  // offset: 0000
+    // *(volatile uint16_t*)(paddr + 6) = 0x0100;  // cs:0100
+
+    extern char ap_boot_bgn;
+    extern char ap_boot_end;
+    uint32_t bytes = &ap_boot_end - &ap_boot_bgn;
+    // memcpy((void*)paddr, &ap_boot_bgn, bytes);
+    for(int i=0; i<bytes; i++) {
+        ((uint8_t*)paddr)[i] = ((uint8_t*)&ap_boot_bgn)[i];
+    }
 }
 
 void wakeup_ap(paddr_t paddr) {
@@ -428,9 +436,12 @@ void wakeup_ap(paddr_t paddr) {
         asm("nop");
     }
 
+#if 0
+    // 在调试的时候，如果在ap_boot.S的入口处写hlt，它会hlt的AP继续执行
     // intel 要求至少发两次
     lapic->write64(LAPIC_ICR, startup_ipi);
     printk("STARTUP[1] IPI %016x\n", startup_ipi);
+#endif
 
     printk("wakeup ap\n");
 }
