@@ -21,7 +21,6 @@
 .extern setup_kernel
 .extern root_task_entry
 .extern get_root_task_stack_top
-.extern kernel_virtual_addr_start
 
 #define MULTIBOOT_STACK_SIZE 0x200
 
@@ -107,7 +106,7 @@ p_label_far_ptr:
 
 .align 32
 boot_gdt:
-empty: .long    0x00000000, 0x00000000
+empty:     .long    0x00000000, 0x00000000
 code_desc: .long    0x0000FFFF, 0x00CF9B00
 data_desc: .long    0x0000FFFF, 0x00CF9300
 boot_gdt_end:

@@ -81,7 +81,7 @@ ${KERNELBIN}: print_flags ${OBJS}
 	@echo 'LD ${KERNELBIN}'
 	@${LD} ${LDFLAGS} $(OBJS) -o $@ > $(SYSTEMMAP)
 	@nm -a $@ > kernel.sym
-# rm kernel/setup.c.o
+	rm kernel/setup.c.o
 
 %.S.o: %.S ${HEADER_FILES}
 	@echo 'CC $<'

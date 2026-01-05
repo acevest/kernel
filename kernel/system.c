@@ -124,7 +124,7 @@ void setup_irqs() {
         irq_desc[i] = no_irq_desc;
 
         if (i < 16) {
-            irq_desc[i].chip = &i8259_chip;
+            irq_set_chip(i, &i8259_chip);
         }
     }
 
@@ -224,4 +224,8 @@ int sysc_reboot(int mode) {
     }
 
     return 0;
+}
+
+void io_mfence() {
+    asm volatile("mfence" ::: "memory");
 }

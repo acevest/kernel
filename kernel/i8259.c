@@ -157,3 +157,56 @@ __attribute__((regparm(1))) void boot_irq_handler(pt_regs_t* regs) {
     // 解除屏蔽当前中断
     enable_i8259_irq(irq);
 }
+
+// IMCR
+#define IMCR_ADDR_PORT 0x22
+#define IMCR_DATA_PORT 0x23
+// IMCR寄存器位定义
+#define IMCR_REG_SELECT 0x70  // 选择寄存器70h
+//
+#define IMCR_BIT_APIC 0x01          // bit0: 1=APIC模式, 0=PIC模式
+#define IMCR_BIT_PIC_MASK 0x02      // bit1: 0=启用PIC, 1=禁用PIC
+#define IMCR_BIT_IMCR_PRESENT 0x80  // bit7: 1=IMCR存在, 0=IMCR不存在
+uint8_t imcr_read(uint8_t reg) {
+    outb(IMCR_ADDR_PORT, reg);
+    return inb(IMCR_DATA_PORT);
+}
+void imcr_write(uint8_t reg, uint8_t value) {
+    outb(IMCR_ADDR_PORT, reg);
+    outb(IMCR_DATA_PORT, value);
+}
+
+void imcr_enable_apic_disable_pic() {
+    uint8_t value = imcr_read(IMCR_REG_SELECT);
+    printk("IMCR: %02x\n", value);
+    if ((value & IMCR_BIT_IMCR_PRESENT) == 0) {
+        panic("IMCR not present\n");
+    }
+    imcr_write(IMCR_REG_SELECT, value | IMCR_BIT_APIC | IMCR_BIT_PIC_MASK);
+    value = imcr_read(IMCR_REG_SELECT);
+    printk("IMCR: %02x\n", value);
+
+    if ((value & IMCR_BIT_APIC) == 0) {
+        panic("IMCR not set to APIC mode\n");
+    } else {
+        printk("IMCR set to APIC mode\n");
+    }
+}
+
+void disable_i8259() {
+    mask_i8259();
+
+    imcr_enable_apic_disable_pic();
+
+    // 禁用8259级联
+    outb(0x11, PIC_MASTER_CMD);  // ICW1: 初始化
+    outb(0x20, PIC_MASTER_IMR);  // ICW2: IR0-7 mapped to 0x20-0x27
+    outb(0x04, PIC_MASTER_IMR);  // ICW3: IR2连接从片
+    outb(0x01, PIC_MASTER_IMR);  // ICW4: Normal EOI
+    outb(0x11, PIC_SLAVE_CMD);   // ICW1: 初始化
+    outb(0x28, PIC_SLAVE_IMR);   // ICW2: IR0-7 mapped to 0x28-0x2F
+    outb(0x02, PIC_SLAVE_IMR);   // ICW3: IR2连接从片
+    outb(0x01, PIC_SLAVE_IMR);   // ICW4: Normal EOI
+
+    mask_i8259();
+}

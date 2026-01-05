@@ -23,8 +23,7 @@
     do {                                                                                                 \
         printk("Unsupport Now...[%s]\n", __FUNCTION__);                                                  \
         printk("EFLAGS:%08x CS:%02x EIP:%08x ERRCODE:%x", regs.eflags, regs.cs, regs.eip, regs.errcode); \
-        while (1)                                                                                        \
-            ;                                                                                            \
+        asm("cli;hlt;");                                                                                 \
     } while (0);
 
 void doDivideError(pt_regs_t regs) {
@@ -95,7 +94,7 @@ US RW  P - Description
 
     asm("movl %%cr2,%%eax" : "=a"(addr));
 
-    // printk("do page fault errcode %x addr %08x [%08x]\n", errcode, addr, current);
+    printk("do page fault errcode %x addr %08x [%08x] %s\n", errcode, addr, current, current->name);
 
     // assert(errcode != 2 && errcode != 6);
 

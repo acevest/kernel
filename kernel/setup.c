@@ -74,21 +74,12 @@ void print_kernel_version() {
     printk(version);
 }
 
-void parse_rsdt(void* addr);
-
 void setup_kernel() {
     printk("sysenter esp mode: fixed to &tss.esp0\n");
 
     init_mm();
 
     init_buffer();
-#if 0
-    parse_rsdt(system.rsdt_addr);
-#endif
-#if 1
-    void init_apic();
-    init_apic();
-#endif
 
     void init_mount();
     init_mount();
@@ -130,9 +121,19 @@ void setup_kernel() {
     setup_i8254(100);
     setup_irqs();
 
+#if 1
+    void init_acpi();
+    init_acpi();
+#endif
+#if 1
+    void init_apic();
+    init_apic();
+#endif
+
+#if !DISABLE_IDE
     void ide_init();
     ide_init();
-
+#endif
     void init_sata();
     init_sata();
 

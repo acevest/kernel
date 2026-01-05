@@ -17,6 +17,9 @@ void ata_pio_read_data(int drvid, int sect_cnt, void* dst);
 void ata_dma_read_ext(int drv, uint64_t pos, uint16_t count, void* dest);
 
 int send_disk_request(disk_request_t* r) {
+#if DISABLE_IDE
+    return 0;
+#endif
     if (NULL == r) {
         panic("null disk request");
     }

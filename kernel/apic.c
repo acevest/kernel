@@ -12,21 +12,32 @@
 #include <system.h>
 #include <fixmap.h>
 #include <apic.h>
+#include <pci.h>
+#include <ioremap.h>
+#include <io.h>
+#include <irq.h>
 
 static inline uint32_t apic_offset_to_msr(uint32_t offset) {
-    return 0x800 + (offset >> 4);
+    uint32_t n = LAPIC_MSR_BASE + (offset >> 4);
+    return n;
 }
 
 uint32_t apic_read_lapic(uint32_t offset) {
     assert(offset < PAGE_SIZE);
     uint8_t* base = (uint8_t*)fixid_to_vaddr(FIX_LAPIC_BASE);
-    return *(uint32_t*)(base + offset);
+    return *(volatile uint32_t*)(base + offset);
 }
 
 void apic_write_lapic(uint32_t offset, uint32_t value) {
     assert(offset < PAGE_SIZE);
     uint8_t* base = (uint8_t*)fixid_to_vaddr(FIX_LAPIC_BASE);
-    *(uint32_t*)(base + offset) = value;
+    *(volatile uint32_t*)(base + offset) = value;
+}
+
+void apic_write64_lapic(uint32_t offset, uint64_t value) {
+    assert(offset < PAGE_SIZE);
+    uint8_t* base = (uint8_t*)fixid_to_vaddr(FIX_LAPIC_BASE);
+    *(volatile uint64_t*)(base + offset) = value;
 }
 
 uint32_t apic_get_lapic_id() {
@@ -36,8 +47,10 @@ uint32_t apic_get_lapic_id() {
 
 static lapic_t apic_lapic = {
     .name = "apic - lapic",
+    .x2apic = false,
     .read = apic_read_lapic,
     .write = apic_write_lapic,
+    .write64 = apic_write64_lapic,
     .get_lapic_id = apic_get_lapic_id,
 };
 
@@ -53,6 +66,12 @@ void x2apic_write_lapic(uint32_t offset, uint32_t value) {
     write_msr32(msr, value);
 }
 
+void x2apic_write64_lapic(uint32_t offset, uint64_t value) {
+    assert(offset < PAGE_SIZE);
+    uint32_t msr = apic_offset_to_msr(offset);
+    write_msr(msr, value);
+}
+
 uint32_t x2apic_get_lapic_id() {
     uint32_t msr = apic_offset_to_msr(LAPIC_ID);
     return read_msr32(msr);
@@ -60,8 +79,10 @@ uint32_t x2apic_get_lapic_id() {
 
 static lapic_t x2apic_lapic = {
     .name = "x2apic - lapic",
+    .x2apic = true,
     .read = x2apic_read_lapic,
     .write = x2apic_write_lapic,
+    .write64 = x2apic_write64_lapic,
     .get_lapic_id = x2apic_get_lapic_id,
 };
 
@@ -71,7 +92,7 @@ void lapic_lvt_detect() {
         uint32_t offset;
         char* name;
     } lvt[] = {
-        {LAPIC_LVT_CMCI, "CMCI"},        //
+        // {LAPIC_LVT_CMCI, "CMCI"},        //
         {LAPIC_LVT_TIMER, "TIMER"},      //
         {LAPIC_LVT_THERMAL, "THERMAL"},  //
         {LAPIC_LVT_PERF, "PERF"},        //
@@ -93,9 +114,10 @@ void lapic_init() {
     if (r.edx & (1 << 9)) {
         printk("local apic supported\n");
         if (r.ecx & (1 << 21)) {
+            x2apic = true;
             printk("x2apic supported\n");
         } else {
-            panic("x2apic not supported\n");
+            // panic("x2apic not supported\n");
         }
     } else {
         panic("local apic not supported\n");
@@ -117,13 +139,16 @@ void lapic_init() {
     if (x2apic) {
         // 开启2xapic
         apic_base |= (1 << 10);
+        printk("after 2xapic enable apic base: %08x\n", apic_base);
         write_msr(MSR_IA32_APIC_BASE, apic_base);
+        printk("after 2xapic enable apic base: %08x\n", apic_base);
 
         apic_base = read_msr32(MSR_IA32_APIC_BASE);
         assert((apic_base & (1 << 10)) != 0);
-        printk("after 2xapic enable apic base: %016lx\n", apic_base);
+        printk("after 2xapic enable apic base: %08x\n", apic_base);
 
         system.lapic = &x2apic_lapic;
+        // system.lapic = &apic_lapic;
     } else {
         system.lapic = &apic_lapic;
     }
@@ -189,6 +214,324 @@ void lapic_init() {
     uint32_t PPR = lapic->read(LAPIC_PPR);
 }
 
-void init_apic() {
-    lapic_init();
+static ioapic_map_t ioapic_map;
+
+uint64_t ioapic_rte_read(uint32_t index) {
+    uint64_t v = 0;
+    *(volatile uint32_t*)ioapic_map.io_reg_sel = index + 1;
+    io_mfence();
+    v = *(volatile uint32_t*)ioapic_map.io_win;
+    io_mfence();
+
+    v <<= 32;
+
+    *(volatile uint32_t*)ioapic_map.io_reg_sel = index + 0;
+    io_mfence();
+    v |= *(volatile uint32_t*)ioapic_map.io_win;
+    io_mfence();
+
+    return v;
 }
+
+void ioapic_rte_write(uint32_t index, uint64_t v) {
+    *(volatile uint32_t*)ioapic_map.io_reg_sel = index + 0;
+    io_mfence();
+    *(volatile uint32_t*)ioapic_map.io_win = v & 0xFFFFFFFF;
+    io_mfence();
+
+    v >>= 32;
+
+    *(volatile uint32_t*)ioapic_map.io_reg_sel = index + 1;
+    io_mfence();
+    *(volatile uint32_t*)ioapic_map.io_win = v & 0xFFFFFFFF;
+    io_mfence();
+}
+
+void ioapic_init() {
+    // 先找到RCBA: Root Complex Base Address寄存器
+    uint32_t cmd = PCI_CMD(0, 31, 0, 0xF0);
+    printk("CMD: %08x\n", cmd);
+    uint32_t RCBA = pci_read_config_long(cmd);
+
+    if ((RCBA & 1) == 0) {
+        panic("RCBA not enabled\n");
+    }
+
+    // 把IO APIC映射进地址空间
+    ioapic_map.phys_base = system.ioapic_addr;
+    ioapic_map.io_reg_sel = (vaddr_t)ioremap(ioapic_map.phys_base, PAGE_SIZE);
+    ioapic_map.io_win = ioapic_map.io_reg_sel + 0x10;
+    ioapic_map.eoi = ioapic_map.io_reg_sel + 0x40;
+    assert(ioapic_map.phys_base != 0);
+    assert(ioapic_map.io_reg_sel != 0);
+    printk("IO-APIC mapped %08x to %08x\n", ioapic_map.phys_base, ioapic_map.io_reg_sel);
+    printk("IO-APIC io_win %08x eoi %08x\n", ioapic_map.io_win, ioapic_map.eoi);
+
+    system.ioapic_map = &ioapic_map;
+
+    // IO APIC ID
+    *(volatile uint32_t*)ioapic_map.io_reg_sel = IOAPIC_ID;
+    io_mfence();
+    uint32_t ioapic_id = *(volatile uint32_t*)ioapic_map.io_win;
+    io_mfence();
+
+    // IO APIC VERSION
+    *(volatile uint32_t*)ioapic_map.io_reg_sel = IOAPIC_VERSION;
+    io_mfence();
+    uint32_t ioapic_version = *(volatile uint32_t*)ioapic_map.io_win;
+    io_mfence();
+
+    int rte_cnt = ((ioapic_version >> 16) & 0xFF) + 1;
+    printk("IO-APIC id %08x version %08x RTE cnt %d\n", ioapic_id, ioapic_version, rte_cnt);
+
+    // 屏蔽所有中断
+    for (int i = 0; i < rte_cnt; i++) {
+        uint32_t irq = 0x20 + i;
+        ioapic_rte_write(IOAPIC_RTE(i), IOAPIC_RTE_MASK | irq);
+    }
+
+    // RCBA
+    // bit[0]: 使能位
+    // bit[13:1]: 保留
+    // bit[31:14]: RCBA物理基地址
+    // 0x3FFF == (1 << 14) - 1
+    uint32_t rcba_phys_base = RCBA & (~0x3FFF);
+
+    printk("RCBA: %08x %08x\n", RCBA, rcba_phys_base);
+
+    // 把RCBA物理基地址映射到内核空间
+    vaddr_t rcba_virt_base = (vaddr_t)ioremap(rcba_phys_base, 4 * PAGE_SIZE);
+    // set_fixmap(FIX_RCBA_BASE, rcba_phys_base);
+    // uint32_t rcba_virt_base = fixid_to_vaddr(FIX_RCBA_BASE);
+    printk("RCBA base %08x mapped to %08x\n", rcba_phys_base, rcba_virt_base);
+
+    // OIC
+    // 位于RCBA 的 0x31FE 偏移处，是一个16位寄存器
+    // bit[7:0]: APIC映射区。决定了IO APIC的间接访问寄存器的地址区间。只有在禁用IO APIC的情况下才能修。
+    // bit[8]: IO APIC使能标志位。 置位使能 复位禁用
+    // bit[9] 协处理器错误使能标志位
+    // bit[15:10]: 保留
+    //
+    // 上面得搞成ioremap映射, 因为0x31FE这个超过一页也就是4K了。
+    uint16_t* pOIC = (uint16_t*)((uint8_t*)rcba_virt_base + 0x31FE);
+    printk("OIC: %04x\n", *pOIC);
+    *pOIC = *pOIC | (1 << 8);
+    printk("OIC: %04x\n", *pOIC);
+    // TODO
+    // iounmap(rcba_virt_base);
+
+#if 1
+    extern irq_chip_t ioapic_chip;
+    // 把8253的中断通过IOAPIC转发到CPU0的0号中断
+    // 8253/8254连在i8259的0号引脚，但连在IO APIC的2号引脚上
+    ioapic_rte_write(IOAPIC_RTE(2), 0x20 + 0);
+    // 把键盘中断通过IOAPIC转发到CPU0的1号中断
+    ioapic_rte_write(IOAPIC_RTE(1), 0x20 + 1);
+    irq_set_chip(0x00, &ioapic_chip);
+    irq_set_chip(0x01, &ioapic_chip);
+#endif
+    // HPTC: High Precision Timer Control Register
+    // bit[1:0] 地址映射范围选择域
+    //       取值      地址映射范围
+    //        00: 0xFED00000 - 0xFED003FF
+    //        01: 0xFED01000 - 0xFED013FF
+    //        10: 0xFED02000 - 0xFED023FF
+    //        11: 0xFED03000 - 0xFED033FF
+    // bit[7] 地址映射使能标志位，用于控制HPET设备访问地址的开启与否
+    //        只有它置位时芯片组才会将HPET配置寄存器映射到内存空间
+    uint32_t* pHPTC = (uint32_t*)((uint8_t*)rcba_virt_base + 0x3404);
+    printk("HPTC: %08x\n", *pHPTC);
+    *pHPTC = (1 << 7) | (0x00);
+    printk("HPTC: %08x\n", *pHPTC);
+
+    vaddr_t hpet_base = (vaddr_t)ioremap(0xFED00000, 0x3FF);
+    printk("HPET base %08x mapped to %08x\n", 0xFED00000, hpet_base);
+
+    uint64_t GCAP_ID = 0;
+    GCAP_ID = *(volatile uint32_t*)(hpet_base + 4);
+    GCAP_ID <<= 32;
+    GCAP_ID |= *(volatile uint32_t*)(hpet_base + 0);
+    printk("GCAP_ID: %016x\n", GCAP_ID);
+
+    uint64_t iddd = *(volatile uint64_t*)(hpet_base + 0);
+    printk("GCAP_ID: %016x\n", iddd);
+    // TODO
+    // iounmap(hpet_base);
+}
+
+void prepare_ap_code(paddr_t paddr) {
+    // 注意: 最开始时AP是运行在实模式
+    paddr += KERNEL_VADDR_BASE;
+    // *(volatile uint8_t*)(paddr + 0) = 0x90;
+    // *(volatile uint8_t*)(paddr + 1) = 0x90;
+    // *(volatile uint8_t*)(paddr + 2) = 0x90;
+    // *(volatile uint8_t*)(paddr + 3) = 0xEA;     // jmp
+    // *(volatile uint16_t*)(paddr + 4) = 0x0000;  // offset: 0000
+    // *(volatile uint16_t*)(paddr + 6) = 0x0100;  // cs:0100
+
+    extern char ap_boot_bgn;
+    extern char ap_boot_end;
+    uint32_t bytes = &ap_boot_end - &ap_boot_bgn;
+
+    for(int i=0; i<bytes; i++) {
+        ((uint8_t*)paddr)[i] = ((uint8_t*)&ap_boot_bgn)[i];
+    }
+
+    // 修正代码里跳入保护模式的地址和gdtr里的gdt的base地址
+    extern uint8_t ap_code32_entry_address;
+    extern uint8_t ap_gdtr_base;
+
+    uint32_t *dst = 0;
+
+    //
+    dst = (uint32_t *)(paddr + (uint32_t)(&ap_code32_entry_address) - (uint32_t)(&ap_boot_bgn));
+    (*dst) += (paddr - KERNEL_VADDR_BASE);
+
+    //
+    dst = (uint32_t *)(paddr + (uint32_t)(&ap_gdtr_base) - (uint32_t)(&ap_boot_bgn));
+    (*dst) += (paddr - KERNEL_VADDR_BASE);
+}
+
+void wakeup_ap(paddr_t paddr) {
+    assert(PAGE_DOWN(paddr) == paddr);
+
+    uint32_t pfn = PFN_DW(paddr);
+    assert(pfn <= 0xFF);
+
+    // 这里使用apic_lapic是因为ICR是一个64位寄存器
+    // 如果用MSR读写的话，只能用0x830这个地址，是没有也不能用LAPIC_ICR_HIGH转换成的0x831的地址的
+    // 而x2apic_lapic的write操作里的自动将偏移转换成MSR的逻辑目前是不支持屏蔽0x831的
+    // lapic_t* lapic = &apic_lapic;
+    lapic_t* lapic = system.lapic;
+
+    uint64_t id = 0;
+    id <<= 32;
+    id <<= lapic->x2apic ? 0 : 24;  // 如果只是apic的话id需要左移56位
+
+    // 在32位系统下ICR寄存器要先写高32位，再写低32位
+    // 如果低32位数据写入那么处理器会立即发送IPI消息
+    //
+    // 这里为什么要单独写个write64?
+    // 因为ICR是一个64位寄存器，对于apic的内存映射的方式没有问题，只要保证先写高32位再写低32位就可以了
+    // 但是对于x2apic的MSR的情况就不一样了，因为ICR的MSR地址只有0x830，是没有也不能访问0x831的
+    // 在lapic->write函数里只实现了按32位写数据
+    // 所以如果尝试写LAPIC_ICR_HIGH的话，就会在x2apic_write_lapic里通过apic_offset_to_msr得到0x831的MSR地址
+    // 所以就干脆写个写64位数据的函数
+
+    // INIT IPI
+    uint64_t init_ipi = id;
+    init_ipi |= ((0b11) << 18);  // 向所有处理器发送消息(不包括自身)
+    init_ipi |= ((0b0) << 15);   // 0=边沿触发  1=电平触发
+    init_ipi |= ((0b1) << 14);   // 信号驱动电平: 0=无效 1=有效
+    init_ipi |= ((0b0) << 12);   // 投递状态: 0=空闲 1=发送挂起
+    init_ipi |= ((0b0) << 11);   // 目标模式: 0=物理模式 1=逻辑模式
+    init_ipi |= ((0b101) << 8);  // 投递模式: 101=INIT, 110=START UP
+    init_ipi |= ((0x00) << 0);   // 中断向量，在STARTUP IPI中代表地址0xMM00:0000 -> 0xMM00*16+0x0000=0xMM000
+    lapic->write64(LAPIC_ICR, init_ipi);
+    printk("INIT IPI %016x\n", init_ipi);
+
+    for (int i = 0; i < 1000 * 10000; i++) {
+        asm("nop");
+    }
+
+    // STARTUP IPI
+    uint64_t startup_ipi = id;
+    startup_ipi |= ((0b11) << 18);  // 向所有处理器发送消息(不包括自身)
+    startup_ipi |= ((0b0) << 15);   // 0=边沿触发  1=电平触发
+    startup_ipi |= ((0b1) << 14);   // 信号驱动电平: 0=无效 1=有效
+    startup_ipi |= ((0b0) << 12);   // 投递状态: 0=空闲 1=发送挂起
+    startup_ipi |= ((0b0) << 11);   // 目标模式: 0=物理模式 1=逻辑模式
+    startup_ipi |= ((0b110) << 8);  // 投递模式: 101=INIT, 110=START UP
+    startup_ipi |= ((pfn) << 0);    // 中断向量，在STARTUP IPI中代表地址0xMM00:0000 -> 0xMM00*16+0x0000=0xMM000
+    lapic->write64(LAPIC_ICR, startup_ipi);
+    printk("STARTUP[0] IPI %016x\n", startup_ipi);
+
+    for (int i = 0; i < 1000 * 10000; i++) {
+        asm("nop");
+    }
+
+#if 0
+    // 在调试的时候，如果在ap_boot.S的入口处写hlt，它会hlt的AP继续执行
+    // intel 要求至少发两次
+    lapic->write64(LAPIC_ICR, startup_ipi);
+    printk("STARTUP[1] IPI %016x\n", startup_ipi);
+#endif
+
+    printk("wakeup ap\n");
+}
+
+void disable_i8259();
+void init_apic() {
+    // mask_i8259();
+    disable_i8259();
+    // imcr_init();
+    lapic_init();
+    ioapic_init();
+
+    paddr_t ap_code_addr = 0x1000;
+    prepare_ap_code(ap_code_addr);
+    wakeup_ap(ap_code_addr);
+}
+
+// ## 中断路由路径配置矩阵
+
+// | 路径 | IMCR bit0 | 8259A | LAPIC | IOAPIC | 中断引脚连接 |
+// |------|-----------|-------|-------|--------|------------|
+// | **路径A** | 0 (PIC) | 启用 | 禁用 | 禁用/忽略 | INTR直接到CPU |
+// | **路径B** | 1 (APIC) | 启用 | 启用 | 禁用 | INTR到LINT0 |
+// | **路径C** | 1 (APIC) | 启用 | 启用 | 启用 | 8259A到IOAPIC |
+// | **路径D** | 1 (APIC) | 禁用/掩码 | 启用 | 启用 | 直连IOAPIC |
+
+// ### 说明：
+// - **IMCR bit0**: 0 = PIC模式, 1 = APIC模式
+// - **路径A**: 传统PIC模式，用于实模式/早期保护模式
+// - **路径B**: 过渡模式，8259A中断通过LAPIC的LINT0引脚
+// - **路径C**: 兼容模式，现代系统启动时常用
+// - **路径D**: 现代标准模式，性能最优
+
+// A. 8259直接到CPU
+//  实模式/早期保护模式
+//  中断向量表直接指向ISR
+//  8259A通过INTR引脚直接触发CPU中断
+
+// B. 8259 → LAPIC → CPU
+//  本地APIC启用，但IOAPIC未启用
+//  8259A中断通过LAPIC的LINTO引脚
+//  需要配置LAPIC的LVT LINT0/1寄存器
+
+// C. 8259 → IOAPIC → LAPIC → CPU
+//  现代系统兼容模式
+//  8259A中断连接到IOAPIC的IRQ0-15
+//  IOAPIC重定向到LAPIC
+//  需要IMCR寄存器配置
+
+// D. IOAPIC → LAPIC → CPU
+//  纯APIC模式
+//  设备中断直接连接到IOAPIC
+//  IOAPIC重定向到LAPIC
+//  8259A被禁用或掩码
+
+int enable_ioapic_irq(unsigned int irq) {
+    uint64_t rte = ioapic_rte_read(irq);
+    rte &= ~IOAPIC_RTE_MASK;
+    ioapic_rte_write(irq, rte);
+    return 0;
+}
+
+int disable_ioapic_irq(unsigned int irq) {
+    uint64_t rte = ioapic_rte_read(irq);
+    rte |= IOAPIC_RTE_MASK;
+    ioapic_rte_write(irq, rte);
+    return 0;
+}
+
+void ack_ioapic_irq(unsigned int irq) {
+    system.lapic->write(LAPIC_EOI, 0);
+}
+
+irq_chip_t ioapic_chip = {
+    .name = "IO-APIC",
+    .enable = enable_ioapic_irq,
+    .disable = disable_ioapic_irq,
+    .ack = ack_ioapic_irq,
+};

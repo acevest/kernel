@@ -90,4 +90,6 @@ void exit_critical_zone();
 #define IRQ_CASCADE 0x02
 #define IRQ_DISK 0x0E
 
+void irq_set_chip(unsigned int irq, irq_chip_t* chip);
+
 #endif  //_IRQ_H

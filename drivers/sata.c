@@ -14,7 +14,8 @@ void init_sata() {
     pci_device_t* pci = pci_find_device_by_classcode(0x0106);
     if (pci == NULL) {
         printk("can not find pci classcode: %08x", 0x0106);
-        panic("can not find sata controller");
+        printk("can not find sata controller");
+        return;
     }
 
     // progif

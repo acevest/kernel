@@ -158,8 +158,13 @@ typedef struct system {
 
     dev_t root_dev;
 
-    // 按理这个信息应该按CPU存储，简化实现
+    // 按理这些信息应该按CPU存储，简化实现
     lapic_t* lapic;
+    paddr_t lapic_addr;
+
+    //
+    paddr_t ioapic_addr;
+    ioapic_map_t* ioapic_map;
 
 #define CMD_LINE_SIZE 128
     const char* cmdline;
@@ -256,6 +261,9 @@ extern volatile int reenter;
 #define DEFAULT_BOOT_DELAY_TICKS 300
 void boot_delay(int ticks);
 
+void io_mfence();
 #endif
+
+#define DISABLE_IDE 1
 
 #endif  //_SYSTEM_H

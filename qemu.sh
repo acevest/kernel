@@ -22,6 +22,7 @@ qemu-system-i386 \
     -m 3100\
     -smp 2 \
     -cpu qemu32,+x2apic \
+    -machine q35 \
     -serial tcp::6666,server,nowait \
     -drive file=hd.img,format=raw,index=0,media=disk \
     -drive file=kernel.iso,index=1,media=cdrom \
@@ -38,7 +39,7 @@ qemu-system-i386 \
     # nc -U /tmp/qemu-monitor.sock
 
     # -d int,cpu_reset \
-
+    # -monitor unix:/tmp/qemu-monitor.sock,server,nowait \
     # -machine pc-q35-9.2  \
     # -cpu qemu32,+apic \
     # -cpu qemu32,+x2apic \

@@ -342,6 +342,10 @@ void init_system_info() {
 
     printk("kernel [%x, %x] bootmem bitmap: %x\n", system.kernel_begin, system.kernel_end, system.bootmem_bitmap_begin);
 
+    // 先写一个默认值
+    system.ioapic_addr = 0xFEC00000;
+    system.lapic_addr = 0xFEE00000;
+
     printk("bootloader: %s\n", boot_params.bootloader);
     printk("boot device: bios dev %x partition %x sub partition %x\n", boot_params.biosdev, boot_params.partition,
            boot_params.sub_partition);

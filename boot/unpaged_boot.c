@@ -17,6 +17,8 @@ extern unsigned long kernel_virtual_addr_start;
 extern pde_t __initdata init_pgd[PDECNT_PER_PAGE] __attribute__((__aligned__(PAGE_SIZE)));
 extern pte_t __initdata init_pgt[PTECNT_PER_PAGE * BOOT_INIT_PAGETBL_CNT] __attribute__((__aligned__(PAGE_SIZE)));
 
+pde_t ap_pre_pgd[PDECNT_PER_PAGE] __attribute__((__aligned__(PAGE_SIZE)));
+
 // Length = BOOT_INIT_PAGETBL_CNT*4M
 // [0x00000000, 0x00000000 + Length - 1]
 // [0xC0000000, 0xC0000000 + Length - 1]
@@ -30,6 +32,7 @@ void boot_paging() {
     pde_t* dir = (pde_t*)init_pgd_paddr;
     for (int i = 0; i < PDECNT_PER_PAGE; i++) {
         dir[i] = 0;
+        ap_pre_pgd[i] = 0;
     }
 
     // 初始化页目录
@@ -38,6 +41,11 @@ void boot_paging() {
     for (int i = 0; i < BOOT_INIT_PAGETBL_CNT; i++) {
         dir[i] = pd_entry;              // 设置低端线性地址空间的页表项
         dir[kpde_base + i] = pd_entry;  // 设置内核线性地址空间的页表项
+
+        // AP初始化用于开启分页后再跳入内核空间的跳板页目录
+        ap_pre_pgd[i] = pd_entry;
+        ap_pre_pgd[kpde_base + i] = pd_entry;
+
         pd_entry += PAGE_SIZE;
     }
 
