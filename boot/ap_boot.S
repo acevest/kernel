@@ -133,23 +133,32 @@ ap_code32_real_entry:
 
 .align 32
 .global ap_code32_entry_address
-ap_code32_entry_address:    .long ap_code32_entry - ap_realmode_base # 在BSP复制代码后会动态调整
+ap_code32_entry_address:    .long ap_code32_entry # 在BSP复制代码后会动态调整
                             .word 0x0008, 0x0000
 
+# 下面的定义会一鱼两吃 [也会复制两份]:
+#   1. 在实模式式下用一次 [只不过BSP复制到1MB以下的内存会稍作调整]
+#   2. 在保护模式下用一次 [因为加载了最终的页目录就无法以一一映射的方式访问这段实模式内存]
 .align 32
+.global ap_gdtr
 .global ap_gdtr_base
 ap_gdtr:
     ap_gdtr_limit: .word ap_gdt_end-ap_gdt
-    ap_gdtr_base:  .long ap_gdt - ap_realmode_base # 在BSP复制代码后会动态调整
+    ap_gdtr_base:  .long ap_gdt # 在BSP复制代码后会动态调整
 
+
+# 此处定义8个GDT项, 参考ap.c里的AP_GDT_CNT
 .align 32
+.global ap_gdt
 ap_gdt:
-empty:     .long    0x00000000, 0x00000000
-code_desc: .long    0x0000FFFF, 0x00CF9B00
-data_desc: .long    0x0000FFFF, 0x00CF9300
-pad0:      .long    0x00000000, 0x00000000
-pad1:      .long    0x00000000, 0x00000000
-pad2:      .long    0x00000000, 0x00000000
+empty:      .long    0x00000000, 0x00000000
+ap_code:    .long    0x0000FFFF, 0x00CF9B00
+ap_data:    .long    0x0000FFFF, 0x00CF9300
+ap_tss:     .long    0x00000000, 0x00000000
+pad0:       .long    0x00000000, 0x00000000
+pad1:       .long    0x00000000, 0x00000000
+pad2:       .long    0x00000000, 0x00000000
+pad3:       .long    0x00000000, 0x00000000
 ap_gdt_end:
 
 ap_boot_end:

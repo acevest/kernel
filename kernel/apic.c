@@ -373,7 +373,7 @@ void prepare_ap_code(paddr_t paddr) {
     extern char ap_boot_end;
     uint32_t bytes = &ap_boot_end - &ap_boot_bgn;
 
-    for(int i=0; i<bytes; i++) {
+    for (int i = 0; i < bytes; i++) {
         ((uint8_t*)paddr)[i] = ((uint8_t*)&ap_boot_bgn)[i];
     }
 
@@ -381,14 +381,16 @@ void prepare_ap_code(paddr_t paddr) {
     extern uint8_t ap_code32_entry_address;
     extern uint8_t ap_gdtr_base;
 
-    uint32_t *dst = 0;
+    uint32_t* dst = 0;
 
     //
-    dst = (uint32_t *)(paddr + (uint32_t)(&ap_code32_entry_address) - (uint32_t)(&ap_boot_bgn));
+    dst = (uint32_t*)(paddr + (uint32_t)(&ap_code32_entry_address) - (uint32_t)(&ap_boot_bgn));
+    (*dst) -= (uint32_t)(&ap_boot_bgn);
     (*dst) += (paddr - KERNEL_VADDR_BASE);
 
     //
-    dst = (uint32_t *)(paddr + (uint32_t)(&ap_gdtr_base) - (uint32_t)(&ap_boot_bgn));
+    dst = (uint32_t*)(paddr + (uint32_t)(&ap_gdtr_base) - (uint32_t)(&ap_boot_bgn));
+    (*dst) -= (uint32_t)(&ap_boot_bgn);
     (*dst) += (paddr - KERNEL_VADDR_BASE);
 }
 

@@ -25,33 +25,33 @@
 #include <string.h>
 #include <syscall.h>
 #include <system.h>
+#include <linkage.h>
 
 System system;
-TSS_t tss;
-Desc idt[NIDT] __attribute__((__aligned__(8)));
-Desc gdt[NGDT] __attribute__((__aligned__(8)));
-char gdtr[6] __attribute__((__aligned__(4)));
-char idtr[6] __attribute__((__aligned__(4)));
+tss_t tss;
 
-extern char _gdtr[6];
-extern char _idtr[6];
+desc_t ALIGN8 idt[NIDT];
+desc_t ALIGN8 gdt[NGDT];
+
+char ALIGN4 gdtr[6];
+char ALIGN4 idtr[6];
 
 volatile int reenter = -1;
 
 void setup_gdt() {
-    pDesc pdesc;
+    desc_t* pdesc;
     // change to new gdt.
     asm volatile("sgdt gdtr");
 
     // 复制旧的GDT
     memcpy(gdt, (void*)pa2va(*((uint32_t*)(gdtr + 2))), *((uint16_t*)(gdtr + 0)));
-    *((unsigned short*)gdtr) = NGDT * sizeof(Desc);
+    *((unsigned short*)gdtr) = NGDT * sizeof(desc_t);
     *((unsigned long*)(gdtr + 2)) = (unsigned long)gdt;
 
     asm volatile("lgdt gdtr");
 
-    memcpy(gdt + INDEX_UCODE, gdt + INDEX_KCODE, sizeof(Desc));
-    memcpy(gdt + INDEX_UDATA, gdt + INDEX_KDATA, sizeof(Desc));
+    memcpy(gdt + INDEX_UCODE, gdt + INDEX_KCODE, sizeof(desc_t));
+    memcpy(gdt + INDEX_UDATA, gdt + INDEX_KDATA, sizeof(desc_t));
     pdesc = gdt + INDEX_UCODE;
     pdesc->seg.DPL = 3;
     pdesc = gdt + INDEX_UDATA;
@@ -62,7 +62,7 @@ void setup_gdt() {
 // 通过中断门进入中断服务程序CPU会自动将中断关闭，也就是将EFLAGS的IF位清0
 // 通过陷阱门进入服务程序时则维持IF标志位不变
 void setup_idt() {
-    *((unsigned short*)idtr) = NIDT * sizeof(Gate);
+    *((unsigned short*)idtr) = NIDT * sizeof(gate_t);
     *((unsigned long*)(idtr + 2)) = (unsigned long)idt;
     asm volatile("lidt idtr");
 }
@@ -174,8 +174,8 @@ void setup_boot_irqs() {
 }
 
 void set_tss_gate(u32 vec, u32 addr, u32 limit) {
-    pSeg p = (pSeg)(gdt + vec);
-    _init_desc((pDesc)p);
+    seg_t* p = (seg_t*)(gdt + vec);
+    _init_desc((desc_t*)p);
     p->limitL = 0xFFFF & limit;
     p->limitH = 0x0F & (limit >> 16);
     p->baseL = 0xFFFF & addr;
@@ -190,8 +190,8 @@ void set_tss_gate(u32 vec, u32 addr, u32 limit) {
 }
 
 void set_tss() {
-    TSS_t* p = &tss;
-    memset((void*)p, sizeof(TSS_t), 0);
+    tss_t* p = &tss;
+    memset((void*)p, 0, sizeof(tss_t));
     p->esp0 = 0;  // delay to init root_task
     p->ss0 = SELECTOR_KRNL_DS;
     p->ss = SELECTOR_KRNL_DS;
@@ -201,11 +201,11 @@ void set_tss() {
     p->ds = SELECTOR_KRNL_DS;
     p->cs = SELECTOR_KRNL_CS;
     p->eflags = 0x1200;
-    p->iomap_base = sizeof(TSS_t);
+    p->iomap_base = sizeof(tss_t);
 
-    // tss的iomap_base=sizeof(TSS_t) > TSS_GATE.LIMIT - 1
+    // tss的iomap_base=sizeof(tss_t) > TSS_GATE.LIMIT - 1
     // 因此表示没有I/O位图
-    set_tss_gate(INDEX_TSS, (u32)p, sizeof(TSS_t));
+    set_tss_gate(INDEX_TSS, (u32)p, sizeof(tss_t));
 
     asm("ltr %%ax" ::"a"((INDEX_TSS << 3) + 3));
 }

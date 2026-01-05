@@ -46,7 +46,7 @@
  */
 #define NOERRCODE(name)     \
     EC_ENTRY(name)          \
-    pushl    $0;             \
+    pushl    $0;            \
     EC_CALLDO(name)
 
 #define ERRORCODE(name)     \
@@ -70,3 +70,24 @@ ERRORCODE    (StackFault)
 ERRORCODE    (GeneralProtection)
 ERRORCODE    (_page_fault)
 NOERRCODE    (CoprocError)
+
+
+
+
+
+NOERRCODE    (APDivideError)
+NOERRCODE    (APDebug)
+NOERRCODE    (APNMI)
+NOERRCODE    (APBreakPoint)
+NOERRCODE    (APOverFlow)
+NOERRCODE    (APBoundsCheck)
+NOERRCODE    (APInvalidOpcode)
+NOERRCODE    (APDeviceNotAvailable)
+NOERRCODE    (APDoubleFault)
+NOERRCODE    (APCoprocSegOverRun)
+ERRORCODE    (APInvalidTss)
+ERRORCODE    (APSegNotPresent)
+ERRORCODE    (APStackFault)
+ERRORCODE    (APGeneralProtection)
+ERRORCODE    (APPageFault)
+NOERRCODE    (APCoprocError)

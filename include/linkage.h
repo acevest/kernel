@@ -30,3 +30,6 @@
 #endif
 
 #define __initdata __attribute__((__section__(".init.data")))
+
+#define ALIGN8 __attribute__((__aligned__(8)))
+#define ALIGN4 __attribute__((__aligned__(4)))

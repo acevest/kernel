@@ -8,6 +8,7 @@
  */
 
 #include <multiboot2.h>
+#include <linkage.h>
 
 // 启用FB这个功能，需要修改grub.cfg，添加如下内容
 // load_video
@@ -15,8 +16,6 @@
 // set gfxpayload=keep
 // terminal_output gfxterm
 #define ENABLE_FB 0
-
-#define ALIGN8 __attribute__((aligned(8)))
 
 typedef struct ALIGN8 multiboot2_elf_header {
     ALIGN8 struct multiboot_header header;

@@ -105,3 +105,14 @@ _boot_clk_irq_handler:
 _boot_kbd_irq_handler:
     push $0x01;
     jmp _boot_irq_handler
+
+
+
+.global ap_no_irq_handler
+ap_no_irq_handler:
+    SAVE_REGS
+
+    call    do_ap_no_irq_handler
+
+    RESTORE_REGS
+    iret

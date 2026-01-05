@@ -60,7 +60,7 @@ typedef struct {
     unsigned char DB : 1;    // 0--16bits,1--32bits
     unsigned char G : 1;     // set to 1. We just need 4K size.
     unsigned char baseH;
-} Seg, *pSeg;
+} seg_t;
 
 //-------------------------------------------------------------------------
 // TSS State,LDT
@@ -81,19 +81,19 @@ typedef struct {
 
     unsigned short eaddrH;
 
-} Gate, *pGate;
+} gate_t;
 
 // just used for type...
 typedef union {
-    Seg seg;
-    Gate gate;
-} Desc, *pDesc;
+    seg_t seg;
+    gate_t gate;
+} desc_t;
 
-#define NGDT 256
+#define NGDT 16
 #define NIDT 256
-#define NLDT 5
-extern Desc idt[NIDT];
-extern Desc gdt[NGDT];
+
+extern desc_t idt[NIDT];
+extern desc_t gdt[NGDT];
 
 //-------------------------------------------------------------------------
 // Define Gate Types...
@@ -102,13 +102,13 @@ extern Desc gdt[NGDT];
 #define TRAP_GATE 0x0F  // Keep  'IF' bit.
 #define TSS_DESC 0x09
 
-static inline void _init_desc(pDesc desc) {
-    memset((char*)desc, 0, sizeof(Desc));
+static inline void _init_desc(desc_t* desc) {
+    memset((void*)desc, 0, sizeof(desc_t));
 }
 
-static inline Desc _create_seg(u8 type, u8 DPL) {
-    Desc d;
-    pSeg p = &d.seg;
+static inline desc_t _create_seg(u8 type, u8 DPL) {
+    desc_t d;
+    seg_t* p = &d.seg;
 
     _init_desc(&d);
     p->limitL = 0xFFFF;
@@ -123,9 +123,9 @@ static inline Desc _create_seg(u8 type, u8 DPL) {
     return d;
 }
 
-static inline Desc _create_gate(u32 handler, u8 type, u8 DPL) {
-    Desc d;
-    pGate p = &d.gate;
+static inline desc_t _create_gate(u32 handler, u8 type, u8 DPL) {
+    desc_t d;
+    gate_t* p = &d.gate;
 
     _init_desc(&d);
 
@@ -175,9 +175,9 @@ typedef struct tss {
     u16 gs, _gs;
     u16 ldt, _ldt;
     u16 T : 1, _T : 15, iomap_base;
-} TSS_t;
+} tss_t;
 
-extern TSS_t tss;
+extern tss_t tss;
 
 // CR0 含有控制处理器操作模式和状态的系统控制标志
 #define CR0_PE (1 << 0)   // R/W Protection Enabled

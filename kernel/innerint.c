@@ -109,3 +109,62 @@ US RW  P - Description
 void doCoprocError(pt_regs_t regs) {
     DIE_MSG();
 }
+
+// TODO 把printk换掉
+#define AP_DIE_MSG()                                                                                     \
+    do {                                                                                                 \
+        printk("AP Unsupport Now...[%s]\n", __FUNCTION__);                                               \
+        printk("EFLAGS:%08x CS:%02x EIP:%08x ERRCODE:%x", regs.eflags, regs.cs, regs.eip, regs.errcode); \
+        asm("cli;hlt;");                                                                                 \
+    } while (0);
+
+void doAPDivideError(pt_regs_t regs) {
+    AP_DIE_MSG();
+}
+void doAPDebug(pt_regs_t regs) {
+    AP_DIE_MSG();
+}
+void doAPNMI(pt_regs_t regs) {
+    AP_DIE_MSG();
+}
+void doAPBreakPoint(pt_regs_t regs) {
+    AP_DIE_MSG();
+}
+void doAPOverFlow(pt_regs_t regs) {
+    AP_DIE_MSG();
+}
+void doAPBoundsCheck(pt_regs_t regs) {
+    AP_DIE_MSG();
+}
+void doAPInvalidOpcode(pt_regs_t regs) {
+    AP_DIE_MSG();
+}
+void doAPDeviceNotAvailable(pt_regs_t regs) {
+    AP_DIE_MSG();
+}
+void doAPDoubleFault(pt_regs_t regs) {
+    AP_DIE_MSG();
+}
+void doAPCoprocSegOverRun(pt_regs_t regs) {
+    AP_DIE_MSG();
+}
+void doAPInvalidTss(pt_regs_t regs) {
+    AP_DIE_MSG();
+}
+void doAPSegNotPresent(pt_regs_t regs) {
+    AP_DIE_MSG();
+}
+void doAPStackFault(pt_regs_t regs) {
+    AP_DIE_MSG();
+}
+void doAPGeneralProtection(pt_regs_t regs) {
+    AP_DIE_MSG();
+}
+
+void doAPPageFault(pt_regs_t regs) {
+    AP_DIE_MSG();
+}
+
+void doAPCoprocError(pt_regs_t regs) {
+    AP_DIE_MSG();
+}
