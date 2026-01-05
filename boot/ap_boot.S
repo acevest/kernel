@@ -16,8 +16,9 @@
 ap_boot_bgn:
 ap_realmode_base:
 ap_real_mode_entry:
+    nop # 多AP启动时的锁的位置, 当然不加这个nop指令也行, 加在这里清晰一点
+
     cli
-    # TODO 只允许CPU1运行
 
     wbinvd # 将CPU缓存写回主内存并使缓存失效
 
@@ -28,6 +29,21 @@ ap_real_mode_entry:
     movw    %bx, %es
     movw    %bx, %ss
 
+    xorb    %al, %al
+    lock xchgb %al, %ds:0x00    # 就是最开始nop指令的位置
+    cmpb    $0x00, %al
+    jne     1f # 段内短跳
+
+    # 如果没拿到锁, 则代表是第2个及以后的AP, 对这些AP直接hlt, 不再需要
+    cli
+2:
+    nop
+    nop
+    #jmp 2b
+    hlt
+
+# 如果拿到锁, 则代表是第一个AP, 继续执行
+1:
     # 算出ap_realmode_base的线性地址
     shl     $4, %ebx
 
@@ -76,7 +92,7 @@ ap_code32_entry:
     movw    %ax, %fs
     movw    %ax, %gs
 
-    # 加载一个跳板页目录，为真正切换到内核地址空间做准备
+    # 加载一个跳板页目录, 为真正切换到内核地址空间做准备
     .extern ap_pre_pgd
     leal    ap_pre_pgd, %eax
     movl    %eax, %cr3
@@ -90,9 +106,9 @@ ap_code32_entry:
     jmp     *%eax
 
 # 虽然下面的代码也会被复制到小于1MB的内存
-# 但是它不会在那里被执行，而是会在大于1MB的物理内存，并且是内核的地址空间执行
+# 但是它不会在那里被执行, 而是会在大于1MB的物理内存, 并且是内核的地址空间执行
 # 也就是说他们在内核的原来的地址执行
-# 当然也可以把它搬到ap_boot_end之后，这样它就不会被复制到小于1MB的内存里了
+# 当然也可以把它搬到ap_boot_end之后, 这样它就不会被复制到小于1MB的内存里了
 ap_code32_real_entry:
 
     nop
@@ -103,7 +119,7 @@ ap_code32_real_entry:
 
     # 到这里我们就可以切到BSP一样cr3了
     # 为什么在开启分页前无法直接加载BSP的cr3?
-    # 因为BSP把小于内核地址空间的映射都清0了，如果直接加载，分页后的第一行指令就无法执行
+    # 因为BSP把小于内核地址空间的映射都清0了, 如果直接加载, 分页后的第一行指令就无法执行
 
     .extern init_pgd
     leal    init_pgd, %eax

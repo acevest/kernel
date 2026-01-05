@@ -20,7 +20,7 @@ set -m
 qemu-system-i386 \
     -boot d \
     -m 3100\
-    -smp 2 \
+    -smp 4 \
     -cpu qemu32,+x2apic \
     -machine q35 \
     -serial tcp::6666,server,nowait \
