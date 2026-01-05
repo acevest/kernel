@@ -71,7 +71,16 @@
 #define LAPIC_LVT_ERROR 0x370
 #define LAPIC_TIMER_INITIAL 0x380
 #define LAPIC_TIMER_COUNTER 0x390
-#define LAPIC_TIMER_DIVIDE 0x3E0
+#define LAPIC_TIMER_DIVIDER 0x3E0
+
+// 屏蔽本地中断位
+#define LAPIC_LVT_MASKED (1 << 16)
+
+// 定时器模式
+#define LAPIC_TIMER_MODE_ONESHOT (0 << 17)
+#define LAPIC_TIMER_MODE_PERIODIC (1 << 17)
+#define LAPIC_TIMER_MODE_TSC_DEADLINE (2 << 17)
+#define LAPIC_TIMER_MODE_RESERVED (3 << 17)
 
 typedef struct lapic {
     const char* name;

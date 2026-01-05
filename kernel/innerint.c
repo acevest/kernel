@@ -19,11 +19,11 @@
 #include <sched.h>
 #include <system.h>
 
-#define DIE_MSG()                                                                                        \
-    do {                                                                                                 \
-        printk("Unsupport Now...[%s]\n", __FUNCTION__);                                                  \
-        printk("EFLAGS:%08x CS:%02x EIP:%08x ERRCODE:%x", regs.eflags, regs.cs, regs.eip, regs.errcode); \
-        asm("cli;hlt;");                                                                                 \
+#define DIE_MSG()                                                                                          \
+    do {                                                                                                   \
+        printk("Unsupport Now...[%s]\n", __FUNCTION__);                                                    \
+        printk("EFLAGS:%08x CS:%02x EIP:%08x ERRCODE:%x\n", regs.eflags, regs.cs, regs.eip, regs.errcode); \
+        asm("cli;hlt;");                                                                                   \
     } while (0);
 
 void doDivideError(pt_regs_t regs) {
@@ -111,11 +111,11 @@ void doCoprocError(pt_regs_t regs) {
 }
 
 // TODO 把printk换掉
-#define AP_DIE_MSG()                                                                                     \
-    do {                                                                                                 \
-        printk("AP Unsupport Now...[%s]\n", __FUNCTION__);                                               \
-        printk("EFLAGS:%08x CS:%02x EIP:%08x ERRCODE:%x", regs.eflags, regs.cs, regs.eip, regs.errcode); \
-        asm("cli;hlt;");                                                                                 \
+#define AP_DIE_MSG()                                                                                       \
+    do {                                                                                                   \
+        printk("AP Unsupport Now...[%s]\n", __FUNCTION__);                                                 \
+        printk("EFLAGS:%08x CS:%02x EIP:%08x ERRCODE:%x\n", regs.eflags, regs.cs, regs.eip, regs.errcode); \
+        asm("cli;hlt;");                                                                                   \
     } while (0);
 
 void doAPDivideError(pt_regs_t regs) {
