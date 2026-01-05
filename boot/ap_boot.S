@@ -43,10 +43,15 @@ ap_real_mode_entry:
 # 如果拿到锁, 则代表是第一个AP, 继续执行
 1:
     # 算出ap_realmode_base的线性地址
+    # 要把这个值传进保护模式
     shl     $4, %ebx
 
-    movl    %ebx, %esp
-    addl    $0x1000, %esp
+    # 将sp指向本页的末尾的位置
+    # 这里不能写成 movl    %ebx, %esp; addl    $0x1000, %esp
+    # 因为目前sp还是搭配ss来用的
+    movl    $0x1000, %esp # ss:sp --> ss*16 + 0x1000
+    #pushl   $0x12345678
+    #popl    %eax
 
     lgdt    ap_gdtr - ap_realmode_base
 
@@ -78,6 +83,10 @@ ap_code32_entry:
     movw    %ax, %fs
     movw    %ax, %gs
 
+
+    # 算出保护模式的esp值
+    addl    %ebx, %esp
+
     # 加载一个跳板页目录, 为真正切换到内核地址空间做准备
     .extern ap_pre_pgd
     leal    ap_pre_pgd, %eax
@@ -92,7 +101,7 @@ ap_code32_entry:
     jmp     *%eax
 
 # 虽然下面的代码也会被复制到小于1MB的内存
-# 但是它不会在那里被执行, 而是会在大于1MB的物理内存, 并且是内核的地址空间执行
+# 但是它不会在那里被执行, 而是会在大于1MB的物理内存(也就是在它原来的位置), 并且是内核的地址空间执行
 # 也就是说他们在内核的原来的地址执行
 # 当然也可以把它搬到ap_boot_end之后, 这样它就不会被复制到小于1MB的内存里了
 ap_code32_real_entry:
@@ -124,14 +133,14 @@ ap_code32_real_entry:
 
 .align 32
 .global ap_code32_entry_address
-ap_code32_entry_address:    .long ap_code32_entry - ap_realmode_base # 在BSP复制代码的时候会动态调整
+ap_code32_entry_address:    .long ap_code32_entry - ap_realmode_base # 在BSP复制代码后会动态调整
                             .word 0x0008, 0x0000
 
 .align 32
 .global ap_gdtr_base
 ap_gdtr:
     ap_gdtr_limit: .word ap_gdt_end-ap_gdt
-    ap_gdtr_base:  .long ap_gdt - ap_realmode_base # 在BSP复制代码的时候会动态调整
+    ap_gdtr_base:  .long ap_gdt - ap_realmode_base # 在BSP复制代码后会动态调整
 
 .align 32
 ap_gdt:
