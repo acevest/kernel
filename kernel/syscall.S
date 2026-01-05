@@ -30,9 +30,7 @@
 //.global syscall_exit
 
 syscall_entry:
-#if FIXED_SYSENTER_ESP_MODE
     movl    (%esp),%esp
-#endif
 
     // sysenter have cleared IF, and sysexit will not set IF.
     sti

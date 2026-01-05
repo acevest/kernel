@@ -77,13 +77,7 @@ void print_kernel_version() {
 void parse_rsdt(void* addr);
 
 void setup_kernel() {
-    printk("sysenter esp mode: %s\n",
-#if FIXED_SYSENTER_ESP_MODE
-           "fixed to &tss.esp0"
-#else
-           "use task union stack"
-#endif
-    );
+    printk("sysenter esp mode: fixed to &tss.esp0\n");
 
     init_mm();
 

@@ -190,5 +190,5 @@ void lapic_init() {
 }
 
 void init_apic() {
-    ioapic_init();
+    lapic_init();
 }

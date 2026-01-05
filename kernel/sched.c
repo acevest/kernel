@@ -79,12 +79,7 @@ void init_root_task() {
     root_task.esp0 = ((unsigned long)&root_task) + sizeof(root_task);
     root_task.cr3 = va2pa((unsigned long)(init_pgd));
 
-    tss.esp0 = root_task.esp0;
-#if FIXED_SYSENTER_ESP_MODE
-    // do nothing
-#else
-    wrmsr(MSR_SYSENTER_ESP, root_task.esp0, 0);
-#endif
+    tss.esp0 = root_task.esp0;  // sysenter会把MSR_SYSENTER_ESP设置为&tss.esp0
 
     for (i = 0; i < NR_TASK_OPEN_CNT; i++) {
         root_task.files.fds[i] = NULL;
@@ -116,11 +111,6 @@ task_t* alloc_task_t() {
 void switch_to() {
     set_cr3(current->cr3);
     tss.esp0 = current->esp0;
-#if FIXED_SYSENTER_ESP_MODE
-    // do nothing
-#else
-    wrmsr(MSR_SYSENTER_ESP, current->esp0, 0);
-#endif
 }
 
 void context_switch(task_t* prev, task_t* next) {

@@ -42,7 +42,6 @@ CFLAGS	+= -fno-omit-frame-pointer
 CFLAGS	+= -fcf-protection=none
 CFLAGS	+= -nostdlib
 CFLAGS	+= -DNR_TTYS=3
-CFLAGS	+= -DFIXED_SYSENTER_ESP_MODE=1
 CFLAGS	+= -DENABLE_BOOT_WAIT=0
 CFLAGS	+= -DENABLE_CLOCK_IRQ_WAIT=0
 
