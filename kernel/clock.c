@@ -32,7 +32,7 @@ extern volatile bool enable_clock_irq_delay;
 void clk_handler(unsigned int irq, pt_regs_t* regs, void* dev_id) {
     // if (jiffies % 100 == 0) {
     // printl(MPL_CLOCK, "clock irq: %d", jiffies);
-    printlxy(MPL_IRQ, MPO_CLOCK, "CLK irq: %d", jiffies);
+    printlxy(MPL_IRQ, MPO_CLOCK, "CLK: %d", jiffies);
     // printk("CLK irq %d\n", jiffies);
     // }
 

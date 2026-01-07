@@ -75,7 +75,7 @@ extern void tty_switch_to_next();
 void kbd_debug(uint8_t scan_code) {
     static unsigned long kbd_cnt = 0;
     // printl(MPL_KEYBOARD, "keyboard irq: %d scan code %02x", kbd_cnt++, scan_code);
-    printlxy(MPL_IRQ, MPO_KEYBOARD, "KBD irq: %d %02x", kbd_cnt++, scan_code);
+    printlxy(MPL_IRQ, MPO_KEYBOARD, "KBD: %02x %d", scan_code, kbd_cnt++);
 
     if (scan_code == 0x01) {  // Esc
         // reboot();

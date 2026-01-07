@@ -9,6 +9,8 @@
 
 #pragma once
 
+#include <linkage.h>
+
 #define LAPIC_MSR_BASE 0x800
 
 // APIC的ID寄存器
@@ -141,3 +143,80 @@ typedef struct ioapic_map {
     vaddr_t io_win;
     vaddr_t eoi;
 } ioapic_map_t;
+
+#define IOAPIC_DELIVERY_MODE_FIXED (0b000)
+#define IOAPIC_DELIVERY_MODE_LOWEST_PRIORITY (0b001)
+#define IOAPIC_DELIVERY_MODE_SMI (0b010)
+#define IOAPIC_DELIVERY_MODE_NMI (0b100)
+#define IOAPIC_DELIVERY_MODE_INIT (0b101)
+#define IOAPIC_DELIVERY_MODE_EXTINT (0b111)
+
+#define IOAPIC_PHYSICAL_DESTINATION (0b0)
+#define IOAPIC_LOGIC_DESTINATION (0b1)
+
+#define IOAPIC_DELIVERY_STATUS_IDLE (0b0)
+#define IOAPIC_DELIVERY_STATUS_SEND_PENDING (0b1)
+
+#define IOAPIC_POLARITY_ACTIVE_HIGH (0b0)
+#define IOAPIC_POLARITY_ACTIVE_LOW (0b1)
+
+#define IOAPIC_TRIGGER_MODE_EDGE (0b0)
+#define IOAPIC_TRIGGER_MODE_LEVEL (0b1)
+
+#define IOAPIC_INT_MASKED (0b1)
+#define IOAPIC_INT_UNMASKED (0b0)
+
+#define IOAPIC_32BIT_TIMER (0b0)
+#define IOAPIC_64BIT_TIMER (0b1)
+
+union ioapic_rte {
+    uint64_t value;
+    struct {
+        uint64_t vector : 8;
+        uint64_t delivery_mode : 3;
+        uint64_t destination_mode : 1;
+        uint64_t delivery_status : 1;
+        uint64_t polarity : 1;
+        uint64_t remote_irr : 1;  // read only
+        uint64_t trigger_mode : 1;
+        uint64_t mask : 1;
+        uint64_t reserved : 39;
+        uint64_t destination : 8;
+    };
+} PACKED;
+
+typedef union ioapic_rte ioapic_rte_t;
+
+union hpet_timn_conf_cap {
+    uint64_t value;
+    struct {
+        // BYTE 1
+        uint64_t reserved0 : 1;     // bit0
+        uint64_t trigger_mode : 1;  // bit1
+        uint64_t enable_int : 1;    // bit2
+        uint64_t type : 1;          // bit3
+        uint64_t periodic : 1;      // bit4 read only
+        uint64_t bit_size : 1;      // bit5 read only 0 32位位宽 1 64位位宽
+        uint64_t val_set : 1;       // bit6 标志位只对处于周期定时模式下的定时器0起作⽤
+                                    // 置位此标志位可使软件在定时器运⾏时直接修改定时值。
+        //  bit7
+        uint64_t reserved1 : 1;
+
+        // >>> bin(0x174C)
+        //  '0b1 0111 0100 1100'
+        // >>> bin(0x2E7C)
+        // '0b10 1110 0111 1100'
+        // BYTE 2
+        uint64_t counter_bit_size : 1;
+        uint64_t int_route : 5;
+        uint64_t fsb_en : 1;
+        uint64_t fsb_delivery_status : 1;  // 15 read only
+
+        // BYTE 3~4
+        uint64_t reserved2 : 16;
+
+        // BYTE 5~8
+        uint64_t int_route_cap : 32;  // read only
+    };
+} PACKED;
+typedef union hpet_timn_conf_cap hpet_timn_conf_cap_t;

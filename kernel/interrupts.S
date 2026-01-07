@@ -49,6 +49,18 @@ DEF_IRQ(0,D)
 DEF_IRQ(0,E)
 DEF_IRQ(0,F)
 
+// 64
+DEF_IRQ(4,0)
+#.extern hpet0_irq_handler
+#.global irq_0x40_handler
+#irq_0x40_handler:
+#    SAVE_REGS
+#
+#    call    hpet0_irq_handler
+#
+#    RESTORE_REGS
+#    iret
+
 
 .global _irq_handler
 .extern irq_handler
