@@ -52,11 +52,13 @@ static inline void set_ap_idt_gate(u32 vec, u32 handler, u8 type, u8 DPL) {
         set_ap_idt_gate(vect, (u32)handler, type, DPL); \
     } while (0)
 
-void ap_kernel_entry() {
+uint32_t ap_get_kernel_esp() {
     // 虽然ap_pre_pgd只做了一下跳板页目录看起来很可惜
     // 不过可以把它拿来个AP的栈用
-    asm("mov %0, %%esp" : : "r"(pa2va(&ap_pre_pgd) + PAGE_SIZE - 128));
+    return (uint32_t)pa2va(&ap_pre_pgd) + PAGE_SIZE;
+}
 
+void ap_kernel_entry() {
     // 进入内核空间后要加载原来已经在内核空间的ap_gdt
     // 之前加载的被复制到1MB以下的ap_gdt需要废弃，因为它已经在内核地址空间之外了
     // 虽然他们是同一个ap_gdt
@@ -124,6 +126,9 @@ void ap_kernel_entry() {
         write_msr(MSR_IA32_APIC_BASE, apic_base);
     }
 
+    system.ap_cpuid = lapic->get_lapic_id();
+    printk("AP CPU id: %d\n", system.ap_cpuid);
+
     uint32_t lapic_svr = lapic->read(LAPIC_SVR);
     lapic_svr |= (1 << 8);    // 启用LAPIC
     lapic_svr &= ~(1 << 12);  // 禁用EOI广播
@@ -162,4 +167,8 @@ void do_ap_no_irq_handler() {
     uint8_t* p = (uint8_t*)0xC00B8000;
     *p = *p == ' ' ? 'K' : ' ';
     system.lapic->write(LAPIC_EOI, 0);
+}
+
+bool ap_ready() {
+    return system.ap_cpuid != 0;
 }

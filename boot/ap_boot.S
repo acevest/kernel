@@ -121,6 +121,11 @@ ap_code32_real_entry:
     subl    $kernel_virtual_addr_start, %eax # 算出物理地址
     movl    %eax, %cr3
 
+    # 加载AP的内核栈顶到esp
+    .extern ap_get_kernel_esp
+    call    ap_get_kernel_esp
+    movl    %eax, %esp
+
     # 进入内核ap代码
     .extern ap_kernel_entry
     leal    ap_kernel_entry, %eax

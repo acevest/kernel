@@ -158,6 +158,9 @@ typedef struct system {
 
     dev_t root_dev;
 
+    //
+    uint32_t ap_cpuid;
+
     // 按理这些信息应该按CPU存储，简化实现
     lapic_t* lapic;
     paddr_t lapic_addr;
@@ -172,9 +175,9 @@ typedef struct system {
     u32 debug;
 
     u32 delay;
-} System, *pSystem;
+} system_t;
 
-extern System system;
+extern system_t system;
 
 void system_delay();
 

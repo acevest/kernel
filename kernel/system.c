@@ -27,7 +27,7 @@
 #include <system.h>
 #include <linkage.h>
 
-System system;
+system_t system;
 tss_t tss;
 
 desc_t ALIGN8 idt[NIDT];

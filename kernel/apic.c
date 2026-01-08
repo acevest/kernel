@@ -624,6 +624,13 @@ void init_apic() {
     paddr_t ap_code_addr = 0x1000;
     prepare_ap_code(ap_code_addr);
     wakeup_ap(ap_code_addr);
+
+    printk("wait AP ready...");
+    extern bool ap_ready();
+    while (!ap_ready()) {
+        asm("pause");
+    }
+    printk("AP ready\n");
 }
 
 // ## 中断路由路径配置矩阵
