@@ -12,13 +12,14 @@
 #include <irq.h>
 #include <page.h>
 #include <assert.h>
+#include <string.h>
 
 static vm_struct_t* vm_area_list = NULL;
 
 vaddr_t vm_vaddr_base = VMALLOC_VADDR_BASE + (8 * 1024 * 1024);
 vaddr_t vm_vaddr_end = VMALLOC_VADDR_END;
 
-vm_struct_t* get_vm_area(size_t size, uint32_t flags) {
+vm_struct_t* alloc_vm_area(size_t size, uint32_t flags) {
     // assert size是页对齐
     assert(PAGE_DOWN(size) == size);
     assert(vm_vaddr_base < vm_vaddr_end);
@@ -96,6 +97,9 @@ vm_struct_t* find_vm_area(vaddr_t vaddr) {
     assert(vaddr < vm_vaddr_end);
     assert(vm_area_list != NULL);
 
+    uint32_t eflags;
+    irq_save(eflags);
+
     vm_struct_t* curt = vm_area_list;
 
     while (curt != NULL) {
@@ -104,6 +108,7 @@ vm_struct_t* find_vm_area(vaddr_t vaddr) {
         assert(curt->vm_vaddr + curt->vm_size <= vm_vaddr_end);
 
         if (vaddr == curt->vm_vaddr) {
+            irq_restore(eflags);
             return curt;
         }
 
@@ -112,16 +117,56 @@ vm_struct_t* find_vm_area(vaddr_t vaddr) {
         curt = curt->vm_next;
     }
 
+    irq_restore(eflags);
+
     return NULL;
 }
 
 void free_vm_area(vm_struct_t* vm_area) {
     assert(vm_area != NULL);
     assert(vm_area->vm_size != 0);
+    assert(vm_area->vm_size % PAGE_SIZE == 0);
+    assert(vm_area->vm_size >= (2 * PAGE_SIZE));
     assert(vm_area->vm_vaddr >= vm_vaddr_base);
     assert(vm_area->vm_vaddr + vm_area->vm_size <= vm_vaddr_end);
     assert(vm_area_list != NULL);
     // TODO
+
+    uint32_t eflags;
+    irq_save(eflags);
+
+    vm_struct_t* prev = NULL;
+    vm_struct_t* curt = vm_area_list;
+
+    while (curt != NULL) {
+        if (curt == vm_area) {
+            if (prev == NULL) {
+                // 只有链表上仅有一个节点，且这个节点就是要删除的节点的情况下prev才可能为NULL
+                assert(vm_area_list == vm_area);
+                assert(vm_area->vm_next == NULL);
+
+                //
+                vm_area_list = curt->vm_next;
+            } else {
+                prev->vm_next = curt->vm_next;
+            }
+
+            // 释放前先清空vm_struct避免连续二次释放
+            memset(curt, 0, sizeof(vm_struct_t));
+
+            kfree(curt);
+
+            irq_restore(eflags);
+            return;
+        }
+
+        prev = curt;
+        curt = curt->vm_next;
+    }
+
+    // 不应该出现这种情况
+    assert(0 && "vm_area not found");
+    irq_restore(eflags);
 }
 
 void* vmalloc(size_t size) {

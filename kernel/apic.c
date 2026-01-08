@@ -257,17 +257,10 @@ void hpet0_bh_handler() {
 void hpet0_irq_handler(unsigned int irq, pt_regs_t* regs, void* dev_id) {
     hpet_ticks++;
 
-    vaddr_t hpet_base = system.hpet_base;
-    assert(hpet_base != 0);
-
     uint8_t* p = (uint8_t*)0xC00B8002;
     *p = *p == ' ' ? 'E' : ' ';
 
     add_irq_bh_handler(hpet0_bh_handler, NULL);
-
-    // uint64_t main_cnt = *(volatile uint64_t*)(hpet_base + 0xF0);
-    // uint64_t counter = *(volatile uint64_t*)(hpet_base + 0x108);
-    // printk("main_cnt: %lu counter: %lu abc\n", main_cnt, counter);
 
     system.lapic->write(LAPIC_EOI, 0);
 }
@@ -325,9 +318,8 @@ void ioapic_init() {
     printk("RCBA: %08x %08x\n", RCBA, rcba_phys_base);
 
     // 把RCBA物理基地址映射到内核空间
-    vaddr_t rcba_virt_base = (vaddr_t)ioremap(rcba_phys_base, 4 * PAGE_SIZE);
-    // set_fixmap(FIX_RCBA_BASE, rcba_phys_base);
-    // uint32_t rcba_virt_base = fixid_to_vaddr(FIX_RCBA_BASE);
+    uint32_t rcba_page_offset = 3 * PAGE_SIZE;
+    vaddr_t rcba_virt_base = (vaddr_t)ioremap(rcba_phys_base, 4 * PAGE_SIZE - rcba_page_offset);
     printk("RCBA base %08x mapped to %08x\n", rcba_phys_base, rcba_virt_base);
 
     // OIC
@@ -338,12 +330,12 @@ void ioapic_init() {
     // bit[15:10]: 保留
     //
     // 上面得搞成ioremap映射, 因为0x31FE这个超过一页也就是4K了。
-    uint16_t* pOIC = (uint16_t*)((uint8_t*)rcba_virt_base + 0x31FE);
+    uint16_t* pOIC = (uint16_t*)((uint8_t*)rcba_virt_base + 0x31FE - rcba_page_offset);
     printk("OIC: %04x\n", *pOIC);
     *pOIC = *pOIC | (1 << 8);
     printk("OIC: %04x\n", *pOIC);
-    // TODO
-    // iounmap(rcba_virt_base);
+
+    iounmap(rcba_virt_base);
 
     uint64_t dst_cpuid = 0;
 
@@ -357,6 +349,11 @@ void ioapic_init() {
     irq_set_chip(0x00, &ioapic_chip);
     irq_set_chip(0x01, &ioapic_chip);
 #endif
+
+    rcba_phys_base = RCBA & (~0x3FFF);
+    printk("RCBA: %08x %08x\n", RCBA, rcba_phys_base);
+    rcba_virt_base = (vaddr_t)ioremap(rcba_phys_base, 4 * PAGE_SIZE - rcba_page_offset);
+    printk("RCBA base %08x mapped to %08x\n", rcba_phys_base, rcba_virt_base);
     // HPTC: High Precision Timer Control Register
     // bit[1:0] 地址映射范围选择域
     //       取值      地址映射范围
@@ -371,9 +368,9 @@ void ioapic_init() {
     *pHPTC = *pHPTC | (1 << 7) | (0x00);
     io_mfence();
     printk("HPTC: %08x\n", *pHPTC);
+    iounmap(rcba_virt_base);
 
     vaddr_t hpet_base = (vaddr_t)ioremap(0xFED00000, 0x3FF);
-    system.hpet_base = hpet_base;
     printk("HPET base %08x mapped to %08x\n", 0xFED00000, hpet_base);
 
     uint64_t GEN_CONF = *(volatile uint64_t*)(hpet_base + 0x10);
@@ -455,6 +452,7 @@ void ioapic_init() {
     printk("TIM0_CONF: 0x%08x%08x\n", (uint32_t)(TIM0_CONF >> 32), (uint32_t)TIM0_CONF);
 
     uint64_t x = freq_mhz * 1000000ULL;
+    x >>= 1;
     *(volatile uint32_t*)(hpet_base + 0x108 + 0x04) = (uint32_t)(x >> 32);
     *(volatile uint32_t*)(hpet_base + 0x108 + 0x00) = (uint32_t)(x & 0xFFFFFFFF);
     // *(volatile uint64_t*)(hpet_base + 0x108) = x;

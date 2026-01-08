@@ -23,7 +23,7 @@ typedef struct vm_struct {
     struct vm_struct* vm_next;
 } vm_struct_t;
 
-vm_struct_t* get_vm_area(size_t size, uint32_t flags);
+vm_struct_t* alloc_vm_area(size_t size, uint32_t flags);
 vm_struct_t* find_vm_area(vaddr_t vaddr);
 
 void free_vm_area(vm_struct_t* vm);

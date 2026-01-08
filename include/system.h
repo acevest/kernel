@@ -158,8 +158,6 @@ typedef struct system {
 
     dev_t root_dev;
 
-    vaddr_t hpet_base;
-
     // 按理这些信息应该按CPU存储，简化实现
     lapic_t* lapic;
     paddr_t lapic_addr;

@@ -12,4 +12,4 @@
 #include <vmalloc.h>
 
 void* ioremap(paddr_t paddr, size_t size);
-void iounmap(void* vaddr);
+void iounmap(vaddr_t vaddr);
