@@ -344,3 +344,7 @@ typedef union pci_bridge
     };
 } __attribute__((packed)) pci_bridge_t;
 #endif
+
+// 读取RCBA寄存器的值
+// Root Complex Base Address
+uint32_t pci_get_rcba();

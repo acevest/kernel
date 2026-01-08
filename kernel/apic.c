@@ -247,34 +247,30 @@ void ioapic_rte_write(uint32_t index, uint64_t v) {
     io_mfence();
 }
 
-static uint64_t hpet_ticks = 0;
+void ioapic_enable() {
+    uint32_t rcba_phys_base = (uint32_t)get_rcba_paddr();
 
-void hpet0_bh_handler() {
-    // hpet_ticks++;
-    printlxy(MPL_IRQ, MPO_HPET, "HPET: %lu", hpet_ticks);
-}
+    uint32_t map_offset = 3 * PAGE_SIZE;
+    vaddr_t rcba_virt_base = (vaddr_t)ioremap(rcba_phys_base + map_offset, 4 * PAGE_SIZE - map_offset);
 
-void hpet0_irq_handler(unsigned int irq, pt_regs_t* regs, void* dev_id) {
-    hpet_ticks++;
+    printk("RCBA %08x %08x mapped to %08x\n", rcba_phys_base, rcba_phys_base + map_offset, rcba_virt_base);
 
-    uint8_t* p = (uint8_t*)0xC00B8002;
-    *p = *p == ' ' ? 'E' : ' ';
+    // OIC
+    // 位于RCBA 的 0x31FE 偏移处，是一个16位寄存器
+    // bit[7:0]: APIC映射区。决定了IO APIC的间接访问寄存器的地址区间。只有在禁用IO APIC的情况下才能修改。
+    // bit[8]: IO APIC使能标志位。 置位使能 复位禁用
+    // bit[9] 协处理器错误使能标志位
+    // bit[15:10]: 保留
+    //
+    uint16_t* pOIC = (uint16_t*)((uint8_t*)rcba_virt_base + 0x31FE - map_offset);
+    printk("OIC: %04x\n", *pOIC);
+    *pOIC = *pOIC | (1 << 8);
+    printk("OIC: %04x\n", *pOIC);
 
-    add_irq_bh_handler(hpet0_bh_handler, NULL);
-
-    system.lapic->write(LAPIC_EOI, 0);
+    iounmap(rcba_virt_base);
 }
 
 void ioapic_init() {
-    // 先找到RCBA: Root Complex Base Address寄存器
-    uint32_t cmd = PCI_CMD(0, 31, 0, 0xF0);
-    printk("CMD: %08x\n", cmd);
-    uint32_t RCBA = pci_read_config_long(cmd);
-
-    if ((RCBA & 1) == 0) {
-        panic("RCBA not enabled\n");
-    }
-
     // 把IO APIC映射进地址空间
     ioapic_map.phys_base = system.ioapic_addr;
     ioapic_map.io_reg_sel = (vaddr_t)ioremap(ioapic_map.phys_base, PAGE_SIZE);
@@ -308,34 +304,9 @@ void ioapic_init() {
         ioapic_rte_write(IOAPIC_RTE(i), IOAPIC_RTE_MASK | irq);
     }
 
-    // RCBA
-    // bit[0]: 使能位
-    // bit[13:1]: 保留
-    // bit[31:14]: RCBA物理基地址
-    // 0x3FFF == (1 << 14) - 1
-    uint32_t rcba_phys_base = RCBA & (~0x3FFF);
+    uint32_t rcba_phys_base = (uint32_t)get_rcba_paddr();
 
-    printk("RCBA: %08x %08x\n", RCBA, rcba_phys_base);
-
-    // 把RCBA物理基地址映射到内核空间
-    uint32_t rcba_page_offset = 3 * PAGE_SIZE;
-    vaddr_t rcba_virt_base = (vaddr_t)ioremap(rcba_phys_base, 4 * PAGE_SIZE - rcba_page_offset);
-    printk("RCBA base %08x mapped to %08x\n", rcba_phys_base, rcba_virt_base);
-
-    // OIC
-    // 位于RCBA 的 0x31FE 偏移处，是一个16位寄存器
-    // bit[7:0]: APIC映射区。决定了IO APIC的间接访问寄存器的地址区间。只有在禁用IO APIC的情况下才能修。
-    // bit[8]: IO APIC使能标志位。 置位使能 复位禁用
-    // bit[9] 协处理器错误使能标志位
-    // bit[15:10]: 保留
-    //
-    // 上面得搞成ioremap映射, 因为0x31FE这个超过一页也就是4K了。
-    uint16_t* pOIC = (uint16_t*)((uint8_t*)rcba_virt_base + 0x31FE - rcba_page_offset);
-    printk("OIC: %04x\n", *pOIC);
-    *pOIC = *pOIC | (1 << 8);
-    printk("OIC: %04x\n", *pOIC);
-
-    iounmap(rcba_virt_base);
+    ioapic_enable();
 
     uint64_t dst_cpuid = 0;
 
@@ -350,164 +321,6 @@ void ioapic_init() {
     irq_set_chip(0x00, &ioapic_chip);
     irq_set_chip(0x01, &ioapic_chip);
 #endif
-
-    rcba_phys_base = RCBA & (~0x3FFF);
-    printk("RCBA: %08x %08x\n", RCBA, rcba_phys_base);
-    rcba_virt_base = (vaddr_t)ioremap(rcba_phys_base, 4 * PAGE_SIZE - rcba_page_offset);
-    printk("RCBA base %08x mapped to %08x\n", rcba_phys_base, rcba_virt_base);
-    // HPTC: High Precision Timer Control Register
-    // bit[1:0] 地址映射范围选择域
-    //       取值      地址映射范围
-    //        00: 0xFED00000 - 0xFED003FF
-    //        01: 0xFED01000 - 0xFED013FF
-    //        10: 0xFED02000 - 0xFED023FF
-    //        11: 0xFED03000 - 0xFED033FF
-    // bit[7] 地址映射使能标志位，用于控制HPET设备访问地址的开启与否
-    //        只有它置位时芯片组才会将HPET配置寄存器映射到内存空间
-    uint32_t* pHPTC = (uint32_t*)((uint8_t*)rcba_virt_base + 0x3404);
-    printk("HPTC: %08x %08x\n", *pHPTC, pHPTC);
-    *pHPTC = *pHPTC | (1 << 7) | (0x00);
-    io_mfence();
-    printk("HPTC: %08x\n", *pHPTC);
-    iounmap(rcba_virt_base);
-
-    vaddr_t hpet_base = (vaddr_t)ioremap(0xFED00000, 0x3FF);
-    printk("HPET base %08x mapped to %08x\n", 0xFED00000, hpet_base);
-
-    uint64_t GEN_CONF = *(volatile uint64_t*)(hpet_base + 0x10);
-    printk("GEN_CONF: 0x%08x%08x\n", (uint32_t)(GEN_CONF >> 32), (uint32_t)GEN_CONF);
-    // // DISABLE HPET
-    // *(volatile uint64_t*)(hpet_base + 0x10) &= ~(1 << 0);
-    // io_mfence();
-
-    // 获取HPET的频率
-    uint64_t GCAP_ID = *(volatile uint64_t*)(hpet_base + 0);
-    // printk("GCAP_ID: %016x\n", GCAP_ID);
-    printk("GCAP_ID: 0x%08x%08x\n", (uint32_t)(GCAP_ID >> 32), (uint32_t)GCAP_ID);
-    uint32_t clock_period = (GCAP_ID >> 32);
-    uint64_t freq_mhz = 1000000000U / clock_period;
-    printk("HPET clock period: %08x\n", clock_period);
-    printk("HPET clock %s compatible\n", (GCAP_ID & (1 << 15)) == 0 ? "not" : "");
-    printk("HPET clock %s 64-bit capable\n", (GCAP_ID & (1 << 13)) == 0 ? "not" : "");
-    printk("HPET clock timer count: %d\n", ((GCAP_ID >> 8) & 0x1F) + 1);
-    printk("HPET clock frequency: %u MHz\n", freq_mhz);
-
-    GEN_CONF = *(volatile uint64_t*)(hpet_base + 0x10);
-    printk("GEN_CONF: 0x%08x%08x\n", (uint32_t)(GEN_CONF >> 32), (uint32_t)GEN_CONF);
-    printk("HPET enabled: %s\n", (GEN_CONF & (1 << 0)) == 0 ? "no" : "yes");
-    printk("HPET legacy replacement: %s\n", (GEN_CONF & (1 << 1)) == 0 ? "no" : "yes");
-
-    uint32_t cpu_irq_vec = 0;
-    uint32_t ioapic_irq = 23;
-
-    // TIM0_CONF
-    uint64_t TIM0_CONF = *(volatile uint64_t*)(hpet_base + 0x100);
-    printk("TIM0_CONF: 0x%08x%08x\n", (uint32_t)(TIM0_CONF >> 32), (uint32_t)TIM0_CONF);
-
-    request_irq(cpu_irq_vec, hpet0_irq_handler, "HPET#0", "HPET#0");
-    // HEPT TIM0 连在 IO-APIC的2号引脚上
-    // ioapic_rte_write(IOAPIC_RTE(2), 0x20 + 3 | (dst_cpuid << 56));
-
-#define TRIGGER_MODE IOAPIC_TRIGGER_MODE_EDGE
-    ioapic_rte_t rte;
-    printk("sizeof(ioapic_rte_t): %d\n", sizeof(ioapic_rte_t));
-    assert(sizeof(ioapic_rte_t) == 8);
-    rte.value = 0;
-    rte.vector = 0x20 + cpu_irq_vec;
-    rte.delivery_mode = IOAPIC_DELIVERY_MODE_FIXED;
-    rte.destination_mode = IOAPIC_PHYSICAL_DESTINATION;
-    rte.trigger_mode = TRIGGER_MODE;
-    rte.mask = IOAPIC_INT_UNMASKED;
-    rte.destination = dst_cpuid;
-
-    printk("RTE VALUE %08x", rte.value);
-
-    ioapic_rte_write(IOAPIC_RTE(ioapic_irq), rte.value);
-    irq_set_chip(cpu_irq_vec, &ioapic_chip);
-
-    // DISABLE HPET
-    *(volatile uint64_t*)(hpet_base + 0x10) &= ~(1ULL << 0);
-    io_mfence();
-
-    hpet_timn_conf_cap_t tim0_conf_cap;
-    assert(sizeof(tim0_conf_cap) == 8);
-    tim0_conf_cap.value = TIM0_CONF;
-    tim0_conf_cap.trigger_mode = TRIGGER_MODE;
-    tim0_conf_cap.enable_int = 1;  // enable
-    tim0_conf_cap.type = 1;        // periodic
-    tim0_conf_cap.periodic = 0;    // readonly
-    tim0_conf_cap.bit_size = 1;    // 0 32bit; 1 64bit
-    tim0_conf_cap.val_set = 1;
-
-    tim0_conf_cap.counter_bit_size = 0;  // 1 32 0 64
-    tim0_conf_cap.int_route = ioapic_irq;
-    tim0_conf_cap.fsb_en = 0;
-    tim0_conf_cap.fsb_delivery_status = 0;  // read only
-    tim0_conf_cap.reserved0 = 0;
-    tim0_conf_cap.reserved1 = 0;
-    tim0_conf_cap.reserved2 = 0;
-    tim0_conf_cap.int_route_cap = 0;
-
-    TIM0_CONF = tim0_conf_cap.value;
-
-    printk("TIM0_CONF: 0x%08x%08x\n", (uint32_t)(TIM0_CONF >> 32), (uint32_t)TIM0_CONF);
-
-    // uint64_t x = freq_mhz * 1000000ULL;
-    uint64_t x = freq_mhz * 10000ULL;
-    *(volatile uint32_t*)(hpet_base + 0x108 + 0x04) = (uint32_t)(x >> 32);
-    *(volatile uint32_t*)(hpet_base + 0x108 + 0x00) = (uint32_t)(x & 0xFFFFFFFF);
-    // *(volatile uint64_t*)(hpet_base + 0x108) = x;
-    io_mfence();
-
-    *(volatile uint32_t*)(hpet_base + 0x100 + 0x04) = (uint32_t)(TIM0_CONF >> 32);
-    *(volatile uint32_t*)(hpet_base + 0x100 + 0x00) = (uint32_t)(TIM0_CONF & 0xFFFFFFFF);
-    // *(volatile uint64_t*)(hpet_base + 0x100) = TIM0_CONF;
-    io_mfence();
-
-    // 如果TIMn_CONF的bit6置位(只能在周期模式下置位)的话，这个比较寄存器要写两次
-    // 第一次是初始值
-    // 第二次是累加值，也就是当MAIN_CNT达到比较寄存器的值时，会自动加上这个
-    // 需要说明的是: 第一次要在写TIMn_CONF之前写入
-    // 在<<Softwater Developers HPET Specification>>中是这样描述bit6的
-    // Software uses this read/write bit only for timers that have been set to periodic mode.
-    // By writing this bit to a 1, the software is then allowed to directly set a periodic timer's accumulator.
-    *(volatile uint32_t*)(hpet_base + 0x108 + 0x04) = (uint32_t)(x >> 32);
-    *(volatile uint32_t*)(hpet_base + 0x108 + 0x00) = (uint32_t)(x & 0xFFFFFFFF);
-    // *(volatile uint64_t*)(hpet_base + 0x108) = x;
-    io_mfence();
-
-    // *(volatile uint32_t*)(hpet_base + 0x108 + 0x04) = (uint32_t)(x >> 32);
-    // *(volatile uint32_t*)(hpet_base + 0x108 + 0x00) = (uint32_t)(x & 0xFFFFFFFF);
-    // // *(volatile uint64_t*)(hpet_base + 0x108) = x;
-    // io_mfence();
-
-    // MAIN_CNT
-    *(volatile uint64_t*)(hpet_base + 0xF0) = 0;
-    // *(volatile uint32_t*)(hpet_base + 0xF0) = 0;
-    io_mfence();
-
-    // ENABLE HPET
-    *(volatile uint64_t*)(hpet_base + 0x10) |= (1ULL << 0);
-    io_mfence();
-
-    // // 禁用 Legacy Replacement 模式
-    // *(volatile uint64_t*)(hpet_base + 0x10) &= ~(1ULL << 1);
-    // io_mfence();
-
-    TIM0_CONF = *(volatile uint64_t*)(hpet_base + 0x100);
-
-    uint32_t ESR = system.lapic->read(LAPIC_ESR);
-    uint64_t TPR = system.lapic->read(LAPIC_TPR);
-    uint32_t PPR = system.lapic->read(LAPIC_PPR);
-    printk("ESR: %08x TPR: %08x PPR: %08x\n", ESR, TPR, PPR);
-    printk("AFTER TIM0_CONF: 0x%08x%08x\n", (uint32_t)(TIM0_CONF >> 32), (uint32_t)TIM0_CONF);
-
-    // while (1) {
-    //     asm("sti");
-    //     asm("hlt;");
-    // }
-    // TODO
-    // iounmap(hpet_base);
 }
 
 void prepare_ap_code(paddr_t paddr) {
@@ -625,12 +438,6 @@ void init_apic() {
     prepare_ap_code(ap_code_addr);
     wakeup_ap(ap_code_addr);
 
-    printk("wait AP ready...");
-    extern bool ap_ready();
-    while (!ap_ready()) {
-        asm("pause");
-    }
-    printk("AP ready\n");
 }
 
 // ## 中断路由路径配置矩阵

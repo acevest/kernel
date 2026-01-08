@@ -265,6 +265,8 @@ extern volatile int reenter;
 void boot_delay(int ticks);
 
 void io_mfence();
+
+paddr_t get_rcba_paddr();
 #endif
 
 #define DISABLE_IDE 1

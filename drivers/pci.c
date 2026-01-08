@@ -239,6 +239,15 @@ err:
     return 0;
 }
 
+uint32_t pci_get_rcba() {
+    // Root Complex Base Address寄存器
+
+    uint32_t cmd = PCI_CMD(0, 31, 0, 0xF0);
+    uint32_t RCBA = pci_read_config_long(cmd);
+
+    return RCBA;
+}
+
 void setup_pci() {
     if (!probe_pci_bus()) {
         return;

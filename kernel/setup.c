@@ -18,6 +18,7 @@
 #include <string.h>
 #include <system.h>
 #include <tty.h>
+#include <hpet.h>
 
 extern void init_mm();
 extern void init_buffer();
@@ -74,6 +75,15 @@ void print_kernel_version() {
     printk(version);
 }
 
+void wait_ap_boot() {
+    printk("wait AP ready...");
+    extern bool ap_ready();
+    while (!ap_ready()) {
+        asm("pause");
+    }
+    printk("AP ready\n");
+}
+
 void setup_kernel() {
     printk("sysenter esp mode: fixed to &tss.esp0\n");
 
@@ -128,6 +138,12 @@ void setup_kernel() {
 #if 1
     void init_apic();
     init_apic();
+#endif
+
+    wait_ap_boot();
+
+#if 1
+    hpet_init();
 #endif
 
 #if !DISABLE_IDE

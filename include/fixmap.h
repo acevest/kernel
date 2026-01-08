@@ -27,6 +27,8 @@ enum {
     FIX_IO_APIC_BASE,
     FIX_IO_APIC_END = FIX_IO_APIC_BASE + MAX_IO_APIC_CNT - 1,
 
+    FIX_HPET_BASE,
+
     FIX_END_PAD,
 };
 

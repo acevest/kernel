@@ -26,6 +26,7 @@
 #include <syscall.h>
 #include <system.h>
 #include <linkage.h>
+#include <pci.h>
 
 system_t system;
 tss_t tss;
@@ -231,4 +232,22 @@ int sysc_reboot(int mode) {
 
 void io_mfence() {
     asm volatile("mfence" ::: "memory");
+}
+
+paddr_t get_rcba_paddr() {
+    uint32_t rcba = pci_get_rcba();
+
+    if ((rcba & 1) == 0) {
+        panic("RCBA not enabled\n");
+    }
+
+    // RCBA
+    // bit[0]: 使能位
+    // bit[13:1]: 保留
+    // bit[31:14]: RCBA物理基地址
+    // 0x3FFF == (1 << 14) - 1
+
+    paddr_t rcba_paddr = rcba & (~0x3FFF);
+
+    return rcba_paddr;
 }
