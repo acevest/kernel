@@ -343,7 +343,8 @@ void ioapic_init() {
 #if 1
     // 把8253的中断通过IOAPIC转发到CPU0的0号中断
     // 8253/8254连在i8259的0号引脚，但连在IO APIC的2号引脚上
-    ioapic_rte_write(IOAPIC_RTE(2), 0x20 + 0 | (dst_cpuid << 56));
+    // ioapic_rte_write(IOAPIC_RTE(2), 0x20 + 0 | (dst_cpuid << 56));
+    ioapic_rte_write(IOAPIC_RTE(2), 0x20 + 0 | (1ULL << 56));
     // 把键盘中断通过IOAPIC转发到CPU0的1号中断
     ioapic_rte_write(IOAPIC_RTE(1), 0x20 + 1 | (dst_cpuid << 56));
     irq_set_chip(0x00, &ioapic_chip);
@@ -396,7 +397,7 @@ void ioapic_init() {
     printk("HPET enabled: %s\n", (GEN_CONF & (1 << 0)) == 0 ? "no" : "yes");
     printk("HPET legacy replacement: %s\n", (GEN_CONF & (1 << 1)) == 0 ? "no" : "yes");
 
-    uint32_t cpu_irq_vec = 64;
+    uint32_t cpu_irq_vec = 0;
     uint32_t ioapic_irq = 23;
 
     // TIM0_CONF
@@ -451,8 +452,8 @@ void ioapic_init() {
 
     printk("TIM0_CONF: 0x%08x%08x\n", (uint32_t)(TIM0_CONF >> 32), (uint32_t)TIM0_CONF);
 
-    uint64_t x = freq_mhz * 1000000ULL;
-    x >>= 1;
+    // uint64_t x = freq_mhz * 1000000ULL;
+    uint64_t x = freq_mhz * 10000ULL;
     *(volatile uint32_t*)(hpet_base + 0x108 + 0x04) = (uint32_t)(x >> 32);
     *(volatile uint32_t*)(hpet_base + 0x108 + 0x00) = (uint32_t)(x & 0xFFFFFFFF);
     // *(volatile uint64_t*)(hpet_base + 0x108) = x;

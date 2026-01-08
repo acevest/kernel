@@ -128,7 +128,7 @@ void ap_kernel_entry() {
     lapic_svr |= (1 << 8);    // 启用LAPIC
     lapic_svr &= ~(1 << 12);  // 禁用EOI广播
     lapic->write(LAPIC_SVR, lapic_svr);
-
+#if 0
     // 先显示地屏蔽时钟中断
     lapic->write(LAPIC_LVT_TIMER, LAPIC_LVT_MASKED);
 
@@ -148,7 +148,7 @@ void ap_kernel_entry() {
 
     //
     lapic->write(LAPIC_LVT_TIMER, LAPIC_TIMER_MODE_PERIODIC | clkvec);
-
+#endif
     asm("sti;");
 
     while (1) {
