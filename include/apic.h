@@ -84,6 +84,18 @@
 #define LAPIC_TIMER_MODE_TSC_DEADLINE (2 << 17)
 #define LAPIC_TIMER_MODE_RESERVED (3 << 17)
 
+// 需要注意的是，分频器用的是第0,1,3位。第2位为0
+#define LAPIC_TIMER_DIVIDE_BY_1 (0b1011)
+#define LAPIC_TIMER_DIVIDE_BY_2 (0b0000)
+#define LAPIC_TIMER_DIVIDE_BY_4 (0b0001)
+#define LAPIC_TIMER_DIVIDE_BY_8 (0b0010)
+#define LAPIC_TIMER_DIVIDE_BY_16 (0b0011)
+#define LAPIC_TIMER_DIVIDE_BY_32 (0b1000)
+#define LAPIC_TIMER_DIVIDE_BY_64 (0b1001)
+#define LAPIC_TIMER_DIVIDE_BY_128 (0b1010)
+
+#define LAPIC_TIMER_DIVIDE_INVALID (0b1111)
+
 typedef struct lapic {
     const char* name;
 

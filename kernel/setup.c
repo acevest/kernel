@@ -75,8 +75,49 @@ void print_kernel_version() {
     printk(version);
 }
 
+void prepare_ap_code(paddr_t paddr) {
+    // 注意: 最开始时AP是运行在实模式
+    paddr += KERNEL_VADDR_BASE;
+    // *(volatile uint8_t*)(paddr + 0) = 0x90;
+    // *(volatile uint8_t*)(paddr + 1) = 0x90;
+    // *(volatile uint8_t*)(paddr + 2) = 0x90;
+    // *(volatile uint8_t*)(paddr + 3) = 0xEA;     // jmp
+    // *(volatile uint16_t*)(paddr + 4) = 0x0000;  // offset: 0000
+    // *(volatile uint16_t*)(paddr + 6) = 0x0100;  // cs:0100
+
+    extern char ap_boot_bgn;
+    extern char ap_boot_end;
+    uint32_t bytes = &ap_boot_end - &ap_boot_bgn;
+
+    for (int i = 0; i < bytes; i++) {
+        ((uint8_t*)paddr)[i] = ((uint8_t*)&ap_boot_bgn)[i];
+    }
+
+    // 修正代码里跳入保护模式的地址和gdtr里的gdt的base地址
+    extern uint8_t ap_code32_entry_address;
+    extern uint8_t ap_gdtr_base;
+
+    uint32_t* dst = 0;
+
+    //
+    dst = (uint32_t*)(paddr + (uint32_t)(&ap_code32_entry_address) - (uint32_t)(&ap_boot_bgn));
+    (*dst) -= (uint32_t)(&ap_boot_bgn);
+    (*dst) += (paddr - KERNEL_VADDR_BASE);
+
+    //
+    dst = (uint32_t*)(paddr + (uint32_t)(&ap_gdtr_base) - (uint32_t)(&ap_boot_bgn));
+    (*dst) -= (uint32_t)(&ap_boot_bgn);
+    (*dst) += (paddr - KERNEL_VADDR_BASE);
+}
+
 void wait_ap_boot() {
-    printk("wait AP ready...");
+    paddr_t ap_code_addr = 0x1000;
+    prepare_ap_code(ap_code_addr);
+
+    void wakeup_ap(paddr_t paddr);
+    wakeup_ap(ap_code_addr);
+
+    printk("wait AP ready...\n");
     extern bool ap_ready();
     while (!ap_ready()) {
         asm("pause");
@@ -140,11 +181,14 @@ void setup_kernel() {
     init_apic();
 #endif
 
-    wait_ap_boot();
-
 #if 1
     hpet_init();
 #endif
+
+    // ap 启动需要用到 hpet来校准
+    wait_ap_boot();
+
+    hpet_init_timer0(1);
 
 #if !DISABLE_IDE
     void ide_init();

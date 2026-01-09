@@ -26,6 +26,8 @@ const static int hpet_trigger_mode = IOAPIC_TRIGGER_MODE_EDGE;
 
 static paddr_t hpet_phys_addr = 0;
 
+static uint32_t hpet_timer_count = 0;
+
 void hpet_hw_enable() {
     uint32_t map_offset = 3 * PAGE_SIZE;
     vaddr_t rcba_phys_base = (vaddr_t)get_rcba_paddr();
@@ -56,11 +58,14 @@ vaddr_t hpet_base() {
 }
 
 uint64_t hpet_read(uint32_t regoffset) {
-    return *(uint64_t*)(hpet_base() + regoffset);
+    uint64_t value = *(uint64_t*)(hpet_base() + regoffset);
+    io_mfence();
+    return value;
 }
 
 uint64_t hpet_write(uint32_t regoffset, uint64_t value) {
     *(volatile uint64_t*)(hpet_base() + regoffset) = value;
+    io_mfence();
     return value;
 }
 
@@ -74,12 +79,10 @@ uint64_t hpet_write(uint32_t regoffset, uint64_t value) {
 
 void hpet_enable() {
     hpet_write(HPET_REG_CONFIG, hpet_read(HPET_REG_CONFIG) | (1ULL << 0));
-    io_mfence();
 }
 
 void hpet_disable() {
     hpet_write(HPET_REG_CONFIG, hpet_read(HPET_REG_CONFIG) & ~(1ULL << 0));
-    io_mfence();
 }
 
 uint32_t hpet_clock_period = 0;
@@ -93,40 +96,26 @@ void hpet0_bh_handler() {
 void hpet0_irq_handler(unsigned int irq, pt_regs_t* regs, void* dev_id) {
     hpet_ticks++;
 
-    uint8_t* p = (uint8_t*)0xC00B8002;
-    *p = *p == ' ' ? 'E' : ' ';
+    uint8_t* p = (uint8_t*)0xC00B8000;
+    *p = *p == ' ' ? 'K' : ' ';
 
     add_irq_bh_handler(hpet0_bh_handler, NULL);
 
     system.lapic->write(LAPIC_EOI, 0);
 }
 
+uint64_t hpet_get_tick_counter(uint32_t hz) {
+    assert(hz > 0);
+    assert(hpet_clock_mhz_freq > 0);
+
+    uint32_t r = 1000000 / hz;
+
+    return r * hpet_clock_mhz_freq;
+}
+
 extern irq_chip_t ioapic_chip;
-void hpet_init() {
-    assert(hpet_use_phys_addr_index < sizeof(hpet_phys_addrs) / sizeof(hpet_phys_addrs[0]));
-    hpet_phys_addr = hpet_phys_addrs[hpet_use_phys_addr_index];
 
-    set_fixmap(FIX_HPET_BASE, hpet_phys_addr);
-    printk("HPET base %08x mapped to %08x\n", hpet_phys_addr, hpet_base());
-
-    //
-    hpet_hw_enable();
-
-    uint64_t capid = hpet_read(HPET_REG_CAPABILITY_ID);
-    hpet_clock_period = capid >> 32;
-    hpet_clock_mhz_freq = 1000000000U / hpet_clock_period;  // 32位除法
-    printk("HPET Capability and ID: 0x%08x%08x\n", (uint32_t)(capid >> 32), (uint32_t)capid);
-    printk("HPET legacy replacement route capable: %s\n", (capid & (1ULL << 15)) ? "Y" : "N");
-    printk("HPET 64bit capable: %s\n,", (capid & (1ULL << 13)) ? "Y" : "N");
-    printk("HPET timer count: %d\n", ((capid >> 8) & 0x1F) + 1);
-    printk("HPET clock period: %u ns\n", hpet_clock_period);
-    printk("HPET clock frequency: %u MHz\n", hpet_clock_mhz_freq);
-
-    uint64_t config = hpet_read(HPET_REG_CONFIG);
-    printk("HPET Configuration: 0x%08x%08x\n", (uint32_t)(config >> 32), (uint32_t)config);
-    printk("HPET enabled: %s\n", (config & (1ULL << 0)) ? "Y" : "N");
-    printk("HPET legacy replacement: %s\n", (config & (1ULL << 1)) ? "Y" : "N");
-
+void hpet_init_timer0(uint32_t hz) {
     //
     hpet_disable();
 
@@ -155,7 +144,7 @@ void hpet_init() {
     ioapic_rte_write(IOAPIC_RTE(ioapic_irq), rte.value);
     irq_set_chip(irq, &ioapic_chip);
 
-    uint64_t counter = hpet_clock_mhz_freq * 1000000ULL;
+    uint64_t counter = hpet_get_tick_counter(hz);
 
     // 配置HPET#0
     uint64_t tim0_config = 0;
@@ -169,13 +158,71 @@ void hpet_init() {
     printk("TIM0_CONF: 0x%08x%08x\n", (uint32_t)(tim0_config >> 32), (uint32_t)tim0_config);
 
     hpet_write(HPET_REG_TIMn_CONFIG_CAPABILITY(0), tim0_config);
-    io_mfence();
 
     hpet_write(HPET_REG_TIMn_COMPARATOR(0), counter);
-    io_mfence();
 
     hpet_write(HPET_REG_MAIN_COUNTER_VALUE, 0);
-    io_mfence();
 
     hpet_enable();
+}
+
+void hpet_prepare_calibration(uint32_t timn, uint32_t hz) {
+    assert(timn < hpet_timer_count);
+    //
+    // hpet_disable();
+
+    uint64_t counter = hpet_get_tick_counter(hz);
+
+    // 配置HPET#0
+    uint64_t timn_config = 0;
+    timn_config |= (hpet_trigger_mode << 1);
+    timn_config |= (0 << 2);  // enable interrupt
+    timn_config |= (0 << 3);  // periodic
+    timn_config |= (1 << 5);  // 64bit
+    // timn_config |= (1 << 6);           // ....
+    // timn_config |= (ioapic_irq << 9);  // ioapic irq
+
+    printk("TIM0_CONF: 0x%08x%08x\n", (uint32_t)(timn_config >> 32), (uint32_t)timn_config);
+
+    hpet_write(HPET_REG_TIMn_CONFIG_CAPABILITY(timn), timn_config);
+
+    hpet_write(HPET_REG_TIMn_COMPARATOR(timn), counter);
+
+    hpet_write(HPET_REG_MAIN_COUNTER_VALUE, 0);
+
+    // hpet_enable();
+}
+
+bool hpet_calibration_end(uint32_t timn) {
+    if (hpet_read(HPET_REG_MAIN_COUNTER_VALUE) >= hpet_read(HPET_REG_TIMn_COMPARATOR(timn))) {
+        return true;
+    }
+    return false;
+}
+
+void hpet_init() {
+    assert(hpet_use_phys_addr_index < sizeof(hpet_phys_addrs) / sizeof(hpet_phys_addrs[0]));
+    hpet_phys_addr = hpet_phys_addrs[hpet_use_phys_addr_index];
+
+    set_fixmap(FIX_HPET_BASE, hpet_phys_addr);
+    printk("HPET base %08x mapped to %08x\n", hpet_phys_addr, hpet_base());
+
+    //
+    hpet_hw_enable();
+
+    uint64_t capid = hpet_read(HPET_REG_CAPABILITY_ID);
+    hpet_clock_period = capid >> 32;
+    hpet_clock_mhz_freq = 1000000000U / hpet_clock_period;  // 32位除法
+    hpet_timer_count = ((capid >> 8) & 0x1F) + 1;
+    printk("HPET Capability and ID: 0x%08x%08x\n", (uint32_t)(capid >> 32), (uint32_t)capid);
+    printk("HPET legacy replacement route capable: %s\n", (capid & (1ULL << 15)) ? "Y" : "N");
+    printk("HPET 64bit capable: %s\n", (capid & (1ULL << 13)) ? "Y" : "N");
+    printk("HPET timer count: %d\n", hpet_timer_count);
+    printk("HPET clock period: %u ns\n", hpet_clock_period);
+    printk("HPET clock frequency: %u MHz\n", hpet_clock_mhz_freq);
+
+    uint64_t config = hpet_read(HPET_REG_CONFIG);
+    printk("HPET Configuration: 0x%08x%08x\n", (uint32_t)(config >> 32), (uint32_t)config);
+    printk("HPET enabled: %s\n", (config & (1ULL << 0)) ? "Y" : "N");
+    printk("HPET legacy replacement: %s\n", (config & (1ULL << 1)) ? "Y" : "N");
 }

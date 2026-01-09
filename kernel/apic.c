@@ -312,50 +312,17 @@ void ioapic_init() {
 
     extern irq_chip_t ioapic_chip;
 #if 1
-    // 把8253的中断通过IOAPIC转发到CPU0的0号中断
+
     // 8253/8254连在i8259的0号引脚，但连在IO APIC的2号引脚上
+    // 把8253/8254的中断通过IOAPIC转发到CPU0的0号中断
     // ioapic_rte_write(IOAPIC_RTE(2), 0x20 + 0 | (dst_cpuid << 56));
+    // 把8253/8254的中断通过IOAPIC转发到CPU1的0号中断
     ioapic_rte_write(IOAPIC_RTE(2), 0x20 + 0 | (1ULL << 56));
     // 把键盘中断通过IOAPIC转发到CPU0的1号中断
     ioapic_rte_write(IOAPIC_RTE(1), 0x20 + 1 | (dst_cpuid << 56));
-    irq_set_chip(0x00, &ioapic_chip);
+    // irq_set_chip(0x00, &ioapic_chip);  // ap不需要这个
     irq_set_chip(0x01, &ioapic_chip);
 #endif
-}
-
-void prepare_ap_code(paddr_t paddr) {
-    // 注意: 最开始时AP是运行在实模式
-    paddr += KERNEL_VADDR_BASE;
-    // *(volatile uint8_t*)(paddr + 0) = 0x90;
-    // *(volatile uint8_t*)(paddr + 1) = 0x90;
-    // *(volatile uint8_t*)(paddr + 2) = 0x90;
-    // *(volatile uint8_t*)(paddr + 3) = 0xEA;     // jmp
-    // *(volatile uint16_t*)(paddr + 4) = 0x0000;  // offset: 0000
-    // *(volatile uint16_t*)(paddr + 6) = 0x0100;  // cs:0100
-
-    extern char ap_boot_bgn;
-    extern char ap_boot_end;
-    uint32_t bytes = &ap_boot_end - &ap_boot_bgn;
-
-    for (int i = 0; i < bytes; i++) {
-        ((uint8_t*)paddr)[i] = ((uint8_t*)&ap_boot_bgn)[i];
-    }
-
-    // 修正代码里跳入保护模式的地址和gdtr里的gdt的base地址
-    extern uint8_t ap_code32_entry_address;
-    extern uint8_t ap_gdtr_base;
-
-    uint32_t* dst = 0;
-
-    //
-    dst = (uint32_t*)(paddr + (uint32_t)(&ap_code32_entry_address) - (uint32_t)(&ap_boot_bgn));
-    (*dst) -= (uint32_t)(&ap_boot_bgn);
-    (*dst) += (paddr - KERNEL_VADDR_BASE);
-
-    //
-    dst = (uint32_t*)(paddr + (uint32_t)(&ap_gdtr_base) - (uint32_t)(&ap_boot_bgn));
-    (*dst) -= (uint32_t)(&ap_boot_bgn);
-    (*dst) += (paddr - KERNEL_VADDR_BASE);
 }
 
 void wakeup_ap(paddr_t paddr) {
@@ -433,11 +400,6 @@ void init_apic() {
     // imcr_init();
     lapic_init();
     ioapic_init();
-
-    paddr_t ap_code_addr = 0x1000;
-    prepare_ap_code(ap_code_addr);
-    wakeup_ap(ap_code_addr);
-
 }
 
 // ## 中断路由路径配置矩阵

@@ -123,8 +123,21 @@ _boot_kbd_irq_handler:
 .global ap_no_irq_handler
 ap_no_irq_handler:
     SAVE_REGS
-
     call    do_ap_no_irq_handler
+    RESTORE_REGS
+    iret
 
+.global ap_lapic_irq_handler
+ap_lapic_irq_handler:
+    SAVE_REGS
+    call    do_ap_lapic_irq_handler
+    RESTORE_REGS
+    iret
+
+
+.global ap_pit_irq_handler
+ap_pit_irq_handler:
+    SAVE_REGS
+    call    do_ap_pit_irq_handler
     RESTORE_REGS
     iret
