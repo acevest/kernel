@@ -13,8 +13,6 @@
 #include <page.h>
 #include <sched.h>
 
-extern void ret_from_fork_user();
-extern void ret_from_fork_krnl();
 extern pid_t get_next_pid();
 extern list_head_t all_tasks;
 
@@ -61,36 +59,7 @@ int do_fork(pt_regs_t* regs, unsigned long flags) {
             continue;
         }
 
-#if 1
         pde_dst[i] = pde_src[i] & (~PDE_RW);
-#else
-        // 这里不用再为每个PDE拷贝一次PageTable，只需要拷贝PageDirectory并将其低于768的写权限去掉
-        // 同时需要修改缺页异常do_page_fault的逻辑
-        if (PAGE_ALIGN(spde) != 0) {
-            dpde = page2va(alloc_one_page(0));
-            assert(dpde != 0);
-            memset((void*)dpde, 0, PAGE_SIZE);
-            dpde = PAGE_FLAGS(spde) | (unsigned long)va2pa(dpde);
-        } else {
-            pde_dst[i] = 0;
-            continue;
-        }
-        pde_dst[i] = dpde;
-
-        pte_t* pte_src = pa2va(PAGE_ALIGN(spde));
-        pte_t* pte_dst = pa2va(PAGE_ALIGN(dpde));
-        for (j = 0; j < PAGE_PTE_CNT; ++j) {
-            pte_src[j] &= ~PAGE_WR;
-            pte_dst[j] = pte_src[j];
-
-            if (pte_src[j] == 0) {
-                continue;
-            }
-            printk("----pde[%u] pte_src[%u] %08x\n", i, j, pte_src[j]);
-            page_t* page = pa2page(pte_src[j]);
-            page->count++;
-        }
-#endif
     }
 
     pt_regs_t* child_regs = ((pt_regs_t*)(TASK_SIZE + (unsigned long)tsk)) - 1;
@@ -128,6 +97,9 @@ int do_fork(pt_regs_t* regs, unsigned long flags) {
     printd("task %08x child_regs esp %08x esp0 %08x\n", tsk, tsk->esp, tsk->esp0);
 
     tsk->state = TASK_READY;
+
+    void add_task_for_monitor(task_t * tsk);
+    add_task_for_monitor(tsk);
 
     return (int)tsk->pid;
 

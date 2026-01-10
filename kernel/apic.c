@@ -318,6 +318,7 @@ void ioapic_init() {
     // ioapic_rte_write(IOAPIC_RTE(2), 0x20 + 0 | (dst_cpuid << 56));
     // 把8253/8254的中断通过IOAPIC转发到CPU1的0号中断
     ioapic_rte_write(IOAPIC_RTE(2), 0x20 + 0 | (1ULL << 56));
+    ioapic_rte_write(IOAPIC_RTE(2), 0x20 + 0 | (1ULL << 56) | 0x10000);
     // 把键盘中断通过IOAPIC转发到CPU0的1号中断
     ioapic_rte_write(IOAPIC_RTE(1), 0x20 + 1 | (dst_cpuid << 56));
     // irq_set_chip(0x00, &ioapic_chip);  // ap不需要这个

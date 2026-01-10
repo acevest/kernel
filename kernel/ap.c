@@ -169,7 +169,7 @@ void ap_kernel_entry() {
         hpet_disable();
 
         // 只要不hpet_enable, HPET的计数器就不会启动
-        hpet_prepare_calibration(timn, 2 /*hz*/);
+        hpet_prepare_calibration(timn, 97 /*hz*/);
 
         //
         hpet_enable();
@@ -219,23 +219,27 @@ void ap_kernel_entry() {
 
     uint32_t ap_cpuid = lapic->get_lapic_id();
     printk("AP CPU id: %d\n", ap_cpuid);
-    system.ap_cpuid = ap_cpuid;
+    system.ap_cpuid = ap_cpuid;  // 这之后不能再printk了
     asm("sti;");
+
+    const char* title = "KERNEL MONITOR";
+    printlxy(MPL_TITLE, (80 - strlen(title)) / 2, title);
 
     while (1) {
         asm("hlt;");
     }
 }
 
-void do_ap_lapic_irq_handler() {
-    uint8_t* p = (uint8_t*)0xC00B8002;
-    *p = *p == ' ' ? 'E' : ' ';
-    system.lapic->write(LAPIC_EOI, 0);
+bool ap_ready() {
+    return system.ap_cpuid != 0;
 }
 
+uint64_t ap_pit_ticks = 0;
 void do_ap_pit_irq_handler() {
     uint8_t* p = (uint8_t*)0xC00B8004;
     *p = *p == ' ' ? 'R' : ' ';
+
+    ap_pit_ticks++;
 
     system.lapic->write(LAPIC_EOI, 0);
 }
@@ -244,6 +248,90 @@ void do_ap_no_irq_handler() {
     panic("AP unexpected irq\n");
 }
 
-bool ap_ready() {
-    return system.ap_cpuid != 0;
+uint64_t ap_lapic_ticks = 0;
+void do_ap_lapic_irq_handler() {
+    uint8_t* p = (uint8_t*)0xC00B8002;
+    *p = *p == ' ' ? 'E' : ' ';
+
+    //
+    extern volatile uint64_t jiffies;
+    extern volatile uint64_t hpet_ticks;  // jiffies 和 hpet_ticks 是同一个东西
+    printlxy(MPL_IRQ, MPO_HPET, "HPET: %lu", jiffies);
+
+    //
+    extern volatile uint8_t scan_code;
+    extern volatile uint64_t kbd_irq_cnt;
+    printlxy(MPL_IRQ, MPO_KEYBOARD, "KBD: %02x %lu", scan_code, kbd_irq_cnt);
+
+    //
+    printlxy(MPL_IRQ, MPO_AP_CLOCK, "AP: %lu", ap_lapic_ticks);
+
+    //
+    void print_all_tasks();
+    print_all_tasks();
+
+    //
+    // void print_all_ides();
+    // print_all_ides();
+
+    ap_lapic_ticks++;
+
+    system.lapic->write(LAPIC_EOI, 0);
+}
+
+#include <task.h>
+const char* task_state(unsigned int state) {
+    static const char s[][8] = {
+        " ERROR", "\x10\x07RUN\x07", " READY", " WAIT ", " INIT ", " EXIT ",
+    };
+
+    if (state >= TASK_END) {
+        state = TASK_UNUSED;
+    }
+
+    return s[state];
+}
+void print_all_tasks() {
+    extern task_t* monitor_tasks[];
+
+    printl(MPL_TASK_TITLE, "         NAME      STATE TK/PI REASON     SCHED     KEEP      TURN");
+
+    for (int i = 0; i < 10; i++) {
+        task_t* p = monitor_tasks[i];
+
+        if (p == NULL) {
+            continue;
+        }
+
+        printl(MPL_TASK_0 + p->pid, "a%08x %-6s:%u %s %02u/%02u %-10s %-9u %-9u %-9u",
+               p,                     //
+               p->name,               //
+               p->pid,                //
+               task_state(p->state),  //
+               p->ticks,              //
+               p->priority,           //
+               p->reason,             //
+               p->sched_cnt,          //
+               p->sched_keep_cnt,     //
+               p->turn                //
+        );
+    }
+}
+
+#include <ide.h>
+extern ide_pci_controller_t ide_pci_controller[];
+void ide_stat_print(ide_pci_controller_t* ide_ctrl) {
+    assert(ide_ctrl != NULL);
+    assert(ide_ctrl >= ide_pci_controller);
+    assert(ide_ctrl < (ide_pci_controller + NR_IDE_CONTROLLER));
+    int r = atomic_read(&(ide_ctrl->request_cnt));
+    int i = atomic_read(&(ide_ctrl->irq_cnt));
+    int c = atomic_read(&(ide_ctrl->consumed_cnt));
+    int channel = ide_ctrl->channel;
+    printlxy(MPL_IDE0 + channel, MPO_IDE, "IDE%d req %u irq %u consumed %u", channel, r, i, c);
+}
+
+void print_all_ides() {
+    ide_stat_print(&ide_pci_controller[0]);
+    ide_stat_print(&ide_pci_controller[1]);
 }

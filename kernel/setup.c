@@ -144,9 +144,6 @@ void setup_kernel() {
     cnsl_init();
     boot_delay(DEFAULT_BOOT_DELAY_TICKS);
 
-    const char* title = "KERNEL MONITOR";
-    printlxy(MPL_TITLE, (80 - strlen(title)) / 2, title);
-
     setup_fs();
 
     setup_tasks();
@@ -188,7 +185,7 @@ void setup_kernel() {
     // ap 启动需要用到 hpet来校准
     wait_ap_boot();
 
-    hpet_init_timer0(1);
+    hpet_init_timer0(101);
 
 #if !DISABLE_IDE
     void ide_init();

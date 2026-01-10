@@ -149,29 +149,6 @@ task_t* find_task(pid_t pid) {
     return p;
 }
 
-const char* task_state(unsigned int state) {
-    static const char s[][8] = {
-        " ERROR", "\x10\x07RUN\x07", " READY", " WAIT ", " INIT ", " EXIT ",
-    };
-
-    if (state >= TASK_END) {
-        state = TASK_UNUSED;
-    }
-
-    return s[state];
-}
-
-void debug_print_all_tasks() {
-    task_t* p = 0;
-    list_head_t *pos = 0, *t = 0;
-    printl(MPL_TASK_TITLE, "         NAME      STATE TK/PI REASON     SCHED     KEEP      TURN");
-    list_for_each_safe(pos, t, &all_tasks) {
-        p = list_entry(pos, task_t, list);
-        printl(MPL_TASK_0 + p->pid, "%08x %-6s:%u %s %02u/%02u %-10s %-9u %-9u %-9u", p, p->name, p->pid,
-               task_state(p->state), p->ticks, p->priority, p->reason, p->sched_cnt, p->sched_keep_cnt, p->turn);
-    }
-}
-
 void schedule() {
     task_t* root = &root_task;
     task_t* sel = 0;
@@ -263,4 +240,11 @@ void schedule() {
 void debug_sched() {
     task_t* p = list_entry(current->list.next, task_t, list);
     p->state = (p->state == TASK_READY) ? TASK_WAIT : TASK_READY;
+}
+
+task_t* monitor_tasks[1024] = {&root_task, 0};
+void add_task_for_monitor(task_t* tsk) {
+    assert(tsk != NULL);
+    int id = tsk->pid;
+    monitor_tasks[id] = tsk;
 }

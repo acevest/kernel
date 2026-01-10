@@ -68,7 +68,7 @@ int sysc_pause() {
 
 int sysc_debug(unsigned int v) {
     static unsigned int cnt = 0;
-    printl(MPL_DEBUG, "task debug syscall %u value %08x", cnt++, v);
+    cnt++;
     return 0;
 }
 

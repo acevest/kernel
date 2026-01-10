@@ -42,34 +42,6 @@ __attribute__((regparm(1))) void irq_handler(pt_regs_t* regs) {
         panic("invalid irq %d\n", irq);
     }
 
-#if 0
-    assert(1 == irq);
-    uint8_t b = inb(0x60);
-    printk("irq %d b %02x\n", irq, b);
-    // write_msr32(0x80b, 0);
-    system.lapic->write(0xB0, 0);
-    // vaddr_t apic_virt_base_addr = fixid_to_vaddr(FIX_LAPIC_BASE);
-    // apic_virt_base_addr += 0xB0;
-    // *((volatile uint32_t*)apic_virt_base_addr) = 0x0;
-#endif
-#if 0
-    // 检查IMCR
-    outb(0x22, 0x70);
-    uint8_t imcr = inb(0x23);
-    printk("IMCR: 0x%02x (bit0=%s, bit1=%s)\n", imcr, (imcr & 0x01) ? "APIC" : "PIC",
-           (imcr & 0x02) ? "PIC masked" : "PIC active");
-
-    // 检查8259A状态
-    uint8_t pic1_imr = inb(0x21);
-    uint8_t pic2_imr = inb(0xA1);
-    printk("8259A IMR: Master=0x%02x, Slave=0x%02x\n", pic1_imr, pic2_imr);
-
-    // 检查IOAPIC是否响应
-    volatile uint32_t* ioapic = (volatile uint32_t*)system.ioapic_map->io_reg_sel;
-    ioapic[0] = 0x01;  // 选择版本寄存器
-    uint32_t version = ioapic[4];
-    printk("IOAPIC version: 0x%08x\n", version);
-#endif
 #if 1
     irq_desc_t* p = irq_desc + irq;
     irq_action_t* action = p->action;
@@ -82,16 +54,6 @@ __attribute__((regparm(1))) void irq_handler(pt_regs_t* regs) {
     assert(reenter <= 1);
 
     // TODO 判断打断的是否是内核态代码
-#if 0
-    if (0x00 == irq) {
-        if ((clk_irq_cnt++ & 0xFU) != 0) {
-            unsigned long esp;
-            asm("movl %%esp, %%eax" : "=a"(esp));
-            printl(MPL_CURRENT, "current %08x %-6s cr3 %08x reenter %d:%u esp %08x ticks %u", current, current->name,
-                current->cr3, reenter, reenter_count, esp, current->ticks);
-        }
-    }
-#endif
 
     while (action && action->handler) {
         action->handler(irq, regs, action->dev_id);
@@ -205,15 +167,13 @@ void irq_bh_handler() {
             // 这里可能存在有部分没处理完
         }
 
-        void debug_print_all_tasks();
 #if ENABLE_CLOCK_IRQ_WAIT
-        debug_print_all_tasks();
         if (irq_bh_actions == NULL) {
             asm("hlt;");
         }
 #else
         if (jiffies < end) {
-            debug_print_all_tasks();
+            // debug_print_all_tasks();
         }
 #endif
     }

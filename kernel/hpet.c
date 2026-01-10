@@ -88,18 +88,12 @@ void hpet_disable() {
 uint32_t hpet_clock_period = 0;
 uint64_t hpet_clock_mhz_freq = 0;  // 32位系统不支持64位除法，所以用MHz为单位
 
-static uint64_t hpet_ticks = 0;
-void hpet0_bh_handler() {
-    // hpet_ticks++;
-    printlxy(MPL_IRQ, MPO_HPET, "HPET: %lu", hpet_ticks);
-}
+uint64_t hpet_ticks = 0;
 void hpet0_irq_handler(unsigned int irq, pt_regs_t* regs, void* dev_id) {
     hpet_ticks++;
 
     uint8_t* p = (uint8_t*)0xC00B8000;
     *p = *p == ' ' ? 'K' : ' ';
-
-    add_irq_bh_handler(hpet0_bh_handler, NULL);
 
     system.lapic->write(LAPIC_EOI, 0);
 }

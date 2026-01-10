@@ -228,4 +228,3 @@ typedef struct _ide_drive {
 extern ide_drive_t ide_drives[MAX_IDE_DRIVE_CNT];
 
 ide_drive_t* ide_get_drive(dev_t dev);
-void ide_stat_print(ide_pci_controller_t* ide_ctrl);

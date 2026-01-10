@@ -22,20 +22,11 @@ unsigned int sys_clock() {
     return jiffies;
 }
 
-void debug_print_all_tasks();
-
-void dump_irq_nr_stack();
 void clk_bh_handler(void* arg);
 
 extern volatile bool enable_clock_irq_delay;
 
 void clk_handler(unsigned int irq, pt_regs_t* regs, void* dev_id) {
-    // if (jiffies % 100 == 0) {
-    // printl(MPL_CLOCK, "clock irq: %d", jiffies);
-    printlxy(MPL_IRQ, MPO_CLOCK, "CLK: %d", jiffies);
-    // printk("CLK irq %d\n", jiffies);
-    // }
-
     jiffies++;
 
     current->jiffies = jiffies;

@@ -42,7 +42,7 @@ ring3_entry:
 
 
     # 纯消耗CPU时间
-    movl    $0x0F0F0F0F, %ecx
+    movl    $0xFF0F0F0F, %ecx
 1:
     loop    1b
 

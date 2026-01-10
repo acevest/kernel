@@ -59,14 +59,6 @@ void* kmalloc(size_t size, gfp_t gfpflags);
 void* kzalloc(size_t size, gfp_t gfpflags);
 void kfree(void* addr);
 
-#define panic(msg, ...)                                                                                 \
-    do {                                                                                                \
-        asm("cli;");                                                                                    \
-        printl(MPL_DEBUG, "PANIC:" msg " %s %s %d\n", ##__VA_ARGS__, __FILE__, __FUNCTION__, __LINE__); \
-        printk("PANIC:" msg " %s %s %d\n", ##__VA_ARGS__, __FILE__, __FUNCTION__, __LINE__);            \
-        asm("hlt");                                                                                     \
-    } while (0);
-
 extern char etext, edata, end;
 
 #define cli() asm volatile("cli")
@@ -270,5 +262,12 @@ paddr_t get_rcba_paddr();
 #endif
 
 #define DISABLE_IDE 1
+
+#define panic(msg, ...)                                                                      \
+    do {                                                                                     \
+        asm("cli;");                                                                         \
+        printk("PANIC:" msg " %s %s %d\n", ##__VA_ARGS__, __FILE__, __FUNCTION__, __LINE__); \
+        asm("hlt");                                                                          \
+    } while (0);
 
 #endif  //_SYSTEM_H
