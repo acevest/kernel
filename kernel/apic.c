@@ -312,16 +312,28 @@ void ioapic_init() {
 
     extern irq_chip_t ioapic_chip;
 #if 1
+    ioapic_rte_t rte;
 
-    // 8253/8254连在i8259的0号引脚，但连在IO APIC的2号引脚上
-    // 把8253/8254的中断通过IOAPIC转发到CPU0的0号中断
-    // ioapic_rte_write(IOAPIC_RTE(2), 0x20 + 0 | (dst_cpuid << 56));
+    // 8253/8254连在8259的0号引脚，但8259连在IO APIC的2号引脚上
     // 把8253/8254的中断通过IOAPIC转发到CPU1的0号中断
-    ioapic_rte_write(IOAPIC_RTE(2), 0x20 + 0 | (1ULL << 56));
-    ioapic_rte_write(IOAPIC_RTE(2), 0x20 + 0 | (1ULL << 56) | 0x10000);
+    rte.value = 0;
+    rte.vector = 0x20 + 0;
+    rte.delivery_mode = IOAPIC_DELIVERY_MODE_FIXED;
+    rte.destination_mode = IOAPIC_PHYSICAL_DESTINATION;
+    rte.trigger_mode = IOAPIC_TRIGGER_MODE_EDGE;
+    rte.mask = IOAPIC_INT_MASKED;  // 暂时先屏蔽
+    rte.destination = 1;
+    ioapic_rte_write(IOAPIC_RTE(2), rte.value);
+
     // 把键盘中断通过IOAPIC转发到CPU0的1号中断
-    ioapic_rte_write(IOAPIC_RTE(1), 0x20 + 1 | (dst_cpuid << 56));
-    // irq_set_chip(0x00, &ioapic_chip);  // ap不需要这个
+    rte.value = 0;
+    rte.vector = 0x20 + 1;
+    rte.delivery_mode = IOAPIC_DELIVERY_MODE_FIXED;
+    rte.destination_mode = IOAPIC_PHYSICAL_DESTINATION;
+    rte.trigger_mode = IOAPIC_TRIGGER_MODE_EDGE;
+    rte.mask = IOAPIC_INT_UNMASKED;
+    rte.destination = 0;
+    ioapic_rte_write(IOAPIC_RTE(1), rte.value);
     irq_set_chip(0x01, &ioapic_chip);
 #endif
 }

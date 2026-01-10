@@ -201,37 +201,3 @@ typedef union ioapic_rte ioapic_rte_t;
 
 uint64_t ioapic_rte_read(uint32_t index);
 void ioapic_rte_write(uint32_t index, uint64_t v);
-
-union hpet_timn_conf_cap {
-    uint64_t value;
-    struct {
-        // BYTE 1
-        uint64_t reserved0 : 1;     // bit0
-        uint64_t trigger_mode : 1;  // bit1
-        uint64_t enable_int : 1;    // bit2
-        uint64_t type : 1;          // bit3
-        uint64_t periodic : 1;      // bit4 read only
-        uint64_t bit_size : 1;      // bit5 read only 0 32位位宽 1 64位位宽
-        uint64_t val_set : 1;       // bit6 标志位只对处于周期定时模式下的定时器0起作⽤
-                                    // 置位此标志位可使软件在定时器运⾏时直接修改定时值。
-        //  bit7
-        uint64_t reserved1 : 1;
-
-        // >>> bin(0x174C)
-        //  '0b1 0111 0100 1100'
-        // >>> bin(0x2E7C)
-        // '0b10 1110 0111 1100'
-        // BYTE 2
-        uint64_t counter_bit_size : 1;
-        uint64_t int_route : 5;
-        uint64_t fsb_en : 1;
-        uint64_t fsb_delivery_status : 1;  // 15 read only
-
-        // BYTE 3~4
-        uint64_t reserved2 : 16;
-
-        // BYTE 5~8
-        uint64_t int_route_cap : 32;  // read only
-    };
-} PACKED;
-typedef union hpet_timn_conf_cap hpet_timn_conf_cap_t;

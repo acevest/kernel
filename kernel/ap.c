@@ -225,9 +225,8 @@ void ap_kernel_entry() {
     const char* title = "KERNEL MONITOR";
     printlxy(MPL_TITLE, (80 - strlen(title)) / 2, title);
 
-    while (1) {
-        asm("hlt;");
-    }
+    void system_monitor();
+    system_monitor();
 }
 
 bool ap_ready() {
@@ -253,6 +252,12 @@ void do_ap_lapic_irq_handler() {
     uint8_t* p = (uint8_t*)0xC00B8002;
     *p = *p == ' ' ? 'E' : ' ';
 
+    ap_lapic_ticks++;
+
+    system.lapic->write(LAPIC_EOI, 0);
+}
+
+void _system_monitor() {
     //
     extern volatile uint64_t jiffies;
     extern volatile uint64_t hpet_ticks;  // jiffies 和 hpet_ticks 是同一个东西
@@ -273,10 +278,17 @@ void do_ap_lapic_irq_handler() {
     //
     // void print_all_ides();
     // print_all_ides();
-
-    ap_lapic_ticks++;
-
-    system.lapic->write(LAPIC_EOI, 0);
+}
+void system_monitor() {
+    while (1) {
+        asm("hlt");
+        uint64_t ap_monitor_begin = ap_lapic_ticks;
+        _system_monitor();
+        uint64_t ap_monitor_end = ap_lapic_ticks;
+        if (ap_monitor_end != ap_monitor_begin) {
+            // panic("AP monitor cost too long\n");
+        }
+    }
 }
 
 #include <task.h>
