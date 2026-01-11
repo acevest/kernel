@@ -27,8 +27,10 @@ qemu-system-i386 \
     -drive file=hd.img,format=raw,index=0,media=disk \
     -drive file=kernel.iso,index=1,media=cdrom \
     -drive file=sata.img,format=raw,if=none,id=sata-disk \
+    -drive file=kernel.iso,format=raw,if=none,id=atapi-cdrom \
     -device ahci,id=ahci0 \
     -device ide-hd,drive=sata-disk,bus=ahci0.0 \
+    -device ide-cd,drive=atapi-cdrom,bus=ahci0.1 \
     -name kernel \
     -vga std \
     -display cocoa \
