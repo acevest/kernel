@@ -62,7 +62,6 @@ void init_root_task() {
     root_task.priority = 7;
     root_task.ticks = root_task.priority;
     root_task.vma_list = NULL;
-    root_task.turn = 0;
     root_task.need_resched = 0;
     root_task.sched_cnt = 0;
     root_task.sched_keep_cnt = 0;
@@ -150,12 +149,11 @@ task_t* find_task(pid_t pid) {
 }
 
 void schedule() {
-    task_t* root = &root_task;
+    // task_t* root = &root_task;
     task_t* sel = 0;
     task_t* p = 0;
     list_head_t *pos = 0, *t = 0;
 
-    assert(current->ticks >= 0);
     assert(current->priority <= TASK_MAX_PRIORITY);
 
     unsigned long iflags;
@@ -165,64 +163,40 @@ void schedule() {
         current->state = TASK_READY;
     }
 
-    list_for_each_safe(pos, t, &all_tasks) {
+    // task_t *head = current;
+    list_for_each_safe(pos, t, &current->list) {
         p = list_entry(pos, task_t, list);
-
-        if (p == &root_task) {
-            continue;
-        }
-
-        assert(p->state != TASK_RUN);
-
         if (TASK_READY != p->state) {
             continue;
         }
-
-        if (sel == 0) {
-            sel = p;
+        if (&root_task == p) {
             continue;
         }
 
-#if 1
-        if (p->priority > sel->priority) {
-            sel = p;
-        } else if (p->priority == sel->priority) {
-            int64_t a = p->jiffies + (p->priority - p->ticks);
-            int64_t b = sel->jiffies + (sel->priority - sel->ticks);
-            if (a < b) {
-                sel = p;
-            }
+        sel = p;
+        break;
+    }
+
+    if (sel == 0) {
+        if (current->state != TASK_READY) {
+            sel = &root_task;
+            root_task.ticks = root_task.priority;
+            root_task.state = TASK_READY;
+        } else {
+            sel = current;
         }
-#endif
-#if 0
-        // 考察三个量
-        // priority 越大越优先
-        // jiffies  越小越优先
-        // (priority - ticks) 表示已经使用的量，越小越优先
-        // 实际简化表达式为 ticks - jiffies（选择最大的)
-        // 先这样写，后续可以在各项添加系数
-        // 这个方法的缺点是对后面新加入的进程非常不友好
-        int64_t a = sel->priority - sel->jiffies - (sel->priority - sel->ticks);
-        int64_t b = p->priority - p->jiffies - (p->priority - p->ticks);
-        if (a < b) {
-            sel = p;
-        } else if (a == b) {
-            if (sel->priority < p->priority) {
-                sel = p;
-            }
-        }
-#endif
     }
 
     task_t* prev = current;
-    task_t* next = sel != 0 ? sel : root;
-
-    prev->need_resched = 0;
+    task_t* next = sel;
 
     next->state = TASK_RUN;
     next->reason = "";
 
     if (prev != next) {
+        if (prev->ticks <= 0) {
+            prev->ticks = prev->priority;
+        }
         next->sched_cnt++;
         context_switch(prev, next);
     } else {

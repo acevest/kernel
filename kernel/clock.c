@@ -31,17 +31,6 @@ void clk_handler(unsigned int irq, pt_regs_t* regs, void* dev_id) {
 
     current->jiffies = jiffies;
 
-    // 中断目前虽然不能嵌套，但依然可以打断前一个中断的下半部分处理
-    // 若前一个时钟中断将这个值减到0，会将该进程设置为need_resched，同时分配新的时间片值，以在下半部处理完后再重新调度就绪进程运行
-    // 而如果其下半部分需要处理的事情很多，处理时间过长，两个时钟中断之间的时间还不足以处理完
-    // 那么下一个时钟中断是完全可以打断还没处理完的下半部逻辑
-    // 打断后该时钟中断不应该继续减少该进程的时间片，因为这会造成该进程在后续的调底中少了实际的运行时间
-    if (1 == current->need_resched) {
-        // 这种情况必然已经发生了该时钟中断打断了下半部处理程序
-        // 反之时钟中断打断了下半部处理程序不一定need_resched就为1
-        return;
-    }
-
 #if ENABLE_CLOCK_IRQ_WAIT
     if (enable_clock_irq_delay) {
         return;
@@ -50,14 +39,6 @@ void clk_handler(unsigned int irq, pt_regs_t* regs, void* dev_id) {
 #endif
 
     current->ticks--;
-
-    if (0 == current->ticks) {
-        current->need_resched = 1;
-        current->ticks = current->priority;
-        current->turn++;
-    }
-
-    assert(current->ticks >= 0);  // 防止ticks被减到0后再减溢出
 
     if (reenter == 0) {
         add_irq_bh_handler(clk_bh_handler, NULL);

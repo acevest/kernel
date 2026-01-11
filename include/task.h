@@ -57,9 +57,9 @@ typedef union task_union {
         uint32_t eip;
 
         int ticks;
-        uint32_t turn;  // 时间片用完次数
-        uint32_t priority;
-        uint64_t jiffies;
+
+        int priority;
+        int64_t jiffies;
 
         volatile int need_resched;
 
