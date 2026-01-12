@@ -33,7 +33,7 @@ int printk(const char* fmtstr, ...) {
     tty_write(default_tty, pkbuf, (size_t)size);
     serial_write(pkbuf, (size_t)size);
 
-    EXIT_CRITICAL_ZONE(EFLAGS);
+    LEAVE_CRITICAL_ZONE(EFLAGS);
     return 0;
 }
 
@@ -47,7 +47,7 @@ int printd(const char* fmtstr, ...) {
     tty_write(debug_tty, pdbuf, (size_t)size);
     serial_write(pdbuf, (size_t)size);
 
-    EXIT_CRITICAL_ZONE(EFLAGS);
+    LEAVE_CRITICAL_ZONE(EFLAGS);
     return 0;
 }
 
@@ -60,6 +60,6 @@ int printlo(unsigned int xpos, unsigned int ypos, const char* fmtstr, ...) {
 
     tty_write_at(monitor_tty, xpos, ypos, plobuf, (size_t)size);
 
-    EXIT_CRITICAL_ZONE(EFLAGS);
+    LEAVE_CRITICAL_ZONE(EFLAGS);
     return 0;
 }

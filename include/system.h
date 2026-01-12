@@ -259,6 +259,17 @@ void boot_delay(int ticks);
 void io_mfence();
 
 paddr_t get_rcba_paddr();
+
+extern uint32_t preempt_count;
+
+void enter_critical_zone();
+void leave_critical_zone();
+bool in_critical_zone();
+
+#define ENTER_CRITICAL_ZONE(x) enter_critical_zone()
+#define LEAVE_CRITICAL_ZONE(x) leave_critical_zone()
+#define IN_CRITICAL_ZONE() in_critical_zone()
+
 #endif
 
 #define DISABLE_IDE 1

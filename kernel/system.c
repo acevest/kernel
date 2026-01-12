@@ -251,3 +251,18 @@ paddr_t get_rcba_paddr() {
 
     return rcba_paddr;
 }
+
+//
+uint32_t preempt_count = 0;
+
+void enter_critical_zone() {
+    preempt_count++;
+}
+
+void leave_critical_zone() {
+    preempt_count--;
+}
+
+bool in_critical_zone() {
+    return preempt_count > 0;
+}

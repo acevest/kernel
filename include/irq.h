@@ -76,15 +76,6 @@ bool irq_disabled();
         __asm__ __volatile__("pushl %0; popfl" ::"g"(x) : "memory", "cc"); \
     } while (0)
 
-void enter_critical_zone();
-void exit_critical_zone();
-
-#define ENTER_CRITICAL_ZONE(x)                        \
-    volatile uint32_t __critical_zone_eflags_##x = 0; \
-    irq_save(__critical_zone_eflags_##x);
-
-#define EXIT_CRITICAL_ZONE(x) irq_restore(__critical_zone_eflags_##x);
-
 #define IRQ_CLOCK 0x00
 #define IRQ_KEYBOARD 0x01
 #define IRQ_CASCADE 0x02

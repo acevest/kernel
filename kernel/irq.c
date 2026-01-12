@@ -99,7 +99,9 @@ __attribute__((regparm(1))) void irq_handler(pt_regs_t* regs) {
     enable_irq();
 
     // 如果需要调度程序
-    schedule();
+    if (!IN_CRITICAL_ZONE()) {
+        schedule();
+    }
 #endif
 }
 
@@ -282,18 +284,6 @@ int disable_no_irq_chip(unsigned int irq) {
 
 irq_chip_t no_irq_chip = {.name = "none", .enable = enable_no_irq_chip, .disable = disable_no_irq_chip};
 irq_desc_t no_irq_desc = {.chip = &no_irq_chip, .action = NULL, .status = 0, .depth = 0};
-
-// 单CPU
-// 这里的代码有BUG，如果嵌套调用的话
-// __critical_zone_eflags的值会被统一设置为最里层时的eflags
-// 意味着如果IF置位了的话，必定会丢失这个信息
-static volatile uint32_t __critical_zone_eflags;
-void enter_critical_zone() {
-    irq_save(__critical_zone_eflags);
-}
-void exit_critical_zone() {
-    irq_restore(__critical_zone_eflags);
-}
 
 void irq_set_chip(unsigned int irq, irq_chip_t* chip) {
     assert(irq < NR_IRQS);
