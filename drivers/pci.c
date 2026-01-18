@@ -132,7 +132,6 @@ pci_device_t* pci_find_device(unsigned int vendor, unsigned int device) {
 }
 
 pci_device_t* pci_find_device_by_classcode(unsigned int classcode) {
-    int i;
     list_head_t* p;
     pci_device_t* pci = 0;
 
@@ -144,6 +143,24 @@ pci_device_t* pci_find_device_by_classcode(unsigned int classcode) {
     }
 
     return 0;
+}
+
+void pci_init_device(uint32_t classcode, uint32_t progif, void (*handler)(pci_device_t*, int)) {
+    list_head_t* p = NULL;
+    pci_device_t* pci = NULL;
+
+    assert(handler != NULL);
+
+    int index = 0;
+
+    list_for_each(p, &pci_devs) {
+        pci = list_entry(p, pci_device_t, list);
+        assert(pci != NULL);
+        if (pci->classcode == classcode && pci->progif == progif) {
+            handler(pci, index);
+            index++;
+        }
+    }
 }
 
 const char* pci_intr_pin(int pin) {

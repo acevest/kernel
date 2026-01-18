@@ -268,6 +268,8 @@ typedef union pci_device
 pci_device_t* pci_find_device(unsigned int vendor, unsigned int device);
 pci_device_t* pci_find_device_by_classcode(unsigned int classcode);
 
+void pci_init_device(uint32_t classcode, uint32_t progif, void (*handler)(pci_device_t* pci, int index));
+
 static inline u32 pci_cmd(pci_device_t* pci, unsigned int reg) {
     return PCI_CMD(pci->bus, pci->dev, pci->devfn, reg);
 }

@@ -191,8 +191,8 @@ void setup_kernel() {
     void ide_init();
     ide_init();
 #endif
-    void init_sata();
-    init_sata();
+    void init_ahci();
+    init_ahci();
 
     void dump_fixmap();
     dump_fixmap();

@@ -19,18 +19,18 @@ set -m
 
 qemu-system-i386 \
     -boot d \
-    -m 3100\
+    -m 128\
     -smp 2 \
     -cpu qemu32,+x2apic \
     -machine q35 \
     -serial tcp::6666,server,nowait \
-    -drive file=hd.img,format=raw,index=0,media=disk \
-    -drive file=kernel.iso,index=1,media=cdrom \
     -drive file=sata.img,format=raw,if=none,id=sata-disk \
+    -drive file=sata2.img,format=raw,if=none,id=sata-disk2 \
     -drive file=kernel.iso,format=raw,if=none,id=atapi-cdrom \
     -device ahci,id=ahci0 \
     -device ide-hd,drive=sata-disk,bus=ahci0.0 \
     -device ide-cd,drive=atapi-cdrom,bus=ahci0.1 \
+    -device ide-hd,drive=sata-disk2,bus=ahci0.5 \
     -name kernel \
     -vga std \
     -display cocoa \
