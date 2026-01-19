@@ -74,3 +74,5 @@ typedef struct {
 extern sata_device_t sata_devices[MAX_SATA_DEVICES];
 
 void sata_read_identify_string(const uint16_t* identify, int bgn, int end, char* buf);
+
+void sata_identify(sata_device_t* sata);

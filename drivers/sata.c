@@ -55,14 +55,6 @@ void init_sata_device(ahci_hba_t* hba, ahci_port_t* port, int index) {
     //
     assert(sizeof(ahci_cmd_header_t) == 32);
     ahci_cmd_header_t* cmd_list = (ahci_cmd_header_t*)sata->cmd_list_base_vaddr;
-#if 1
-    for (int i = 0; i < 32; i++) {
-        ahci_cmd_header_t* hdr = &cmd_list[i];
-        printk(" cmd_list[%02d] base %08x prdt %04x:%d\n", i, hdr->cmd_table_base, hdr->prdtl, hdr->prdtl);
-        hdr->cmd_table_base = 0;
-        hdr->prdtl = 0;
-    }
-#endif
 
     sata->cmd_table_paddr = (paddr_t)page2pa(alloc_one_page(0));
     sata->cmd_table_vaddr = (ahci_cmd_table_t*)ioremap(sata->cmd_table_paddr, PAGE_SIZE);
@@ -87,9 +79,15 @@ void init_sata_device(ahci_hba_t* hba, ahci_port_t* port, int index) {
     sata->cmd_table0 = cmd_table + 0;
     sata->prdte0 = cmd_table[0].prdt + 0;
 
+    //
+    sata_identify(sata);
+}
+
+void sata_identify(sata_device_t* sata) {
+    assert(sata != NULL);
     sata->prdte0->data_base = sata->data_paddr;
     sata->prdte0->data_byte_count = (512 - 1) | 1;
-    sata->prdte0->ioc = 1;
+    sata->prdte0->ioc = 0;
 
     //
     ahci_fis_reg_h2d_t* fis = (ahci_fis_reg_h2d_t*)sata->cmd_table0->cmd_fis;
@@ -107,16 +105,22 @@ void init_sata_device(ahci_hba_t* hba, ahci_port_t* port, int index) {
 
     // 清除中断状态
     // 写1清0
+    ahci_port_t* port = sata->port;
+    assert(port != NULL);
     port->interrupt_status = port->interrupt_status;
 
+    //
     port->interrupt_enable = AHCI_INTERRUPT_ENABLE_DHRS;
-    asm("sti");
+
     //
     port->cmd_issue = 1 << 0;
 
     uint32_t timeout = 1000000;
     while (timeout--) {
         if (port->interrupt_status & 1) {
+            printk("SATA INTERRUPT STATUS: %08x\n", port->interrupt_status);
+            // 清除本次请求产生的中断
+            port->interrupt_status = 1;
             break;
         }
         if (port->sata_error) {
@@ -192,39 +196,6 @@ void init_sata_device(ahci_hba_t* hba, ahci_port_t* port, int index) {
 
     sata_read_identify_string(identify, 27, 46, s);
     printk("HD Model: %s\n", s);
-
-    // while (!sata_irq_triggered) {
-    //     // asm("sti");
-    //     asm("pause");
-    // }
-
-    // 1. 等待端口空闲（确保上一条命令完全完成）
-    while (port->cmd_issue & 1) {
-        // 命令位仍被置位，等待清除
-    }
-    while (port->sata_active & 1) {
-        // 等待active位清除
-    }
-
-    memset(fis, 0, sizeof(ahci_fis_reg_h2d_t));
-    fis->fis_type = AHCI_FIS_TYPE_REG_H2D;
-    fis->c = 1;
-    fis->command = SATA_CMD_IDENTIFY;
-    fis->device = SATA_DEVICE_LBA;
-
-    sata->cmd_list0->cfl = sizeof(ahci_fis_reg_h2d_t) / sizeof(uint32_t);
-    sata->cmd_list0->prdtl = 1;
-    sata->cmd_list0->w = 0;  // read
-    sata->cmd_list0->a = 0;  // ata device
-    sata->cmd_list0->prd_byte_count = 0;
-    // 清除中断状态
-    // 写1清0
-    port->interrupt_status = port->interrupt_status;
-
-    port->interrupt_enable = AHCI_INTERRUPT_ENABLE_DHRS;
-
-    //
-    port->cmd_issue = 1 << 0;
 }
 
 sata_device_t sata_devices[MAX_SATA_DEVICES] = {0};
