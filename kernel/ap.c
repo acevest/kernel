@@ -240,7 +240,7 @@ void do_ap_pit_irq_handler() {
 
     ap_pit_ticks++;
 
-    system.lapic->write(LAPIC_EOI, 0);
+    ioapic_eoi();
 }
 
 void do_ap_no_irq_handler() {
@@ -254,7 +254,7 @@ void do_ap_lapic_irq_handler() {
 
     ap_lapic_ticks++;
 
-    system.lapic->write(LAPIC_EOI, 0);
+    ioapic_eoi();
 }
 
 void _system_monitor() {

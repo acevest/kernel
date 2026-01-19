@@ -74,6 +74,8 @@ void init_ahci_device(pci_device_t* pci, int index) {
 
     hba->global_hba_control |= AHCI_ENABLE;
 
+    hba->global_hba_control |= AHCI_INTERRUPT_ENABLE;
+
     uint32_t cap = hba->capability;
 
     int num_ports = (cap & 0x1F) + 1;
@@ -168,10 +170,6 @@ void init_ahci_device(pci_device_t* pci, int index) {
             }
         }
     }
-
-    // TODO
-    // 开启ahci的global_hba_control的interrupt enable位
-    hba->global_hba_control |= AHCI_INTERRUPT_ENABLE;
 }
 
 void init_ahci() {

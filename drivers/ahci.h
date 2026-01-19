@@ -23,6 +23,24 @@ const static int AHCI_DEVICE_SATAPI = 4;
 const static int AHCI_FIS_TYPE_REG_H2D = 0x27;
 const static int AHCI_FIS_TYPE_REG_D2H = 0x34;
 
+const static uint32_t AHCI_INTERRUPT_ENABLE_DHRS = (1U << 0);   // device to host fis interrupt enable
+const static uint32_t AHCI_INTERRUPT_ENABLE_PSE = (1U << 1);    // pio setup fis interrupt enable
+const static uint32_t AHCI_INTERRUPT_ENABLE_DSE = (1U << 2);    // DMA setup fis interrupt enable
+const static uint32_t AHCI_INTERRUPT_ENABLE_SDBE = (1U << 3);   // set device bits interrupt enable
+const static uint32_t AHCI_INTERRUPT_ENABLE_UFE = (1U << 4);    // unknown fis interrupt enable
+const static uint32_t AHCI_INTERRUPT_ENABLE_DPE = (1U << 5);    // descriptor process error interrupt enable
+const static uint32_t AHCI_INTERRUPT_ENABLE_PCE = (1U << 6);    // port change error interrupt enable
+const static uint32_t AHCI_INTERRUPT_ENABLE_DMPE = (1U << 7);   // device mechanical presence enable
+const static uint32_t AHCI_INTERRUPT_ENABLE_PRCE = (1U << 22);  // phyrdy change interrupt enable
+const static uint32_t AHCI_INTERRUPT_ENABLE_IPME = (1U << 23);  // incorrect port multiplier interrupt enable
+const static uint32_t AHCI_INTERRUPT_ENABLE_OFE = (1U << 24);   // overflow error interrupt enable
+const static uint32_t AHCI_INTERRUPT_ENABLE_INFE = (1U << 26);  // interface non-fatal error enable
+const static uint32_t AHCI_INTERRUPT_ENABLE_IFE = (1U << 27);   // interface fatal error enable
+const static uint32_t AHCI_INTERRUPT_ENABLE_HBDE = (1U << 28);  // host bus data error enable
+const static uint32_t AHCI_INTERRUPT_ENABLE_HBFE = (1U << 29);  // host bus fatal error enable
+const static uint32_t AHCI_INTERRUPT_ENABLE_TFEE = (1U << 30);  // task file error enable
+const static uint32_t AHCI_INTERRUPT_ENABLE_CPDE = (1U << 31);  // cold presence detect enable
+
 typedef struct {
     uint8_t fis_type;
     uint8_t pmport : 4;  // port multiplier

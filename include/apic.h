@@ -201,3 +201,5 @@ typedef union ioapic_rte ioapic_rte_t;
 
 uint64_t ioapic_rte_read(uint32_t index);
 void ioapic_rte_write(uint32_t index, uint64_t v);
+
+void ioapic_eoi();

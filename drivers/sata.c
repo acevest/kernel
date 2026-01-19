@@ -15,6 +15,8 @@
 #include <string.h>
 #include <system.h>
 
+int sata_irq_triggered = 0;
+
 void init_sata_device(ahci_hba_t* hba, ahci_port_t* port, int index) {
     assert(hba != NULL);
     assert(port != NULL);
@@ -107,6 +109,8 @@ void init_sata_device(ahci_hba_t* hba, ahci_port_t* port, int index) {
     // 写1清0
     port->interrupt_status = port->interrupt_status;
 
+    port->interrupt_enable = AHCI_INTERRUPT_ENABLE_DHRS;
+    asm("sti");
     //
     port->cmd_issue = 1 << 0;
 
@@ -188,6 +192,39 @@ void init_sata_device(ahci_hba_t* hba, ahci_port_t* port, int index) {
 
     sata_read_identify_string(identify, 27, 46, s);
     printk("HD Model: %s\n", s);
+
+    // while (!sata_irq_triggered) {
+    //     // asm("sti");
+    //     asm("pause");
+    // }
+
+    // 1. 等待端口空闲（确保上一条命令完全完成）
+    while (port->cmd_issue & 1) {
+        // 命令位仍被置位，等待清除
+    }
+    while (port->sata_active & 1) {
+        // 等待active位清除
+    }
+
+    memset(fis, 0, sizeof(ahci_fis_reg_h2d_t));
+    fis->fis_type = AHCI_FIS_TYPE_REG_H2D;
+    fis->c = 1;
+    fis->command = SATA_CMD_IDENTIFY;
+    fis->device = SATA_DEVICE_LBA;
+
+    sata->cmd_list0->cfl = sizeof(ahci_fis_reg_h2d_t) / sizeof(uint32_t);
+    sata->cmd_list0->prdtl = 1;
+    sata->cmd_list0->w = 0;  // read
+    sata->cmd_list0->a = 0;  // ata device
+    sata->cmd_list0->prd_byte_count = 0;
+    // 清除中断状态
+    // 写1清0
+    port->interrupt_status = port->interrupt_status;
+
+    port->interrupt_enable = AHCI_INTERRUPT_ENABLE_DHRS;
+
+    //
+    port->cmd_issue = 1 << 0;
 }
 
 sata_device_t sata_devices[MAX_SATA_DEVICES] = {0};

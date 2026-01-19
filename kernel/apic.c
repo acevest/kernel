@@ -270,6 +270,17 @@ void ioapic_enable() {
     iounmap(rcba_virt_base);
 }
 
+void ioapic_eoi() {
+    system.lapic->write(LAPIC_EOI, 0);
+}
+
+extern int sata_irq_triggered;
+void sata0_irq_handler() {
+    printk("SATA#0 IRQ\n");
+    sata_irq_triggered = 1;
+    ioapic_eoi();
+}
+
 void ioapic_init() {
     // 把IO APIC映射进地址空间
     ioapic_map.phys_base = system.ioapic_addr;
@@ -335,6 +346,20 @@ void ioapic_init() {
     rte.destination = 0;
     ioapic_rte_write(IOAPIC_RTE(1), rte.value);
     irq_set_chip(0x01, &ioapic_chip);
+
+    //
+    int irq = 0x0B;  // 11
+    rte.value = 0;
+    rte.vector = 0x20 + irq;
+    rte.delivery_mode = IOAPIC_DELIVERY_MODE_FIXED;
+    rte.destination_mode = IOAPIC_PHYSICAL_DESTINATION;
+    rte.trigger_mode = IOAPIC_TRIGGER_MODE_EDGE;
+    rte.mask = IOAPIC_INT_UNMASKED;
+    rte.destination = 0;
+    ioapic_rte_write(IOAPIC_RTE(irq), rte.value);
+    irq_set_chip(irq, &ioapic_chip);
+
+    request_irq(irq, sata0_irq_handler, "SATA#0", "SATA#0");
 #endif
 }
 
