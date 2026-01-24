@@ -17,26 +17,40 @@
 
 int sata_irq_triggered = 0;
 
-void init_sata_device(ahci_hba_t* hba, ahci_port_t* port, int index) {
+int max_sata_devices = 0;
+sata_device_t sata_devices[MAX_SATA_DEVICES] = {0};
+
+uint8_t sector[512];
+void init_sata_device(ahci_hba_t* hba, ahci_port_t* port, int port_index) {
+    int index = max_sata_devices;
+
     assert(hba != NULL);
     assert(port != NULL);
+    assert(port_index >= 0 && port_index < MAX_SATA_DEVICES);
     assert(index >= 0 && index < MAX_SATA_DEVICES);
 
     sata_device_t* sata = sata_devices + index;
+    memset(sata, 0, sizeof(sata_device_t));
     sata->hba = hba;
     sata->port = port;
     sata->index = index;
+    sata->port_index = port_index;
 
     printk("ahci port clb %08x fb %08x sata_status 0x%08X signature %08X\n", port->cmd_list_base, port->fis_base,
            port->sata_status, port->signature);
 
     vaddr_t cmd_list_base = (vaddr_t)ioremap(PAGE_ALIGN(port->cmd_list_base), 0x1000);
-    vaddr_t fis_base = cmd_list_base;
+    vaddr_t fis_base = 0;
 
-    if (PAGE_ALIGN(port->cmd_list_base) != PAGE_ALIGN(port->fis_base)) {
+    // fis_base大概率和cmd_list_base在同一个页上
+    // 如果不在同一个页上，那么需要单独分配空间
+    if (PAGE_ALIGN(port->cmd_list_base) == PAGE_ALIGN(port->fis_base)) {
+        fis_base = cmd_list_base;
+    } else {
         fis_base = (vaddr_t)ioremap(PAGE_ALIGN(port->fis_base), 0x1000);
     }
 
+    // 算出各自在页内的偏移
     cmd_list_base += port->cmd_list_base - PAGE_ALIGN(port->cmd_list_base);
     fis_base += port->fis_base - PAGE_ALIGN(port->fis_base);
 
@@ -81,6 +95,129 @@ void init_sata_device(ahci_hba_t* hba, ahci_port_t* port, int index) {
 
     //
     sata_identify(sata);
+
+    if (!sata->lba48) {
+        return;
+    }
+
+    if (!sata->dma) {
+        return;
+    }
+
+    max_sata_devices += 1;
+
+    memset(sector, 0xCC, 512);
+    sata_dma_read(sata, 0, 1, (paddr_t)va2pa(sector));
+    printk("sector %08x\n", (uint32_t*)sector);
+}
+
+void sata_irq_handler(unsigned int irq, pt_regs_t* regs, void* dev_id) {
+    sata_irq_triggered = 1;
+
+    for (int i = 0; i < max_sata_devices; i++) {
+        sata_device_t* sata = sata_devices + i;
+        ahci_port_t* port = sata->port;
+        assert(port != NULL);
+
+        //
+        uint32_t interrupt_status = port->interrupt_status;
+        if (0 == interrupt_status) {
+            continue;
+        }
+
+        printk("SATA[%u] IRQ[%u] is %08x\n", i, irq, interrupt_status);
+        if (interrupt_status & AHCI_INTERRUPT_STATUS_DHRS) {
+            //
+        }
+
+        port->interrupt_status = interrupt_status;
+    }
+
+    ioapic_eoi();
+}
+
+bool sata_ready(sata_device_t* sata) {
+    if (sata->port->task_file_data & 0x80) {
+        return false;
+    }
+    return true;
+}
+int sata_wait_ready(sata_device_t* sata) {
+    assert(sata != NULL);
+    ahci_port_t* port = sata->port;
+    assert(port != NULL);
+
+    // 清除error 和 中断状态
+    port->sata_error = port->sata_error;
+    port->interrupt_status = port->interrupt_status;
+
+    uint32_t timeout = 1000000;
+    while (timeout--) {
+        if (sata_ready(sata)) {
+            return 0;
+        }
+        asm("pause");
+    }
+    return -1;
+}
+
+int sata_dma_read(sata_device_t* sata, uint64_t lba, uint32_t sectors, paddr_t paddr) {
+    assert(sata != NULL);
+    assert(sectors <= 4);
+    assert(lba + sectors <= sata->max_lba);
+
+    ahci_port_t* port = sata->port;
+    assert(port != NULL);
+
+    uint32_t bytes = sectors * 512;
+
+    //
+    if (0 != sata_wait_ready(sata)) {
+        panic("sata wait ready timeout");
+    }
+
+    //
+    sata->prdte0->data_base = paddr;
+    sata->prdte0->data_byte_count = (bytes - 1) | 1;
+    sata->prdte0->ioc = 1;
+
+    //
+    ahci_fis_reg_h2d_t* fis = (ahci_fis_reg_h2d_t*)sata->cmd_table0->cmd_fis;
+    memset(fis, 0, sizeof(ahci_fis_reg_h2d_t));
+    fis->fis_type = AHCI_FIS_TYPE_REG_H2D;
+    fis->c = 1;
+    fis->command = SATA_CMD_READ_DMA_EXT;
+    fis->device = SATA_DEVICE_LBA;
+    fis->lba0 = (lba >> (0 * 8)) & 0xFF;
+    fis->lba1 = (lba >> (1 * 8)) & 0xFF;
+    fis->lba2 = (lba >> (2 * 8)) & 0xFF;
+    fis->lba3 = (lba >> (3 * 8)) & 0xFF;
+    fis->lba4 = (lba >> (4 * 8)) & 0xFF;
+    fis->lba5 = (lba >> (5 * 8)) & 0xFF;
+
+    //
+    fis->count_low = (sectors >> 0) & 0xFF;
+    fis->count_high = (sectors >> 8) & 0xFF;
+
+    //
+    sata->cmd_list0->cfl = sizeof(ahci_fis_reg_h2d_t) / sizeof(uint32_t);
+    sata->cmd_list0->prdtl = 1;
+    sata->cmd_list0->w = 0;  // read
+    sata->cmd_list0->a = 0;  // ata device
+    sata->cmd_list0->c = 1;
+    sata->cmd_list0->prd_byte_count = 0;
+
+    //
+    port->sata_error = port->sata_error;
+    port->interrupt_status = port->interrupt_status;
+
+    //
+    port->interrupt_enable = AHCI_INTERRUPT_ENABLE_DHRS;
+
+    //
+    port->cmd_issue = 1 << 0;
+
+    return 0;
 }
 
 void sata_identify(sata_device_t* sata) {
@@ -101,6 +238,7 @@ void sata_identify(sata_device_t* sata) {
     sata->cmd_list0->prdtl = 1;
     sata->cmd_list0->w = 0;  // read
     sata->cmd_list0->a = 0;  // ata device
+    sata->cmd_list0->c = 1;
     sata->cmd_list0->prd_byte_count = 0;
 
     // 清除中断状态
@@ -197,8 +335,6 @@ void sata_identify(sata_device_t* sata) {
     sata_read_identify_string(identify, 27, 46, s);
     printk("HD Model: %s\n", s);
 }
-
-sata_device_t sata_devices[MAX_SATA_DEVICES] = {0};
 
 void sata_read_identify_string(const uint16_t* identify, int bgn, int end, char* buf) {
     const char* p = (const char*)(identify + bgn);

@@ -42,6 +42,7 @@ typedef struct {
     ahci_hba_t* hba;
     ahci_port_t* port;
     int index;
+    int port_index;
 
     int dma;    // 是否支持dma
     int lba48;  // 是否支持lba48
@@ -72,6 +73,8 @@ typedef struct {
 } sata_device_t;
 
 extern sata_device_t sata_devices[MAX_SATA_DEVICES];
+
+int sata_dma_read(sata_device_t* sata, uint64_t lba, uint32_t sectors, paddr_t paddr);
 
 void sata_read_identify_string(const uint16_t* identify, int bgn, int end, char* buf);
 

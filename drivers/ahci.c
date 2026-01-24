@@ -129,7 +129,6 @@ void init_ahci_device(pci_device_t* pci, int index) {
     printk("ahci version %s[%08x]\n", version, ahci_version);
 
     assert(sizeof(ahci_port_t) == 0x80);
-    int sata_index = 0;
     for (int i = 0; i < num_ports; i++) {
         if (ahci_pi & (1 << i)) {
             ahci_port_t* port = hba->ports + i;
@@ -148,10 +147,10 @@ void init_ahci_device(pci_device_t* pci, int index) {
 
             switch (port->signature) {
             case SATA_SIGNATURE_ATA:
-                printk("SATA device detected\n");
                 extern void init_sata_device(ahci_hba_t * hba, ahci_port_t * port, int index);
-                init_sata_device(hba, port, sata_index);
-                sata_index++;
+                init_sata_device(hba, port, i);
+                printk("SATA device detected at port %d\n", i);
+
                 break;
             case SATA_SIGNATURE_ATAPI:
                 printk("SATAPI device detected\n");

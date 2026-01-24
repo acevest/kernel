@@ -22,6 +22,27 @@ const static int AHCI_DEVICE_SATAPI = 4;
 
 const static int AHCI_FIS_TYPE_REG_H2D = 0x27;
 const static int AHCI_FIS_TYPE_REG_D2H = 0x34;
+const static int AHCI_FIS_TYPE_DMA_ACTIVE = 0x39;
+const static int AHCI_FIS_TYPE_DMA_SETUP = 0x41;
+const static int AHCI_FIS_TYPE_DATA = 0x46;
+
+const static uint32_t AHCI_INTERRUPT_STATUS_DHRS = (1U << 0);   // device to host fis interrupt
+const static uint32_t AHCI_INTERRUPT_STATUS_PSS = (1U << 1);    // pio setup fis interrupt
+const static uint32_t AHCI_INTERRUPT_STATUS_DSS = (1U << 2);    // DMA setup fis interrupt
+const static uint32_t AHCI_INTERRUPT_STATUS_SDBS = (1U << 3);   // set device bits interrupt
+const static uint32_t AHCI_INTERRUPT_STATUS_UFS = (1U << 4);    // unknown fis interrupt
+const static uint32_t AHCI_INTERRUPT_STATUS_DPS = (1U << 5);    // descriptor process error interrupt
+const static uint32_t AHCI_INTERRUPT_STATUS_PCS = (1U << 6);    // port change error interrupt
+const static uint32_t AHCI_INTERRUPT_STATUS_DMPS = (1U << 7);   // device mechanical presence
+const static uint32_t AHCI_INTERRUPT_STATUS_PRCS = (1U << 22);  // phyrdy change interrupt
+const static uint32_t AHCI_INTERRUPT_STATUS_IPMS = (1U << 23);  // incorrect port multiplier interrupt
+const static uint32_t AHCI_INTERRUPT_STATUS_OFS = (1U << 24);   // overflow status interrupt
+const static uint32_t AHCI_INTERRUPT_STATUS_INFS = (1U << 26);  // interface non-fatal error interrupt
+const static uint32_t AHCI_INTERRUPT_STATUS_IFS = (1U << 27);   // interface fatal error interrupt
+const static uint32_t AHCI_INTERRUPT_STATUS_HBDS = (1U << 28);  // host bus data error interrupt
+const static uint32_t AHCI_INTERRUPT_STATUS_HBFS = (1U << 29);  // host bus fatal error interrupt
+const static uint32_t AHCI_INTERRUPT_STATUS_TFES = (1U << 30);  // task file error interrupt
+const static uint32_t AHCI_INTERRUPT_STATUS_CPDS = (1U << 31);  // cold port detect interrupt
 
 const static uint32_t AHCI_INTERRUPT_ENABLE_DHRS = (1U << 0);   // device to host fis interrupt enable
 const static uint32_t AHCI_INTERRUPT_ENABLE_PSE = (1U << 1);    // pio setup fis interrupt enable
@@ -68,6 +89,40 @@ typedef struct {
     uint8_t _reserved1[4];
 } ahci_fis_reg_h2d_t;
 
+// 双向
+typedef struct {
+    uint8_t fis_type;
+    uint8_t pmport : 4;
+    uint8_t _r : 1;
+    uint8_t direction : 1;    // direction: 0: transmitter->receiver; 1: receiver->transmitter
+    uint8_t i : 1;            // interrupt
+    uint8_t auto_active : 1;  // auto-activate
+
+    uint8_t _reserved0[2];
+
+    uint32_t dma_buffer_identifier;
+    uint32_t _dma_buffer_identifier_upper;
+
+    uint32_t _reserved1;
+
+    uint32_t dma_buffer_offset;   // bit[1:0] 应该为0
+    uint32_t dma_transfer_count;  // bit[0] 应该为0
+
+    uint32_t _reserved2;
+} ahci_fis_dma_setup_t;
+
+// 双向
+typedef struct {
+    uint8_t fis_type;
+
+    uint8_t pmport : 4;
+    uint8_t _r : 4;
+
+    uint8_t _reserved[2];
+
+    uint8_t data[0];
+} ahci_fis_data_t;
+
 typedef struct {
     uint32_t data_base;  // 第0位必为0
 
@@ -100,10 +155,10 @@ typedef struct {
     uint32_t cfl : 5;  // length of the command fis: 命令FIS大小(双字为单位)
     uint32_t a : 1;    // 该命令需要发送到ATAPI设备
     uint32_t w : 1;    // 该命令需要向设备写入数据
-    uint32_t p : 1;    //
-    uint32_t r : 1;
-    uint32_t b : 1;
-    uint32_t c : 1;  // 命令执行完后，需要将 task_file_data的BSY位清零
+    uint32_t p : 1;    // Prefetchable
+    uint32_t r : 1;    // reset
+    uint32_t b : 1;    // BIST FIS
+    uint32_t c : 1;    // 命令执行完后，需要将 task_file_data的BSY位清零
     uint32_t R : 1;
     uint32_t pmp : 4;
     uint32_t prdtl : 16;  // prdt entry count
