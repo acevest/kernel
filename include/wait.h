@@ -38,6 +38,7 @@ void add_wait_queue(wait_queue_head_t* head, wait_queue_entry_t* wq);
 void del_wait_queue(wait_queue_head_t* head, wait_queue_entry_t* wq);
 
 // prepare_to_wait 不会调用schedule
+void __prepare_to_wait(wait_queue_head_t* head, wait_queue_entry_t* wqe, unsigned int state);
 void prepare_to_wait(wait_queue_head_t* head, wait_queue_entry_t* wq, unsigned int state);
 
 void __end_wait(wait_queue_entry_t* wq);
@@ -46,6 +47,8 @@ void __end_wait(wait_queue_entry_t* wq);
 // 设置condition为真的语句和wake_up原子地执行
 // wake_up只唤醒不立即重新调度
 void wake_up(wait_queue_head_t* head);
+
+void wake_up_all(wait_queue_head_t* head);
 
 // nr == 0 代表唤醒所有
 void __wake_up(wait_queue_head_t* head, int nr);
@@ -68,36 +71,12 @@ void __wake_up(wait_queue_head_t* head, int nr);
                 irq_restore(flags);                    \
                 void schedule();                       \
                 schedule();                            \
+                irq_save(flags);                       \
                 __end_wait(&__wait);                   \
+                irq_restore(flags);                    \
             }                                          \
         }                                              \
     } while (0)
-
-#if 0
-// __wait_event这个逻辑参考自Linux内核，但是发现它有BUG
-// 第一个问题
-// 1. 在进入到__wait_event后，prepare_to_wait前其它进程通过wake_up唤醒当前进程
-// 2. prepare_to_wait把当前进程设置为TASK_WAIT
-// 3. prepare_to_wait最后一句irq_restore(flags);执行完后 其实 condition 已经为true了
-// 4. 从if((conditon))到break再到__end_wait前都有可能被中断打断并重新schedule()
-//    只要在__end_wait的irq_save(flags);完全关闭中断前被中断打断并schedule把当前进程换下CPU，那么这次唤醒就会丢失
-//    如果只有一次唤醒，那么这个唤醒丢失后，当前进程就会一直处于WAIT状态并且永远不会再被调度到
-//
-// 但按理Linux内核不应该会出现这种BUG，还没研究明白，先把这段代码放在这里
-#define __wait_event(head, condition)                  \
-    do {                                               \
-        DECLARE_WAIT_QUEUE_ENTRY(__wait, current);     \
-        while (1) {                                    \
-            prepare_to_wait(head, &__wait, TASK_WAIT); \
-            if ((condition)) {                         \
-                break;                                 \
-            }                                          \
-            void schedule();                           \
-            schedule();                                \
-        }                                              \
-        __end_wait(&__wait);                           \
-    } while (0)
-#endif
 
 #define wait_event(head, condition)      \
     do {                                 \

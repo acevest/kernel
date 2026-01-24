@@ -11,15 +11,33 @@
 #include <sched.h>
 
 void wait_completion(completion_t* x) {
-    wait_event(&x->wait, (x->done != 0));
-    x->done--;
+    uint32_t eflags;
+    DECLARE_WAIT_QUEUE_ENTRY(__wait, current);
+
+    while (1) {
+        irq_save(eflags);
+        if (x->done > 0) {
+            x->done--;
+            irq_restore(eflags);
+            return;
+        }
+
+        __prepare_to_wait(&x->wait, &__wait, TASK_WAIT);
+        irq_restore(eflags);
+
+        schedule();
+
+        irq_save(eflags);
+        __end_wait(&__wait);
+        irq_restore(eflags);
+    }
 }
 
 void complete(completion_t* x) {
     uint32_t iflags;
     irq_save(iflags);
     x->done++;
-    __wake_up(&x->wait, 1);
+    wake_up_all(&x->wait);
     irq_restore(iflags);
 }
 

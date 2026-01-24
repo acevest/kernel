@@ -12,14 +12,14 @@
 #include <wait.h>
 
 typedef struct completion {
-    volatile int done;
+    unsigned int done;
     wait_queue_head_t wait;
 
     // 仅用于调试
     char* name;
 } completion_t;
 
-#define COMPLETION_INITIALIZER(x) {0, WAIT_QUEUE_HEAD_INITIALIZER(x).wait}
+#define COMPLETION_INITIALIZER(x) {0, WAIT_QUEUE_HEAD_INITIALIZER(x.wait)}
 
 void init_completion(completion_t* x);
 
