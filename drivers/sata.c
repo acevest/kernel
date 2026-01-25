@@ -26,7 +26,7 @@ void init_sata_device(ahci_hba_t* hba, ahci_port_t* port, int port_index) {
 
     assert(hba != NULL);
     assert(port != NULL);
-    assert(port_index >= 0 && port_index < MAX_SATA_DEVICES);
+    assert(port_index >= 0 && port_index < AHCI_PORT_COUNT);
     assert(index >= 0 && index < MAX_SATA_DEVICES);
 
     sata_device_t* sata = sata_devices + index;
@@ -35,6 +35,8 @@ void init_sata_device(ahci_hba_t* hba, ahci_port_t* port, int port_index) {
     sata->port = port;
     sata->index = index;
     sata->port_index = port_index;
+
+    init_completion(&sata->completion);
 
     printk("ahci port clb %08x fb %08x sata_status 0x%08X signature %08X\n", port->cmd_list_base, port->fis_base,
            port->sata_status, port->signature);
@@ -74,10 +76,6 @@ void init_sata_device(ahci_hba_t* hba, ahci_port_t* port, int port_index) {
     sata->cmd_table_vaddr = (ahci_cmd_table_t*)ioremap(sata->cmd_table_paddr, PAGE_SIZE);
     memset((void*)sata->cmd_table_vaddr, 0, PAGE_SIZE);
 
-    sata->data_paddr = (paddr_t)page2pa(alloc_one_page(0));
-    sata->data_vaddr = (vaddr_t)ioremap(sata->data_paddr, PAGE_SIZE);
-    memset((void*)sata->data_vaddr, 0, PAGE_SIZE);
-
     memset((void*)cmd_list, 0, sizeof(ahci_cmd_header_t));
     cmd_list[0].cfl = 0;
     cmd_list[0].a = 0;
@@ -106,9 +104,9 @@ void init_sata_device(ahci_hba_t* hba, ahci_port_t* port, int port_index) {
 
     max_sata_devices += 1;
 
-    memset(sector, 0xCC, 512);
-    sata_dma_read(sata, 0, 1, (paddr_t)va2pa(sector));
-    printk("sector %08x\n", (uint32_t*)sector);
+    // memset(sector, 0xCC, 512);
+    // sata_dma_read(sata, 0, 1, (paddr_t)va2pa(sector));
+    // printk("sector %08x\n", (uint32_t*)sector);
 }
 
 void sata_irq_handler(unsigned int irq, pt_regs_t* regs, void* dev_id) {
@@ -129,6 +127,8 @@ void sata_irq_handler(unsigned int irq, pt_regs_t* regs, void* dev_id) {
         if (interrupt_status & AHCI_INTERRUPT_STATUS_DHRS) {
             //
         }
+
+        complete(&sata->completion);
 
         port->interrupt_status = interrupt_status;
     }
@@ -161,7 +161,7 @@ int sata_wait_ready(sata_device_t* sata) {
     return -1;
 }
 
-int sata_dma_read(sata_device_t* sata, uint64_t lba, uint32_t sectors, paddr_t paddr) {
+int sata_dma_read(sata_device_t* sata, uint64_t lba, uint32_t sectors, vaddr_t vaddr) {
     assert(sata != NULL);
     assert(sectors <= 4);
     assert(lba + sectors <= sata->max_lba);
@@ -177,7 +177,7 @@ int sata_dma_read(sata_device_t* sata, uint64_t lba, uint32_t sectors, paddr_t p
     }
 
     //
-    sata->prdte0->data_base = paddr;
+    sata->prdte0->data_base = va2pa(vaddr);
     sata->prdte0->data_byte_count = (bytes - 1) | 1;
     sata->prdte0->ioc = 1;
 
@@ -222,7 +222,12 @@ int sata_dma_read(sata_device_t* sata, uint64_t lba, uint32_t sectors, paddr_t p
 
 void sata_identify(sata_device_t* sata) {
     assert(sata != NULL);
-    sata->prdte0->data_base = sata->data_paddr;
+
+    paddr_t data_paddr = (paddr_t)page2pa(alloc_one_page(0));
+    vaddr_t data_vaddr = (vaddr_t)ioremap(data_paddr, PAGE_SIZE);
+    memset((void*)data_vaddr, 0, PAGE_SIZE);
+
+    sata->prdte0->data_base = data_paddr;
     sata->prdte0->data_byte_count = (512 - 1) | 1;
     sata->prdte0->ioc = 0;
 
@@ -238,7 +243,7 @@ void sata_identify(sata_device_t* sata) {
     sata->cmd_list0->prdtl = 1;
     sata->cmd_list0->w = 0;  // read
     sata->cmd_list0->a = 0;  // ata device
-    sata->cmd_list0->c = 1;
+    sata->cmd_list0->c = 1;  // 自动清除BSY位
     sata->cmd_list0->prd_byte_count = 0;
 
     // 清除中断状态
@@ -247,39 +252,45 @@ void sata_identify(sata_device_t* sata) {
     assert(port != NULL);
     port->interrupt_status = port->interrupt_status;
 
+#if 0
     //
     port->interrupt_enable = AHCI_INTERRUPT_ENABLE_DHRS;
+#endif
 
     //
     port->cmd_issue = 1 << 0;
 
     uint32_t timeout = 1000000;
     while (timeout--) {
+        if ((port->cmd_issue) & (1 << 0) == 0) {
+            break;
+        }
+        // 不启用中断也仍然会设置
         if (port->interrupt_status & 1) {
             printk("SATA INTERRUPT STATUS: %08x\n", port->interrupt_status);
             // 清除本次请求产生的中断
-            port->interrupt_status = 1;
+            port->interrupt_status = port->interrupt_status;
             break;
         }
         if (port->sata_error) {
             printk("SATA ERROR: %08x\n", port->sata_error);
-            return;
+            goto end;
         }
         asm("pause");
     }
 
     if (timeout == 0) {
         printk("SATA TIMEOUT\n");
-        return;
+        goto end;
     }
 
     if (sata->cmd_list0->prd_byte_count != 512) {
         printk("SATA PRD BYTE COUNT: %08x\n", sata->cmd_list0->prd_byte_count);
-        return;
+        goto end;
     }
 
-    printk("identify data %08x\n", sata->data_vaddr);
-    uint16_t* identify = (uint16_t*)sata->data_vaddr;
+    printk("identify data %08x\n", data_vaddr);
+    uint16_t* identify = (uint16_t*)data_vaddr;
 
     // 第49个word的第8个bit位表示是否支持DMA
     // 第83个word的第10个bit位表示是否支持LBA48，为1表示支持。
@@ -334,6 +345,10 @@ void sata_identify(sata_device_t* sata) {
 
     sata_read_identify_string(identify, 27, 46, s);
     printk("HD Model: %s\n", s);
+
+end:
+    iounmap(data_vaddr);
+    free_pages((unsigned long)pa2va(data_paddr));
 }
 
 void sata_read_identify_string(const uint16_t* identify, int bgn, int end, char* buf) {

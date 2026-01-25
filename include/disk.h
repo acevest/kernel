@@ -28,13 +28,22 @@ typedef struct disk_request {
     bbuffer_t* bb;
     disk_request_cmd_t command;  // 命令
     list_head_t list;
-    semaphore_t sem;
+    // semaphore_t r_sem;
+
+    completion_t completion;
 
     int ret;
 } disk_request_t;
 
 typedef struct {
-    uint32_t count;
+    uint64_t req_count;
+    uint64_t completed_count;
+
+    uint32_t count;  // TODO remove
+    uint32_t pending_count;
+
+    //
+    mutex_t mutex;
     list_head_t list;
 
     // 供disk任务睡眠和被唤醒用

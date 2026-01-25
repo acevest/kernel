@@ -50,8 +50,9 @@ enum {
 // monitor print offset
 enum {
     MPO_HPET = 1,
-    MPO_AP_CLOCK = 28,
-    MPO_KEYBOARD = 48,
+    MPO_AP_CLOCK = 20,
+    MPO_DISK = 36,
+    MPO_KEYBOARD = 54,
     MPO_IDE = 1,
 };
 

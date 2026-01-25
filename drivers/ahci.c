@@ -174,6 +174,8 @@ void init_ahci_device(pci_device_t* pci, int index) {
 }
 
 void init_ahci() {
+    void init_disk_request_queue();
+    init_disk_request_queue();
     // progif
     // 0x01 AHCI
     pci_init_device(0x0106, 0x01, init_ahci_device);

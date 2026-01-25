@@ -15,6 +15,7 @@
 #include <msr.h>
 #include <cpuid.h>
 #include <hpet.h>
+#include <disk.h>
 
 extern pde_t* ap_pre_pgd;
 
@@ -270,6 +271,10 @@ void _system_monitor() {
 
     //
     printlxy(MPL_IRQ, MPO_AP_CLOCK, "AP: %lu", ap_lapic_ticks);
+
+    extern disk_request_queue_t disk_request_queue;
+    disk_request_queue_t* drq = &disk_request_queue;
+    printlxy(MPL_IRQ, MPO_DISK, "DISK: %lu/%u/%lu", drq->req_count, drq->pending_count, drq->completed_count);
 
     //
     void print_all_tasks();

@@ -11,6 +11,7 @@
 
 #include <ahci.h>
 #include <types.h>
+#include <completion.h>
 
 #define SATA_SIGNATURE_ATA 0x00000101
 #define SATA_SIGNATURE_ATAPI 0xEB140101
@@ -48,6 +49,8 @@ typedef struct {
     int lba48;  // 是否支持lba48
     uint64_t max_lba;
 
+    completion_t completion;
+
     // 虽然有32个cmd header，但只用第0个
     ahci_cmd_header_t* cmd_list_base_vaddr;
     vaddr_t fis_base_vaddr;
@@ -60,9 +63,9 @@ typedef struct {
     paddr_t prdte_paddr;
     vaddr_t prdte_vaddr;
 
-    // 分配一个数据页
-    paddr_t data_paddr;
-    vaddr_t data_vaddr;
+    // // 分配一个数据页
+    // paddr_t data_paddr;
+    // vaddr_t data_vaddr;
 
     // 第0个cmd header
     ahci_cmd_header_t* cmd_list0;
@@ -74,7 +77,7 @@ typedef struct {
 
 extern sata_device_t sata_devices[MAX_SATA_DEVICES];
 
-int sata_dma_read(sata_device_t* sata, uint64_t lba, uint32_t sectors, paddr_t paddr);
+int sata_dma_read(sata_device_t* sata, uint64_t lba, uint32_t sectors, vaddr_t vaddr);
 
 void sata_read_identify_string(const uint16_t* identify, int bgn, int end, char* buf);
 

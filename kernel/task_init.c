@@ -195,9 +195,8 @@ void init_task_entry() {
 #endif
 
 #if 1
-#if !DISABLE_IDE
-    kernel_task("ide/1", disk_task_entry, (void*)1);
-#endif
+
+    kernel_task("disk", disk_task_entry, NULL);
     kernel_task("user", user_task_entry, NULL);
     kernel_task("tskA", taskA_entry, NULL);
     kernel_task("tskB", taskB_entry, NULL);
