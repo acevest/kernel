@@ -55,11 +55,15 @@ extern tty_t* const monitor_tty;
 int printlo(unsigned int xpos, unsigned int ypos, const char* fmtstr, ...) {
     static char plobuf[1024];
     char* args = (char*)(((char*)&fmtstr) + 4);
-    ENTER_CRITICAL_ZONE(EFLAGS);
+
+    unsigned long eflags;
+    irq_save(eflags);
+
     int size = vsprintf(plobuf, fmtstr, args);
 
     tty_write_at(monitor_tty, xpos, ypos, plobuf, (size_t)size);
 
-    LEAVE_CRITICAL_ZONE(EFLAGS);
+    irq_restore(eflags);
+
     return 0;
 }
