@@ -44,7 +44,7 @@ int write_buf(char* buf, const char* str, char fillch, int charcnt, int align) {
     return charcnt > len ? charcnt : len;
 }
 
-int vsprintf(char* buf, const char* fmt, char* args) {
+int vsprintf(char* buf, const char* fmt, va_list args) {
     char* p = buf;
     int char_cnt;
     char tmp[64];
@@ -79,50 +79,44 @@ int vsprintf(char* buf, const char* fmt, char* args) {
 
         switch (*fmt) {
         case 'c':
-            *p++ = *args;
+            *p++ = va_arg(args, char);
             break;
         case 'd':
-            itoa(tmp, *((int*)args));
+            itoa(tmp, va_arg(args, int));
             p += write_buf(p, tmp, char_fill, char_cnt, align);
             break;
         case 'l':
             fmt++;
             if (*fmt == 'u' || *fmt == 'd') {  // d u都当成u来处理
-                i64tou(tmp, *((int64_t*)args));
+                i64tou(tmp, va_arg(args, uint64_t));
                 p += write_buf(p, tmp, char_fill, char_cnt, align);
-                args += 4;
             } else if (*fmt == 'o') {
-                i64too(tmp, *((uint64_t*)args));
+                i64too(tmp, va_arg(args, uint64_t));
                 p += write_buf(p, tmp, char_fill, char_cnt, align);
-                args += 4;
             } else if (*fmt == 'x' || *fmt == 'X') {
-                // i64tox(tmp, *((uint64_t *)args), *fmt == 'X' ? 1 : 0);
-                i64tox(tmp, *((uint64_t*)args), 1);  // x X都强制为大写
+                i64tox(tmp, va_arg(args, uint64_t), 1);  // x X都强制为大写
                 p += write_buf(p, tmp, char_fill, char_cnt, align);
-                args += 4;
             }
             break;
         case 's':
-            p += write_buf(p, (const char*)*((unsigned int*)args), char_fill, char_cnt, align);
+            p += write_buf(p, (const char*)va_arg(args, char*), char_fill, char_cnt, align);
             break;
         case 'u':
-            itou(tmp, *((unsigned int*)args));
+            itou(tmp, va_arg(args, uint32_t));
             p += write_buf(p, tmp, char_fill, char_cnt, align);
             break;
         case 'x':
         case 'X':
-            // itox(tmp, *((unsigned int *)args), *fmt == 'X' ? 1 : 0);
-            itox(tmp, *((unsigned int*)args), 1);  // x X都强制为大写
+            itox(tmp, va_arg(args, uint32_t), 1);  // x X都强制为大写
             p += write_buf(p, tmp, char_fill, char_cnt, align);
             break;
         case 'o':
-            itoo(tmp, *((unsigned*)args));
+            itoo(tmp, va_arg(args, uint32_t));
             p += write_buf(p, tmp, char_fill, char_cnt, align);
             break;
         default:
             break;
         }
-        args += 4;
         fmt++;
     }
     *p = 0;

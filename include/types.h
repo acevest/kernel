@@ -72,9 +72,10 @@ typedef enum { false, true } bool;
 typedef void (*pf_intr)();
 
 //
+#define INTSIZEOF(n) ((sizeof(n) + sizeof(uint32_t) - 1) & (~(sizeof(uint32_t) - 1)))
 typedef char* va_list;
-#define va_start(ap, last) ((ap) = (va_list) & (last) + sizeof(last))
-#define va_arg(ap, type) (*(type*)(((ap) += sizeof(type)) - sizeof(type)))
+#define va_start(ap, last) ((ap) = (va_list) & (last) + INTSIZEOF(last))
+#define va_arg(ap, type) (*(type*)(((ap) += INTSIZEOF(type)) - INTSIZEOF(type)))
 #define va_end(ap) ((ap) = (va_list)0)
 
 #endif  //_TYPES_H
