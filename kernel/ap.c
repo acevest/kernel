@@ -118,7 +118,7 @@ void ap_kernel_entry() {
         if (r.ecx & (1 << 21)) {
             printk("x2apic supported\n");
         } else {
-            panic("x2apic not supported\n");
+            printk("x2apic not supported\n");
         }
     } else {
         panic("local apic not supported\n");

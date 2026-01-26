@@ -36,8 +36,18 @@ void apic_write_lapic(uint32_t offset, uint32_t value) {
 
 void apic_write64_lapic(uint32_t offset, uint64_t value) {
     assert(offset < PAGE_SIZE);
+    assert((offset % 8) == 0);
+#if 1
     uint8_t* base = (uint8_t*)fixid_to_vaddr(FIX_LAPIC_BASE);
     *(volatile uint64_t*)(base + offset) = value;
+#else
+    // 在bochs上得用下面这段代码，否则会提示
+    // PANIC
+    // Device: [APIC0 ]
+    // Message: APIC write at unaligned address 0x0000fee00304
+    uint8_t* base = (uint8_t*)fixid_to_vaddr(FIX_LAPIC_BASE);
+    *(volatile uint32_t*)(base + offset) = (uint32_t)value;
+#endif
 }
 
 uint32_t apic_get_lapic_id() {
@@ -117,7 +127,7 @@ void lapic_init() {
             x2apic = true;
             printk("x2apic supported\n");
         } else {
-            // panic("x2apic not supported\n");
+            printk("x2apic not supported\n");
         }
     } else {
         panic("local apic not supported\n");
