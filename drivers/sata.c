@@ -15,8 +15,6 @@
 #include <string.h>
 #include <system.h>
 
-int sata_irq_triggered = 0;
-
 int max_sata_devices = 0;
 sata_device_t sata_devices[MAX_SATA_DEVICES] = {0};
 
@@ -109,13 +107,14 @@ void init_sata_device(ahci_hba_t* hba, ahci_port_t* port, int port_index) {
     // printk("sector %08x\n", (uint32_t*)sector);
 }
 
+uint64_t sata_irq_cnt = 0;
 void sata_irq_handler(unsigned int irq, pt_regs_t* regs, void* dev_id) {
-    sata_irq_triggered = 1;
-
     for (int i = 0; i < max_sata_devices; i++) {
         sata_device_t* sata = sata_devices + i;
         ahci_port_t* port = sata->port;
         assert(port != NULL);
+
+        sata_irq_cnt += 1;
 
         //
         uint32_t interrupt_status = port->interrupt_status;
@@ -123,7 +122,7 @@ void sata_irq_handler(unsigned int irq, pt_regs_t* regs, void* dev_id) {
             continue;
         }
 
-        printk("SATA[%u] IRQ[%u] is %08x\n", i, irq, interrupt_status);
+        printk("SATA[%u] IRQ[%u] is %08x cnt %lu\n", i, irq, interrupt_status, sata_irq_cnt);
         if (interrupt_status & AHCI_INTERRUPT_STATUS_DHRS) {
             //
         }

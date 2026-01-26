@@ -253,9 +253,11 @@ paddr_t get_rcba_paddr() {
 }
 
 //
-uint32_t preempt_count = 0;
+int preempt_count = 0;
 
-void enter_critical_zone() {
+// char preempt_debug_msg[100][100] = {{0}};
+void enter_critical_zone(const char* msg) {
+    // strcpy(preempt_debug_msg[preempt_count], msg);
     preempt_count++;
 }
 

@@ -18,52 +18,89 @@
 #include <irq.h>
 #include <system.h>
 #include <tty.h>
+
 int vsprintf(char* buf, const char* fmt, char* args);
 
 void serial_write(const char* buf, size_t size);
 
 extern tty_t* const default_tty;
-int printk(const char* fmtstr, ...) {
-    static char pkbuf[1024];
 
-    ENTER_CRITICAL_ZONE(EFLAGS);
+int _printk(const char* fmtstr, va_list args) {
+    char* pkbuf = kmalloc(1024, 0);
 
-    char* args = (char*)(((char*)&fmtstr) + 4);
     int size = vsprintf(pkbuf, fmtstr, args);
+
     tty_write(default_tty, pkbuf, (size_t)size);
     serial_write(pkbuf, (size_t)size);
 
-    LEAVE_CRITICAL_ZONE(EFLAGS);
+    kfree(pkbuf);
+    return 0;
+}
+
+static char _early_pkbuf[1024];
+int _early_printk(const char* fmtstr, va_list args) {
+    uint32_t eflags;
+    irq_save(eflags);
+
+    int size = vsprintf(_early_pkbuf, fmtstr, args);
+
+    tty_write(default_tty, _early_pkbuf, (size_t)size);
+    serial_write(_early_pkbuf, (size_t)size);
+
+    irq_restore(eflags);
+    return 0;
+}
+
+typedef int (*printk_t)(const char* fmtstr, va_list args);
+static printk_t _printk_func = _early_printk;
+
+void set_printk(printk_t pk) {
+    _printk_func = pk;
+}
+
+int printk(const char* fmtstr, ...) {
+    va_list args;
+    va_start(args, fmtstr);
+
+    _printk_func(fmtstr, args);
+
+    va_end(args);
     return 0;
 }
 
 extern tty_t* const debug_tty;
 int printd(const char* fmtstr, ...) {
-    static char pdbuf[1024];
-    ENTER_CRITICAL_ZONE(EFLAGS);
+    char* pdbuf = kmalloc(1024, 0);
 
-    char* args = (char*)(((char*)&fmtstr) + 4);
+    va_list args;
+    va_start(args, fmtstr);
     int size = vsprintf(pdbuf, fmtstr, args);
+    va_end(args);
+
     tty_write(debug_tty, pdbuf, (size_t)size);
     serial_write(pdbuf, (size_t)size);
 
-    LEAVE_CRITICAL_ZONE(EFLAGS);
+    kfree(pdbuf);
+
     return 0;
 }
 
 extern tty_t* const monitor_tty;
 int printlo(unsigned int xpos, unsigned int ypos, const char* fmtstr, ...) {
     static char plobuf[1024];
-    char* args = (char*)(((char*)&fmtstr) + 4);
 
-    unsigned long eflags;
+    va_list args;
+    va_start(args, fmtstr);
+
+    uint32_t eflags;
     irq_save(eflags);
 
     int size = vsprintf(plobuf, fmtstr, args);
 
+    va_end(args);
+
     tty_write_at(monitor_tty, xpos, ypos, plobuf, (size_t)size);
 
     irq_restore(eflags);
-
     return 0;
 }

@@ -130,6 +130,8 @@ void setup_kernel() {
 
     init_mm();
 
+    set_printk(_printk);
+
     init_buffer();
 
     void init_mount();
@@ -161,7 +163,7 @@ void setup_kernel() {
     print_kernel_version();
     boot_delay(DEFAULT_BOOT_DELAY_TICKS);
 
-    extern tty_t* const monitor_tty;
+    // extern tty_t* const monitor_tty;
     // tty_switch(monitor_tty);
 
     boot_delay(DEFAULT_BOOT_DELAY_TICKS);

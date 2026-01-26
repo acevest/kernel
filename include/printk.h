@@ -52,8 +52,13 @@ enum {
     MPO_HPET = 1,
     MPO_AP_CLOCK = 20,
     MPO_DISK = 36,
-    MPO_KEYBOARD = 54,
+    MPO_KEYBOARD = 60,
     MPO_IDE = 1,
 };
 
 int sprintf(char* str, const char* fmtstr, ...);
+
+#include <types.h>
+typedef int (*printk_t)(const char* fmtstr, va_list args);
+void set_printk(printk_t pk);
+int _printk(const char* fmtstr, va_list args);
