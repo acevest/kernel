@@ -45,8 +45,8 @@ kmem_cache_t* ext2_inode_cache;
 
 ext2_inode_t ext2_root_inode;
 
-static ext2_inode_t boot_inode;
-static ext2_inode_t krnl_inode;
+// static ext2_inode_t boot_inode;
+// static ext2_inode_t krnl_inode;
 
 unsigned long ext2_block_size() {
     return (EXT2_MIN_BLOCK_SIZE << (EXT2_SB)->s_log_block_size);
@@ -58,6 +58,7 @@ void* ext2_alloc_block() {
 
 void* ext2_free_block(void* blk) {
     kmem_cache_free(ext2_block_cache, blk);
+    return blk;
 }
 
 void* ext2_alloc_inode() {
@@ -71,7 +72,7 @@ void ext2_read_inode(unsigned int ino, ext2_inode_t* inode) {
 
     printd("read_inode %u\n", ino);
 
-    unsigned int in;  // inode number
+    // unsigned int in;  // inode number
     unsigned int gn;  // group number
     unsigned int gi;  // inode index in group
 

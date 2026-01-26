@@ -72,7 +72,7 @@ SECTIONS
         *(.text)
         *(.sysexit) /* last */
     }
-    etext = .;
+    _etext = .;
 
     /* 后续节的物理地址(也就是 LMA: Load Memory Address 加载内存地址)会根据 .text 节的自动计算，不用再每个都写一遍 AT 指令了 */
 
@@ -81,7 +81,7 @@ SECTIONS
         data = .;
         *(.data)
     }
-    edata = .;
+    _edata = .;
 
 
     .bss : ALIGN(0x1000)
@@ -89,9 +89,9 @@ SECTIONS
         bss = .;
         *(.bss);
     }
-    ebss = .;
+    _ebss = .;
 
-    end = .;
+    /* end = .; */
     _end = .;
     kernel_end = .;
 

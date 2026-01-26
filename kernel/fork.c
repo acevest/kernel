@@ -40,15 +40,14 @@ int do_fork(pt_regs_t* regs, unsigned long flags) {
     tsk->cr3 = (uint32_t)page2pa(alloc_one_page(0));
     assert(tsk->cr3 != 0);
 
-    unsigned int i, j;
     pde_t* pde_src = (pde_t*)pa2va(current->cr3);
     pde_t* pde_dst = (pde_t*)pa2va(tsk->cr3);
 
     memcpy((void*)pa2va(tsk->cr3), (void*)pa2va(current->cr3), PAGE_SIZE);
 
-    for (i = 0; i < PAGE_PDE_CNT; ++i) {
-        unsigned long spde = (unsigned long)pde_src[i];
-        unsigned long dpde = 0;
+    for (int i = 0; i < PAGE_PDE_CNT; ++i) {
+        // unsigned long spde = (unsigned long)pde_src[i];
+        // unsigned long dpde = 0;
 
         if (i >= get_npde(PAGE_OFFSET)) {
             pde_dst[i] = pde_src[i];

@@ -90,6 +90,7 @@ bbuffer_t* get_from_hash_table(dev_t dev, uint64_t block, uint32_t size) {
 }
 
 bbuffer_t* getblk(dev_t dev, uint64_t block, uint32_t size) {
+    uint32_t iflags;
     assert(size == 1024 || size == 2048 || size == 4096);
 
     // 暂时先只支持hard disk
@@ -97,7 +98,6 @@ bbuffer_t* getblk(dev_t dev, uint64_t block, uint32_t size) {
 
     int retry = 0;
 again:
-    uint32_t iflags;
     irq_save(iflags);
 
     // 先尝试从hash里分配

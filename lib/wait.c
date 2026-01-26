@@ -10,4 +10,5 @@
 #include <syscall.h>
 int wait(unsigned long pid) {
     syscall1(SYSC_WAIT, pid);
+    return 0;
 }

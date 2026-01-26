@@ -89,7 +89,7 @@ void parse_madt(vaddr_t addr) {
         } break;
         case 1: {  // IO APIC
             uint8_t ioapic_id = ptr[2];
-            uint8_t reserved = ptr[3];
+            // uint8_t reserved = ptr[3];
             uint32_t ioapic_addr = *(uint32_t*)(ptr + 4);
             uint32_t global_irq_base = *(uint32_t*)(ptr + 8);
             ioapic_cnt++;
@@ -115,7 +115,7 @@ void parse_madt(vaddr_t addr) {
             printk("LAPIC non-uniform cpu %u apic %u flags %02x\n", cpu_id, apic_id, flags);
         } break;
         case 4: {  // 虚拟化APIC
-            uint16_t reserved = *(uint16_t*)(ptr + 2);
+            // uint16_t reserved = *(uint16_t*)(ptr + 2);
             uint32_t apic_addr = *(uint32_t*)(ptr + 4);
             printk("Virtual APIC addr %08x\n", apic_addr);
         } break;

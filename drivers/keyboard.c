@@ -51,19 +51,19 @@ char kbd_char_tbl[] = {
 };
 
 // TODO 改造成环形缓冲区
-uint8_t scan_code;
+uint8_t kbd_scan_code;
 void kbd_bh_handler(void* arg) {
-    kbd_debug(scan_code);
-    if (0x80 & scan_code) {  // break code
+    kbd_debug(kbd_scan_code);
+    if (0x80 & kbd_scan_code) {  // break code
         return;
     }
-    uint8_t inx = scan_code & 0xFF;
+    uint8_t inx = kbd_scan_code & 0xFF;
     char ch = kbd_char_tbl[inx];
     cnsl_kbd_write(ch);
 }
 
 void kbd_handler(unsigned int irq, pt_regs_t* regs, void* dev_id) {
-    scan_code = inb(0x60);
+    kbd_scan_code = inb(0x60);
     add_irq_bh_handler(kbd_bh_handler, NULL);
 }
 

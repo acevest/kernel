@@ -261,7 +261,7 @@ void sata_identify(sata_device_t* sata) {
 
     uint32_t timeout = 1000000;
     while (timeout--) {
-        if ((port->cmd_issue) & (1 << 0) == 0) {
+        if (((port->cmd_issue) & (1 << 0)) == 0) {
             break;
         }
         // 不启用中断也仍然会设置

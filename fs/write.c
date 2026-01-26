@@ -79,7 +79,7 @@ ssize_t vfs_generic_file_write(file_t* file, const char* buf, size_t size, loff_
         pos += bytes;
     }
 
-end:
+    // end:
     up(&inode->i_sem);
     *p_pos = pos;
 

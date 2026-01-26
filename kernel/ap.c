@@ -68,7 +68,8 @@ void ap_kernel_entry() {
     // 之前加载的被复制到1MB以下的ap_gdt需要废弃，因为它已经在内核地址空间之外了
     // 虽然他们是同一个ap_gdt
     extern char ap_gdtr;
-    asm("lgdt ap_gdtr");
+    // 最简单的写 asm("lgdt ap_gdtr"); 但是c编译器不通过
+    asm("lgdt %0" ::"m"(ap_gdtr));
 
     // tss
     // AP 暂时不服务用户特权级 所以暂时用不到tss
@@ -261,13 +262,13 @@ void do_ap_lapic_irq_handler() {
 void _system_monitor() {
     //
     extern volatile uint64_t jiffies;
-    extern volatile uint64_t hpet_ticks;  // jiffies 和 hpet_ticks 是同一个东西
+    // extern volatile uint64_t hpet_ticks;  // jiffies 和 hpet_ticks 是同一个东西
     printlxy(MPL_IRQ, MPO_HPET, "HPET: %lu", jiffies);
 
     //
-    extern volatile uint8_t scan_code;
+    extern volatile uint8_t kbd_scan_code;
     extern volatile uint64_t kbd_irq_cnt;
-    printlxy(MPL_IRQ, MPO_KEYBOARD, "KBD: %02x %lu", scan_code, kbd_irq_cnt);
+    printlxy(MPL_IRQ, MPO_KEYBOARD, "KBD: %02x %lu", kbd_scan_code, kbd_irq_cnt);
 
     //
     printlxy(MPL_IRQ, MPO_AP_CLOCK, "AP: %lu", ap_lapic_ticks);

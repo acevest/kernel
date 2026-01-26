@@ -132,6 +132,7 @@ int follow_down(dentry_t** dentry, vfsmount_t** vfsmnt) {
     //         *dentry = dentry_get(tmp_mnt->mnt_root);
     //     }
     // }
+    return 0;
 }
 
 int path_walk(const char* path, namei_t* ni) {

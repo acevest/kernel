@@ -61,7 +61,7 @@ int sysc_exec(const char* path, char* const argv[]) {
     assert(ehdr != 0);
     ext2_read_data(&inode, 0, PAGE_SIZE, (char*)ehdr);
     printk("%08x\n", *((unsigned long*)ehdr->e_ident));
-    assert(strncmp(ELFMAG, ehdr->e_ident, sizeof(ELFMAG) - 1) == 0);
+    assert(strncmp(ELFMAG, (char*)ehdr->e_ident, sizeof(ELFMAG) - 1) == 0);
     printk("Elf Entry: %08x\n", ehdr->e_entry);
 
     int i, j;

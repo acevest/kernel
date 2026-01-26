@@ -296,7 +296,7 @@ void init_rootfs() {
         {
             // TODO支持带多层目录的fe_name
 
-            namei_t ni;
+            // namei_t ni;
             const char* path = fe_name;
             const int flags = O_CREAT | O_APPEND;
 #define bufsz 5223
@@ -327,8 +327,8 @@ void init_rootfs() {
 
             vfs_generic_file_read(&file, buf, bufsz, &file.f_pos);
 #endif
-            for (int i = 0; i < bufsz; i++) {
-                printk("%c", buf[i]);
+            for (int k = 0; k < bufsz; k++) {
+                printk("%c", buf[k]);
             }
             printk("\n");
         }

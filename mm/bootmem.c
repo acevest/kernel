@@ -263,6 +263,10 @@ void init_bootmem() {
 // 由于只有在构建buddy system的时候才会用到
 // 所以这里就简单实现
 void* alloc_from_bootmem(unsigned long size, char* title) {
+    unsigned long free_pfn = 0;
+    unsigned long bgn_pfn = 0;
+    unsigned long end_pfn = 0;
+
     void* region = NULL;
     unsigned long pfn_cnt = PFN_UP(size);
 
@@ -273,7 +277,7 @@ void* alloc_from_bootmem(unsigned long size, char* title) {
 
 find_next_block:
     // 先找到第一个空闲的pfn
-    unsigned long free_pfn = pbd->max_pfn;
+    free_pfn = pbd->max_pfn;
     for (unsigned long pfn = search_bgn_pfn; pfn < pbd->max_pfn; pfn++) {
         if (bootmem_page_state(pfn) == BOOTMEM_PAGE_FREE) {
             free_pfn = pfn;
@@ -283,8 +287,8 @@ find_next_block:
     }
 
     // 检验接下来是否有足够的size
-    unsigned long bgn_pfn = free_pfn;
-    unsigned long end_pfn = bgn_pfn + pfn_cnt;
+    bgn_pfn = free_pfn;
+    end_pfn = bgn_pfn + pfn_cnt;
 
     // printk("free_pfn: %d end_pfn:%d max_pfn:%d \n", free_pfn, end_pfn, pbd->max_pfn);
 

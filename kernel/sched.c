@@ -113,7 +113,7 @@ void switch_to() {
 }
 
 void context_switch(task_t* prev, task_t* next) {
-    unsigned long eax, ebx, ecx, edx, esi, edi;
+    unsigned long /*eax,*/ ebx, ecx, edx, esi, edi;
     asm volatile(
         "pushfl;"
         "pushl  %%ebp;"

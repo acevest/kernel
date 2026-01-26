@@ -59,7 +59,7 @@ void* kmalloc(size_t size, gfp_t gfpflags);
 void* kzalloc(size_t size, gfp_t gfpflags);
 void kfree(void* addr);
 
-extern char etext, edata, end;
+// extern char etext, edata, end;
 
 #define cli() asm volatile("cli")
 #define sti() asm volatile("sti")

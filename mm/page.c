@@ -55,7 +55,7 @@ void do_wp_page(void* addr) {
     pde_t* pde = page_dir + npde;
 
     // 如果是因为PDE被写保护
-    if (*pde & PDE_RW == 0) {
+    if (((*pde) & PDE_RW) == 0) {
         // 1. 分配一个页表
         unsigned long newtbl = (unsigned long)page2va(alloc_one_page(0));
         assert(newtbl != 0);
@@ -86,7 +86,7 @@ void do_wp_page(void* addr) {
     pte_t* pte = page_tbl + npte;
 
     // 如果PTE的位置被写保护
-    if (*pte & PTE_RW == 0) {
+    if (((*pte) & PTE_RW) == 0) {
         // 1. 分配一个页表
         unsigned long newaddr = (unsigned long)page2va(alloc_one_page(0));
         assert(newaddr != 0);
@@ -179,7 +179,7 @@ void set_pte_pfn(vaddr_t vaddr, pfn_t pfn, uint32_t flags) {
     assert(pgd != 0);
 
     pde_t pde = pgd[npde];
-    assert(pde & PAGE_P == PAGE_P);
+    assert(((pde)&PAGE_P) == PAGE_P);
 
     pte_t* pgt = (pte_t*)pa2va(PAGE_ALIGN(pde));
     pte_t pte = pgt[npte];

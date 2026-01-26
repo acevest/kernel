@@ -134,7 +134,7 @@ void init_ahci_device(pci_device_t* pci, int index) {
             ahci_port_t* port = hba->ports + i;
             uint32_t sata_status = port->sata_status;
             uint32_t sata_det = (sata_status >> 0) & 0x0F;  // device detection
-            uint32_t sata_spd = (sata_status >> 4) & 0x0F;  // current interface speed
+            // uint32_t sata_spd = (sata_status >> 4) & 0x0F;  // current interface speed
             uint32_t sata_ipm = (sata_status >> 8) & 0x0F;  // interface power management
 
             if (sata_det != 3) {
@@ -146,12 +146,11 @@ void init_ahci_device(pci_device_t* pci, int index) {
             }
 
             switch (port->signature) {
-            case SATA_SIGNATURE_ATA:
+            case SATA_SIGNATURE_ATA: {
                 extern void init_sata_device(ahci_hba_t * hba, ahci_port_t * port, int index);
                 init_sata_device(hba, port, i);
                 printk("SATA device detected at port %d\n", i);
-
-                break;
+            } break;
             case SATA_SIGNATURE_ATAPI:
                 printk("SATAPI device detected\n");
                 break;

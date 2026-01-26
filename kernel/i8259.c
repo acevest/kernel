@@ -59,6 +59,7 @@ int enable_i8259_irq(unsigned int irq) {
         mask &= inb(PIC_MASTER_IMR);
         outb_p(mask, PIC_MASTER_IMR);
     }
+    return 0;
 }
 
 int disable_i8259_irq(unsigned int irq) {
@@ -72,6 +73,7 @@ int disable_i8259_irq(unsigned int irq) {
         mask |= inb(PIC_MASTER_IMR);
         outb(mask, PIC_MASTER_IMR);
     }
+    return 0;
 }
 
 void mask_ack_i8259_irq(unsigned int irq) {
@@ -107,7 +109,7 @@ void mask_ack_i8259_irq(unsigned int irq) {
 }
 
 void ack_i8259_irq(unsigned int irq) {
-    unsigned char mask = 0;
+    // unsigned char mask = 0;
 
     if (irq & 8)  // Slave
     {

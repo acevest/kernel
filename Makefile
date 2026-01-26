@@ -34,6 +34,9 @@ ifeq (,$(shell which $(CC) 2>/dev/null))
 endif
 
 CFLAGS	:= -g -c -fno-builtin -m32 -DBUILDER='"$(shell whoami)"' -std=gnu11
+CFLAGS	+= -Wall
+CFLAGS	+= -Werror
+CFLAGS	+= -Wshadow
 # 指示编译器禁止生成位置无关代码
 CFLAGS	+= -fno-pic
 # 指示编译器在生成目标文件时不省略函数调用栈帧指针: frame pointer

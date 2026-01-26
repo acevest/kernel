@@ -81,10 +81,19 @@ int strncmp(const char* a, const char* b, size_t count) {
 
 char* strcat(char* dest, const char* src) {
     char* tmp = dest;
-    while (*dest)
+    while (*dest) {
         dest++;
-    while (*dest++ = *src++)
-        ;
+    }
+    // while (*dest++ = *src++)
+    //     ;
+    while (1) {
+        *dest = *src;
+        dest++;
+        src++;
+        if (*dest == 0) {
+            break;
+        }
+    }
     return tmp;
 }
 void* memcpy(void* dest, const void* src, size_t size) {

@@ -33,8 +33,8 @@ cpuid_regs_t cpuid(unsigned long op) {
 
 void detect_cpu() {
     cpuid_regs_t r;
-    unsigned short int cpu_sn[6];  // serial number
-    int i;
+    // unsigned short int cpu_sn[6];  // serial number
+    // int i;
 
     /**********************Get CPU Name********************************/
     char cpu_name[13];

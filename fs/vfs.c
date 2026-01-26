@@ -52,7 +52,8 @@ int vfs_register_filesystem(fs_type_t* fs) {
 
     add->next = fs;
     fs->next = 0;
-    return 0;
+
+    return ret;
 }
 
 fs_type_t* vfs_find_filesystem(const char* name) {

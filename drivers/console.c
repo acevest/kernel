@@ -100,10 +100,12 @@ int cnsl_kbd_write(char ch) {
         // wake_up(&rdwq);
         up(&sem);
     }
+
+    return 0;
 }
 
 int cnsl_read(char* buf, size_t count) {
-    unsigned long flags;
+    // unsigned long flags;
 
     assert(count > 0);
     int cnt = 0;

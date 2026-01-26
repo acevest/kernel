@@ -49,6 +49,7 @@ vfsmount_t* vfs_kernel_mount(fs_type_t* type, int flags, const char* name, void*
     mnt = alloc_vfsmount(name);
 
     ret = type->read_super(type, flags, name, data, mnt);
+    assert(ret == 0);
 
     assert(mnt->mnt_sb != 0);
     assert(mnt->mnt_root != 0);

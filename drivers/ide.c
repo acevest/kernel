@@ -269,7 +269,10 @@ extern void* mbr_buf;
 
 uint8_t ata_pci_bus_status();
 
-void ide_ata_init();
+uint16_t ata_identify[256];
+
+void ide_ata_init(uint16_t* identify);
+
 void ide_init() {
     memset(ide_pci_controller, 0, sizeof(ide_pci_controller[0]) * NR_IDE_CONTROLLER);
 
@@ -277,7 +280,7 @@ void ide_init() {
     init_pci_controller(0x0101);
 
     // 读IDE 硬盘的identity
-    ide_ata_init();
+    ide_ata_init(ata_identify);
 }
 
 ide_drive_t* ide_get_drive(dev_t dev) {

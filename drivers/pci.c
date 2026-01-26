@@ -106,7 +106,7 @@ void scan_pci_bus(int bus) {
             pci->hdr_type &= PCI_HDRTYPE_MASK;
 
             for (i = 0; i < BARS_CNT; ++i) {
-                cmd = PCI_CMD(bus, dev, devfn, PCI_BAR0 + i * 4);
+                cmd = PCI_CMD(bus, dev, devfn, (PCI_BAR0 + i * 4));
                 pci->bars[i] = pci_read_config_long(cmd);
             }
 
@@ -116,7 +116,6 @@ void scan_pci_bus(int bus) {
 }
 
 pci_device_t* pci_find_device(unsigned int vendor, unsigned int device) {
-    int i;
     list_head_t* p;
     pci_device_t* pci = 0;
 
@@ -182,7 +181,6 @@ const char* pci_intr_pin(int pin) {
 
 void dump_pci_dev() {
     list_head_t* p;
-    int i;
 
     list_for_each(p, &pci_devs) {
         pci_device_t* pci = list_entry(p, pci_device_t, list);

@@ -62,8 +62,10 @@ int sysc_wait(int ticks) {
 }
 
 int sysc_test() {
+    return 0;
 }
 int sysc_pause() {
+    return 0;
 }
 
 int sysc_debug(unsigned int v) {

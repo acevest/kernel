@@ -24,7 +24,7 @@
 #include <task.h>
 #include <types.h>
 
-extern char etext, edata, end;
+// extern char etext, edata, end;
 
 pde_t __initdata init_pgd[PDECNT_PER_PAGE] __attribute__((__aligned__(PAGE_SIZE)));
 pte_t __initdata init_pgt[PTECNT_PER_PAGE * BOOT_INIT_PAGETBL_CNT] __attribute__((__aligned__(PAGE_SIZE)));
@@ -84,7 +84,7 @@ void init_paging() {
         }
 
         // 分配一个页表
-        pte_t* pg_table = (pte_t*)alloc_from_bootmem(PAGE_SIZE, paging_page);
+        pg_table = (pte_t*)alloc_from_bootmem(PAGE_SIZE, paging_page);
         if (0 == pg_table) {
             panic("no pages for paging...");
         }

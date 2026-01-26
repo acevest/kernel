@@ -36,7 +36,7 @@ void user_task_entry() {
     extern uint8_t ring3_page_begin;
 
     paddr_t ring3_page_addr = (paddr_t)&ring3_page_begin;  // 不在内核空间的物理地址
-    paddr_t ring3_stack_top = ring3_page_addr + PAGE_SIZE;
+    // paddr_t ring3_stack_top = ring3_page_addr + PAGE_SIZE;
 
     vaddr_t ring3_page_vaddr = 0x08000000;  // 指定的ring3的虚拟地址
     vaddr_t ring3_stack_top_vaddr = PAGE_OFFSET - 0x100000;

@@ -212,6 +212,7 @@ void lapic_init() {
     // TPR是软件的“计划”，ISR是硬件的“现状”，而PPR是综合二者得出的“当前执行标准”。
     // 内核只能通过设置TPR来影响PPR
     uint32_t PPR = lapic->read(LAPIC_PPR);
+    printk("TPR: %08x PPR: %08x\n", TPR, PPR);
 }
 
 static ioapic_map_t ioapic_map;
@@ -308,11 +309,11 @@ void ioapic_init() {
         ioapic_rte_write(IOAPIC_RTE(i), IOAPIC_RTE_MASK | irq);
     }
 
-    uint32_t rcba_phys_base = (uint32_t)get_rcba_paddr();
+    // uint32_t rcba_phys_base = (uint32_t)get_rcba_paddr();
 
     ioapic_enable();
 
-    uint64_t dst_cpuid = 0;
+    // uint64_t dst_cpuid = 0;
 
     extern irq_chip_t ioapic_chip;
 #if 1

@@ -42,7 +42,7 @@ void ata_test(uint64_t nr) {
 //  1. 若为0，就认为没有IDE
 //  2. 等到status的BSY位清除
 //  3. 等到status的DRQ位或ERR位设置
-u16 identify[256];
+
 void ata_send_read_identify_cmd(int drv) {
 }
 
@@ -153,7 +153,7 @@ extern unsigned int IDE_CHL0_CTL_BASE;
 extern unsigned int IDE_CHL1_CTL_BASE;
 
 // 《AT Attachment 8 - ATA/ATAPI Command Set》
-void ide_ata_init() {
+void ide_ata_init(uint16_t* identify) {
     printk("IDE %04X %04X %04X %04X\n", IDE_CHL0_CMD_BASE, IDE_CHL1_CMD_BASE, IDE_CHL0_CTL_BASE, IDE_CHL1_CTL_BASE);
     for (int i = 0; i < MAX_IDE_DRIVE_CNT; i++) {
         int drvid = i;
@@ -237,7 +237,7 @@ void ide_ata_init() {
         // Bit 2: 1 表示设备支持应急电源降级。
         // Bit 1: 1 表示设备支持硬件重置。
         // Bit 0: 1 表示设备支持软重置。
-        uint16_t devtype = identify[ATA_IDENT_DEVTYPE];
+        // uint16_t devtype = identify[ATA_IDENT_DEVTYPE];
 
         // printk("device type %04X\n", devtype);
 
@@ -454,7 +454,7 @@ void read_partition_table(ide_drive_t* drv, uint32_t mbr_ext_offset, uint64_t lb
 void ide_read_partions() {
     for (int i = 0; i < MAX_IDE_DRIVE_CNT; i++) {
         ide_drive_t* drv = ide_drives + i;
-        int channel = i >> 1;
+        // int channel = i >> 1;
 
         if (0 == drv->present) {
             continue;
@@ -557,7 +557,7 @@ void ata_dma_read_ext(int drvid, uint64_t pos, uint16_t count, void* dest) {
     outb((pos >> 16) & 0xFF, REG_LBAH(drvid));
 
     // 等待硬盘READY
-    while (inb(REG_STATUS(drvid)) & ATA_STATUS_RDY == 0) {
+    while ((inb(REG_STATUS(drvid)) & ATA_STATUS_RDY) == 0) {
         nop();
     }
 
@@ -629,7 +629,7 @@ int ata_pio_read_ext(int drvid, uint64_t pos, uint16_t count, int timeout, void*
     outb((pos >> 8) & 0xFF, REG_LBAM(drvid));
     outb((pos >> 16) & 0xFF, REG_LBAH(drvid));
 
-    while (inb(REG_STATUS(drvid)) & ATA_STATUS_RDY == 0) {
+    while ((inb(REG_STATUS(drvid)) & ATA_STATUS_RDY) == 0) {
         nop();
     }
 

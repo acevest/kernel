@@ -19,7 +19,7 @@ int sysc_exit(int status) {
     irq_save(flags);
     current->state = TASK_EXITING;
 
-    task_t* t = current;
+    // task_t* t = current;
 
     irq_restore(flags);
 

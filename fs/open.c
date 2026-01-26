@@ -19,7 +19,7 @@
 #include <types.h>
 
 int get_unused_fd() {
-    int fd;
+    // int fd;
     task_files_t* files = &(current->files);
 
     for (int i = 0; i < NR_TASK_OPEN_CNT; i++) {

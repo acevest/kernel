@@ -118,7 +118,7 @@ uint32_t segoff_to_addr(segoff_t sg) {
     return 0xC0000000 + (sg.segment << 4) + sg.offset;
 }
 
-vbe_mode_info_t* get_vbe_mode_info(uint16_t) {
+vbe_mode_info_t* get_vbe_mode_info(uint16_t mode) {
     // 设置并执行实模式代码以调用 VBE 函数 0x4F01
     // 返回指向 VBE 模式信息的指针
     return NULL;

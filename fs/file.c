@@ -29,7 +29,7 @@ page_t** page_hash_table = NULL;
 
 static uint32_t page_hash_func(address_space_t* mapping, uint32_t index) {
     uint32_t i = (((uint32_t)mapping) / (sizeof(inode_t) & ~(sizeof(inode_t) - 1)));
-#define s(x) ((x) + (x) >> PAGE_HASH_BITS)
+#define s(x) ((x) + ((x) >> PAGE_HASH_BITS))
     return s(i + index) & (PAGE_HASH_SIZE - 1);
 #undef s
 }

@@ -144,7 +144,7 @@ void check_kernel(unsigned long addr, unsigned long magic) {
     struct multiboot_tag_bootdev* bootdev = 0;
     struct multiboot_tag_mmap* mmap_tag = 0;
     struct multiboot_tag_vbe* vbe = 0;
-    struct multiboot_tag_framebuffer* fb = 0;
+    // struct multiboot_tag_framebuffer* fb = 0;
     struct multiboot_tag_elf_sections* elf = 0;
 
     boot_params.e820map.map_cnt = 0;
@@ -160,7 +160,7 @@ void check_kernel(unsigned long addr, unsigned long magic) {
             strlcpy(boot_params.bootloader, ((struct multiboot_tag_string*)tag)->string,
                     sizeof(boot_params.bootloader));
             break;
-        case MULTIBOOT_TAG_TYPE_MODULE:
+        case MULTIBOOT_TAG_TYPE_MODULE: {
             struct multiboot_tag_module* m = (struct multiboot_tag_module*)tag;
             void* mod_start = (void*)m->mod_start;
             printk("module 0x%08x - 0x%08x size %u cmdline %s\n", m->mod_start, m->mod_end, m->size, m->cmdline);
@@ -200,7 +200,7 @@ void check_kernel(unsigned long addr, unsigned long magic) {
                 printk("\n");
             }
 #endif
-            break;
+        } break;
         case MULTIBOOT_TAG_TYPE_BASIC_MEMINFO:
             mminfo = (struct multiboot_tag_basic_meminfo*)tag;
             // KB to Bytes
@@ -263,21 +263,22 @@ void check_kernel(unsigned long addr, unsigned long magic) {
                     name = strtab + section->sh_name;
                 }
 
-                uint32_t addr = section->sh_addr;
-                uint32_t size = section->sh_size;
-                uint32_t type = section->sh_type;
-                uint32_t flags = section->sh_flags;
-                printk("%20s addr %08x size %08x type %08x flags %08x\n", name ? name : "(unnamed)", addr, size, type,
-                       flags);
+                uint32_t _addr = section->sh_addr;
+                uint32_t _size = section->sh_size;
+                uint32_t _type = section->sh_type;
+                uint32_t _flags = section->sh_flags;
+                printk("%20s addr %08x size %08x type %08x flags %08x\n", name ? name : "(unnamed)", _addr, _size,
+                       _type, _flags);
             }
         } break;
         case MULTIBOOT_TAG_TYPE_LOAD_BASE_ADDR:
             printk("load base addr %08x\n", ((struct multiboot_tag_load_base_addr*)tag)->load_base_addr);
             break;
-        case MULTIBOOT_TAG_TYPE_ACPI_OLD:
+        case MULTIBOOT_TAG_TYPE_ACPI_OLD: {
             extern void parse_acpi(void*);
-            parse_acpi(tag);
+            parse_acpi((void*)tag);
             break;
+        }
         case MULTIBOOT_TAG_TYPE_ACPI_NEW:
             printk("ACPI new\n");
             break;

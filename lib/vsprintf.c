@@ -132,7 +132,6 @@ void swap_char(char* a, char* b) {
 }
 
 char* itoa(char* s, int n) {
-    int i = 0;
     char* p = 0;
 
     if (n & 0x80000000) {
@@ -154,6 +153,8 @@ char* itoa(char* s, int n) {
         s++;
         p--;
     }
+
+    return s;
 }
 
 char* i64tou(char* s, uint64_t n) {
@@ -163,10 +164,10 @@ char* i64tou(char* s, uint64_t n) {
         i = strlen(s);
     }
     itou(s + i, n & 0xFFFFFFFF);
+    return s;
 }
 
 char* itou(char* s, unsigned int n) {
-    char c;
     char* p = s;
 
     do {
@@ -181,6 +182,7 @@ char* itou(char* s, unsigned int n) {
         s++;
         p--;
     }
+    return s;
 }
 
 char* _itoo(char* s, uint64_t n, int bgn) {

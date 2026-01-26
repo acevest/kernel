@@ -140,9 +140,9 @@ inode_t* ramfs_get_inode(superblock_t* sb, umode_t mode, dev_t dev) {
     return inode;
 }
 
-static sb_operations_t ramfs_ops = {
-    // .alloc_inode = ramfs_alloc_inode,
-};
+// static sb_operations_t ramfs_ops = {
+//     // .alloc_inode = ramfs_alloc_inode,
+// };
 
 int ramfs_fill_super_cb(superblock_t* sb, void* data) {
     int err = 0;
