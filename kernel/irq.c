@@ -48,7 +48,9 @@ __attribute__((regparm(1))) void irq_handler(pt_regs_t* regs) {
 
     // 在qemu启动后如果gdb有加断点，就很会一直触发中断重入
     reenter++;
-    reenter_count += reenter == 0 ? 0 : 1;
+    if (reenter > 1) {
+        reenter_count++;
+    }
     assert(irq_disabled());
     assert(reenter >= 0);
     assert(reenter <= 1);

@@ -94,7 +94,6 @@ void do_wp_page(void* addr) {
         // 2. 拷贝页表
         pte_t* oldaddr = pa2va(PAGE_ALIGN(page_dir[npde]));
         memcpy((void*)newaddr, (void*)oldaddr, PAGE_SIZE);
-
         // 3. 解除PTE的写保护
         *pte |= PTE_RW;
     }

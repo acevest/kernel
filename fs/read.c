@@ -29,6 +29,8 @@ ssize_t vfs_generic_file_read(file_t* file, char* buf, size_t size, loff_t* p_po
     uint32_t offset = pos & (PAGE_SIZE - 1);
     size_t left = size;
 
+    ssize_t read_bytes = 0;
+
     while (left > 0) {
         page_t* page = NULL;
         uint32_t end_index = inode->i_size >> PAGE_SHIFT;
@@ -58,6 +60,7 @@ ssize_t vfs_generic_file_read(file_t* file, char* buf, size_t size, loff_t* p_po
 
         // copy data
         bytes = bytes < left ? bytes : left;
+        read_bytes += bytes;
         void* addr = page2va(page);
         // printk("memcpy bytes %u index %u\n", bytes, index);
         // printk("read addr %x bytes %u index %u offset %u\n", addr, bytes, index, offset);
@@ -80,7 +83,7 @@ ssize_t vfs_generic_file_read(file_t* file, char* buf, size_t size, loff_t* p_po
     no_cached_page_in_hash:
         page = alloc_one_page(0);
         if (page == NULL) {
-            return ENOMEM;
+            return -ENOMEM;
         }
 
         // TODO：可能已经有其它进程已经把数据读入内存了
@@ -91,7 +94,7 @@ ssize_t vfs_generic_file_read(file_t* file, char* buf, size_t size, loff_t* p_po
         assert(mapping->a_ops->read_page != NULL);
         ret = mapping->a_ops->read_page(file, page);
         if (0 != ret) {
-            return EIO;
+            return -EIO;
         }
 
         //
@@ -99,7 +102,7 @@ ssize_t vfs_generic_file_read(file_t* file, char* buf, size_t size, loff_t* p_po
         add_page_to_hash(page, mapping, index);
     }
 
-    return ret;
+    return read_bytes;
 }
 
 ssize_t sysc_read(int fd, void* buf, size_t count) {

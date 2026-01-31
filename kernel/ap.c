@@ -124,7 +124,7 @@ void ap_kernel_entry() {
         panic("local apic not supported\n");
     }
 
-    // 开房时钟中断
+    // 开启时钟中断
     lapic_t* lapic = system.lapic;
 
     uint32_t apic_base = 0;

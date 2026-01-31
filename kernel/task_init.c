@@ -160,13 +160,14 @@ void init_task_entry() {
         file.f_dentry = ni.path.dentry;
         file.f_ops = file.f_dentry->d_inode->i_fops;
 
-        vfs_generic_file_write(&file, "aaa1234567", 10, &file.f_pos);
+        const char* init_elf_data = "aaa1234567abcdIII";
+        vfs_generic_file_write(&file, init_elf_data, strlen(init_elf_data), &file.f_pos);
 
         file.f_pos = 0;
         char buf[128] = {'b', 'u', 'f'};
-        vfs_generic_file_read(&file, buf, 4, &file.f_pos);
-        for (int i = 0; i < 16; i++) {
-            printk("%c ", buf[i]);
+        ssize_t ret = vfs_generic_file_read(&file, buf, 128, &file.f_pos);
+        for (int i = 0; i < ret; i++) {
+            printk("%c", buf[i]);
         }
         printk("\n");
     }
