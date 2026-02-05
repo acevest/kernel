@@ -220,6 +220,10 @@ void init_buffer() {
             if (page_left_space < blocksize) {
                 data = (void*)page2va(alloc_one_page(0));
                 page = va2page(data);
+                page_left_space = PAGE_SIZE;
+
+                // printk("blocksize %u\n", blocksize);
+                // printk("page[%u] %08x\n", page->index, data);
             }
 
             bbuffer_t* b = kmem_cache_alloc(bbufer_kmem_cache, 0);
@@ -228,7 +232,8 @@ void init_buffer() {
             b->block = 0;
             b->block_size = blocksize;
             atomic_set(&(b->ref_count), 0);
-            b->data = data + j * blocksize;
+            // b->data = data + (page_left_space - blocksize);
+            b->data = data + (PAGE_SIZE - page_left_space);
             b->dev = 0;
             b->page = page;
             b->uptodate = 0;
@@ -239,6 +244,8 @@ void init_buffer() {
             assert(NULL != b->data);
 
             list_add(&b->node, &store[i].free_list);
+
+            // printk("[%u] bbuffer[%u].data %08x\n", blocksize, j, b->data);
 
             page_left_space -= blocksize;
         }
