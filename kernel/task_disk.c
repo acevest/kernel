@@ -69,6 +69,10 @@ void disk_task_entry() {
     while (1) {
         down(&disk_request_queue.sem);
 
+        for (int i = 0; i < 123; i++) {
+            asm("hlt");
+        }
+
         mutex_lock(&disk_request_queue.mutex);
         assert(!list_empty(&disk_request_queue.list));
         disk_request_t* req = list_first_entry(&disk_request_queue.list, disk_request_t, list);
@@ -84,8 +88,8 @@ void disk_task_entry() {
 
         disk_request_queue.completed_count++;  // 不需要保护
 
-        for (int i = 0; i < 123; i++) {
-            asm("hlt");
-        }
+        // for (int i = 0; i < 123; i++) {
+        //     asm("hlt");
+        // }
     }
 }

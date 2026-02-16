@@ -109,12 +109,12 @@ void init_sata_device(ahci_hba_t* hba, ahci_port_t* port, int port_index) {
 
 uint64_t sata_irq_cnt = 0;
 void sata_irq_handler(unsigned int irq, pt_regs_t* regs, void* dev_id) {
+    sata_irq_cnt++;
+
     for (int i = 0; i < max_sata_devices; i++) {
         sata_device_t* sata = sata_devices + i;
         ahci_port_t* port = sata->port;
         assert(port != NULL);
-
-        sata_irq_cnt += 1;
 
         //
         uint32_t interrupt_status = port->interrupt_status;

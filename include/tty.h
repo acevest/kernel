@@ -17,8 +17,8 @@
 #define TTY_GREEN 0b0010
 #define TTY_CYAN 0b0011
 #define TTY_RED 0b0100
-#define TTY_PURPLE 0b101
-#define TTY_YELLOW 0b110
+#define TTY_PURPLE 0b0101
+#define TTY_YELLOW 0b0110
 #define TTY_WHITE 0b0111
 
 typedef struct tty {
